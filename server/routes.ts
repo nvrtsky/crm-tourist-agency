@@ -8,11 +8,11 @@ import { insertTouristSchema, insertCityVisitSchema } from "@shared/schema";
 export async function registerRoutes(app: Express): Promise<Server> {
   const bitrix24 = getBitrix24Service();
 
-  // Get tourists for a specific deal
-  app.get("/api/tourists/:dealId", async (req, res) => {
+  // Get tourists for a specific entity (smart process element)
+  app.get("/api/tourists/:entityId", async (req, res) => {
     try {
-      const { dealId } = req.params;
-      const tourists = await storage.getTouristsByDeal(dealId);
+      const { entityId } = req.params;
+      const tourists = await storage.getTouristsByEntity(entityId);
       res.json(tourists);
     } catch (error) {
       console.error("Error fetching tourists:", error);
@@ -32,10 +32,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { dealId, name, email, phone, visits } = touristValidation.data;
+      const { entityId, entityTypeId, name, email, phone, visits } = touristValidation.data;
 
       const touristData = {
-        dealId,
+        entityId,
+        entityTypeId,
         name,
         email: email || undefined,
         phone: phone || undefined,
@@ -46,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create contact in Bitrix24 only if service is available
       if (bitrix24) {
         bitrixContactId = await bitrix24.createContact(touristData);
-        await bitrix24.linkContactToDeal(dealId, bitrixContactId);
+        await bitrix24.linkContactToEntity(entityId, entityTypeId, bitrixContactId);
       }
 
       // Create tourist in our storage
@@ -78,10 +79,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Update deal user fields with route summary (only if Bitrix24 is available)
+      // Update entity user fields with route summary (only if Bitrix24 is available)
       if (bitrix24) {
-        await bitrix24.updateDealUserFields(dealId, {
-          totalTourists: (await storage.getTouristsByDeal(dealId)).length,
+        await bitrix24.updateEntityUserFields(entityId, entityTypeId, {
+          totalTourists: (await storage.getTouristsByEntity(entityId)).length,
           lastUpdated: new Date().toISOString(),
         });
       }

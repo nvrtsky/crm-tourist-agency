@@ -14,7 +14,8 @@ export type TransportType = typeof TRANSPORT_TYPES[number];
 // Tourist table - now includes Bitrix24 integration fields
 export const tourists = pgTable("tourists", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  dealId: text("deal_id").notNull(), // Bitrix24 Deal ID
+  entityId: text("entity_id").notNull(), // Bitrix24 Smart Process Element ID
+  entityTypeId: text("entity_type_id").notNull(), // Bitrix24 Smart Process Entity Type ID
   bitrixContactId: text("bitrix_contact_id"), // Bitrix24 Contact ID
   name: text("name").notNull(),
   email: text("email"),
@@ -32,10 +33,15 @@ export const cityVisits = pgTable("city_visits", {
 });
 
 // Zod schemas
+export const insertCityVisitSchema = createInsertSchema(cityVisits).omit({ id: true });
+
+// Schema for city visits when creating a tourist (without touristId since it's not known yet)
+export const insertCityVisitWithoutTouristSchema = insertCityVisitSchema.omit({ touristId: true });
+
 export const insertTouristSchema = createInsertSchema(tourists).omit({ id: true }).extend({
   bitrixContactId: z.string().optional(),
+  visits: z.array(insertCityVisitWithoutTouristSchema).optional(),
 });
-export const insertCityVisitSchema = createInsertSchema(cityVisits).omit({ id: true });
 
 // Types
 export type Tourist = typeof tourists.$inferSelect;

@@ -27,12 +27,12 @@ const cityNames: Record<City, { en: string; cn: string }> = {
 };
 
 export default function Dashboard() {
-  const { dealId } = useBitrix24();
+  const { entityId } = useBitrix24();
 
-  // Fetch tourists for current deal
+  // Fetch tourists for current entity
   const { data: tourists, isLoading } = useQuery<TouristWithVisits[]>({
-    queryKey: ["/api/tourists", dealId],
-    enabled: !!dealId,
+    queryKey: ["/api/tourists", entityId],
+    enabled: !!entityId,
   });
 
   // Calculate statistics

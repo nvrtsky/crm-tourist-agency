@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
 interface Bitrix24Context {
-  dealId: string | null;
+  entityId: string | null;
+  entityTypeId: string | null;
   domain: string | null;
   memberId: string | null;
   accessToken: string | null;
@@ -18,7 +19,7 @@ declare global {
         info: () => {
           options?: {
             ID?: string;
-            ENTITY_ID?: string;
+            ENTITY_TYPE_ID?: string;
           };
         };
       };
@@ -43,7 +44,8 @@ declare global {
 
 export function useBitrix24(): Bitrix24Context {
   const [context, setContext] = useState<Bitrix24Context>({
-    dealId: null,
+    entityId: null,
+    entityTypeId: null,
     domain: null,
     memberId: null,
     accessToken: null,
@@ -57,7 +59,8 @@ export function useBitrix24(): Bitrix24Context {
     if (import.meta.env.DEV && !window.BX24) {
       console.log("Running in development mode without Bitrix24");
       setContext({
-        dealId: "dev-deal-123",
+        entityId: "dev-entity-123",
+        entityTypeId: "dev-type-1",
         domain: "localhost",
         memberId: "dev-member",
         accessToken: "dev-token",
@@ -80,18 +83,20 @@ export function useBitrix24(): Bitrix24Context {
     window.BX24.init(() => {
       try {
         const placementInfo = window.BX24!.placement.info();
-        const dealId = placementInfo?.options?.ENTITY_ID || null;
+        const entityId = placementInfo?.options?.ID || null;
+        const entityTypeId = placementInfo?.options?.ENTITY_TYPE_ID || null;
         const auth = window.BX24!.getAuth();
         const domain = auth.domain || window.BX24!.getDomain();
 
         setContext({
-          dealId,
+          entityId,
+          entityTypeId,
           domain,
           memberId: auth.member_id || null,
           accessToken: auth.access_token || null,
           expiresIn: auth.expires_in || null,
           isReady: true,
-          error: dealId ? null : "Deal ID не найден",
+          error: entityId && entityTypeId ? null : "Entity ID или Entity Type ID не найдены",
         });
 
         // Auto-resize iframe

@@ -73,19 +73,21 @@ export class Bitrix24Service {
     await this.call("crm.contact.update", { id: contactId, fields });
   }
 
-  // Link contact to deal
-  async linkContactToDeal(dealId: string, contactId: string): Promise<void> {
-    await this.call("crm.deal.contact.add", {
-      id: dealId,
+  // Link contact to smart process entity
+  async linkContactToEntity(entityId: string, entityTypeId: string, contactId: string): Promise<void> {
+    await this.call("crm.item.contact.add", {
+      entityTypeId: Number(entityTypeId),
+      id: Number(entityId),
       fields: {
-        CONTACT_ID: contactId,
+        CONTACT_ID: Number(contactId),
       },
     });
   }
 
-  // Update deal user fields with tour route data
-  async updateDealUserFields(
-    dealId: string,
+  // Update entity user fields with tour route data
+  async updateEntityUserFields(
+    entityId: string,
+    entityTypeId: string,
     routeData: any
   ): Promise<void> {
     const fields: Record<string, any> = {};
@@ -95,16 +97,23 @@ export class Bitrix24Service {
       fields[process.env.UF_CRM_TOUR_ROUTE] = JSON.stringify(routeData);
     }
 
-    await this.call("crm.deal.update", { id: dealId, fields });
+    await this.call("crm.item.update", { 
+      entityTypeId: Number(entityTypeId),
+      id: Number(entityId), 
+      fields 
+    });
   }
 
-  // Get deal user fields
-  async getDealUserFields(dealId: string): Promise<any> {
-    const deal = await this.call("crm.deal.get", { id: dealId });
+  // Get entity user fields
+  async getEntityUserFields(entityId: string, entityTypeId: string): Promise<any> {
+    const item = await this.call("crm.item.get", { 
+      entityTypeId: Number(entityTypeId),
+      id: Number(entityId)
+    });
     
-    if (process.env.UF_CRM_TOUR_ROUTE && deal[process.env.UF_CRM_TOUR_ROUTE]) {
+    if (process.env.UF_CRM_TOUR_ROUTE && item[process.env.UF_CRM_TOUR_ROUTE]) {
       try {
-        return JSON.parse(deal[process.env.UF_CRM_TOUR_ROUTE]);
+        return JSON.parse(item[process.env.UF_CRM_TOUR_ROUTE]);
       } catch (error) {
         console.error("Error parsing tour route data:", error);
         return null;

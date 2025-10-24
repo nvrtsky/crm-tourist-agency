@@ -22,7 +22,7 @@ function Router() {
 }
 
 export default function App() {
-  const { dealId, isReady, error } = useBitrix24();
+  const { entityId, isReady, error } = useBitrix24();
 
   if (!isReady) {
     return (
@@ -35,7 +35,7 @@ export default function App() {
     );
   }
 
-  if (error && !dealId) {
+  if (error && !entityId) {
     return (
       <div className="flex items-center justify-center h-screen p-4">
         <Alert variant="destructive" className="max-w-md">
@@ -54,9 +54,9 @@ export default function App() {
           <header className="flex items-center justify-between px-4 py-3 border-b bg-background shrink-0">
             <div className="flex items-center gap-3">
               <h1 className="text-lg font-semibold">Групповой тур по Китаю</h1>
-              {dealId && (
+              {entityId && (
                 <span className="text-xs text-muted-foreground font-mono">
-                  ID: {dealId}
+                  ID: {entityId}
                 </span>
               )}
             </div>

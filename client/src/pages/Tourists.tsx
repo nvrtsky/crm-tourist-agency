@@ -20,13 +20,13 @@ import { useToast } from "@/hooks/use-toast";
 export default function Tourists() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { dealId } = useBitrix24();
+  const { entityId, entityTypeId } = useBitrix24();
   const { toast } = useToast();
 
-  // Fetch tourists for current deal
+  // Fetch tourists for current entity
   const { data: tourists, isLoading } = useQuery<TouristWithVisits[]>({
-    queryKey: ["/api/tourists", dealId],
-    enabled: !!dealId,
+    queryKey: ["/api/tourists", entityId],
+    enabled: !!entityId,
   });
 
   // Create tourist mutation
@@ -34,15 +34,16 @@ export default function Tourists() {
     mutationFn: async (data: any) => {
       return apiRequest("POST", `/api/tourists`, {
         ...data,
-        dealId,
+        entityId,
+        entityTypeId,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tourists", dealId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
       setIsDialogOpen(false);
       toast({
         title: "Турист добавлен",
-        description: "Турист успешно добавлен в систему и привязан к сделке",
+        description: "Турист успешно добавлен в систему и привязан к событию",
       });
     },
     onError: (error) => {
@@ -61,7 +62,7 @@ export default function Tourists() {
       return apiRequest("DELETE", `/api/tourists/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tourists", dealId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
       toast({
         title: "Турист удален",
         description: "Турист удален из системы",

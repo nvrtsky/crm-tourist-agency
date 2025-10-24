@@ -10,7 +10,7 @@ import { randomUUID } from "crypto";
 export interface IStorage {
   // Tourist operations
   getTourist(id: string): Promise<Tourist | undefined>;
-  getTouristsByDeal(dealId: string): Promise<TouristWithVisits[]>;
+  getTouristsByEntity(entityId: string): Promise<TouristWithVisits[]>;
   getAllTourists(): Promise<TouristWithVisits[]>;
   createTourist(tourist: InsertTourist): Promise<Tourist>;
   updateTourist(id: string, tourist: Partial<InsertTourist>): Promise<Tourist | undefined>;
@@ -37,9 +37,9 @@ export class MemStorage implements IStorage {
     return this.tourists.get(id);
   }
 
-  async getTouristsByDeal(dealId: string): Promise<TouristWithVisits[]> {
+  async getTouristsByEntity(entityId: string): Promise<TouristWithVisits[]> {
     const tourists = Array.from(this.tourists.values()).filter(
-      (tourist) => tourist.dealId === dealId
+      (tourist) => tourist.entityId === entityId
     );
     
     return Promise.all(
@@ -64,7 +64,8 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const tourist: Tourist = {
       id,
-      dealId: insertTourist.dealId,
+      entityId: insertTourist.entityId,
+      entityTypeId: insertTourist.entityTypeId,
       bitrixContactId: insertTourist.bitrixContactId ?? null,
       name: insertTourist.name,
       email: insertTourist.email ?? null,

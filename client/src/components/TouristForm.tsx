@@ -27,7 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Plane, Train, Plus, X } from "lucide-react";
 import { format } from "date-fns";
@@ -218,7 +218,13 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                     onClick={() => toggleCity(city)}
                     data-testid={`checkbox-city-${city.toLowerCase()}`}
                   >
-                    <Checkbox checked={isSelected} />
+                    <div 
+                      className={`h-4 w-4 shrink-0 rounded-sm border border-primary flex items-center justify-center ${
+                        isSelected ? "bg-primary text-primary-foreground" : ""
+                      }`}
+                    >
+                      {isSelected && <Check className="h-3 w-3" />}
+                    </div>
                     <div>
                       <div className="font-medium">{cityNames[city].en}</div>
                       <div className="text-sm text-muted-foreground">

@@ -10,6 +10,7 @@ import { randomUUID } from "crypto";
 export interface IStorage {
   // Tourist operations
   getTourist(id: string): Promise<Tourist | undefined>;
+  getTouristsByDeal(dealId: string): Promise<TouristWithVisits[]>;
   getAllTourists(): Promise<TouristWithVisits[]>;
   createTourist(tourist: InsertTourist): Promise<Tourist>;
   updateTourist(id: string, tourist: Partial<InsertTourist>): Promise<Tourist | undefined>;
@@ -36,6 +37,19 @@ export class MemStorage implements IStorage {
     return this.tourists.get(id);
   }
 
+  async getTouristsByDeal(dealId: string): Promise<TouristWithVisits[]> {
+    const tourists = Array.from(this.tourists.values()).filter(
+      (tourist) => tourist.dealId === dealId
+    );
+    
+    return Promise.all(
+      tourists.map(async (tourist) => ({
+        ...tourist,
+        visits: await this.getCityVisitsByTourist(tourist.id),
+      }))
+    );
+  }
+
   async getAllTourists(): Promise<TouristWithVisits[]> {
     const tourists = Array.from(this.tourists.values());
     return Promise.all(
@@ -50,6 +64,8 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const tourist: Tourist = {
       id,
+      dealId: insertTourist.dealId,
+      bitrixContactId: insertTourist.bitrixContactId ?? null,
       name: insertTourist.name,
       email: insertTourist.email ?? null,
       phone: insertTourist.phone ?? null,
@@ -62,7 +78,13 @@ export class MemStorage implements IStorage {
     const tourist = this.tourists.get(id);
     if (!tourist) return undefined;
     
-    const updated = { ...tourist, ...updates };
+    const updated: Tourist = {
+      ...tourist,
+      ...updates,
+      email: updates.email !== undefined ? updates.email ?? null : tourist.email,
+      phone: updates.phone !== undefined ? updates.phone ?? null : tourist.phone,
+      bitrixContactId: updates.bitrixContactId !== undefined ? updates.bitrixContactId ?? null : tourist.bitrixContactId,
+    };
     this.tourists.set(id, updated);
     return updated;
   }

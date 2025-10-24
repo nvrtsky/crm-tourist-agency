@@ -4,6 +4,8 @@ import type { TouristWithVisits } from '@shared/schema';
 export default function TouristCardExample() {
   const mockTourist: TouristWithVisits = {
     id: '1',
+    dealId: 'dev-deal-123',
+    bitrixContactId: null,
     name: 'Александр Иванов',
     email: 'alex@example.com',
     phone: '+7 900 123-45-67',

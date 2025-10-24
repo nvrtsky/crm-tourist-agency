@@ -22,6 +22,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create tourist (with Bitrix24 integration)
   app.post("/api/tourists", async (req, res) => {
+    let createdTourist: any = null;
+    let bitrixContactId: string | undefined;
+
     try {
       // Validate tourist data
       const touristValidation = insertTouristSchema.safeParse(req.body);
@@ -34,6 +37,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { entityId, entityTypeId, name, email, phone, visits } = touristValidation.data;
 
+      // Pre-validate all visits before creating anything
+      if (visits && Array.isArray(visits) && visits.length > 0) {
+        for (const visit of visits) {
+          const visitValidation = insertCityVisitSchema.omit({ touristId: true }).safeParse(visit);
+          if (!visitValidation.success) {
+            return res.status(400).json({
+              error: "Visit validation error",
+              details: visitValidation.error.errors,
+            });
+          }
+        }
+      }
+
       const touristData = {
         entityId,
         entityTypeId,
@@ -42,57 +58,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: phone || undefined,
       };
 
-      let bitrixContactId: string | undefined;
-
       // Create contact in Bitrix24 only if service is available
       if (bitrix24) {
-        bitrixContactId = await bitrix24.createContact(touristData);
-        await bitrix24.linkContactToEntity(entityId, entityTypeId, bitrixContactId);
+        try {
+          bitrixContactId = await bitrix24.createContact(touristData);
+          await bitrix24.linkContactToEntity(entityId, entityTypeId, bitrixContactId);
+        } catch (bitrixError) {
+          console.error("Bitrix24 integration failed:", bitrixError);
+          return res.status(502).json({
+            error: "Failed to create tourist in Bitrix24 CRM",
+            details: "Unable to create or link contact in smart process. Please check webhook configuration.",
+          });
+        }
       }
 
-      // Create tourist in our storage
-      const tourist = await storage.createTourist({
-        ...touristData,
-        bitrixContactId,
-      });
+      // Create tourist in our storage only after Bitrix24 success
+      try {
+        createdTourist = await storage.createTourist({
+          ...touristData,
+          bitrixContactId,
+        });
+      } catch (storageError) {
+        // Rollback Bitrix24 contact if storage creation failed
+        if (bitrix24 && bitrixContactId) {
+          try {
+            await bitrix24.deleteContact(bitrixContactId);
+            console.log("Cleaned up Bitrix24 contact after storage failure:", bitrixContactId);
+          } catch (cleanupError) {
+            console.error("Failed to cleanup Bitrix24 contact:", cleanupError);
+          }
+        }
+        throw storageError;
+      }
 
-      // Create city visits with validation
+      // Create city visits
       const createdVisits = [];
       if (visits && Array.isArray(visits) && visits.length > 0) {
         for (const visit of visits) {
-          // Validate each visit
-          const visitValidation = insertCityVisitSchema.safeParse({
-            touristId: tourist.id,
+          const cityVisit = await storage.createCityVisit({
+            touristId: createdTourist.id,
             city: visit.city,
             arrivalDate: visit.arrivalDate,
             transportType: visit.transportType,
             hotelName: visit.hotelName,
           });
-
-          if (!visitValidation.success) {
-            console.error("Invalid visit data:", visitValidation.error);
-            continue; // Skip invalid visits
-          }
-
-          const cityVisit = await storage.createCityVisit(visitValidation.data);
           createdVisits.push(cityVisit);
         }
       }
 
       // Update entity user fields with route summary (only if Bitrix24 is available)
       if (bitrix24) {
-        await bitrix24.updateEntityUserFields(entityId, entityTypeId, {
-          totalTourists: (await storage.getTouristsByEntity(entityId)).length,
-          lastUpdated: new Date().toISOString(),
-        });
+        try {
+          await bitrix24.updateEntityUserFields(entityId, entityTypeId, {
+            totalTourists: (await storage.getTouristsByEntity(entityId)).length,
+            lastUpdated: new Date().toISOString(),
+          });
+        } catch (updateError) {
+          console.error("Failed to update entity fields, but tourist was created:", updateError);
+          // Non-critical error - tourist is already created, just log it
+        }
       }
 
       res.json({
-        ...tourist,
+        ...createdTourist,
         visits: createdVisits,
       });
     } catch (error) {
       console.error("Error creating tourist:", error);
+
+      // Rollback: delete created tourist (and cleanup Bitrix contact if needed)
+      if (createdTourist) {
+        try {
+          await storage.deleteTourist(createdTourist.id);
+          console.log("Rolled back tourist creation:", createdTourist.id);
+        } catch (rollbackError) {
+          console.error("Failed to rollback tourist creation:", rollbackError);
+        }
+      }
+
+      // If we created Bitrix contact but never created tourist, clean it up
+      if (bitrix24 && bitrixContactId && !createdTourist) {
+        try {
+          await bitrix24.deleteContact(bitrixContactId);
+          console.log("Cleaned up orphaned Bitrix24 contact:", bitrixContactId);
+        } catch (cleanupError) {
+          console.error("Failed to cleanup Bitrix24 contact:", cleanupError);
+        }
+      }
+
       res.status(500).json({ error: "Failed to create tourist" });
     }
   });

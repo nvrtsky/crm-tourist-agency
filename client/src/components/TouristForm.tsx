@@ -50,6 +50,7 @@ const formSchema = z.object({
 interface CityVisitData {
   city: City;
   arrivalDate: Date | null;
+  departureDate: Date | null;
   transportType: TransportType;
   hotelName: string;
 }
@@ -62,6 +63,7 @@ interface TouristFormProps {
     visits: Array<{
       city: City;
       arrivalDate: string;
+      departureDate?: string;
       transportType: TransportType;
       hotelName: string;
     }>;
@@ -95,6 +97,7 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
       newVisits.set(city, {
         city,
         arrivalDate: null,
+        departureDate: null,
         transportType: "plane",
         hotelName: "",
       });
@@ -118,6 +121,7 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
       .map((v) => ({
         city: v.city,
         arrivalDate: v.arrivalDate!.toISOString().split("T")[0],
+        departureDate: v.departureDate ? v.departureDate.toISOString().split("T")[0] : undefined,
         transportType: v.transportType,
         hotelName: v.hotelName,
       }));
@@ -267,34 +271,69 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div>
-                          <Label>Дата прибытия *</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className="w-full justify-start text-left font-normal mt-1"
-                                data-testid={`button-date-${city.toLowerCase()}`}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {visit.arrivalDate ? (
-                                  format(visit.arrivalDate, "PPP", { locale: ru })
-                                ) : (
-                                  <span>Выберите дату</span>
-                                )}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={visit.arrivalDate || undefined}
-                                onSelect={(date) =>
-                                  updateVisit(city, { arrivalDate: date || null })
-                                }
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Дата прибытия *</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-start text-left font-normal mt-1"
+                                  data-testid={`button-arrival-date-${city.toLowerCase()}`}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {visit.arrivalDate ? (
+                                    format(visit.arrivalDate, "PPP", { locale: ru })
+                                  ) : (
+                                    <span>Выберите дату</span>
+                                  )}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={visit.arrivalDate || undefined}
+                                  onSelect={(date) =>
+                                    updateVisit(city, { arrivalDate: date || null })
+                                  }
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+
+                          <div>
+                            <Label>Дата выезда</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-start text-left font-normal mt-1"
+                                  data-testid={`button-departure-date-${city.toLowerCase()}`}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {visit.departureDate ? (
+                                    format(visit.departureDate, "PPP", { locale: ru })
+                                  ) : (
+                                    <span>Выберите дату</span>
+                                  )}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={visit.departureDate || undefined}
+                                  onSelect={(date) =>
+                                    updateVisit(city, { departureDate: date || null })
+                                  }
+                                  disabled={(date) =>
+                                    visit.arrivalDate ? date < visit.arrivalDate : false
+                                  }
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
                         </div>
 
                         <div>

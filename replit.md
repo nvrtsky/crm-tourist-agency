@@ -1,219 +1,51 @@
-# Веб-сервис для туристического агенства
+# Веб-сервис для туристического агентства
 
-Система управления групповыми турами с интеграцией в Битрикс24.
+## Overview
+This project is a web application designed to manage group tours across four cities in China: Beijing, Luoyang, Xi'an, and Zhangjiajie. Tourists can join or leave a tour at any stage of the itinerary. The application integrates with Bitrix24 as an embedded tab within a "Smart Process" (specifically, the "Event" smart process), where each smart process item represents a single group tour. It aims to streamline tour management, provide comprehensive tourist and itinerary tracking, and offer various reporting features.
 
-## Описание проекта
+## User Preferences
+I prefer detailed explanations.
+I want iterative development.
+Ask before making major changes.
+Do not make changes to folder `Z`.
+Do not make changes to file `Y`.
 
-Веб-приложение для управления групповыми турами по 4 городам Китая:
-- Пекин (Beijing / 北京)
-- Лоян (Luoyang / 洛阳)
-- Сиань (Xi'an / 西安)
-- Чжанцзяцзе (Zhangjiajie / 张家界)
+## System Architecture
 
-Туристы могут присоединяться/отсоединяться на любом этапе маршрута.
+### UI/UX Decisions
+The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwind CSS for a modern and responsive design. The application features a dashboard for statistics, a wide summary table with sticky headers for comprehensive data overview, and full mobile adaptation across all pages, including compact navigation and responsive cards for smaller screens.
 
-## Интеграция с Битрикс24
+### Technical Implementations
+- **Frontend**: React, TypeScript, Wouter (routing), TanStack Query (API state management), Shadcn UI, Tailwind CSS, Bitrix24 JS SDK.
+- **Backend**: Express.js, TypeScript, In-memory storage (MemStorage for development), Bitrix24 REST API integration (`crm.item.*` methods for smart processes).
+- **Data Structure**: Shared TypeScript types and Zod schemas define the data models across frontend and backend.
+- **Project Structure**:
+    - `client/`: Frontend React application.
+    - `server/`: Backend Express server, including Bitrix24 API client and routes.
+    - `shared/`: Common types and Zod schemas.
+    - `attached_assets/`: City images.
 
-Приложение работает как встраиваемая вкладка "Управление группами" в смарт-процессе "Событие" Битрикс24:
-- **Один элемент смарт-процесса = один групповой тур**
-- Туристы создаются как контакты в CRM и привязываются к элементу смарт-процесса
-- Информация о маршрутах хранится в пользовательских полях элемента смарт-процесса
+### Feature Specifications
+- **Tourist Management**: Create, edit, delete tourists; link tourists to Bitrix24 smart process items and CRM contacts.
+- **Itinerary Management**: Select cities, specify arrival/departure dates and times, choose transport types (flight/train), enter flight/train numbers, record hotel information. Includes validation for departure dates (must be after arrival).
+- **Dashboard**: Displays tourist statistics, city distribution, upcoming arrivals, and hotel usage.
+- **Summary Table**: Comprehensive table showing all tourists, date/time ranges for arrival/departure, flight numbers, hotel lists, and transport icons. Features sticky header, responsive design with horizontal scrolling, and a total tourist count.
+- **Sharing & Export**: Copy link functionality and export to Excel (including times and flight numbers).
+- **Bitrix24 Integration**: Operates as an embedded tab, synchronizes tourists with CRM contacts, and stores route information in custom fields of the Bitrix24 smart process item.
+- **Development Mode**: Supports standalone operation with mock data for development and testing without Bitrix24 integration.
 
-Подробная инструкция по настройке: [BITRIX24_SETUP.md](./BITRIX24_SETUP.md)
+### System Design Choices
+- **Smart Process Integration**: The system leverages Bitrix24's smart processes, with each "Event" smart process item representing a unique group tour.
+- **API Endpoints**: Dedicated API for managing tourists (GET, POST, PATCH, DELETE) and for seeding/clearing test data.
+- **Environment Variables**: Uses `BITRIX24_WEBHOOK_URL` for production and optional `UF_CRM_TOUR_ROUTE`, `SESSION_SECRET`.
 
-## Технический стек
-
-### Frontend
-- React + TypeScript
-- Wouter (роутинг)
-- TanStack Query (управление состоянием API)
-- Shadcn UI + Tailwind CSS
-- Bitrix24 JS SDK
-
-### Backend
-- Express.js + TypeScript
-- In-memory storage (MemStorage)
-- Bitrix24 REST API интеграция (`crm.item.*` методы для смарт-процессов)
-
-## Основные функции
-
-### Управление туристами
-- ✅ Создание туриста (+ контакт в CRM)
-- ✅ Редактирование данных туриста
-- ✅ Удаление туриста
-- ✅ Привязка к элементу смарт-процесса Битрикс24
-
-### Маршруты
-- ✅ Выбор городов из списка
-- ✅ Указание даты прибытия и выезда в каждый город
-- ✅ Выбор транспорта прибытия и выезда (самолет/поезд)
-- ✅ Фиксация отеля в каждом городе
-- ✅ Валидация: дата выезда не может быть раньше даты прибытия
-
-### Dashboard
-- ✅ Статистика по туристам
-- ✅ Распределение по городам
-- ✅ Предстоящие прибытия
-- ✅ Количество используемых отелей
-
-### Сводная таблица
-- ✅ Широкая таблица со всеми туристами
-- ✅ Отображение диапазонов дат прибытия-выезда (например, "15.11 - 18.11")
-- ✅ Список отелей для каждого туриста
-- ✅ Иконки транспорта прибытия и выезда (например: ✈️ → 🚂)
-- ✅ Sticky header для прокрутки
-- ✅ Responsive дизайн с горизонтальной прокруткой
-- ✅ Строка итогов с подсчетом туристов
-- ✅ Функция "Поделиться": копировать ссылку и экспорт в Excel (с диапазонами дат)
-- 🔄 Группировка/разгруппировка (визуально готова, логика в планах)
-
-### Мобильная адаптация
-- ✅ Адаптивная навигация (компактная на <640px)
-- ✅ Dashboard: адаптивные карточки и spacing
-- ✅ Tourists: компактные формы и диалоги
-- ✅ Summary: вертикальные карточки на мобильных (<768px), таблица на desktop
-
-## Структура проекта
-
-```
-├── client/               # Frontend React приложение
-│   ├── src/
-│   │   ├── components/  # Переиспользуемые компоненты
-│   │   ├── hooks/       # Custom hooks (useBitrix24)
-│   │   ├── pages/       # Страницы приложения
-│   │   └── lib/         # Утилиты
-├── server/              # Backend Express сервер
-│   ├── bitrix24.ts     # Bitrix24 API клиент (crm.item.* методы)
-│   ├── routes.ts       # API роуты
-│   └── storage.ts      # Хранилище данных
-├── shared/             # Общие типы и схемы
-│   └── schema.ts       # TypeScript типы и Zod схемы
-└── attached_assets/    # Изображения городов
-```
-
-## Переменные окружения
-
-### Обязательные (для production)
-```env
-BITRIX24_WEBHOOK_URL=https://your-portal.bitrix24.ru/rest/1/your-key/
-```
-
-### Опциональные
-```env
-UF_CRM_TOUR_ROUTE=UF_CRM_XXXXX  # Код пользовательского поля для маршрута
-SESSION_SECRET=your-session-secret
-```
-
-## Режимы работы
-
-### Development (без Bitrix24)
-Приложение работает standalone с mock данными:
-- Entity ID: `dev-entity-123`
-- Entity Type ID: `dev-type-1`
-- Bitrix24 интеграция отключена
-- Полный функционал для разработки и тестирования
-
-### Production (в Bitrix24)
-Приложение получает контекст через Bitrix24 JS SDK:
-- Автоматическое получение Entity ID и Entity Type ID
-- Синхронизация контактов с CRM
-- Сохранение данных в пользовательские поля элемента смарт-процесса
-
-## API Endpoints
-
-### Туристы
-- `GET /api/tourists/:entityId` - Получить туристов элемента смарт-процесса
-- `POST /api/tourists` - Создать туриста (требует entityId и entityTypeId)
-- `PATCH /api/tourists/:id` - Обновить туриста
-- `DELETE /api/tourists/:id` - Удалить туриста
-
-### Тестовые данные
-- `POST /api/seed-tourists` - Загрузить 13 тестовых туристов из реальной таблицы
-- `DELETE /api/tourists/entity/:entityId` - Очистить всех туристов для элемента смарт-процесса
-
-## Последние изменения
-
-### 2025-10-26 (Выбор транспорта выезда)
-- ✅ Добавлено поле `departureTransportType` в схему данных (shared/schema.ts)
-- ✅ Форма туриста обновлена: кнопки выбора транспорта прибытия и выезда для каждого города
-- ✅ Summary отображает транспорт прибытия и выезда с стрелкой (✈️ → 🚂)
-- ✅ API (POST /api/tourists, POST /api/seed-tourists) сохраняет departureTransportType
-- ✅ Тестовые данные обновлены с разнообразными комбинациями транспорта:
-  - Одинаковый транспорт (самолет → самолет, поезд → поезд)
-  - Разный транспорт (самолет → поезд, поезд → самолет)
-- ✅ E2E тесты: создание туриста с выбором транспорта выезда, отображение в Summary
-
-### 2025-10-26 (Даты выезда из городов)
-- ✅ Добавлено поле `departureDate` в схему данных (shared/schema.ts)
-- ✅ Форма туриста обновлена: два календаря для каждого города (прибытие и выезд)
-- ✅ Валидация в форме: дата выезда не может быть раньше даты прибытия
-- ✅ Summary отображает диапазоны дат: "DD.MM - DD.MM" в таблице
-- ✅ Excel экспорт включает диапазоны дат: "DD.MM.YYYY - DD.MM.YYYY"
-- ✅ API (POST /api/tourists) корректно сохраняет departureDate
-- ✅ Тестовые данные (13 туристов) обновлены с реалистичными датами выезда
-- ✅ E2E тесты: создание туриста с датами, отображение диапазонов в Summary
-
-### 2025-10-26 (Тестовые данные)
-- ✅ Добавлен endpoint для загрузки тестовых данных (POST /api/seed-tourists)
-- ✅ Endpoint для очистки всех данных (DELETE /api/tourists/entity/:entityId)
-- ✅ Кнопки управления данными на Dashboard:
-  - "Загрузить тестовые данные" - 13 туристов из реальной таблицы
-  - "Очистить все данные" - удаление всех туристов
-- ✅ Тестовые данные включают:
-  - 13 туристов с реальными именами и телефонами
-  - Маршруты по всем 4 городам (Beijing, Luoyang, Xian, Zhangjiajie)
-  - Реальные отели: Park Plaza Beijing Wangfujing, Pullman Zhangjiajie, Luoyang Peony Plaza, Grand Park Xian
-  - Даты прибытия: октябрь-ноябрь 2025
-  - Транспорт: самолет и поезд
-- ✅ E2E тесты: загрузка, отображение, очистка данных
-
-### 2025-10-26 (Мобильная адаптация и экспорт)
-- ✅ Полная мобильная адаптация всех страниц
-  - Header с компактной навигацией (иконки на <640px)
-  - Dashboard: адаптивные карточки и spacing
-  - Tourists: компактные формы и диалоги (95vw на мобильных)
-  - Summary: вертикальные карточки на <768px, таблица на desktop
-- ✅ Функция "Поделиться" в Summary
-  - Копирование ссылки в буфер обмена (Clipboard API)
-  - Экспорт сводной таблицы в Excel (xlsx библиотека)
-  - Toast уведомления при успехе/ошибке
-- ✅ React Query refetchOnMount для Summary (исправление проблемы с кэшем)
-- ✅ E2E тесты пройдены: мобильная навигация, создание туристов, экспорт
-
-### 2025-10-26 (Сводная таблица)
-- ✅ Создана страница Summary с широкой таблицей туристов
-- ✅ Добавлена навигация "Сводная" в меню
-- ✅ Реализованы столбцы: №, Туристы, Телефон, Города (с датами), Отели, Транспорт, Даты прибытия
-- ✅ Применена стилизация: sticky header, hover effects, responsive с горизонтальной прокруткой
-- ✅ Добавлена кнопка группировки (визуально, логика пока не реализована)
-- ✅ Строка итогов с подсчетом туристов
-
-### 2025-10-24 (Рефакторинг под смарт-процесс)
-- ✅ Переход от CRM сделок к смарт-процессу "Событие"
-- ✅ Обновлена схема данных: dealId → entityId, добавлен entityTypeId
-- ✅ Bitrix24 клиент использует crm.item.* методы вместо crm.deal.*
-- ✅ useBitrix24 hook получает entityId и entityTypeId из placement
-- ✅ API routes обновлены для работы с entityId
-- ✅ Frontend компоненты адаптированы под новую архитектуру
-- ✅ Обновлена документация
-
-### 2025-10-24 (Первоначальная интеграция)
-- ✅ Интегрирован Bitrix24 JS SDK
-- ✅ Создан Bitrix24 REST API клиент
-- ✅ Реализована синхронизация туристов с контактами CRM
-- ✅ Адаптирован UI для работы в iframe (без sidebar)
-- ✅ Создана документация по настройке интеграции
-
-## Разработка
-
-```bash
-npm run dev  # Запуск dev сервера (http://localhost:5000)
-```
-
-## Deployment
-
-Приложение готово к публикации на Replit:
-1. Добавьте BITRIX24_WEBHOOK_URL в Secrets
-2. Опубликуйте проект
-3. Настройте локальное приложение в Битрикс24
-4. Добавьте placement на вкладку смарт-процесса "Событие"
+## External Dependencies
+- **Bitrix24**: CRM and Smart Process platform for tour management and data storage.
+- **React**: Frontend library.
+- **TypeScript**: Superset of JavaScript for type-safe development.
+- **Wouter**: Small routing library for React.
+- **TanStack Query**: Data fetching and state management library.
+- **Shadcn UI**: UI component library.
+- **Tailwind CSS**: Utility-first CSS framework.
+- **Express.js**: Backend web application framework.
+- **xlsx**: Library for Excel export functionality.

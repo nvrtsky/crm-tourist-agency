@@ -229,105 +229,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: "Sadeeva Iuliia",
           phone: "+79151455488",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Pullman Zhangjiajie" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-03", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", departureDate: "2025-11-06", transportType: "train", hotelName: "Pullman Zhangjiajie" }
           ]
         },
         {
           name: "Sadeeva Emmiia",
           phone: "+79151455488",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Pullman Zhangjiajie" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-03", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", departureDate: "2025-11-06", transportType: "train", hotelName: "Pullman Zhangjiajie" }
           ]
         },
         {
           name: "Polshchikova Anastasiia",
           phone: "+79119880952",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-05", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" }
           ]
         },
         {
           name: "Androsova Marfa",
           phone: "+79627323846",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Pullman Zhangjiajie" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-03", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", departureDate: "2025-11-06", transportType: "train", hotelName: "Pullman Zhangjiajie" }
           ]
         },
         {
           name: "Karev Ivan",
           phone: "+79038558094",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Pullman Zhangjiajie" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-03", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", departureDate: "2025-11-06", transportType: "train", hotelName: "Pullman Zhangjiajie" }
           ]
         },
         {
           name: "Kareva Ekaterina",
           phone: "+79038558094",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Pullman Zhangjiajie" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-03", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", departureDate: "2025-11-06", transportType: "train", hotelName: "Pullman Zhangjiajie" }
           ]
         },
         {
           name: "Bogdanov Vadim",
           phone: "+79251845075",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "train", hotelName: "Park Plaza Beijing Wangfujing" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-04", transportType: "train", hotelName: "Park Plaza Beijing Wangfujing" }
           ]
         },
         {
           name: "Skachkova Iuliia",
           phone: "+79251845075",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "train", hotelName: "Park Plaza Beijing Wangfujing" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-04", transportType: "train", hotelName: "Park Plaza Beijing Wangfujing" }
           ]
         },
         {
           name: "Chadova Larisa",
           phone: "+79090227150",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Luoyang", arrivalDate: "2025-11-05", transportType: "train", hotelName: "Luoyang Peony Plaza" },
-            { city: "Xian", arrivalDate: "2025-11-08", transportType: "train", hotelName: "Grand Park Xian" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-05", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Luoyang", arrivalDate: "2025-11-05", departureDate: "2025-11-08", transportType: "train", hotelName: "Luoyang Peony Plaza" },
+            { city: "Xian", arrivalDate: "2025-11-08", departureDate: "2025-11-12", transportType: "train", hotelName: "Grand Park Xian" }
           ]
         },
         {
           name: "Chadov Evgenii",
           phone: "+79090227150",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Luoyang", arrivalDate: "2025-11-05", transportType: "train", hotelName: "Luoyang Peony Plaza" },
-            { city: "Xian", arrivalDate: "2025-11-08", transportType: "train", hotelName: "Grand Park Xian" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-05", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Luoyang", arrivalDate: "2025-11-05", departureDate: "2025-11-08", transportType: "train", hotelName: "Luoyang Peony Plaza" },
+            { city: "Xian", arrivalDate: "2025-11-08", departureDate: "2025-11-12", transportType: "train", hotelName: "Grand Park Xian" }
           ]
         },
         {
           name: "Smirnov Vitalii",
           phone: "+79697630050",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Xian", arrivalDate: "2025-11-04", transportType: "train", hotelName: "Grand Park Xian" }
+            { city: "Beijing", arrivalDate: "2025-11-01", departureDate: "2025-11-04", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Xian", arrivalDate: "2025-11-04", departureDate: "2025-11-08", transportType: "train", hotelName: "Grand Park Xian" }
           ]
         },
         {
           name: "Meshcheriakova Ekaterina",
           phone: "+79313577015",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-10-30", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Luoyang", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Luoyang Peony Plaza" },
-            { city: "Xian", arrivalDate: "2025-11-05", transportType: "train", hotelName: "Grand Park Xian" }
+            { city: "Beijing", arrivalDate: "2025-10-30", departureDate: "2025-11-03", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Luoyang", arrivalDate: "2025-11-03", departureDate: "2025-11-05", transportType: "train", hotelName: "Luoyang Peony Plaza" },
+            { city: "Xian", arrivalDate: "2025-11-05", departureDate: "2025-11-09", transportType: "train", hotelName: "Grand Park Xian" }
           ]
         },
         {
           name: "Tokarev Aleksei",
           phone: "+79313577015",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-10-30", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Luoyang", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Luoyang Peony Plaza" },
-            { city: "Xian", arrivalDate: "2025-11-05", transportType: "train", hotelName: "Grand Park Xian" }
+            { city: "Beijing", arrivalDate: "2025-10-30", departureDate: "2025-11-03", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Luoyang", arrivalDate: "2025-11-03", departureDate: "2025-11-05", transportType: "train", hotelName: "Luoyang Peony Plaza" },
+            { city: "Xian", arrivalDate: "2025-11-05", departureDate: "2025-11-09", transportType: "train", hotelName: "Grand Park Xian" }
           ]
         }
       ];
@@ -364,6 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               touristId: newTourist.id,
               city: visit.city as any,
               arrivalDate: visit.arrivalDate,
+              departureDate: (visit as any).departureDate,
               transportType: visit.transportType as any,
               hotelName: visit.hotelName,
             });

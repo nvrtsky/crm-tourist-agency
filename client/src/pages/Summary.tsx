@@ -50,6 +50,68 @@ export default function Summary() {
     }
   };
 
+  const handleExportCity = (city: City) => {
+    if (!tourists || tourists.length === 0) {
+      toast({
+        title: "Нет данных",
+        description: "Нечего экспортировать",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const data = tourists.map((tourist, index) => {
+      const visit = tourist.visits.find(v => v.city === city);
+      let cityData = "—";
+      
+      if (visit) {
+        const arrivalDate = format(new Date(visit.arrivalDate), "dd.MM.yyyy", { locale: ru });
+        const arrivalTime = visit.arrivalTime ? ` ${visit.arrivalTime}` : "";
+        const departureDate = visit.departureDate 
+          ? format(new Date(visit.departureDate), "dd.MM.yyyy", { locale: ru })
+          : "";
+        const departureTime = visit.departureTime ? ` ${visit.departureTime}` : "";
+        
+        const dateRange = departureDate 
+          ? `${arrivalDate}${arrivalTime} - ${departureDate}${departureTime}` 
+          : `${arrivalDate}${arrivalTime}`;
+        
+        const hotel = `Отель: ${visit.hotelName}`;
+        
+        const arrival = visit.transportType === "plane" ? "Самолет" : "Поезд";
+        const departure = visit.departureTransportType 
+          ? (visit.departureTransportType === "plane" ? "Самолет" : "Поезд")
+          : "";
+        const transport = departure ? `${arrival} → ${departure}` : arrival;
+        
+        const flightNumber = visit.flightNumber ? `Рейс: ${visit.flightNumber}` : "";
+        
+        cityData = [dateRange, hotel, transport, flightNumber]
+          .filter(Boolean)
+          .join("\n");
+      }
+
+      return {
+        "№": index + 1,
+        "Турист": tourist.name,
+        "Телефон": tourist.phone || "—",
+        [CITY_NAMES[city]]: cityData,
+      };
+    });
+
+    const worksheet = utils.json_to_sheet(data);
+    const workbook = utils.book_new();
+    utils.book_append_sheet(workbook, worksheet, CITY_NAMES[city]);
+
+    const fileName = `tourists_${city.toLowerCase()}_${format(new Date(), "dd-MM-yyyy")}.xlsx`;
+    writeFile(workbook, fileName);
+
+    toast({
+      title: "Экспорт завершен",
+      description: `Файл ${fileName} загружен`,
+    });
+  };
+
   const handleExportToExcel = () => {
     if (!tourists || tourists.length === 0) {
       toast({
@@ -189,7 +251,19 @@ export default function Summary() {
                     className="px-4 py-3 text-left text-sm font-medium border-b min-w-[200px]"
                     data-testid={`header-city-${city.toLowerCase()}`}
                   >
-                    {CITY_NAMES[city]}
+                    <div className="flex items-center justify-between gap-2">
+                      <span>{CITY_NAMES[city]}</span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleExportCity(city)}
+                        className="h-6 w-6 shrink-0"
+                        data-testid={`button-export-city-${city.toLowerCase()}`}
+                        title={`Экспорт ${CITY_NAMES[city]}`}
+                      >
+                        <Share2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </th>
                 ))}
               </tr>
@@ -340,7 +414,19 @@ export default function Summary() {
                       const visit = visitsByCity[city];
                       return visit ? (
                         <div key={city} className="space-y-1.5 border-l-2 border-primary/20 pl-3">
-                          <div className="text-xs font-medium text-primary">{CITY_NAMES[city]}</div>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-xs font-medium text-primary">{CITY_NAMES[city]}</div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleExportCity(city)}
+                              className="h-5 w-5 shrink-0"
+                              data-testid={`button-export-city-mobile-${city.toLowerCase()}`}
+                              title={`Экспорт ${CITY_NAMES[city]}`}
+                            >
+                              <Share2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                           <Badge variant="secondary" className="text-xs whitespace-nowrap w-fit">
                             {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
                             {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}

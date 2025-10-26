@@ -35,7 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { entityId, entityTypeId, name, email, phone, visits } = touristValidation.data;
+      const { entityId, entityTypeId, name, email, phone, passport, birthDate, amount, currency, nights, visits } = touristValidation.data;
 
       // Pre-validate all visits before creating anything
       if (visits && Array.isArray(visits) && visits.length > 0) {
@@ -56,6 +56,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name,
         email: email || undefined,
         phone: phone || undefined,
+        passport: passport || undefined,
+        birthDate: birthDate || undefined,
+        amount: amount || undefined,
+        currency: currency || undefined,
+        nights: nights || undefined,
       };
 
       // Create contact in Bitrix24 only if service is available
@@ -106,6 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             departureTransportType: visit.departureTransportType,
             flightNumber: visit.flightNumber,
             hotelName: visit.hotelName,
+            roomType: visit.roomType,
           });
           createdVisits.push(cityVisit);
         }

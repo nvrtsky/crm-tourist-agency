@@ -4,6 +4,7 @@ import { TouristWithVisits, CITIES, City } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,12 +28,32 @@ const CITY_NAMES: Record<City, string> = {
 export default function Summary() {
   const { entityId } = useBitrix24();
   const [isGrouped, setIsGrouped] = useState(false);
+  const [selectedTourists, setSelectedTourists] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const { data: tourists, isLoading } = useQuery<TouristWithVisits[]>({
     queryKey: ["/api/tourists", entityId],
     refetchOnMount: true,
   });
+
+  const toggleSelectAll = () => {
+    if (!tourists) return;
+    if (selectedTourists.size === tourists.length) {
+      setSelectedTourists(new Set());
+    } else {
+      setSelectedTourists(new Set(tourists.map(t => t.id)));
+    }
+  };
+
+  const toggleTourist = (id: string) => {
+    const newSelected = new Set(selectedTourists);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedTourists(newSelected);
+  };
 
   const handleCopyLink = async () => {
     try {
@@ -77,6 +98,7 @@ export default function Summary() {
           : `${arrivalDate}${arrivalTime}`;
         
         const hotel = `Отель: ${visit.hotelName}`;
+        const roomType = visit.roomType ? `Тип: ${visit.roomType === "twin" ? "Twin" : "Double"}` : "";
         
         const arrival = visit.transportType === "plane" ? "Самолет" : "Поезд";
         const departure = visit.departureTransportType 
@@ -86,15 +108,23 @@ export default function Summary() {
         
         const flightNumber = visit.flightNumber ? `Рейс: ${visit.flightNumber}` : "";
         
-        cityData = [dateRange, hotel, transport, flightNumber]
+        cityData = [dateRange, hotel, roomType, transport, flightNumber]
           .filter(Boolean)
           .join("\n");
       }
 
+      const touristInfo = [
+        tourist.name,
+        tourist.phone || "",
+        tourist.passport ? `Паспорт: ${tourist.passport}` : "",
+        tourist.birthDate ? `ДР: ${format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}` : "",
+        tourist.amount ? `Сумма: ${tourist.amount} ${tourist.currency === "CNY" ? "¥" : "₽"}` : "",
+        tourist.nights ? `Ночей: ${tourist.nights}` : "",
+      ].filter(Boolean).join("\n");
+
       return {
         "№": index + 1,
-        "Турист": tourist.name,
-        "Телефон": tourist.phone || "—",
+        "Турист": touristInfo,
         [CITY_NAMES[city]]: cityData,
       };
     });
@@ -138,6 +168,7 @@ export default function Summary() {
             : `${arrivalDate}${arrivalTime}`;
           
           const hotel = `Отель: ${visit.hotelName}`;
+          const roomType = visit.roomType ? `Тип: ${visit.roomType === "twin" ? "Twin" : "Double"}` : "";
           
           const arrival = visit.transportType === "plane" ? "Самолет" : "Поезд";
           const departure = visit.departureTransportType 
@@ -147,7 +178,7 @@ export default function Summary() {
           
           const flightNumber = visit.flightNumber ? `Рейс: ${visit.flightNumber}` : "";
           
-          acc[CITY_NAMES[city]] = [dateRange, hotel, transport, flightNumber]
+          acc[CITY_NAMES[city]] = [dateRange, hotel, roomType, transport, flightNumber]
             .filter(Boolean)
             .join("\n");
         } else {
@@ -156,10 +187,18 @@ export default function Summary() {
         return acc;
       }, {} as Record<string, string>);
 
+      const touristInfo = [
+        tourist.name,
+        tourist.phone || "",
+        tourist.passport ? `Паспорт: ${tourist.passport}` : "",
+        tourist.birthDate ? `ДР: ${format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}` : "",
+        tourist.amount ? `Сумма: ${tourist.amount} ${tourist.currency === "CNY" ? "¥" : "₽"}` : "",
+        tourist.nights ? `Ночей: ${tourist.nights}` : "",
+      ].filter(Boolean).join("\n");
+
       return {
         "№": index + 1,
-        "Турист": tourist.name,
-        "Телефон": tourist.phone || "—",
+        "Турист": touristInfo,
         ...visitsByCity,
       };
     });
@@ -236,19 +275,23 @@ export default function Summary() {
           <table className="w-full border-collapse">
             <thead className="sticky top-0 bg-muted z-10">
               <tr>
+                <th className="px-4 py-3 text-left border-b" data-testid="header-checkbox">
+                  <Checkbox
+                    checked={tourists && tourists.length > 0 && selectedTourists.size === tourists.length}
+                    onCheckedChange={toggleSelectAll}
+                    data-testid="checkbox-select-all"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left text-sm font-medium border-b" data-testid="header-number">
                   #
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[200px]" data-testid="header-name">
-                  Туристы
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[140px]" data-testid="header-phone">
-                  Телефон
+                <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[280px]" data-testid="header-tourist">
+                  Турист
                 </th>
                 {CITIES.map((city) => (
                   <th
                     key={city}
-                    className="px-4 py-3 text-left text-sm font-medium border-b min-w-[200px]"
+                    className="px-4 py-3 text-left text-sm font-medium border-b min-w-[220px]"
                     data-testid={`header-city-${city.toLowerCase()}`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -271,7 +314,7 @@ export default function Summary() {
             <tbody>
               {!tourists || tourists.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground" data-testid="empty-message">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground" data-testid="empty-message">
                     Туристы не добавлены
                   </td>
                 </tr>
@@ -288,14 +331,39 @@ export default function Summary() {
                       className="hover-elevate border-b last:border-b-0"
                       data-testid={`tourist-row-${index}`}
                     >
+                      <td className="px-4 py-3" data-testid={`tourist-checkbox-${index}`}>
+                        <Checkbox
+                          checked={selectedTourists.has(tourist.id)}
+                          onCheckedChange={() => toggleTourist(tourist.id)}
+                          data-testid={`checkbox-tourist-${index}`}
+                        />
+                      </td>
                       <td className="px-4 py-3 text-sm" data-testid={`tourist-number-${index}`}>
                         {index + 1}
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium" data-testid={`tourist-name-${index}`}>
-                        {tourist.name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground" data-testid={`tourist-phone-${index}`}>
-                        {tourist.phone || "—"}
+                      <td className="px-4 py-3" data-testid={`tourist-info-${index}`}>
+                        <div className="flex flex-col gap-1">
+                          <div className="font-medium text-sm">{tourist.name}</div>
+                          {tourist.phone && (
+                            <div className="text-xs text-muted-foreground">{tourist.phone}</div>
+                          )}
+                          {tourist.passport && (
+                            <div className="text-xs text-muted-foreground">Паспорт: {tourist.passport}</div>
+                          )}
+                          {tourist.birthDate && (
+                            <div className="text-xs text-muted-foreground">
+                              ДР: {format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}
+                            </div>
+                          )}
+                          {tourist.amount && (
+                            <div className="text-xs text-muted-foreground">
+                              Сумма: {tourist.amount} {tourist.currency === "CNY" ? "¥" : "₽"}
+                            </div>
+                          )}
+                          {tourist.nights && (
+                            <div className="text-xs text-muted-foreground">Ночей: {tourist.nights}</div>
+                          )}
+                        </div>
                       </td>
                       {CITIES.map((city) => {
                         const visit = visitsByCity[city];
@@ -320,8 +388,15 @@ export default function Summary() {
                                     </span>
                                   )}
                                 </Badge>
-                                <div className="text-xs text-muted-foreground truncate" title={visit.hotelName}>
-                                  Отель: {visit.hotelName}
+                                <div className="text-xs text-muted-foreground">
+                                  <div className="truncate" title={visit.hotelName}>
+                                    Отель: {visit.hotelName}
+                                  </div>
+                                  {visit.roomType && (
+                                    <div className="mt-0.5">
+                                      Тип: {visit.roomType === "twin" ? "Twin" : "Double"}
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Badge variant="outline" className="text-xs">
@@ -364,11 +439,8 @@ export default function Summary() {
             {tourists && tourists.length > 0 && (
               <tfoot className="bg-muted/50 border-t-2">
                 <tr>
-                  <td colSpan={2} className="px-4 py-3 text-sm font-semibold" data-testid="footer-total-label">
-                    Итого:
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium" data-testid="footer-total-count">
-                    {touristCount} туристов
+                  <td colSpan={3} className="px-4 py-3 text-sm font-semibold" data-testid="footer-total-label">
+                    Итого: {touristCount} туристов
                   </td>
                   <td colSpan={4} className="px-4 py-3 text-sm text-muted-foreground">
                   </td>
@@ -397,17 +469,31 @@ export default function Summary() {
             return (
               <Card key={tourist.id} data-testid={`tourist-card-mobile-${index}`}>
                 <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={selectedTourists.has(tourist.id)}
+                      onCheckedChange={() => toggleTourist(tourist.id)}
+                      data-testid={`checkbox-tourist-mobile-${index}`}
+                      className="mt-1"
+                    />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <Badge variant="outline" className="shrink-0">{index + 1}</Badge>
                         <h3 className="font-semibold truncate" data-testid={`tourist-card-name-${index}`}>
                           {tourist.name}
                         </h3>
                       </div>
-                      {tourist.phone && (
-                        <p className="text-sm text-muted-foreground mt-1">{tourist.phone}</p>
-                      )}
+                      <div className="space-y-0.5 text-sm text-muted-foreground">
+                        {tourist.phone && <div>{tourist.phone}</div>}
+                        {tourist.passport && <div>Паспорт: {tourist.passport}</div>}
+                        {tourist.birthDate && (
+                          <div>ДР: {format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}</div>
+                        )}
+                        {tourist.amount && (
+                          <div>Сумма: {tourist.amount} {tourist.currency === "CNY" ? "¥" : "₽"}</div>
+                        )}
+                        {tourist.nights && <div>Ночей: {tourist.nights}</div>}
+                      </div>
                     </div>
                   </div>
 
@@ -442,8 +528,11 @@ export default function Summary() {
                               </>
                             )}
                           </Badge>
-                          <div className="text-xs text-muted-foreground">
-                            Отель: {visit.hotelName}
+                          <div className="text-xs text-muted-foreground space-y-0.5">
+                            <div>Отель: {visit.hotelName}</div>
+                            {visit.roomType && (
+                              <div>Тип: {visit.roomType === "twin" ? "Twin" : "Double"}</div>
+                            )}
                           </div>
                           <div className="flex items-center gap-1">
                             <Badge variant="outline" className="text-xs">

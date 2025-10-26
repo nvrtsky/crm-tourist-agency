@@ -239,106 +239,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           name: "Sadeeva Iuliia",
           phone: "+79151455488",
+          passport: "1234 567890",
+          birthDate: "1985-03-15",
+          amount: "65000",
+          currency: "RUB" as const,
+          nights: "5",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
           ]
         },
         {
           name: "Sadeeva Emmiia",
           phone: "+79151455488",
+          passport: "2345 678901",
+          birthDate: "2010-08-22",
+          amount: "55000",
+          currency: "RUB" as const,
+          nights: "5",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
           ]
         },
         {
           name: "Polshchikova Anastasiia",
           phone: "+79119880952",
+          passport: "3456 789012",
+          birthDate: "1992-06-10",
+          amount: "58000",
+          currency: "RUB" as const,
+          nights: "4",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "13:00", departureDate: "2025-11-05", departureTime: "18:30", transportType: "plane", departureTransportType: "plane", flightNumber: "CA890", hotelName: "Park Plaza Beijing Wangfujing" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "13:00", departureDate: "2025-11-05", departureTime: "18:30", transportType: "plane", departureTransportType: "plane", flightNumber: "CA890", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const }
           ]
         },
         {
           name: "Androsova Marfa",
           phone: "+79627323846",
+          passport: "4567 890123",
+          birthDate: "1988-11-25",
+          amount: "72000",
+          currency: "RUB" as const,
+          nights: "5",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "SU101", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z205", hotelName: "Pullman Zhangjiajie" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "SU101", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z205", hotelName: "Pullman Zhangjiajie", roomType: "double" as const }
           ]
         },
         {
           name: "Karev Ivan",
           phone: "+79038558094",
+          passport: "5678 901234",
+          birthDate: "1990-04-18",
+          amount: "68000",
+          currency: "RUB" as const,
+          nights: "5",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
           ]
         },
         {
           name: "Kareva Ekaterina",
           phone: "+79038558094",
+          passport: "6789 012345",
+          birthDate: "1993-09-05",
+          amount: "68000",
+          currency: "RUB" as const,
+          nights: "5",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
           ]
         },
         {
           name: "Bogdanov Vadim",
           phone: "+79251845075",
+          passport: "7890 123456",
+          birthDate: "1987-12-30",
+          amount: "62000",
+          currency: "RUB" as const,
+          nights: "3",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "10:15", departureDate: "2025-11-04", departureTime: "11:30", transportType: "train", departureTransportType: "train", flightNumber: "G102", hotelName: "Park Plaza Beijing Wangfujing" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "10:15", departureDate: "2025-11-04", departureTime: "11:30", transportType: "train", departureTransportType: "train", flightNumber: "G102", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const }
           ]
         },
         {
           name: "Skachkova Iuliia",
           phone: "+79251845075",
+          passport: "8901 234567",
+          birthDate: "1989-02-14",
+          amount: "62000",
+          currency: "RUB" as const,
+          nights: "3",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "10:15", departureDate: "2025-11-04", departureTime: "15:20", transportType: "train", departureTransportType: "plane", flightNumber: "G102", hotelName: "Park Plaza Beijing Wangfujing" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "10:15", departureDate: "2025-11-04", departureTime: "15:20", transportType: "train", departureTransportType: "plane", flightNumber: "G102", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const }
           ]
         },
         {
           name: "Chadova Larisa",
           phone: "+79090227150",
+          passport: "9012 345678",
+          birthDate: "1991-07-08",
+          amount: "85000",
+          currency: "RUB" as const,
+          nights: "11",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "12:45", departureDate: "2025-11-05", departureTime: "07:30", transportType: "plane", departureTransportType: "train", flightNumber: "HU456", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Luoyang", arrivalDate: "2025-11-05", arrivalTime: "14:00", departureDate: "2025-11-08", departureTime: "08:00", transportType: "train", departureTransportType: "train", flightNumber: "G210", hotelName: "Luoyang Peony Plaza" },
-            { city: "Xian", arrivalDate: "2025-11-08", arrivalTime: "15:30", departureDate: "2025-11-12", departureTime: "17:45", transportType: "train", departureTransportType: "plane", flightNumber: "G305", hotelName: "Grand Park Xian" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "12:45", departureDate: "2025-11-05", departureTime: "07:30", transportType: "plane", departureTransportType: "train", flightNumber: "HU456", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Luoyang", arrivalDate: "2025-11-05", arrivalTime: "14:00", departureDate: "2025-11-08", departureTime: "08:00", transportType: "train", departureTransportType: "train", flightNumber: "G210", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
+            { city: "Xian", arrivalDate: "2025-11-08", arrivalTime: "15:30", departureDate: "2025-11-12", departureTime: "17:45", transportType: "train", departureTransportType: "plane", flightNumber: "G305", hotelName: "Grand Park Xian", roomType: "twin" as const }
           ]
         },
         {
           name: "Chadov Evgenii",
           phone: "+79090227150",
+          passport: "0123 456789",
+          birthDate: "1990-05-20",
+          amount: "85000",
+          currency: "RUB" as const,
+          nights: "11",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "12:45", departureDate: "2025-11-05", departureTime: "07:30", transportType: "plane", departureTransportType: "train", flightNumber: "HU456", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Luoyang", arrivalDate: "2025-11-05", arrivalTime: "14:00", departureDate: "2025-11-08", departureTime: "08:00", transportType: "train", departureTransportType: "train", flightNumber: "G210", hotelName: "Luoyang Peony Plaza" },
-            { city: "Xian", arrivalDate: "2025-11-08", arrivalTime: "15:30", departureDate: "2025-11-12", departureTime: "17:45", transportType: "train", departureTransportType: "plane", flightNumber: "G305", hotelName: "Grand Park Xian" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "12:45", departureDate: "2025-11-05", departureTime: "07:30", transportType: "plane", departureTransportType: "train", flightNumber: "HU456", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Luoyang", arrivalDate: "2025-11-05", arrivalTime: "14:00", departureDate: "2025-11-08", departureTime: "08:00", transportType: "train", departureTransportType: "train", flightNumber: "G210", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
+            { city: "Xian", arrivalDate: "2025-11-08", arrivalTime: "15:30", departureDate: "2025-11-12", departureTime: "17:45", transportType: "train", departureTransportType: "plane", flightNumber: "G305", hotelName: "Grand Park Xian", roomType: "twin" as const }
           ]
         },
         {
           name: "Smirnov Vitalii",
           phone: "+79697630050",
+          passport: "1357 246801",
+          birthDate: "1986-10-12",
+          amount: "74000",
+          currency: "RUB" as const,
+          nights: "7",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "11:00", departureDate: "2025-11-04", departureTime: "06:45", transportType: "plane", departureTransportType: "train", flightNumber: "MU567", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Xian", arrivalDate: "2025-11-04", arrivalTime: "13:20", departureDate: "2025-11-08", departureTime: "19:00", transportType: "train", departureTransportType: "plane", flightNumber: "G301", hotelName: "Grand Park Xian" }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "11:00", departureDate: "2025-11-04", departureTime: "06:45", transportType: "plane", departureTransportType: "train", flightNumber: "MU567", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const },
+            { city: "Xian", arrivalDate: "2025-11-04", arrivalTime: "13:20", departureDate: "2025-11-08", departureTime: "19:00", transportType: "train", departureTransportType: "plane", flightNumber: "G301", hotelName: "Grand Park Xian", roomType: "double" as const }
           ]
         },
         {
           name: "Meshcheriakova Ekaterina",
           phone: "+79313577015",
+          passport: "2468 135790",
+          birthDate: "1994-01-28",
+          amount: "88000",
+          currency: "RUB" as const,
+          nights: "10",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-10-30", arrivalTime: "16:00", departureDate: "2025-11-03", departureTime: "10:30", transportType: "plane", departureTransportType: "train", flightNumber: "CA789", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Luoyang", arrivalDate: "2025-11-03", arrivalTime: "17:15", departureDate: "2025-11-05", departureTime: "09:00", transportType: "train", departureTransportType: "train", flightNumber: "G208", hotelName: "Luoyang Peony Plaza" },
-            { city: "Xian", arrivalDate: "2025-11-05", arrivalTime: "14:45", departureDate: "2025-11-09", departureTime: "16:30", transportType: "train", departureTransportType: "plane", flightNumber: "G302", hotelName: "Grand Park Xian" }
+            { city: "Beijing", arrivalDate: "2025-10-30", arrivalTime: "16:00", departureDate: "2025-11-03", departureTime: "10:30", transportType: "plane", departureTransportType: "train", flightNumber: "CA789", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Luoyang", arrivalDate: "2025-11-03", arrivalTime: "17:15", departureDate: "2025-11-05", departureTime: "09:00", transportType: "train", departureTransportType: "train", flightNumber: "G208", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
+            { city: "Xian", arrivalDate: "2025-11-05", arrivalTime: "14:45", departureDate: "2025-11-09", departureTime: "16:30", transportType: "train", departureTransportType: "plane", flightNumber: "G302", hotelName: "Grand Park Xian", roomType: "twin" as const }
           ]
         },
         {
           name: "Tokarev Aleksei",
           phone: "+79313577015",
+          passport: "3691 258047",
+          birthDate: "1992-11-03",
+          amount: "88000",
+          currency: "RUB" as const,
+          nights: "10",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-10-30", arrivalTime: "16:00", departureDate: "2025-11-03", departureTime: "10:30", transportType: "plane", departureTransportType: "train", flightNumber: "CA789", hotelName: "Park Plaza Beijing Wangfujing" },
-            { city: "Luoyang", arrivalDate: "2025-11-03", arrivalTime: "17:15", departureDate: "2025-11-05", departureTime: "09:00", transportType: "train", departureTransportType: "train", flightNumber: "G208", hotelName: "Luoyang Peony Plaza" },
-            { city: "Xian", arrivalDate: "2025-11-05", arrivalTime: "14:45", departureDate: "2025-11-09", departureTime: "16:30", transportType: "train", departureTransportType: "plane", flightNumber: "G302", hotelName: "Grand Park Xian" }
+            { city: "Beijing", arrivalDate: "2025-10-30", arrivalTime: "16:00", departureDate: "2025-11-03", departureTime: "10:30", transportType: "plane", departureTransportType: "train", flightNumber: "CA789", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Luoyang", arrivalDate: "2025-11-03", arrivalTime: "17:15", departureDate: "2025-11-05", departureTime: "09:00", transportType: "train", departureTransportType: "train", flightNumber: "G208", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
+            { city: "Xian", arrivalDate: "2025-11-05", arrivalTime: "14:45", departureDate: "2025-11-09", departureTime: "16:30", transportType: "train", departureTransportType: "plane", flightNumber: "G302", hotelName: "Grand Park Xian", roomType: "twin" as const }
           ]
         }
       ];
@@ -350,6 +415,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           entityTypeId,
           name: tourist.name,
           phone: tourist.phone,
+          passport: tourist.passport,
+          birthDate: tourist.birthDate,
+          amount: tourist.amount,
+          currency: tourist.currency,
+          nights: tourist.nights,
         };
 
         // Create contact in Bitrix24 only if service is available
@@ -382,6 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               departureTransportType: (visit as any).departureTransportType,
               flightNumber: (visit as any).flightNumber,
               hotelName: visit.hotelName,
+              roomType: (visit as any).roomType,
             });
           }
         }

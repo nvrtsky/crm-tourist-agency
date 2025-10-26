@@ -3,11 +3,19 @@ import { useBitrix24 } from "@/hooks/useBitrix24";
 import { TouristWithVisits, CITIES, City } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Loader2, Plane, Train, List, Grid } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Loader2, Plane, Train, List, Grid, Share2, Link as LinkIcon, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { useState } from "react";
+import { utils, writeFile } from "xlsx";
+import { useToast } from "@/hooks/use-toast";
 
 const CITY_NAMES: Record<City, string> = {
   Beijing: "Пекин",
@@ -19,10 +27,77 @@ const CITY_NAMES: Record<City, string> = {
 export default function Summary() {
   const { entityId } = useBitrix24();
   const [isGrouped, setIsGrouped] = useState(false);
+  const { toast } = useToast();
 
   const { data: tourists, isLoading } = useQuery<TouristWithVisits[]>({
     queryKey: ["/api/tourists", entityId],
+    refetchOnMount: true,
   });
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Ссылка скопирована",
+        description: "Ссылка на сводную таблицу скопирована в буфер обмена",
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось скопировать ссылку",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportToExcel = () => {
+    if (!tourists || tourists.length === 0) {
+      toast({
+        title: "Нет данных",
+        description: "Нечего экспортировать",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const data = tourists.map((tourist, index) => {
+      const visitsByCity = CITIES.reduce((acc, city) => {
+        const visit = tourist.visits.find(v => v.city === city);
+        acc[CITY_NAMES[city]] = visit ? format(new Date(visit.arrivalDate), "dd.MM.yyyy", { locale: ru }) : "—";
+        return acc;
+      }, {} as Record<string, string>);
+
+      const hotels = tourist.visits
+        .map(v => v.hotelName)
+        .filter((name, i, arr) => arr.indexOf(name) === i)
+        .join(", ");
+
+      const transports = tourist.visits
+        .map(v => v.transportType === "plane" ? "Самолет" : "Поезд")
+        .join(", ");
+
+      return {
+        "№": index + 1,
+        "Турист": tourist.name,
+        "Телефон": tourist.phone || "—",
+        ...visitsByCity,
+        "Отели": hotels,
+        "Транспорт": transports,
+      };
+    });
+
+    const worksheet = utils.json_to_sheet(data);
+    const workbook = utils.book_new();
+    utils.book_append_sheet(workbook, worksheet, "Туристы");
+
+    const fileName = `tourists_summary_${format(new Date(), "dd-MM-yyyy")}.xlsx`;
+    writeFile(workbook, fileName);
+
+    toast({
+      title: "Экспорт завершен",
+      description: `Файл ${fileName} загружен`,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -36,27 +111,49 @@ export default function Summary() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold" data-testid="summary-title">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-semibold truncate" data-testid="summary-title">
             Сводная таблица туристов
           </h1>
           <p className="text-sm text-muted-foreground">
             Всего туристов: {touristCount}
           </p>
         </div>
-        <Button
-          variant={isGrouped ? "default" : "outline"}
-          size="sm"
-          onClick={() => setIsGrouped(!isGrouped)}
-          data-testid="button-toggle-group"
-        >
-          {isGrouped ? <List className="h-4 w-4 mr-2" /> : <Grid className="h-4 w-4 mr-2" />}
-          {isGrouped ? "Разгруппировать" : "Сгруппировать"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={isGrouped ? "default" : "outline"}
+            size="sm"
+            onClick={() => setIsGrouped(!isGrouped)}
+            data-testid="button-toggle-group"
+            className="hidden sm:flex"
+          >
+            {isGrouped ? <List className="h-4 w-4 mr-2" /> : <Grid className="h-4 w-4 mr-2" />}
+            {isGrouped ? "Разгруппировать" : "Сгруппировать"}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" data-testid="button-share">
+                <Share2 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Поделиться</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleCopyLink} data-testid="menu-copy-link">
+                <LinkIcon className="h-4 w-4 mr-2" />
+                Копировать ссылку
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportToExcel} data-testid="menu-export-excel">
+                <Download className="h-4 w-4 mr-2" />
+                Экспорт в Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      <Card className="overflow-hidden">
+      {/* Desktop: Table view */}
+      <Card className="overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead className="sticky top-0 bg-muted z-10">
@@ -190,7 +287,6 @@ export default function Summary() {
                     {touristCount} туристов
                   </td>
                   <td colSpan={7} className="px-4 py-3 text-sm text-muted-foreground">
-                    {/* Дополнительная статистика может быть добавлена здесь */}
                   </td>
                 </tr>
               </tfoot>
@@ -198,6 +294,110 @@ export default function Summary() {
           </table>
         </div>
       </Card>
+
+      {/* Mobile: Card view */}
+      <div className="md:hidden space-y-3">
+        {!tourists || tourists.length === 0 ? (
+          <Card className="p-8">
+            <p className="text-center text-muted-foreground" data-testid="empty-message-mobile">
+              Туристы не добавлены
+            </p>
+          </Card>
+        ) : (
+          tourists.map((tourist, index) => {
+            const visitsByCity = CITIES.reduce((acc, city) => {
+              acc[city] = tourist.visits.find(v => v.city === city);
+              return acc;
+            }, {} as Record<City, typeof tourist.visits[0] | undefined>);
+
+            const hotels = tourist.visits
+              .map(v => v.hotelName)
+              .filter((name, i, arr) => arr.indexOf(name) === i);
+
+            const transports = tourist.visits.map(v => v.transportType);
+
+            return (
+              <Card key={tourist.id} data-testid={`tourist-card-mobile-${index}`}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="shrink-0">{index + 1}</Badge>
+                        <h3 className="font-semibold truncate" data-testid={`tourist-card-name-${index}`}>
+                          {tourist.name}
+                        </h3>
+                      </div>
+                      {tourist.phone && (
+                        <p className="text-sm text-muted-foreground mt-1">{tourist.phone}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-muted-foreground">Города:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {CITIES.map((city) => {
+                        const visit = visitsByCity[city];
+                        return visit ? (
+                          <Badge key={city} variant="secondary" className="text-xs">
+                            {CITY_NAMES[city]} {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+
+                  {hotels.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium text-muted-foreground">Отели:</div>
+                      <div className="text-sm">
+                        {hotels.map((hotel, i) => (
+                          <div key={i}>{hotel}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {transports.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium text-muted-foreground">Транспорт:</div>
+                      <div className="flex gap-1">
+                        {transports.map((type, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">
+                            {type === "plane" ? (
+                              <>
+                                <Plane className="h-3 w-3 mr-1" />
+                                Самолет
+                              </>
+                            ) : (
+                              <>
+                                <Train className="h-3 w-3 mr-1" />
+                                Поезд
+                              </>
+                            )}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
+
+      {/* Mobile: Total */}
+      {tourists && tourists.length > 0 && (
+        <Card className="md:hidden">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold">Итого:</span>
+              <span className="text-sm font-medium">{touristCount} туристов</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

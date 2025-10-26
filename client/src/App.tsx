@@ -34,27 +34,30 @@ function Navigation() {
         size="sm"
         onClick={() => setLocation("/")}
         data-testid="nav-dashboard"
+        className="flex-1 sm:flex-none"
       >
-        <LayoutDashboard className="h-4 w-4 mr-2" />
-        Обзор
+        <LayoutDashboard className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Обзор</span>
       </Button>
       <Button
         variant={location === "/tourists" ? "default" : "ghost"}
         size="sm"
         onClick={() => setLocation("/tourists")}
         data-testid="nav-tourists"
+        className="flex-1 sm:flex-none"
       >
-        <Users className="h-4 w-4 mr-2" />
-        Туристы
+        <Users className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Туристы</span>
       </Button>
       <Button
         variant={location === "/summary" ? "default" : "ghost"}
         size="sm"
         onClick={() => setLocation("/summary")}
         data-testid="nav-summary"
+        className="flex-1 sm:flex-none"
       >
-        <TableProperties className="h-4 w-4 mr-2" />
-        Сводная
+        <TableProperties className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Сводная</span>
       </Button>
     </nav>
   );
@@ -90,12 +93,15 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="flex flex-col h-screen w-full overflow-hidden">
-          <header className="flex flex-col gap-3 px-4 py-3 border-b bg-background shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <h1 className="text-lg font-semibold">Групповой тур по Китаю</h1>
+          <header className="flex flex-col gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b bg-background shrink-0">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <h1 className="text-base sm:text-lg font-semibold truncate">
+                  <span className="hidden sm:inline">Групповой тур по Китаю</span>
+                  <span className="sm:hidden">Тур Китай</span>
+                </h1>
                 {entityId && (
-                  <span className="text-xs text-muted-foreground font-mono">
+                  <span className="hidden md:inline text-xs text-muted-foreground font-mono">
                     ID: {entityId}
                   </span>
                 )}

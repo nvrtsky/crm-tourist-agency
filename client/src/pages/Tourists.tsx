@@ -101,24 +101,24 @@ export default function Tourists() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold" data-testid="text-page-title">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
+        <div className="min-w-0 flex-1 sm:flex-none">
+          <h1 className="text-2xl sm:text-3xl font-bold truncate" data-testid="text-page-title">
             Туристы
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Управление списком туристов и их маршрутами
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-add-tourist">
-              <Plus className="h-4 w-4 mr-2" />
-              Добавить туриста
+            <Button data-testid="button-add-tourist" size="sm" className="sm:size-default">
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Добавить туриста</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Новый турист</DialogTitle>
             </DialogHeader>

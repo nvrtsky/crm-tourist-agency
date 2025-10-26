@@ -105,12 +105,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold" data-testid="text-page-title">
+        <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-page-title">
           Обзор группового тура
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-sm sm:text-base text-muted-foreground mt-1">
           Групповой тур по 4 городам Китая: Пекин → Лоян → Сиань → Чжанцзяцзе
         </p>
       </div>

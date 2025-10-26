@@ -309,13 +309,13 @@ export default function Summary() {
                               <div className="flex flex-col gap-1.5">
                                 <Badge variant="secondary" className="text-xs whitespace-nowrap w-fit">
                                   <span>
-                                    {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
+                                    <span className="font-semibold">{format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}</span>
                                     {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
                                   </span>
                                   {visit.departureDate && (
                                     <span>
                                       {" - "}
-                                      {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}
+                                      <span className="font-semibold">{format(new Date(visit.departureDate), "dd.MM", { locale: ru })}</span>
                                       {visit.departureTime && <span className="text-muted-foreground"> {visit.departureTime}</span>}
                                     </span>
                                   )}
@@ -431,13 +431,13 @@ export default function Summary() {
                           </div>
                           <Badge variant="secondary" className="text-xs whitespace-nowrap w-fit">
                             <span>
-                              {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
+                              <span className="font-semibold">{format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}</span>
                               {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
                             </span>
                             {visit.departureDate && (
                               <>
                                 {" - "}
-                                {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}
+                                <span className="font-semibold">{format(new Date(visit.departureDate), "dd.MM", { locale: ru })}</span>
                                 {visit.departureTime && <span className="text-muted-foreground"> {visit.departureTime}</span>}
                               </>
                             )}

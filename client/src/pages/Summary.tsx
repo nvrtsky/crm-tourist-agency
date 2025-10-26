@@ -70,42 +70,35 @@ export default function Summary() {
             ? format(new Date(visit.departureDate), "dd.MM.yyyy", { locale: ru })
             : "";
           const departureTime = visit.departureTime ? ` ${visit.departureTime}` : "";
-          acc[CITY_NAMES[city]] = departureDate 
+          
+          const dateRange = departureDate 
             ? `${arrivalDate}${arrivalTime} - ${departureDate}${departureTime}` 
             : `${arrivalDate}${arrivalTime}`;
+          
+          const hotel = `Отель: ${visit.hotelName}`;
+          
+          const arrival = visit.transportType === "plane" ? "Самолет" : "Поезд";
+          const departure = visit.departureTransportType 
+            ? (visit.departureTransportType === "plane" ? "Самолет" : "Поезд")
+            : "";
+          const transport = departure ? `${arrival} → ${departure}` : arrival;
+          
+          const flightNumber = visit.flightNumber ? `Рейс: ${visit.flightNumber}` : "";
+          
+          acc[CITY_NAMES[city]] = [dateRange, hotel, transport, flightNumber]
+            .filter(Boolean)
+            .join("\n");
         } else {
           acc[CITY_NAMES[city]] = "—";
         }
         return acc;
       }, {} as Record<string, string>);
 
-      const hotels = tourist.visits
-        .map(v => v.hotelName)
-        .filter((name, i, arr) => arr.indexOf(name) === i)
-        .join(", ");
-
-      const transports = tourist.visits
-        .map(v => {
-          const arrival = v.transportType === "plane" ? "Самолет" : "Поезд";
-          const departure = v.departureTransportType 
-            ? (v.departureTransportType === "plane" ? "Самолет" : "Поезд")
-            : "";
-          return departure ? `${arrival} → ${departure}` : arrival;
-        })
-        .join(", ");
-
-      const flightNumbers = tourist.visits
-        .map(v => v.flightNumber || "—")
-        .join(", ");
-
       return {
         "№": index + 1,
         "Турист": tourist.name,
         "Телефон": tourist.phone || "—",
         ...visitsByCity,
-        "Отели": hotels,
-        "Транспорт": transports,
-        "Номер рейса": flightNumbers,
       };
     });
 
@@ -193,30 +186,18 @@ export default function Summary() {
                 {CITIES.map((city) => (
                   <th
                     key={city}
-                    className="px-4 py-3 text-left text-sm font-medium border-b min-w-[120px]"
+                    className="px-4 py-3 text-left text-sm font-medium border-b min-w-[200px]"
                     data-testid={`header-city-${city.toLowerCase()}`}
                   >
                     {CITY_NAMES[city]}
                   </th>
                 ))}
-                <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[180px]" data-testid="header-hotels">
-                  Отели
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[120px]" data-testid="header-transport">
-                  Транспорт
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[120px]" data-testid="header-flight-number">
-                  Номер рейса
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[160px]" data-testid="header-dates">
-                  Даты (прибытие - выезд)
-                </th>
               </tr>
             </thead>
             <tbody>
               {!tourists || tourists.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground" data-testid="empty-message">
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground" data-testid="empty-message">
                     Туристы не добавлены
                   </td>
                 </tr>
@@ -226,19 +207,6 @@ export default function Summary() {
                     acc[city] = tourist.visits.find(v => v.city === city);
                     return acc;
                   }, {} as Record<City, typeof tourist.visits[0] | undefined>);
-
-                  const hotels = tourist.visits
-                    .map(v => v.hotelName)
-                    .filter((name, i, arr) => arr.indexOf(name) === i);
-
-                  const transports = tourist.visits.map(v => ({
-                    arrival: v.transportType,
-                    departure: v.departureTransportType,
-                  }));
-                  const dateRanges = tourist.visits.map(v => ({
-                    arrival: v.arrivalDate,
-                    departure: v.departureDate,
-                  })).sort((a, b) => a.arrival.localeCompare(b.arrival));
 
                   return (
                     <tr
@@ -264,8 +232,8 @@ export default function Summary() {
                             data-testid={`tourist-${index}-city-${city.toLowerCase()}`}
                           >
                             {visit ? (
-                              <div className="flex flex-col gap-1">
-                                <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                              <div className="flex flex-col gap-1.5">
+                                <Badge variant="secondary" className="text-xs whitespace-nowrap w-fit">
                                   {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
                                   {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
                                   {visit.departureDate && (
@@ -276,6 +244,35 @@ export default function Summary() {
                                     </span>
                                   )}
                                 </Badge>
+                                <div className="text-xs text-muted-foreground truncate" title={visit.hotelName}>
+                                  Отель: {visit.hotelName}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {visit.transportType === "plane" ? (
+                                      <Plane className="h-3 w-3" />
+                                    ) : (
+                                      <Train className="h-3 w-3" />
+                                    )}
+                                  </Badge>
+                                  {visit.departureTransportType && (
+                                    <>
+                                      <span className="text-xs text-muted-foreground">→</span>
+                                      <Badge variant="outline" className="text-xs">
+                                        {visit.departureTransportType === "plane" ? (
+                                          <Plane className="h-3 w-3" />
+                                        ) : (
+                                          <Train className="h-3 w-3" />
+                                        )}
+                                      </Badge>
+                                    </>
+                                  )}
+                                </div>
+                                {visit.flightNumber && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Рейс: {visit.flightNumber}
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <span className="text-muted-foreground">—</span>
@@ -283,63 +280,6 @@ export default function Summary() {
                           </td>
                         );
                       })}
-                      <td className="px-4 py-3 text-sm" data-testid={`tourist-hotels-${index}`}>
-                        <div className="space-y-1">
-                          {hotels.map((hotel, i) => (
-                            <div key={i} className="text-xs truncate" title={hotel}>
-                              {hotel}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3" data-testid={`tourist-transport-${index}`}>
-                        <div className="flex flex-col gap-1">
-                          {transports.map((transport, i) => (
-                            <div key={i} className="flex items-center gap-1">
-                              <Badge variant="outline" className="text-xs">
-                                {transport.arrival === "plane" ? (
-                                  <Plane className="h-3 w-3" />
-                                ) : (
-                                  <Train className="h-3 w-3" />
-                                )}
-                              </Badge>
-                              {transport.departure && (
-                                <>
-                                  <span className="text-xs text-muted-foreground">→</span>
-                                  <Badge variant="outline" className="text-xs">
-                                    {transport.departure === "plane" ? (
-                                      <Plane className="h-3 w-3" />
-                                    ) : (
-                                      <Train className="h-3 w-3" />
-                                    )}
-                                  </Badge>
-                                </>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm" data-testid={`tourist-flight-number-${index}`}>
-                        <div className="space-y-1">
-                          {tourist.visits.map((visit, i) => (
-                            <div key={i} className="text-xs">
-                              {visit.flightNumber || "—"}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground" data-testid={`tourist-dates-${index}`}>
-                        <div className="space-y-1">
-                          {dateRanges.map((range, i) => (
-                            <div key={i} className="text-xs whitespace-nowrap">
-                              {format(new Date(range.arrival), "dd.MM.yyyy", { locale: ru })}
-                              {range.departure && (
-                                <> - {format(new Date(range.departure), "dd.MM.yyyy", { locale: ru })}</>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
                     </tr>
                   );
                 })
@@ -354,7 +294,7 @@ export default function Summary() {
                   <td className="px-4 py-3 text-sm font-medium" data-testid="footer-total-count">
                     {touristCount} туристов
                   </td>
-                  <td colSpan={8} className="px-4 py-3 text-sm text-muted-foreground">
+                  <td colSpan={4} className="px-4 py-3 text-sm text-muted-foreground">
                   </td>
                 </tr>
               </tfoot>
@@ -378,15 +318,6 @@ export default function Summary() {
               return acc;
             }, {} as Record<City, typeof tourist.visits[0] | undefined>);
 
-            const hotels = tourist.visits
-              .map(v => v.hotelName)
-              .filter((name, i, arr) => arr.indexOf(name) === i);
-
-            const transports = tourist.visits.map(v => ({
-              arrival: v.transportType,
-              departure: v.departureTransportType,
-            }));
-
             return (
               <Card key={tourist.id} data-testid={`tourist-card-mobile-${index}`}>
                 <CardContent className="p-4 space-y-3">
@@ -404,88 +335,56 @@ export default function Summary() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="text-xs font-medium text-muted-foreground">Города:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {CITIES.map((city) => {
-                        const visit = visitsByCity[city];
-                        return visit ? (
-                          <div key={city} className="flex flex-col gap-0.5">
-                            <Badge variant="secondary" className="text-xs whitespace-nowrap">
-                              {CITY_NAMES[city]} {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
-                              {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
-                              {visit.departureDate && (
-                                <>
-                                  {" - "}
-                                  {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}
-                                  {visit.departureTime && <span className="text-muted-foreground"> {visit.departureTime}</span>}
-                                </>
-                              )}
-                            </Badge>
-                            {visit.flightNumber && (
-                              <span className="text-xs text-muted-foreground pl-1">
-                                Рейс: {visit.flightNumber}
-                              </span>
+                  <div className="space-y-3">
+                    {CITIES.map((city) => {
+                      const visit = visitsByCity[city];
+                      return visit ? (
+                        <div key={city} className="space-y-1.5 border-l-2 border-primary/20 pl-3">
+                          <div className="text-xs font-medium text-primary">{CITY_NAMES[city]}</div>
+                          <Badge variant="secondary" className="text-xs whitespace-nowrap w-fit">
+                            {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
+                            {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
+                            {visit.departureDate && (
+                              <>
+                                {" - "}
+                                {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}
+                                {visit.departureTime && <span className="text-muted-foreground"> {visit.departureTime}</span>}
+                              </>
                             )}
+                          </Badge>
+                          <div className="text-xs text-muted-foreground">
+                            Отель: {visit.hotelName}
                           </div>
-                        ) : null;
-                      })}
-                    </div>
-                  </div>
-
-                  {hotels.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-xs font-medium text-muted-foreground">Отели:</div>
-                      <div className="text-sm">
-                        {hotels.map((hotel, i) => (
-                          <div key={i}>{hotel}</div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {transports.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-xs font-medium text-muted-foreground">Транспорт:</div>
-                      <div className="flex flex-wrap gap-2">
-                        {transports.map((transport, i) => (
-                          <div key={i} className="flex items-center gap-1">
+                          <div className="flex items-center gap-1">
                             <Badge variant="outline" className="text-xs">
-                              {transport.arrival === "plane" ? (
-                                <>
-                                  <Plane className="h-3 w-3 mr-1" />
-                                  Самолет
-                                </>
+                              {visit.transportType === "plane" ? (
+                                <Plane className="h-3 w-3" />
                               ) : (
-                                <>
-                                  <Train className="h-3 w-3 mr-1" />
-                                  Поезд
-                                </>
+                                <Train className="h-3 w-3" />
                               )}
                             </Badge>
-                            {transport.departure && (
+                            {visit.departureTransportType && (
                               <>
                                 <span className="text-xs text-muted-foreground">→</span>
                                 <Badge variant="outline" className="text-xs">
-                                  {transport.departure === "plane" ? (
-                                    <>
-                                      <Plane className="h-3 w-3 mr-1" />
-                                      Самолет
-                                    </>
+                                  {visit.departureTransportType === "plane" ? (
+                                    <Plane className="h-3 w-3" />
                                   ) : (
-                                    <>
-                                      <Train className="h-3 w-3 mr-1" />
-                                      Поезд
-                                    </>
+                                    <Train className="h-3 w-3" />
                                   )}
                                 </Badge>
                               </>
                             )}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                          {visit.flightNumber && (
+                            <div className="text-xs text-muted-foreground">
+                              Рейс: {visit.flightNumber}
+                            </div>
+                          )}
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
                 </CardContent>
               </Card>
             );

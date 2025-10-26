@@ -46,7 +46,12 @@ export const cityVisits = pgTable("city_visits", {
   departureTime: text("departure_time"), // Time string HH:MM (optional)
   transportType: text("transport_type").notNull(), // 'train' or 'plane' for arrival
   departureTransportType: text("departure_transport_type"), // 'train' or 'plane' for departure (optional)
-  flightNumber: text("flight_number"), // Flight/train number (optional)
+  flightNumber: text("flight_number"), // Flight/train number for arrival (optional)
+  airport: text("airport"), // Airport name for arrival (optional)
+  transfer: text("transfer"), // Transfer info for arrival (optional)
+  departureFlightNumber: text("departure_flight_number"), // Flight/train number for departure (optional)
+  departureAirport: text("departure_airport"), // Airport name for departure (optional)
+  departureTransfer: text("departure_transfer"), // Transfer info for departure (optional)
   hotelName: text("hotel_name").notNull(),
   roomType: text("room_type"), // 'twin' or 'double' (optional)
 });

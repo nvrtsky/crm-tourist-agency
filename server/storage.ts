@@ -121,6 +121,11 @@ export class MemStorage implements IStorage {
       departureTime: insertVisit.departureTime ?? null,
       departureTransportType: insertVisit.departureTransportType ?? null,
       flightNumber: insertVisit.flightNumber ?? null,
+      airport: insertVisit.airport ?? null,
+      transfer: insertVisit.transfer ?? null,
+      departureFlightNumber: insertVisit.departureFlightNumber ?? null,
+      departureAirport: insertVisit.departureAirport ?? null,
+      departureTransfer: insertVisit.departureTransfer ?? null,
       roomType: insertVisit.roomType ?? null,
     };
     this.cityVisits.set(id, visit);

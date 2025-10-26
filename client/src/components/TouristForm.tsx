@@ -64,6 +64,11 @@ interface CityVisitData {
   transportType: TransportType;
   departureTransportType: TransportType | null;
   flightNumber: string;
+  airport: string;
+  transfer: string;
+  departureFlightNumber: string;
+  departureAirport: string;
+  departureTransfer: string;
   hotelName: string;
   roomType: RoomType | null;
 }
@@ -87,6 +92,11 @@ interface TouristFormProps {
       transportType: TransportType;
       departureTransportType?: TransportType;
       flightNumber?: string;
+      airport?: string;
+      transfer?: string;
+      departureFlightNumber?: string;
+      departureAirport?: string;
+      departureTransfer?: string;
       hotelName: string;
       roomType?: RoomType;
     }>;
@@ -131,6 +141,11 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
         transportType: "plane",
         departureTransportType: null,
         flightNumber: "",
+        airport: "",
+        transfer: "",
+        departureFlightNumber: "",
+        departureAirport: "",
+        departureTransfer: "",
         hotelName: "",
         roomType: null,
       });
@@ -160,6 +175,11 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
         transportType: v.transportType,
         departureTransportType: v.departureTransportType || undefined,
         flightNumber: v.flightNumber || undefined,
+        airport: v.airport || undefined,
+        transfer: v.transfer || undefined,
+        departureFlightNumber: v.departureFlightNumber || undefined,
+        departureAirport: v.departureAirport || undefined,
+        departureTransfer: v.departureTransfer || undefined,
         hotelName: v.hotelName,
         roomType: v.roomType || undefined,
       }));
@@ -415,40 +435,46 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                           </Button>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Дата прибытия *</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className="w-full justify-start text-left font-normal"
-                                  data-testid={`button-arrival-date-${city.toLowerCase()}`}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {visit.arrivalDate ? (
-                                    format(visit.arrivalDate, "PPP", { locale: ru })
-                                  ) : (
-                                    <span>Выберите дату</span>
-                                  )}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                  mode="single"
-                                  selected={visit.arrivalDate || undefined}
-                                  onSelect={(date) =>
-                                    updateVisit(city, { arrivalDate: date || null })
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <div>
-                              <Label htmlFor={`arrival-time-${city}`} className="text-sm text-muted-foreground">
-                                Время прибытия
-                              </Label>
+                      <CardContent className="space-y-6">
+                        {/* Прибытие */}
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-sm uppercase text-muted-foreground border-b pb-2">
+                            Прибытие
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Дата прибытия *</Label>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-left font-normal"
+                                    data-testid={`button-arrival-date-${city.toLowerCase()}`}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {visit.arrivalDate ? (
+                                      format(visit.arrivalDate, "PPP", { locale: ru })
+                                    ) : (
+                                      <span>Выберите дату</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                  <Calendar
+                                    mode="single"
+                                    selected={visit.arrivalDate || undefined}
+                                    onSelect={(date) =>
+                                      updateVisit(city, { arrivalDate: date || null })
+                                    }
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor={`arrival-time-${city}`}>Время прибытия</Label>
                               <Input
                                 id={`arrival-time-${city}`}
                                 type="time"
@@ -456,64 +482,13 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                                 onChange={(e) =>
                                   updateVisit(city, { arrivalTime: e.target.value })
                                 }
-                                className="mt-1"
                                 data-testid={`input-arrival-time-${city.toLowerCase()}`}
                               />
                             </div>
                           </div>
 
-                          <div className="space-y-2">
-                            <Label>Дата выезда</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className="w-full justify-start text-left font-normal"
-                                  data-testid={`button-departure-date-${city.toLowerCase()}`}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {visit.departureDate ? (
-                                    format(visit.departureDate, "PPP", { locale: ru })
-                                  ) : (
-                                    <span>Выберите дату</span>
-                                  )}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                  mode="single"
-                                  selected={visit.departureDate || undefined}
-                                  onSelect={(date) =>
-                                    updateVisit(city, { departureDate: date || null })
-                                  }
-                                  disabled={(date) =>
-                                    visit.arrivalDate ? date < visit.arrivalDate : false
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <div>
-                              <Label htmlFor={`departure-time-${city}`} className="text-sm text-muted-foreground">
-                                Время выезда
-                              </Label>
-                              <Input
-                                id={`departure-time-${city}`}
-                                type="time"
-                                value={visit.departureTime}
-                                onChange={(e) =>
-                                  updateVisit(city, { departureTime: e.target.value })
-                                }
-                                className="mt-1"
-                                data-testid={`input-departure-time-${city.toLowerCase()}`}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <Label>Способ прибытия *</Label>
+                            <Label>Транспорт *</Label>
                             <div className="grid grid-cols-2 gap-2 mt-1">
                               <Button
                                 type="button"
@@ -546,8 +521,106 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                             </div>
                           </div>
 
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor={`flight-number-${city}`}>Рейс</Label>
+                              <Input
+                                id={`flight-number-${city}`}
+                                placeholder="CA123, Z2123"
+                                value={visit.flightNumber}
+                                onChange={(e) =>
+                                  updateVisit(city, { flightNumber: e.target.value })
+                                }
+                                className="mt-1"
+                                data-testid={`input-flight-number-${city.toLowerCase()}`}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`airport-${city}`}>Аэропорт</Label>
+                              <Input
+                                id={`airport-${city}`}
+                                placeholder="Название аэропорта"
+                                value={visit.airport}
+                                onChange={(e) =>
+                                  updateVisit(city, { airport: e.target.value })
+                                }
+                                className="mt-1"
+                                data-testid={`input-airport-${city.toLowerCase()}`}
+                              />
+                            </div>
+                          </div>
+
                           <div>
-                            <Label>Способ выезда</Label>
+                            <Label htmlFor={`transfer-${city}`}>Трансфер</Label>
+                            <Input
+                              id={`transfer-${city}`}
+                              placeholder="Информация о трансфере"
+                              value={visit.transfer}
+                              onChange={(e) =>
+                                updateVisit(city, { transfer: e.target.value })
+                              }
+                              className="mt-1"
+                              data-testid={`input-transfer-${city.toLowerCase()}`}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Убытие */}
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-sm uppercase text-muted-foreground border-b pb-2">
+                            Убытие
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Дата выезда</Label>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-left font-normal"
+                                    data-testid={`button-departure-date-${city.toLowerCase()}`}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {visit.departureDate ? (
+                                      format(visit.departureDate, "PPP", { locale: ru })
+                                    ) : (
+                                      <span>Выберите дату</span>
+                                    )}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                  <Calendar
+                                    mode="single"
+                                    selected={visit.departureDate || undefined}
+                                    onSelect={(date) =>
+                                      updateVisit(city, { departureDate: date || null })
+                                    }
+                                    disabled={(date) =>
+                                      visit.arrivalDate ? date < visit.arrivalDate : false
+                                    }
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor={`departure-time-${city}`}>Время выезда</Label>
+                              <Input
+                                id={`departure-time-${city}`}
+                                type="time"
+                                value={visit.departureTime}
+                                onChange={(e) =>
+                                  updateVisit(city, { departureTime: e.target.value })
+                                }
+                                data-testid={`input-departure-time-${city.toLowerCase()}`}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label>Транспорт</Label>
                             <div className="grid grid-cols-2 gap-2 mt-1">
                               <Button
                                 type="button"
@@ -579,59 +652,95 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                               </Button>
                             </div>
                           </div>
-                        </div>
 
-                        <div>
-                          <Label htmlFor={`flight-number-${city}`}>Номер рейса</Label>
-                          <Input
-                            id={`flight-number-${city}`}
-                            placeholder="Например: CA123, Z2123"
-                            value={visit.flightNumber}
-                            onChange={(e) =>
-                              updateVisit(city, { flightNumber: e.target.value })
-                            }
-                            className="mt-1"
-                            data-testid={`input-flight-number-${city.toLowerCase()}`}
-                          />
-                        </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor={`departure-flight-number-${city}`}>Рейс</Label>
+                              <Input
+                                id={`departure-flight-number-${city}`}
+                                placeholder="CA123, Z2123"
+                                value={visit.departureFlightNumber}
+                                onChange={(e) =>
+                                  updateVisit(city, { departureFlightNumber: e.target.value })
+                                }
+                                className="mt-1"
+                                data-testid={`input-departure-flight-number-${city.toLowerCase()}`}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`departure-airport-${city}`}>Аэропорт</Label>
+                              <Input
+                                id={`departure-airport-${city}`}
+                                placeholder="Название аэропорта"
+                                value={visit.departureAirport}
+                                onChange={(e) =>
+                                  updateVisit(city, { departureAirport: e.target.value })
+                                }
+                                className="mt-1"
+                                data-testid={`input-departure-airport-${city.toLowerCase()}`}
+                              />
+                            </div>
+                          </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor={`hotel-${city}`}>Отель *</Label>
+                            <Label htmlFor={`departure-transfer-${city}`}>Трансфер</Label>
                             <Input
-                              id={`hotel-${city}`}
-                              placeholder="Название отеля"
-                              value={visit.hotelName}
+                              id={`departure-transfer-${city}`}
+                              placeholder="Информация о трансфере"
+                              value={visit.departureTransfer}
                               onChange={(e) =>
-                                updateVisit(city, { hotelName: e.target.value })
+                                updateVisit(city, { departureTransfer: e.target.value })
                               }
                               className="mt-1"
-                              data-testid={`input-hotel-${city.toLowerCase()}`}
+                              data-testid={`input-departure-transfer-${city.toLowerCase()}`}
                             />
                           </div>
-                          <div>
-                            <Label htmlFor={`room-type-${city}`}>Тип номера</Label>
-                            <Select
-                              value={visit.roomType || ""}
-                              onValueChange={(value) =>
-                                updateVisit(city, { roomType: value as RoomType })
-                              }
-                            >
-                              <SelectTrigger
-                                id={`room-type-${city}`}
+                        </div>
+
+                        {/* Отель */}
+                        <div className="space-y-4">
+                          <h4 className="font-semibold text-sm uppercase text-muted-foreground border-b pb-2">
+                            Отель
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor={`hotel-${city}`}>Название *</Label>
+                              <Input
+                                id={`hotel-${city}`}
+                                placeholder="Название отеля"
+                                value={visit.hotelName}
+                                onChange={(e) =>
+                                  updateVisit(city, { hotelName: e.target.value })
+                                }
                                 className="mt-1"
-                                data-testid={`select-room-type-${city.toLowerCase()}`}
+                                data-testid={`input-hotel-${city.toLowerCase()}`}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`room-type-${city}`}>Тип номера</Label>
+                              <Select
+                                value={visit.roomType || ""}
+                                onValueChange={(value) =>
+                                  updateVisit(city, { roomType: value as RoomType })
+                                }
                               >
-                                <SelectValue placeholder="Выберите тип" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {ROOM_TYPES.map((type) => (
-                                  <SelectItem key={type} value={type}>
-                                    {type === "twin" ? "Twin (две кровати)" : "Double (одна кровать)"}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                                <SelectTrigger
+                                  id={`room-type-${city}`}
+                                  className="mt-1"
+                                  data-testid={`select-room-type-${city.toLowerCase()}`}
+                                >
+                                  <SelectValue placeholder="Выберите тип" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ROOM_TYPES.map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                      {type === "twin" ? "Twin (две кровати)" : "Double (одна кровать)"}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
                       </CardContent>

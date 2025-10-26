@@ -110,6 +110,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             transportType: visit.transportType,
             departureTransportType: visit.departureTransportType,
             flightNumber: visit.flightNumber,
+            airport: visit.airport,
+            transfer: visit.transfer,
+            departureFlightNumber: visit.departureFlightNumber,
+            departureAirport: visit.departureAirport,
+            departureTransfer: visit.departureTransfer,
             hotelName: visit.hotelName,
             roomType: visit.roomType,
           });
@@ -245,8 +250,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "5",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", airport: "Sheremetyevo SVO", transfer: "Встреча в аэропорту", departureFlightNumber: "D719", departureAirport: "Beijing Capital", departureTransfer: "До вокзала", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", airport: "Beijing West Station", transfer: "Групповой", departureFlightNumber: "CA456", departureAirport: "Zhangjiajie Hehua", departureTransfer: "Индивидуальный", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
           ]
         },
         {
@@ -258,8 +263,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "5",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", airport: "Sheremetyevo SVO", transfer: "Встреча в аэропорту", departureFlightNumber: "D719", departureAirport: "Beijing Capital", departureTransfer: "До вокзала", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", airport: "Beijing West Station", transfer: "Групповой", departureFlightNumber: "CA456", departureAirport: "Zhangjiajie Hehua", departureTransfer: "Индивидуальный", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
           ]
         },
         {
@@ -271,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "4",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "13:00", departureDate: "2025-11-05", departureTime: "18:30", transportType: "plane", departureTransportType: "plane", flightNumber: "CA890", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "13:00", departureDate: "2025-11-05", departureTime: "18:30", transportType: "plane", departureTransportType: "plane", flightNumber: "CA890", airport: "Domodedovo DME", transfer: "VIP трансфер", departureFlightNumber: "CA891", departureAirport: "Beijing Capital", departureTransfer: "VIP трансфер", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const }
           ]
         },
         {
@@ -283,8 +288,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "5",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "SU101", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z205", hotelName: "Pullman Zhangjiajie", roomType: "double" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "SU101", airport: "Vnukovo VKO", transfer: "Встреча с гидом", departureFlightNumber: "D301", departureAirport: "Beijing South", departureTransfer: "Групповой автобус", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z205", airport: "Beijing Railway", transfer: "До отеля", departureFlightNumber: "MU789", departureAirport: "Zhangjiajie Hehua", departureTransfer: "С багажом", hotelName: "Pullman Zhangjiajie", roomType: "double" as const }
           ]
         },
         {
@@ -451,6 +456,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               transportType: visit.transportType as any,
               departureTransportType: (visit as any).departureTransportType,
               flightNumber: (visit as any).flightNumber,
+              airport: (visit as any).airport,
+              transfer: (visit as any).transfer,
+              departureFlightNumber: (visit as any).departureFlightNumber,
+              departureAirport: (visit as any).departureAirport,
+              departureTransfer: (visit as any).departureTransfer,
               hotelName: visit.hotelName,
               roomType: (visit as any).roomType,
             });

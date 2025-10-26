@@ -6,6 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -100,15 +106,26 @@ export default function Summary() {
         const hotel = `Отель: ${visit.hotelName}`;
         const roomType = visit.roomType ? `Тип: ${visit.roomType === "twin" ? "Twin" : "Double"}` : "";
         
-        const arrival = visit.transportType === "plane" ? "Самолет" : "Поезд";
-        const departure = visit.departureTransportType 
-          ? (visit.departureTransportType === "plane" ? "Самолет" : "Поезд")
-          : "";
-        const transport = departure ? `${arrival} → ${departure}` : arrival;
+        const arrivalParts = [
+          visit.transportType === "plane" ? "Самолет" : "Поезд",
+          visit.flightNumber ? `Рейс: ${visit.flightNumber}` : "",
+          visit.airport ? `Аэропорт: ${visit.airport}` : "",
+          visit.transfer ? `Трансфер: ${visit.transfer}` : "",
+        ].filter(Boolean);
         
-        const flightNumber = visit.flightNumber ? `Рейс: ${visit.flightNumber}` : "";
+        const departureParts = [];
+        if (visit.departureTransportType) {
+          departureParts.push(visit.departureTransportType === "plane" ? "Самолет" : "Поезд");
+          if (visit.departureFlightNumber) departureParts.push(`Рейс: ${visit.departureFlightNumber}`);
+          if (visit.departureAirport) departureParts.push(`Аэропорт: ${visit.departureAirport}`);
+          if (visit.departureTransfer) departureParts.push(`Трансфер: ${visit.departureTransfer}`);
+        }
         
-        cityData = [dateRange, hotel, roomType, transport, flightNumber]
+        const transport = departureParts.length > 0
+          ? `Прибытие: ${arrivalParts.join(", ")}\nУбытие: ${departureParts.join(", ")}`
+          : `Прибытие: ${arrivalParts.join(", ")}`;
+        
+        cityData = [dateRange, hotel, roomType, transport]
           .filter(Boolean)
           .join("\n");
       }
@@ -170,15 +187,26 @@ export default function Summary() {
           const hotel = `Отель: ${visit.hotelName}`;
           const roomType = visit.roomType ? `Тип: ${visit.roomType === "twin" ? "Twin" : "Double"}` : "";
           
-          const arrival = visit.transportType === "plane" ? "Самолет" : "Поезд";
-          const departure = visit.departureTransportType 
-            ? (visit.departureTransportType === "plane" ? "Самолет" : "Поезд")
-            : "";
-          const transport = departure ? `${arrival} → ${departure}` : arrival;
+          const arrivalParts = [
+            visit.transportType === "plane" ? "Самолет" : "Поезд",
+            visit.flightNumber ? `Рейс: ${visit.flightNumber}` : "",
+            visit.airport ? `Аэропорт: ${visit.airport}` : "",
+            visit.transfer ? `Трансфер: ${visit.transfer}` : "",
+          ].filter(Boolean);
           
-          const flightNumber = visit.flightNumber ? `Рейс: ${visit.flightNumber}` : "";
+          const departureParts = [];
+          if (visit.departureTransportType) {
+            departureParts.push(visit.departureTransportType === "plane" ? "Самолет" : "Поезд");
+            if (visit.departureFlightNumber) departureParts.push(`Рейс: ${visit.departureFlightNumber}`);
+            if (visit.departureAirport) departureParts.push(`Аэропорт: ${visit.departureAirport}`);
+            if (visit.departureTransfer) departureParts.push(`Трансфер: ${visit.departureTransfer}`);
+          }
           
-          acc[CITY_NAMES[city]] = [dateRange, hotel, roomType, transport, flightNumber]
+          const transport = departureParts.length > 0
+            ? `Прибытие: ${arrivalParts.join(", ")}\nУбытие: ${departureParts.join(", ")}`
+            : `Прибытие: ${arrivalParts.join(", ")}`;
+          
+          acc[CITY_NAMES[city]] = [dateRange, hotel, roomType, transport]
             .filter(Boolean)
             .join("\n");
         } else {
@@ -399,29 +427,56 @@ export default function Summary() {
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {visit.transportType === "plane" ? (
-                                      <Plane className="h-3 w-3" />
-                                    ) : (
-                                      <Train className="h-3 w-3" />
-                                    )}
-                                  </Badge>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="text-xs cursor-help">
+                                          {visit.transportType === "plane" ? (
+                                            <Plane className="h-3 w-3" />
+                                          ) : (
+                                            <Train className="h-3 w-3" />
+                                          )}
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        Прибытие {visit.transportType === "plane" ? "самолетом" : "поездом"}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                   {visit.departureTransportType && (
                                     <>
                                       <span className="text-xs text-muted-foreground">→</span>
-                                      <Badge variant="outline" className="text-xs">
-                                        {visit.departureTransportType === "plane" ? (
-                                          <Plane className="h-3 w-3" />
-                                        ) : (
-                                          <Train className="h-3 w-3" />
-                                        )}
-                                      </Badge>
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Badge variant="outline" className="text-xs cursor-help">
+                                              {visit.departureTransportType === "plane" ? (
+                                                <Plane className="h-3 w-3" />
+                                              ) : (
+                                                <Train className="h-3 w-3" />
+                                              )}
+                                            </Badge>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            Убытие {visit.departureTransportType === "plane" ? "самолетом" : "поездом"}
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
                                     </>
                                   )}
                                 </div>
-                                {visit.flightNumber && (
-                                  <div className="text-xs text-muted-foreground">
-                                    Рейс: {visit.flightNumber}
+                                {(visit.flightNumber || visit.airport || visit.transfer) && (
+                                  <div className="text-xs text-muted-foreground space-y-0.5">
+                                    {visit.flightNumber && <div>Рейс: {visit.flightNumber}</div>}
+                                    {visit.airport && <div>Аэропорт: {visit.airport}</div>}
+                                    {visit.transfer && <div>Трансфер: {visit.transfer}</div>}
+                                  </div>
+                                )}
+                                {(visit.departureFlightNumber || visit.departureAirport || visit.departureTransfer) && (
+                                  <div className="text-xs text-muted-foreground space-y-0.5 border-t pt-1 mt-1">
+                                    {visit.departureFlightNumber && <div>Убытие рейс: {visit.departureFlightNumber}</div>}
+                                    {visit.departureAirport && <div>Убытие аэропорт: {visit.departureAirport}</div>}
+                                    {visit.departureTransfer && <div>Убытие трансфер: {visit.departureTransfer}</div>}
                                   </div>
                                 )}
                               </div>
@@ -535,29 +590,56 @@ export default function Summary() {
                             )}
                           </div>
                           <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-xs">
-                              {visit.transportType === "plane" ? (
-                                <Plane className="h-3 w-3" />
-                              ) : (
-                                <Train className="h-3 w-3" />
-                              )}
-                            </Badge>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="outline" className="text-xs cursor-help">
+                                    {visit.transportType === "plane" ? (
+                                      <Plane className="h-3 w-3" />
+                                    ) : (
+                                      <Train className="h-3 w-3" />
+                                    )}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Прибытие {visit.transportType === "plane" ? "самолетом" : "поездом"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             {visit.departureTransportType && (
                               <>
                                 <span className="text-xs text-muted-foreground">→</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {visit.departureTransportType === "plane" ? (
-                                    <Plane className="h-3 w-3" />
-                                  ) : (
-                                    <Train className="h-3 w-3" />
-                                  )}
-                                </Badge>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="outline" className="text-xs cursor-help">
+                                        {visit.departureTransportType === "plane" ? (
+                                          <Plane className="h-3 w-3" />
+                                        ) : (
+                                          <Train className="h-3 w-3" />
+                                        )}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Убытие {visit.departureTransportType === "plane" ? "самолетом" : "поездом"}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               </>
                             )}
                           </div>
-                          {visit.flightNumber && (
-                            <div className="text-xs text-muted-foreground">
-                              Рейс: {visit.flightNumber}
+                          {(visit.flightNumber || visit.airport || visit.transfer) && (
+                            <div className="text-xs text-muted-foreground space-y-0.5">
+                              {visit.flightNumber && <div>Рейс: {visit.flightNumber}</div>}
+                              {visit.airport && <div>Аэропорт: {visit.airport}</div>}
+                              {visit.transfer && <div>Трансфер: {visit.transfer}</div>}
+                            </div>
+                          )}
+                          {(visit.departureFlightNumber || visit.departureAirport || visit.departureTransfer) && (
+                            <div className="text-xs text-muted-foreground space-y-0.5 border-t pt-1 mt-1">
+                              {visit.departureFlightNumber && <div>Убытие рейс: {visit.departureFlightNumber}</div>}
+                              {visit.departureAirport && <div>Убытие аэропорт: {visit.departureAirport}</div>}
+                              {visit.departureTransfer && <div>Убытие трансфер: {visit.departureTransfer}</div>}
                             </div>
                           )}
                         </div>

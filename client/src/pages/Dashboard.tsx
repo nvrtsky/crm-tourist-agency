@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, MapPin, Calendar, Hotel, Loader2, Database, Trash2 } from "lucide-react";
+import { Users, MapPin, Calendar, Hotel, Loader2, Database, Trash2, DollarSign, Bed } from "lucide-react";
 import CityCard from "@/components/CityCard";
 import { useBitrix24 } from "@/hooks/useBitrix24";
 import { useToast } from "@/hooks/use-toast";
@@ -92,6 +92,19 @@ export default function Dashboard() {
         upcomingArrivals: 0,
         totalHotels: 0,
         cityData: {} as Record<City, { touristCount: number; hotels: string[] }>,
+        revenueByRUB: 0,
+        revenueByCNY: 0,
+        averageRevenueRUB: 0,
+        averageRevenueCNY: 0,
+        touristsCountRUB: 0,
+        touristsCountCNY: 0,
+        hotelRoomStats: [] as Array<{
+          city: City;
+          hotelName: string;
+          twinCount: number;
+          doubleCount: number;
+          totalRooms: number;
+        }>,
       };
     }
 
@@ -106,7 +119,26 @@ export default function Dashboard() {
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     let upcomingArrivals = 0;
 
+    // Financial metrics - separate by currency
+    let revenueByRUB = 0;
+    let revenueByCNY = 0;
+    let touristsCountRUB = 0;
+    let touristsCountCNY = 0;
+
+    // Hotel room statistics
+    const hotelRooms = new Map<string, { city: City; twin: number; double: number }>();
+
     tourists.forEach((tourist) => {
+      // Calculate revenue per currency
+      const amount = parseFloat(tourist.amount || "0");
+      if (tourist.currency === "RUB") {
+        revenueByRUB += amount;
+        touristsCountRUB++;
+      } else if (tourist.currency === "CNY") {
+        revenueByCNY += amount;
+        touristsCountCNY++;
+      }
+
       tourist.visits.forEach((visit) => {
         const city = visit.city as City;
         if (cityData[city]) {
@@ -117,6 +149,18 @@ export default function Dashboard() {
           if (arrivalDate >= now && arrivalDate <= nextWeek) {
             upcomingArrivals++;
           }
+
+          // Count room types per hotel
+          const hotelKey = `${city}:${visit.hotelName}`;
+          if (!hotelRooms.has(hotelKey)) {
+            hotelRooms.set(hotelKey, { city, twin: 0, double: 0 });
+          }
+          const hotelData = hotelRooms.get(hotelKey)!;
+          if (visit.roomType === "twin") {
+            hotelData.twin++;
+          } else if (visit.roomType === "double") {
+            hotelData.double++;
+          }
         }
       });
     });
@@ -126,6 +170,18 @@ export default function Dashboard() {
     Object.values(cityData).forEach((c) => {
       c.hotels.forEach((h) => allHotels.add(h));
     });
+
+    // Convert hotel room stats to array
+    const hotelRoomStats = Array.from(hotelRooms.entries()).map(([key, data]) => {
+      const hotelName = key.split(":")[1];
+      return {
+        city: data.city,
+        hotelName,
+        twinCount: data.twin,
+        doubleCount: data.double,
+        totalRooms: data.twin + data.double,
+      };
+    }).sort((a, b) => a.city.localeCompare(b.city));
 
     return {
       totalTourists: tourists.length,
@@ -141,6 +197,13 @@ export default function Dashboard() {
           },
         ])
       ) as Record<City, { touristCount: number; hotels: string[] }>,
+      revenueByRUB,
+      revenueByCNY,
+      averageRevenueRUB: touristsCountRUB > 0 ? revenueByRUB / touristsCountRUB : 0,
+      averageRevenueCNY: touristsCountCNY > 0 ? revenueByCNY / touristsCountCNY : 0,
+      touristsCountRUB,
+      touristsCountCNY,
+      hotelRoomStats,
     };
   }, [tourists]);
 
@@ -264,6 +327,78 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {stats.totalTourists > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Финансовая сводка</CardTitle>
+              <DollarSign className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 sm:grid-cols-2">
+              {stats.touristsCountRUB > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">RUB</Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {stats.touristsCountRUB} {stats.touristsCountRUB === 1 ? 'турист' : 'туристов'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold" data-testid="stat-revenue-rub">
+                      {stats.revenueByRUB.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Общая сумма
+                    </p>
+                  </div>
+                  <div>
+                    <div className="text-xl font-semibold" data-testid="stat-average-revenue-rub">
+                      {stats.averageRevenueRUB.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Средний чек
+                    </p>
+                  </div>
+                </div>
+              )}
+              {stats.touristsCountCNY > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">CNY</Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {stats.touristsCountCNY} {stats.touristsCountCNY === 1 ? 'турист' : 'туристов'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold" data-testid="stat-revenue-cny">
+                      {stats.revenueByCNY.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ¥
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Общая сумма
+                    </p>
+                  </div>
+                  <div>
+                    <div className="text-xl font-semibold" data-testid="stat-average-revenue-cny">
+                      {stats.averageRevenueCNY.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ¥
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Средний чек
+                    </p>
+                  </div>
+                </div>
+              )}
+              {stats.touristsCountRUB === 0 && stats.touristsCountCNY === 0 && (
+                <div className="col-span-2 text-center text-muted-foreground py-4">
+                  Нет данных о платежах
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div>
         <h2 className="text-2xl font-semibold mb-4">Города на маршруте</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -311,6 +446,74 @@ export default function Dashboard() {
                         className="h-full bg-primary transition-all"
                         style={{ width: `${percentage}%` }}
                       />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {stats.hotelRoomStats.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Сводка по типам номеров в отелях</CardTitle>
+              <Bed className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {(Object.keys(cityNames) as City[]).map((city) => {
+                const cityHotels = stats.hotelRoomStats.filter((h) => h.city === city);
+                if (cityHotels.length === 0) return null;
+
+                return (
+                  <div key={city} className="space-y-3">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <span className="font-semibold">{cityNames[city].en}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {cityNames[city].cn}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {cityHotels.map((hotel) => (
+                        <div
+                          key={`${hotel.city}-${hotel.hotelName}`}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-md bg-muted/50"
+                        >
+                          <div className="font-medium text-sm" data-testid={`hotel-${hotel.hotelName}`}>
+                            {hotel.hotelName}
+                          </div>
+                          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                Twin
+                              </Badge>
+                              <span className="text-sm font-semibold" data-testid={`hotel-${hotel.hotelName}-twin`}>
+                                {hotel.twinCount}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                Double
+                              </Badge>
+                              <span className="text-sm font-semibold" data-testid={`hotel-${hotel.hotelName}-double`}>
+                                {hotel.doubleCount}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="text-xs">
+                                Всего
+                              </Badge>
+                              <span className="text-sm font-bold" data-testid={`hotel-${hotel.hotelName}-total`}>
+                                {hotel.totalRooms}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );

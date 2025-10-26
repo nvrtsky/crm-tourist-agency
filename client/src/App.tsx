@@ -7,16 +7,18 @@ import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import Dashboard from "@/pages/Dashboard";
 import Tourists from "@/pages/Tourists";
+import Summary from "@/pages/Summary";
 import NotFound from "@/pages/not-found";
 import { useBitrix24 } from "@/hooks/useBitrix24";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2, LayoutDashboard, Users } from "lucide-react";
+import { AlertCircle, Loader2, LayoutDashboard, Users, TableProperties } from "lucide-react";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/tourists" component={Tourists} />
+      <Route path="/summary" component={Summary} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -44,6 +46,15 @@ function Navigation() {
       >
         <Users className="h-4 w-4 mr-2" />
         Туристы
+      </Button>
+      <Button
+        variant={location === "/summary" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setLocation("/summary")}
+        data-testid="nav-summary"
+      >
+        <TableProperties className="h-4 w-4 mr-2" />
+        Сводная
       </Button>
     </nav>
   );

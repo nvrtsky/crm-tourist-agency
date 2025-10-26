@@ -170,9 +170,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/tourists/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      const { visits, ...touristData } = req.body;
       
       // Validate update data (partial schema)
-      const updateValidation = insertTouristSchema.partial().safeParse(req.body);
+      const updateValidation = insertTouristSchema.partial().safeParse(touristData);
       if (!updateValidation.success) {
         return res.status(400).json({
           error: "Validation error",
@@ -199,7 +200,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Tourist not found" });
       }
 
-      res.json(updated);
+      // Update visits if provided
+      if (visits && Array.isArray(visits)) {
+        // Delete existing visits
+        const existingVisits = await storage.getCityVisitsByTourist(id);
+        for (const visit of existingVisits) {
+          await storage.deleteCityVisit(visit.id);
+        }
+
+        // Create new visits
+        for (const visit of visits) {
+          await storage.createCityVisit({
+            touristId: id,
+            city: visit.city,
+            arrivalDate: visit.arrivalDate,
+            arrivalTime: visit.arrivalTime,
+            departureDate: visit.departureDate,
+            departureTime: visit.departureTime,
+            transportType: visit.transportType,
+            departureTransportType: visit.departureTransportType,
+            flightNumber: visit.flightNumber,
+            airport: visit.airport,
+            transfer: visit.transfer,
+            departureFlightNumber: visit.departureFlightNumber,
+            departureAirport: visit.departureAirport,
+            departureTransfer: visit.departureTransfer,
+            hotelName: visit.hotelName,
+            roomType: visit.roomType,
+          });
+        }
+      }
+
+      // Get updated tourist with visits
+      const updatedWithVisits = await storage.getTourist(id);
+      res.json(updatedWithVisits);
     } catch (error) {
       console.error("Error updating tourist:", error);
       res.status(500).json({ error: "Failed to update tourist" });
@@ -301,8 +335,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "5",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", airport: "Sheremetyevo SVO", transfer: "Встреча в аэропорту", departureFlightNumber: "D719", departureAirport: "Beijing Capital", departureTransfer: "До вокзала", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", airport: "Beijing West Station", transfer: "Групповой", departureFlightNumber: "CA456", departureAirport: "Zhangjiajie Hehua", departureTransfer: "Индивидуальный", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
           ]
         },
         {
@@ -314,8 +348,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "5",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
-            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "14:30", departureDate: "2025-11-03", departureTime: "09:45", transportType: "plane", departureTransportType: "train", flightNumber: "CA123", airport: "Sheremetyevo SVO", transfer: "Встреча в аэропорту", departureFlightNumber: "D719", departureAirport: "Beijing Capital", departureTransfer: "До вокзала", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", arrivalTime: "16:20", departureDate: "2025-11-06", departureTime: "08:15", transportType: "train", departureTransportType: "plane", flightNumber: "Z201", airport: "Beijing West Station", transfer: "Групповой", departureFlightNumber: "CA456", departureAirport: "Zhangjiajie Hehua", departureTransfer: "Индивидуальный", hotelName: "Pullman Zhangjiajie", roomType: "twin" as const }
           ]
         },
         {
@@ -327,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "3",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "10:15", departureDate: "2025-11-04", departureTime: "11:30", transportType: "train", departureTransportType: "train", flightNumber: "G102", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "10:15", departureDate: "2025-11-04", departureTime: "11:30", transportType: "train", departureTransportType: "train", flightNumber: "G102", airport: "Moscow Kazansky", transfer: "Такси", departureFlightNumber: "G104", departureAirport: "Beijing West", departureTransfer: "На своем", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const }
           ]
         },
         {
@@ -339,7 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "3",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "10:15", departureDate: "2025-11-04", departureTime: "15:20", transportType: "train", departureTransportType: "plane", flightNumber: "G102", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "10:15", departureDate: "2025-11-04", departureTime: "15:20", transportType: "train", departureTransportType: "plane", flightNumber: "G102", airport: "Moscow Kazansky", transfer: "Такси", departureFlightNumber: "CA902", departureAirport: "Beijing Capital", departureTransfer: "Стандартный", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const }
           ]
         },
         {
@@ -351,9 +385,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "11",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "12:45", departureDate: "2025-11-05", departureTime: "07:30", transportType: "plane", departureTransportType: "train", flightNumber: "HU456", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
-            { city: "Luoyang", arrivalDate: "2025-11-05", arrivalTime: "14:00", departureDate: "2025-11-08", departureTime: "08:00", transportType: "train", departureTransportType: "train", flightNumber: "G210", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
-            { city: "Xian", arrivalDate: "2025-11-08", arrivalTime: "15:30", departureDate: "2025-11-12", departureTime: "17:45", transportType: "train", departureTransportType: "plane", flightNumber: "G305", hotelName: "Grand Park Xian", roomType: "twin" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "12:45", departureDate: "2025-11-05", departureTime: "07:30", transportType: "plane", departureTransportType: "train", flightNumber: "HU456", airport: "Pulkovo LED", transfer: "Групповая встреча", departureFlightNumber: "G215", departureAirport: "Beijing South", departureTransfer: "Автобус", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Luoyang", arrivalDate: "2025-11-05", arrivalTime: "14:00", departureDate: "2025-11-08", departureTime: "08:00", transportType: "train", departureTransportType: "train", flightNumber: "G210", airport: "Beijing Railway", transfer: "Со станции", departureFlightNumber: "G320", departureAirport: "Luoyang Station", departureTransfer: "Организованный", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
+            { city: "Xian", arrivalDate: "2025-11-08", arrivalTime: "15:30", departureDate: "2025-11-12", departureTime: "17:45", transportType: "train", departureTransportType: "plane", flightNumber: "G305", airport: "Luoyang Railway", transfer: "Прямой", departureFlightNumber: "MU234", departureAirport: "Xian Xianyang", departureTransfer: "Трансфер в аэропорт", hotelName: "Grand Park Xian", roomType: "twin" as const }
           ]
         },
         {
@@ -365,9 +399,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "11",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "12:45", departureDate: "2025-11-05", departureTime: "07:30", transportType: "plane", departureTransportType: "train", flightNumber: "HU456", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
-            { city: "Luoyang", arrivalDate: "2025-11-05", arrivalTime: "14:00", departureDate: "2025-11-08", departureTime: "08:00", transportType: "train", departureTransportType: "train", flightNumber: "G210", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
-            { city: "Xian", arrivalDate: "2025-11-08", arrivalTime: "15:30", departureDate: "2025-11-12", departureTime: "17:45", transportType: "train", departureTransportType: "plane", flightNumber: "G305", hotelName: "Grand Park Xian", roomType: "twin" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "12:45", departureDate: "2025-11-05", departureTime: "07:30", transportType: "plane", departureTransportType: "train", flightNumber: "HU456", airport: "Pulkovo LED", transfer: "Групповая встреча", departureFlightNumber: "G215", departureAirport: "Beijing South", departureTransfer: "Автобус", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Luoyang", arrivalDate: "2025-11-05", arrivalTime: "14:00", departureDate: "2025-11-08", departureTime: "08:00", transportType: "train", departureTransportType: "train", flightNumber: "G210", airport: "Beijing Railway", transfer: "Со станции", departureFlightNumber: "G320", departureAirport: "Luoyang Station", departureTransfer: "Организованный", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
+            { city: "Xian", arrivalDate: "2025-11-08", arrivalTime: "15:30", departureDate: "2025-11-12", departureTime: "17:45", transportType: "train", departureTransportType: "plane", flightNumber: "G305", airport: "Luoyang Railway", transfer: "Прямой", departureFlightNumber: "MU234", departureAirport: "Xian Xianyang", departureTransfer: "Трансфер в аэропорт", hotelName: "Grand Park Xian", roomType: "twin" as const }
           ]
         },
         {
@@ -379,8 +413,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "7",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "11:00", departureDate: "2025-11-04", departureTime: "06:45", transportType: "plane", departureTransportType: "train", flightNumber: "MU567", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const },
-            { city: "Xian", arrivalDate: "2025-11-04", arrivalTime: "13:20", departureDate: "2025-11-08", departureTime: "19:00", transportType: "train", departureTransportType: "plane", flightNumber: "G301", hotelName: "Grand Park Xian", roomType: "double" as const }
+            { city: "Beijing", arrivalDate: "2025-11-01", arrivalTime: "11:00", departureDate: "2025-11-04", departureTime: "06:45", transportType: "plane", departureTransportType: "train", flightNumber: "MU567", airport: "Vnukovo VKO", transfer: "Индивидуальный трансфер", departureFlightNumber: "G315", departureAirport: "Beijing West", departureTransfer: "С сопровождением", hotelName: "Park Plaza Beijing Wangfujing", roomType: "double" as const },
+            { city: "Xian", arrivalDate: "2025-11-04", arrivalTime: "13:20", departureDate: "2025-11-08", departureTime: "19:00", transportType: "train", departureTransportType: "plane", flightNumber: "G301", airport: "Beijing Station", transfer: "От отеля", departureFlightNumber: "CA888", departureAirport: "Xian Xianyang", departureTransfer: "Комфорт", hotelName: "Grand Park Xian", roomType: "double" as const }
           ]
         },
         {
@@ -392,9 +426,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "10",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-10-30", arrivalTime: "16:00", departureDate: "2025-11-03", departureTime: "10:30", transportType: "plane", departureTransportType: "train", flightNumber: "CA789", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
-            { city: "Luoyang", arrivalDate: "2025-11-03", arrivalTime: "17:15", departureDate: "2025-11-05", departureTime: "09:00", transportType: "train", departureTransportType: "train", flightNumber: "G208", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
-            { city: "Xian", arrivalDate: "2025-11-05", arrivalTime: "14:45", departureDate: "2025-11-09", departureTime: "16:30", transportType: "train", departureTransportType: "plane", flightNumber: "G302", hotelName: "Grand Park Xian", roomType: "twin" as const }
+            { city: "Beijing", arrivalDate: "2025-10-30", arrivalTime: "16:00", departureDate: "2025-11-03", departureTime: "10:30", transportType: "plane", departureTransportType: "train", flightNumber: "CA789", airport: "Domodedovo DME", transfer: "Встреча с табличкой", departureFlightNumber: "G208", departureAirport: "Beijing Capital", departureTransfer: "До вокзала групповой", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Luoyang", arrivalDate: "2025-11-03", arrivalTime: "17:15", departureDate: "2025-11-05", departureTime: "09:00", transportType: "train", departureTransportType: "train", flightNumber: "G208", airport: "Beijing South Station", transfer: "Гид встретит", departureFlightNumber: "G302", departureAirport: "Luoyang Railway", departureTransfer: "Автобус к поезду", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
+            { city: "Xian", arrivalDate: "2025-11-05", arrivalTime: "14:45", departureDate: "2025-11-09", departureTime: "16:30", transportType: "train", departureTransportType: "plane", flightNumber: "G302", airport: "Luoyang Station", transfer: "Со станции до отеля", departureFlightNumber: "HU555", departureAirport: "Xian Xianyang", departureTransfer: "Премиум трансфер", hotelName: "Grand Park Xian", roomType: "twin" as const }
           ]
         },
         {
@@ -406,9 +440,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "RUB" as const,
           nights: "10",
           visits: [
-            { city: "Beijing", arrivalDate: "2025-10-30", arrivalTime: "16:00", departureDate: "2025-11-03", departureTime: "10:30", transportType: "plane", departureTransportType: "train", flightNumber: "CA789", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
-            { city: "Luoyang", arrivalDate: "2025-11-03", arrivalTime: "17:15", departureDate: "2025-11-05", departureTime: "09:00", transportType: "train", departureTransportType: "train", flightNumber: "G208", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
-            { city: "Xian", arrivalDate: "2025-11-05", arrivalTime: "14:45", departureDate: "2025-11-09", departureTime: "16:30", transportType: "train", departureTransportType: "plane", flightNumber: "G302", hotelName: "Grand Park Xian", roomType: "twin" as const }
+            { city: "Beijing", arrivalDate: "2025-10-30", arrivalTime: "16:00", departureDate: "2025-11-03", departureTime: "10:30", transportType: "plane", departureTransportType: "train", flightNumber: "CA789", airport: "Domodedovo DME", transfer: "Встреча с табличкой", departureFlightNumber: "G208", departureAirport: "Beijing Capital", departureTransfer: "До вокзала групповой", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Luoyang", arrivalDate: "2025-11-03", arrivalTime: "17:15", departureDate: "2025-11-05", departureTime: "09:00", transportType: "train", departureTransportType: "train", flightNumber: "G208", airport: "Beijing South Station", transfer: "Гид встретит", departureFlightNumber: "G302", departureAirport: "Luoyang Railway", departureTransfer: "Автобус к поезду", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
+            { city: "Xian", arrivalDate: "2025-11-05", arrivalTime: "14:45", departureDate: "2025-11-09", departureTime: "16:30", transportType: "train", departureTransportType: "plane", flightNumber: "G302", airport: "Luoyang Station", transfer: "Со станции до отеля", departureFlightNumber: "HU555", departureAirport: "Xian Xianyang", departureTransfer: "Премиум трансфер", hotelName: "Grand Park Xian", roomType: "twin" as const }
           ]
         }
       ];

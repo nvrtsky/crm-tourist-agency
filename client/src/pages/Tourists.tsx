@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Tourists() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTourist, setEditingTourist] = useState<TouristWithVisits | null>(null);
   const { entityId, entityTypeId } = useBitrix24();
   const { toast } = useToast();
 
@@ -56,6 +57,29 @@ export default function Tourists() {
     },
   });
 
+  // Update tourist mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      return apiRequest("PATCH", `/api/tourists/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
+      setEditingTourist(null);
+      toast({
+        title: "Турист обновлен",
+        description: "Информация о туристе успешно обновлена",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить туриста",
+        variant: "destructive",
+      });
+      console.error("Error updating tourist:", error);
+    },
+  });
+
   // Delete tourist mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -83,7 +107,11 @@ export default function Tourists() {
   ) || [];
 
   const handleSubmit = (data: any) => {
-    createMutation.mutate(data);
+    if (editingTourist) {
+      updateMutation.mutate({ id: editingTourist.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
   const handleDelete = (id: string, name: string) => {
@@ -146,7 +174,7 @@ export default function Tourists() {
           <TouristCard
             key={tourist.id}
             tourist={tourist}
-            onEdit={() => console.log("Edit tourist", tourist.id)}
+            onEdit={() => setEditingTourist(tourist)}
             onDelete={() => handleDelete(tourist.id, tourist.name)}
           />
         ))}
@@ -169,6 +197,19 @@ export default function Tourists() {
           )}
         </div>
       )}
+
+      <Dialog open={!!editingTourist} onOpenChange={(open) => !open && setEditingTourist(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Редактировать туриста</DialogTitle>
+          </DialogHeader>
+          <TouristForm
+            initialTourist={editingTourist}
+            onSubmit={handleSubmit}
+            onCancel={() => setEditingTourist(null)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

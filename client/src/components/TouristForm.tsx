@@ -74,6 +74,7 @@ interface CityVisitData {
 }
 
 interface TouristFormProps {
+  initialTourist?: any;
   onSubmit: (data: {
     name: string;
     email?: string;
@@ -104,21 +105,52 @@ interface TouristFormProps {
   onCancel?: () => void;
 }
 
-export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
-  const [selectedCities, setSelectedCities] = useState<Set<City>>(new Set());
-  const [cityVisits, setCityVisits] = useState<Map<City, CityVisitData>>(new Map());
+export default function TouristForm({ initialTourist, onSubmit, onCancel }: TouristFormProps) {
+  const [selectedCities, setSelectedCities] = useState<Set<City>>(() => {
+    if (initialTourist?.visits) {
+      return new Set(initialTourist.visits.map((v: any) => v.city));
+    }
+    return new Set();
+  });
+  
+  const [cityVisits, setCityVisits] = useState<Map<City, CityVisitData>>(() => {
+    if (initialTourist?.visits) {
+      const map = new Map();
+      initialTourist.visits.forEach((visit: any) => {
+        map.set(visit.city, {
+          city: visit.city,
+          arrivalDate: visit.arrivalDate ? new Date(visit.arrivalDate) : null,
+          arrivalTime: visit.arrivalTime || "",
+          departureDate: visit.departureDate ? new Date(visit.departureDate) : null,
+          departureTime: visit.departureTime || "",
+          transportType: visit.transportType || "plane",
+          departureTransportType: visit.departureTransportType || null,
+          flightNumber: visit.flightNumber || "",
+          airport: visit.airport || "",
+          transfer: visit.transfer || "",
+          departureFlightNumber: visit.departureFlightNumber || "",
+          departureAirport: visit.departureAirport || "",
+          departureTransfer: visit.departureTransfer || "",
+          hotelName: visit.hotelName || "",
+          roomType: visit.roomType || null,
+        });
+      });
+      return map;
+    }
+    return new Map();
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      passport: "",
-      birthDate: "",
-      amount: "",
-      currency: "RUB",
-      nights: "",
+      name: initialTourist?.name || "",
+      email: initialTourist?.email || "",
+      phone: initialTourist?.phone || "",
+      passport: initialTourist?.passport || "",
+      birthDate: initialTourist?.birthDate || "",
+      amount: initialTourist?.amount || "",
+      currency: initialTourist?.currency || "RUB",
+      nights: initialTourist?.nights || "",
     },
   });
 

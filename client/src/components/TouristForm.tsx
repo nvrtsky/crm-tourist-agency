@@ -52,6 +52,7 @@ interface CityVisitData {
   arrivalDate: Date | null;
   departureDate: Date | null;
   transportType: TransportType;
+  departureTransportType: TransportType | null;
   hotelName: string;
 }
 
@@ -65,6 +66,7 @@ interface TouristFormProps {
       arrivalDate: string;
       departureDate?: string;
       transportType: TransportType;
+      departureTransportType?: TransportType;
       hotelName: string;
     }>;
   }) => void;
@@ -99,6 +101,7 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
         arrivalDate: null,
         departureDate: null,
         transportType: "plane",
+        departureTransportType: null,
         hotelName: "",
       });
       setCityVisits(newVisits);
@@ -123,6 +126,7 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
         arrivalDate: v.arrivalDate!.toISOString().split("T")[0],
         departureDate: v.departureDate ? v.departureDate.toISOString().split("T")[0] : undefined,
         transportType: v.transportType,
+        departureTransportType: v.departureTransportType || undefined,
         hotelName: v.hotelName,
       }));
 
@@ -336,37 +340,73 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                           </div>
                         </div>
 
-                        <div>
-                          <Label>Способ прибытия *</Label>
-                          <div className="grid grid-cols-2 gap-2 mt-1">
-                            <Button
-                              type="button"
-                              variant={
-                                visit.transportType === "plane" ? "default" : "outline"
-                              }
-                              className="justify-start"
-                              onClick={() =>
-                                updateVisit(city, { transportType: "plane" })
-                              }
-                              data-testid={`button-transport-plane-${city.toLowerCase()}`}
-                            >
-                              <Plane className="mr-2 h-4 w-4" />
-                              Самолет
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={
-                                visit.transportType === "train" ? "default" : "outline"
-                              }
-                              className="justify-start"
-                              onClick={() =>
-                                updateVisit(city, { transportType: "train" })
-                              }
-                              data-testid={`button-transport-train-${city.toLowerCase()}`}
-                            >
-                              <Train className="mr-2 h-4 w-4" />
-                              Поезд
-                            </Button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Способ прибытия *</Label>
+                            <div className="grid grid-cols-2 gap-2 mt-1">
+                              <Button
+                                type="button"
+                                variant={
+                                  visit.transportType === "plane" ? "default" : "outline"
+                                }
+                                className="justify-start"
+                                onClick={() =>
+                                  updateVisit(city, { transportType: "plane" })
+                                }
+                                data-testid={`button-transport-plane-${city.toLowerCase()}`}
+                              >
+                                <Plane className="mr-2 h-4 w-4" />
+                                Самолет
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={
+                                  visit.transportType === "train" ? "default" : "outline"
+                                }
+                                className="justify-start"
+                                onClick={() =>
+                                  updateVisit(city, { transportType: "train" })
+                                }
+                                data-testid={`button-transport-train-${city.toLowerCase()}`}
+                              >
+                                <Train className="mr-2 h-4 w-4" />
+                                Поезд
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label>Способ выезда</Label>
+                            <div className="grid grid-cols-2 gap-2 mt-1">
+                              <Button
+                                type="button"
+                                variant={
+                                  visit.departureTransportType === "plane" ? "default" : "outline"
+                                }
+                                className="justify-start"
+                                onClick={() =>
+                                  updateVisit(city, { departureTransportType: "plane" })
+                                }
+                                data-testid={`button-departure-transport-plane-${city.toLowerCase()}`}
+                              >
+                                <Plane className="mr-2 h-4 w-4" />
+                                Самолет
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={
+                                  visit.departureTransportType === "train" ? "default" : "outline"
+                                }
+                                className="justify-start"
+                                onClick={() =>
+                                  updateVisit(city, { departureTransportType: "train" })
+                                }
+                                data-testid={`button-departure-transport-train-${city.toLowerCase()}`}
+                              >
+                                <Train className="mr-2 h-4 w-4" />
+                                Поезд
+                              </Button>
+                            </div>
                           </div>
                         </div>
 

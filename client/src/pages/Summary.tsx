@@ -81,7 +81,13 @@ export default function Summary() {
         .join(", ");
 
       const transports = tourist.visits
-        .map(v => v.transportType === "plane" ? "Самолет" : "Поезд")
+        .map(v => {
+          const arrival = v.transportType === "plane" ? "Самолет" : "Поезд";
+          const departure = v.departureTransportType 
+            ? (v.departureTransportType === "plane" ? "Самолет" : "Поезд")
+            : "";
+          return departure ? `${arrival} → ${departure}` : arrival;
+        })
         .join(", ");
 
       return {
@@ -213,7 +219,10 @@ export default function Summary() {
                     .map(v => v.hotelName)
                     .filter((name, i, arr) => arr.indexOf(name) === i);
 
-                  const transports = tourist.visits.map(v => v.transportType);
+                  const transports = tourist.visits.map(v => ({
+                    arrival: v.transportType,
+                    departure: v.departureTransportType,
+                  }));
                   const dateRanges = tourist.visits.map(v => ({
                     arrival: v.arrivalDate,
                     departure: v.departureDate,
@@ -267,15 +276,29 @@ export default function Summary() {
                         </div>
                       </td>
                       <td className="px-4 py-3" data-testid={`tourist-transport-${index}`}>
-                        <div className="flex gap-1">
-                          {transports.map((type, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">
-                              {type === "plane" ? (
-                                <Plane className="h-3 w-3" />
-                              ) : (
-                                <Train className="h-3 w-3" />
+                        <div className="flex flex-col gap-1">
+                          {transports.map((transport, i) => (
+                            <div key={i} className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-xs">
+                                {transport.arrival === "plane" ? (
+                                  <Plane className="h-3 w-3" />
+                                ) : (
+                                  <Train className="h-3 w-3" />
+                                )}
+                              </Badge>
+                              {transport.departure && (
+                                <>
+                                  <span className="text-xs text-muted-foreground">→</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {transport.departure === "plane" ? (
+                                      <Plane className="h-3 w-3" />
+                                    ) : (
+                                      <Train className="h-3 w-3" />
+                                    )}
+                                  </Badge>
+                                </>
                               )}
-                            </Badge>
+                            </div>
                           ))}
                         </div>
                       </td>
@@ -333,7 +356,10 @@ export default function Summary() {
               .map(v => v.hotelName)
               .filter((name, i, arr) => arr.indexOf(name) === i);
 
-            const transports = tourist.visits.map(v => v.transportType);
+            const transports = tourist.visits.map(v => ({
+              arrival: v.transportType,
+              departure: v.departureTransportType,
+            }));
 
             return (
               <Card key={tourist.id} data-testid={`tourist-card-mobile-${index}`}>
@@ -383,21 +409,41 @@ export default function Summary() {
                   {transports.length > 0 && (
                     <div className="space-y-2">
                       <div className="text-xs font-medium text-muted-foreground">Транспорт:</div>
-                      <div className="flex gap-1">
-                        {transports.map((type, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">
-                            {type === "plane" ? (
+                      <div className="flex flex-wrap gap-2">
+                        {transports.map((transport, i) => (
+                          <div key={i} className="flex items-center gap-1">
+                            <Badge variant="outline" className="text-xs">
+                              {transport.arrival === "plane" ? (
+                                <>
+                                  <Plane className="h-3 w-3 mr-1" />
+                                  Самолет
+                                </>
+                              ) : (
+                                <>
+                                  <Train className="h-3 w-3 mr-1" />
+                                  Поезд
+                                </>
+                              )}
+                            </Badge>
+                            {transport.departure && (
                               <>
-                                <Plane className="h-3 w-3 mr-1" />
-                                Самолет
-                              </>
-                            ) : (
-                              <>
-                                <Train className="h-3 w-3 mr-1" />
-                                Поезд
+                                <span className="text-xs text-muted-foreground">→</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {transport.departure === "plane" ? (
+                                    <>
+                                      <Plane className="h-3 w-3 mr-1" />
+                                      Самолет
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Train className="h-3 w-3 mr-1" />
+                                      Поезд
+                                    </>
+                                  )}
+                                </Badge>
                               </>
                             )}
-                          </Badge>
+                          </div>
                         ))}
                       </div>
                     </div>

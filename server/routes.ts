@@ -219,6 +219,202 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Seed test data from the tour table
+  app.post("/api/seed-tourists", async (req, res) => {
+    try {
+      const { entityId = "dev-entity-123", entityTypeId = "dev-type-1" } = req.body;
+
+      const testTourists = [
+        {
+          name: "Sadeeva Iuliia",
+          phone: "+79151455488",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Pullman Zhangjiajie" }
+          ]
+        },
+        {
+          name: "Sadeeva Emmiia",
+          phone: "+79151455488",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Pullman Zhangjiajie" }
+          ]
+        },
+        {
+          name: "Polshchikova Anastasiia",
+          phone: "+79119880952",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" }
+          ]
+        },
+        {
+          name: "Androsova Marfa",
+          phone: "+79627323846",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Pullman Zhangjiajie" }
+          ]
+        },
+        {
+          name: "Karev Ivan",
+          phone: "+79038558094",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Pullman Zhangjiajie" }
+          ]
+        },
+        {
+          name: "Kareva Ekaterina",
+          phone: "+79038558094",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Zhangjiajie", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Pullman Zhangjiajie" }
+          ]
+        },
+        {
+          name: "Bogdanov Vadim",
+          phone: "+79251845075",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "train", hotelName: "Park Plaza Beijing Wangfujing" }
+          ]
+        },
+        {
+          name: "Skachkova Iuliia",
+          phone: "+79251845075",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "train", hotelName: "Park Plaza Beijing Wangfujing" }
+          ]
+        },
+        {
+          name: "Chadova Larisa",
+          phone: "+79090227150",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Luoyang", arrivalDate: "2025-11-05", transportType: "train", hotelName: "Luoyang Peony Plaza" },
+            { city: "Xian", arrivalDate: "2025-11-08", transportType: "train", hotelName: "Grand Park Xian" }
+          ]
+        },
+        {
+          name: "Chadov Evgenii",
+          phone: "+79090227150",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Luoyang", arrivalDate: "2025-11-05", transportType: "train", hotelName: "Luoyang Peony Plaza" },
+            { city: "Xian", arrivalDate: "2025-11-08", transportType: "train", hotelName: "Grand Park Xian" }
+          ]
+        },
+        {
+          name: "Smirnov Vitalii",
+          phone: "+79697630050",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-01", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Xian", arrivalDate: "2025-11-04", transportType: "train", hotelName: "Grand Park Xian" }
+          ]
+        },
+        {
+          name: "Meshcheriakova Ekaterina",
+          phone: "+79313577015",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-10-30", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Luoyang", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Luoyang Peony Plaza" },
+            { city: "Xian", arrivalDate: "2025-11-05", transportType: "train", hotelName: "Grand Park Xian" }
+          ]
+        },
+        {
+          name: "Tokarev Aleksei",
+          phone: "+79313577015",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-10-30", transportType: "plane", hotelName: "Park Plaza Beijing Wangfujing" },
+            { city: "Luoyang", arrivalDate: "2025-11-03", transportType: "train", hotelName: "Luoyang Peony Plaza" },
+            { city: "Xian", arrivalDate: "2025-11-05", transportType: "train", hotelName: "Grand Park Xian" }
+          ]
+        }
+      ];
+
+      const created = [];
+      for (const tourist of testTourists) {
+        const touristData = {
+          entityId,
+          entityTypeId,
+          name: tourist.name,
+          phone: tourist.phone,
+        };
+
+        // Create contact in Bitrix24 only if service is available
+        let bitrixContactId: string | undefined;
+        if (bitrix24) {
+          try {
+            bitrixContactId = await bitrix24.createContact(touristData);
+            await bitrix24.linkContactToEntity(entityId, entityTypeId, bitrixContactId);
+          } catch (error) {
+            console.error("Bitrix24 integration failed for", tourist.name, error);
+          }
+        }
+
+        const newTourist = await storage.createTourist({
+          ...touristData,
+          bitrixContactId,
+        });
+
+        // Add visits
+        if (tourist.visits && newTourist) {
+          for (const visit of tourist.visits) {
+            await storage.createCityVisit({
+              touristId: newTourist.id,
+              city: visit.city as any,
+              arrivalDate: visit.arrivalDate,
+              transportType: visit.transportType as any,
+              hotelName: visit.hotelName,
+            });
+          }
+        }
+
+        created.push(newTourist);
+      }
+
+      res.json({ 
+        success: true, 
+        count: created.length,
+        message: `Создано ${created.length} туристов с тестовыми данными`
+      });
+    } catch (error) {
+      console.error("Error seeding tourists:", error);
+      res.status(500).json({ error: "Failed to seed tourists" });
+    }
+  });
+
+  // Clear all tourists for an entity (useful for testing)
+  app.delete("/api/tourists/entity/:entityId", async (req, res) => {
+    try {
+      const { entityId } = req.params;
+      const tourists = await storage.getTouristsByEntity(entityId);
+
+      for (const tourist of tourists) {
+        // Delete from Bitrix24 if exists and service is available
+        if (bitrix24 && tourist.bitrixContactId) {
+          try {
+            await bitrix24.deleteContact(tourist.bitrixContactId);
+          } catch (error) {
+            console.error("Error deleting Bitrix24 contact:", error);
+          }
+        }
+
+        // Delete from storage
+        await storage.deleteTourist(tourist.id);
+      }
+
+      res.json({ 
+        success: true, 
+        count: tourists.length,
+        message: `Удалено ${tourists.length} туристов`
+      });
+    } catch (error) {
+      console.error("Error clearing tourists:", error);
+      res.status(500).json({ error: "Failed to clear tourists" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

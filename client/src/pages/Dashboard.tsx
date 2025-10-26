@@ -1,10 +1,13 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, MapPin, Calendar, Hotel, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, MapPin, Calendar, Hotel, Loader2, Database, Trash2 } from "lucide-react";
 import CityCard from "@/components/CityCard";
 import { useBitrix24 } from "@/hooks/useBitrix24";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { City, TouristWithVisits } from "@shared/schema";
 
 import beijingImg from '@assets/generated_images/Beijing_Forbidden_City_landmark_8163e9fe.png';
@@ -27,12 +30,57 @@ const cityNames: Record<City, { en: string; cn: string }> = {
 };
 
 export default function Dashboard() {
-  const { entityId } = useBitrix24();
+  const { entityId, entityTypeId } = useBitrix24();
+  const { toast } = useToast();
 
   // Fetch tourists for current entity
   const { data: tourists, isLoading } = useQuery<TouristWithVisits[]>({
     queryKey: ["/api/tourists", entityId],
     enabled: !!entityId,
+  });
+
+  // Seed test data mutation
+  const seedDataMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/seed-tourists", { entityId, entityTypeId });
+      return await res.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
+      toast({
+        title: "Тестовые данные загружены",
+        description: data.message,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить тестовые данные",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Clear all data mutation
+  const clearDataMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("DELETE", `/api/tourists/entity/${entityId}`);
+      return await res.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
+      toast({
+        title: "Данные очищены",
+        description: data.message,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось очистить данные",
+        variant: "destructive",
+      });
+    },
   });
 
   // Calculate statistics
@@ -113,6 +161,37 @@ export default function Dashboard() {
         <p className="text-sm sm:text-base text-muted-foreground mt-1">
           Групповой тур по 4 городам Китая: Пекин → Лоян → Сиань → Чжанцзяцзе
         </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => seedDataMutation.mutate()}
+          disabled={seedDataMutation.isPending}
+          data-testid="button-seed-data"
+        >
+          {seedDataMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Database className="h-4 w-4 mr-2" />
+          )}
+          Загрузить тестовые данные
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => clearDataMutation.mutate()}
+          disabled={clearDataMutation.isPending || stats.totalTourists === 0}
+          data-testid="button-clear-data"
+        >
+          {clearDataMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Trash2 className="h-4 w-4 mr-2" />
+          )}
+          Очистить все данные
+        </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

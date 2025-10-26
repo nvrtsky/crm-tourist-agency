@@ -62,6 +62,7 @@ interface CityVisitData {
   departureTransportType: TransportType | null;
   flightNumber: string;
   hotelName: string;
+  roomType: RoomType | null;
 }
 
 interface TouristFormProps {
@@ -69,6 +70,11 @@ interface TouristFormProps {
     name: string;
     email?: string;
     phone?: string;
+    passport?: string;
+    birthDate?: string;
+    amount?: string;
+    currency?: string;
+    nights?: string;
     visits: Array<{
       city: City;
       arrivalDate: string;
@@ -79,6 +85,7 @@ interface TouristFormProps {
       departureTransportType?: TransportType;
       flightNumber?: string;
       hotelName: string;
+      roomType?: RoomType;
     }>;
   }) => void;
   onCancel?: () => void;
@@ -94,6 +101,11 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
       name: "",
       email: "",
       phone: "",
+      passport: "",
+      birthDate: "",
+      amount: "",
+      currency: "RUB",
+      nights: "",
     },
   });
 
@@ -117,6 +129,7 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
         departureTransportType: null,
         flightNumber: "",
         hotelName: "",
+        roomType: null,
       });
       setCityVisits(newVisits);
     }
@@ -145,6 +158,7 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
         departureTransportType: v.departureTransportType || undefined,
         flightNumber: v.flightNumber || undefined,
         hotelName: v.hotelName,
+        roomType: v.roomType || undefined,
       }));
 
     if (visits.length === 0) {
@@ -156,6 +170,11 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
       name: values.name,
       email: values.email || undefined,
       phone: values.phone || undefined,
+      passport: values.passport || undefined,
+      birthDate: values.birthDate || undefined,
+      amount: values.amount || undefined,
+      currency: values.currency || undefined,
+      nights: values.nights || undefined,
       visits,
     });
   };
@@ -213,6 +232,102 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                     <Input
                       placeholder="+7 900 123-45-67"
                       data-testid="input-tourist-phone"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="passport"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Паспорт</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="1234 567890"
+                      data-testid="input-tourist-passport"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="birthDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Дата рождения</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      data-testid="input-tourist-birthdate"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Сумма</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="50000"
+                        data-testid="input-tourist-amount"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Валюта</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-tourist-currency">
+                          <SelectValue placeholder="Выберите валюту" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CURRENCIES.map((currency) => (
+                          <SelectItem key={currency} value={currency}>
+                            {currency === "RUB" ? "Рубль (₽)" : "Юань (¥)"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="nights"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Количество ночей</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="7"
+                      data-testid="input-tourist-nights"
                       {...field}
                     />
                   </FormControl>
@@ -471,18 +586,44 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                           />
                         </div>
 
-                        <div>
-                          <Label htmlFor={`hotel-${city}`}>Отель *</Label>
-                          <Input
-                            id={`hotel-${city}`}
-                            placeholder="Название отеля"
-                            value={visit.hotelName}
-                            onChange={(e) =>
-                              updateVisit(city, { hotelName: e.target.value })
-                            }
-                            className="mt-1"
-                            data-testid={`input-hotel-${city.toLowerCase()}`}
-                          />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor={`hotel-${city}`}>Отель *</Label>
+                            <Input
+                              id={`hotel-${city}`}
+                              placeholder="Название отеля"
+                              value={visit.hotelName}
+                              onChange={(e) =>
+                                updateVisit(city, { hotelName: e.target.value })
+                              }
+                              className="mt-1"
+                              data-testid={`input-hotel-${city.toLowerCase()}`}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`room-type-${city}`}>Тип номера</Label>
+                            <Select
+                              value={visit.roomType || ""}
+                              onValueChange={(value) =>
+                                updateVisit(city, { roomType: value as RoomType })
+                              }
+                            >
+                              <SelectTrigger
+                                id={`room-type-${city}`}
+                                className="mt-1"
+                                data-testid={`select-room-type-${city.toLowerCase()}`}
+                              >
+                                <SelectValue placeholder="Выберите тип" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ROOM_TYPES.map((type) => (
+                                  <SelectItem key={type} value={type}>
+                                    {type === "twin" ? "Twin (две кровати)" : "Double (одна кровать)"}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

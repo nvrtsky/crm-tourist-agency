@@ -50,9 +50,12 @@ const formSchema = z.object({
 interface CityVisitData {
   city: City;
   arrivalDate: Date | null;
+  arrivalTime: string;
   departureDate: Date | null;
+  departureTime: string;
   transportType: TransportType;
   departureTransportType: TransportType | null;
+  flightNumber: string;
   hotelName: string;
 }
 
@@ -64,9 +67,12 @@ interface TouristFormProps {
     visits: Array<{
       city: City;
       arrivalDate: string;
+      arrivalTime?: string;
       departureDate?: string;
+      departureTime?: string;
       transportType: TransportType;
       departureTransportType?: TransportType;
+      flightNumber?: string;
       hotelName: string;
     }>;
   }) => void;
@@ -99,9 +105,12 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
       newVisits.set(city, {
         city,
         arrivalDate: null,
+        arrivalTime: "",
         departureDate: null,
+        departureTime: "",
         transportType: "plane",
         departureTransportType: null,
+        flightNumber: "",
         hotelName: "",
       });
       setCityVisits(newVisits);
@@ -124,9 +133,12 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
       .map((v) => ({
         city: v.city,
         arrivalDate: v.arrivalDate!.toISOString().split("T")[0],
+        arrivalTime: v.arrivalTime || undefined,
         departureDate: v.departureDate ? v.departureDate.toISOString().split("T")[0] : undefined,
+        departureTime: v.departureTime || undefined,
         transportType: v.transportType,
         departureTransportType: v.departureTransportType || undefined,
+        flightNumber: v.flightNumber || undefined,
         hotelName: v.hotelName,
       }));
 
@@ -276,13 +288,13 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
+                          <div className="space-y-2">
                             <Label>Дата прибытия *</Label>
                             <Popover>
                               <PopoverTrigger asChild>
                                 <Button
                                   variant="outline"
-                                  className="w-full justify-start text-left font-normal mt-1"
+                                  className="w-full justify-start text-left font-normal"
                                   data-testid={`button-arrival-date-${city.toLowerCase()}`}
                                 >
                                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -304,15 +316,30 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                                 />
                               </PopoverContent>
                             </Popover>
+                            <div>
+                              <Label htmlFor={`arrival-time-${city}`} className="text-sm text-muted-foreground">
+                                Время прибытия
+                              </Label>
+                              <Input
+                                id={`arrival-time-${city}`}
+                                type="time"
+                                value={visit.arrivalTime}
+                                onChange={(e) =>
+                                  updateVisit(city, { arrivalTime: e.target.value })
+                                }
+                                className="mt-1"
+                                data-testid={`input-arrival-time-${city.toLowerCase()}`}
+                              />
+                            </div>
                           </div>
 
-                          <div>
+                          <div className="space-y-2">
                             <Label>Дата выезда</Label>
                             <Popover>
                               <PopoverTrigger asChild>
                                 <Button
                                   variant="outline"
-                                  className="w-full justify-start text-left font-normal mt-1"
+                                  className="w-full justify-start text-left font-normal"
                                   data-testid={`button-departure-date-${city.toLowerCase()}`}
                                 >
                                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -337,6 +364,21 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                                 />
                               </PopoverContent>
                             </Popover>
+                            <div>
+                              <Label htmlFor={`departure-time-${city}`} className="text-sm text-muted-foreground">
+                                Время выезда
+                              </Label>
+                              <Input
+                                id={`departure-time-${city}`}
+                                type="time"
+                                value={visit.departureTime}
+                                onChange={(e) =>
+                                  updateVisit(city, { departureTime: e.target.value })
+                                }
+                                className="mt-1"
+                                data-testid={`input-departure-time-${city.toLowerCase()}`}
+                              />
+                            </div>
                           </div>
                         </div>
 
@@ -408,6 +450,20 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
                               </Button>
                             </div>
                           </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor={`flight-number-${city}`}>Номер рейса</Label>
+                          <Input
+                            id={`flight-number-${city}`}
+                            placeholder="Например: CA123, Z2123"
+                            value={visit.flightNumber}
+                            onChange={(e) =>
+                              updateVisit(city, { flightNumber: e.target.value })
+                            }
+                            className="mt-1"
+                            data-testid={`input-flight-number-${city.toLowerCase()}`}
+                          />
                         </div>
 
                         <div>

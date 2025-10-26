@@ -65,10 +65,14 @@ export default function Summary() {
         const visit = tourist.visits.find(v => v.city === city);
         if (visit) {
           const arrivalDate = format(new Date(visit.arrivalDate), "dd.MM.yyyy", { locale: ru });
+          const arrivalTime = visit.arrivalTime ? ` ${visit.arrivalTime}` : "";
           const departureDate = visit.departureDate 
             ? format(new Date(visit.departureDate), "dd.MM.yyyy", { locale: ru })
             : "";
-          acc[CITY_NAMES[city]] = departureDate ? `${arrivalDate} - ${departureDate}` : arrivalDate;
+          const departureTime = visit.departureTime ? ` ${visit.departureTime}` : "";
+          acc[CITY_NAMES[city]] = departureDate 
+            ? `${arrivalDate}${arrivalTime} - ${departureDate}${departureTime}` 
+            : `${arrivalDate}${arrivalTime}`;
         } else {
           acc[CITY_NAMES[city]] = "—";
         }
@@ -90,6 +94,10 @@ export default function Summary() {
         })
         .join(", ");
 
+      const flightNumbers = tourist.visits
+        .map(v => v.flightNumber || "—")
+        .join(", ");
+
       return {
         "№": index + 1,
         "Турист": tourist.name,
@@ -97,6 +105,7 @@ export default function Summary() {
         ...visitsByCity,
         "Отели": hotels,
         "Транспорт": transports,
+        "Номер рейса": flightNumbers,
       };
     });
 
@@ -196,6 +205,9 @@ export default function Summary() {
                 <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[120px]" data-testid="header-transport">
                   Транспорт
                 </th>
+                <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[120px]" data-testid="header-flight-number">
+                  Номер рейса
+                </th>
                 <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[160px]" data-testid="header-dates">
                   Даты (прибытие - выезд)
                 </th>
@@ -204,7 +216,7 @@ export default function Summary() {
             <tbody>
               {!tourists || tourists.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground" data-testid="empty-message">
+                  <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground" data-testid="empty-message">
                     Туристы не добавлены
                   </td>
                 </tr>
@@ -255,8 +267,13 @@ export default function Summary() {
                               <div className="flex flex-col gap-1">
                                 <Badge variant="secondary" className="text-xs whitespace-nowrap">
                                   {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
+                                  {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
                                   {visit.departureDate && (
-                                    <span> - {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}</span>
+                                    <span>
+                                      {" - "}
+                                      {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}
+                                      {visit.departureTime && <span className="text-muted-foreground"> {visit.departureTime}</span>}
+                                    </span>
                                   )}
                                 </Badge>
                               </div>
@@ -302,6 +319,15 @@ export default function Summary() {
                           ))}
                         </div>
                       </td>
+                      <td className="px-4 py-3 text-sm" data-testid={`tourist-flight-number-${index}`}>
+                        <div className="space-y-1">
+                          {tourist.visits.map((visit, i) => (
+                            <div key={i} className="text-xs">
+                              {visit.flightNumber || "—"}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground" data-testid={`tourist-dates-${index}`}>
                         <div className="space-y-1">
                           {dateRanges.map((range, i) => (
@@ -328,7 +354,7 @@ export default function Summary() {
                   <td className="px-4 py-3 text-sm font-medium" data-testid="footer-total-count">
                     {touristCount} туристов
                   </td>
-                  <td colSpan={7} className="px-4 py-3 text-sm text-muted-foreground">
+                  <td colSpan={8} className="px-4 py-3 text-sm text-muted-foreground">
                   </td>
                 </tr>
               </tfoot>
@@ -384,12 +410,24 @@ export default function Summary() {
                       {CITIES.map((city) => {
                         const visit = visitsByCity[city];
                         return visit ? (
-                          <Badge key={city} variant="secondary" className="text-xs whitespace-nowrap">
-                            {CITY_NAMES[city]} {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
-                            {visit.departureDate && (
-                              <> - {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}</>
+                          <div key={city} className="flex flex-col gap-0.5">
+                            <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                              {CITY_NAMES[city]} {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
+                              {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
+                              {visit.departureDate && (
+                                <>
+                                  {" - "}
+                                  {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}
+                                  {visit.departureTime && <span className="text-muted-foreground"> {visit.departureTime}</span>}
+                                </>
+                              )}
+                            </Badge>
+                            {visit.flightNumber && (
+                              <span className="text-xs text-muted-foreground pl-1">
+                                Рейс: {visit.flightNumber}
+                              </span>
                             )}
-                          </Badge>
+                          </div>
                         ) : null;
                       })}
                     </div>

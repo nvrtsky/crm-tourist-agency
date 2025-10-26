@@ -28,9 +28,12 @@ export const cityVisits = pgTable("city_visits", {
   touristId: varchar("tourist_id").notNull(),
   city: text("city").notNull(),
   arrivalDate: text("arrival_date").notNull(), // ISO date string
+  arrivalTime: text("arrival_time"), // Time string HH:MM (optional)
   departureDate: text("departure_date"), // ISO date string (optional - tourist may still be in city)
+  departureTime: text("departure_time"), // Time string HH:MM (optional)
   transportType: text("transport_type").notNull(), // 'train' or 'plane' for arrival
   departureTransportType: text("departure_transport_type"), // 'train' or 'plane' for departure (optional)
+  flightNumber: text("flight_number"), // Flight/train number (optional)
   hotelName: text("hotel_name").notNull(),
 });
 

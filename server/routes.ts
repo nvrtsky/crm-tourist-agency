@@ -99,6 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             touristId: createdTourist.id,
             city: visit.city,
             arrivalDate: visit.arrivalDate,
+            departureDate: visit.departureDate,
             transportType: visit.transportType,
             hotelName: visit.hotelName,
           });

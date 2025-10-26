@@ -11,6 +11,14 @@ export type City = typeof CITIES[number];
 export const TRANSPORT_TYPES = ["train", "plane"] as const;
 export type TransportType = typeof TRANSPORT_TYPES[number];
 
+// Room types
+export const ROOM_TYPES = ["twin", "double"] as const;
+export type RoomType = typeof ROOM_TYPES[number];
+
+// Currency types
+export const CURRENCIES = ["RUB", "CNY"] as const;
+export type Currency = typeof CURRENCIES[number];
+
 // Tourist table - now includes Bitrix24 integration fields
 export const tourists = pgTable("tourists", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -20,6 +28,11 @@ export const tourists = pgTable("tourists", {
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
+  passport: text("passport"), // Passport number
+  birthDate: text("birth_date"), // ISO date string
+  amount: text("amount"), // Amount as string to preserve precision
+  currency: text("currency"), // 'RUB' or 'CNY'
+  nights: text("nights"), // Number of nights as string
 });
 
 // City visit table - stores each city visit for a tourist
@@ -35,6 +48,7 @@ export const cityVisits = pgTable("city_visits", {
   departureTransportType: text("departure_transport_type"), // 'train' or 'plane' for departure (optional)
   flightNumber: text("flight_number"), // Flight/train number (optional)
   hotelName: text("hotel_name").notNull(),
+  roomType: text("room_type"), // 'twin' or 'double' (optional)
 });
 
 // Zod schemas

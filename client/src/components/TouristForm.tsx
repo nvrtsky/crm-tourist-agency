@@ -32,7 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Plane, Train, Plus, X } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { CITIES, type City, type TransportType } from "@shared/schema";
+import { CITIES, CURRENCIES, ROOM_TYPES, type City, type TransportType, type Currency, type RoomType } from "@shared/schema";
 
 const cityNames: Record<City, { en: string; cn: string }> = {
   Beijing: { en: "Beijing", cn: "北京" },
@@ -45,6 +45,11 @@ const formSchema = z.object({
   name: z.string().min(2, "Имя должно содержать минимум 2 символа"),
   email: z.string().email("Некорректный email").optional().or(z.literal("")),
   phone: z.string().optional(),
+  passport: z.string().optional(),
+  birthDate: z.string().optional(),
+  amount: z.string().optional(),
+  currency: z.string().optional(),
+  nights: z.string().optional(),
 });
 
 interface CityVisitData {

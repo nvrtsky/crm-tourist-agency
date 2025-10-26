@@ -70,6 +70,11 @@ export class MemStorage implements IStorage {
       name: insertTourist.name,
       email: insertTourist.email ?? null,
       phone: insertTourist.phone ?? null,
+      passport: insertTourist.passport ?? null,
+      birthDate: insertTourist.birthDate ?? null,
+      amount: insertTourist.amount ?? null,
+      currency: insertTourist.currency ?? null,
+      nights: insertTourist.nights ?? null,
     };
     this.tourists.set(id, tourist);
     return tourist;
@@ -85,6 +90,11 @@ export class MemStorage implements IStorage {
       email: updates.email !== undefined ? updates.email ?? null : tourist.email,
       phone: updates.phone !== undefined ? updates.phone ?? null : tourist.phone,
       bitrixContactId: updates.bitrixContactId !== undefined ? updates.bitrixContactId ?? null : tourist.bitrixContactId,
+      passport: updates.passport !== undefined ? updates.passport ?? null : tourist.passport,
+      birthDate: updates.birthDate !== undefined ? updates.birthDate ?? null : tourist.birthDate,
+      amount: updates.amount !== undefined ? updates.amount ?? null : tourist.amount,
+      currency: updates.currency !== undefined ? updates.currency ?? null : tourist.currency,
+      nights: updates.nights !== undefined ? updates.nights ?? null : tourist.nights,
     };
     this.tourists.set(id, updated);
     return updated;
@@ -103,7 +113,16 @@ export class MemStorage implements IStorage {
 
   async createCityVisit(insertVisit: InsertCityVisit): Promise<CityVisit> {
     const id = randomUUID();
-    const visit: CityVisit = { ...insertVisit, id };
+    const visit: CityVisit = { 
+      ...insertVisit, 
+      id,
+      arrivalTime: insertVisit.arrivalTime ?? null,
+      departureDate: insertVisit.departureDate ?? null,
+      departureTime: insertVisit.departureTime ?? null,
+      departureTransportType: insertVisit.departureTransportType ?? null,
+      flightNumber: insertVisit.flightNumber ?? null,
+      roomType: insertVisit.roomType ?? null,
+    };
     this.cityVisits.set(id, visit);
     return visit;
   }

@@ -28,6 +28,7 @@ export const cityVisits = pgTable("city_visits", {
   touristId: varchar("tourist_id").notNull(),
   city: text("city").notNull(),
   arrivalDate: text("arrival_date").notNull(), // ISO date string
+  departureDate: text("departure_date"), // ISO date string (optional - tourist may still be in city)
   transportType: text("transport_type").notNull(), // 'train' or 'plane'
   hotelName: text("hotel_name").notNull(),
 });

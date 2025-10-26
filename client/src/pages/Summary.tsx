@@ -308,8 +308,10 @@ export default function Summary() {
                             {visit ? (
                               <div className="flex flex-col gap-1.5">
                                 <Badge variant="secondary" className="text-xs whitespace-nowrap w-fit">
-                                  {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
-                                  {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
+                                  <span>
+                                    {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
+                                    {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
+                                  </span>
                                   {visit.departureDate && (
                                     <span>
                                       {" - "}
@@ -428,8 +430,10 @@ export default function Summary() {
                             </Button>
                           </div>
                           <Badge variant="secondary" className="text-xs whitespace-nowrap w-fit">
-                            {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
-                            {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
+                            <span>
+                              {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
+                              {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
+                            </span>
                             {visit.departureDate && (
                               <>
                                 {" - "}

@@ -45,7 +45,10 @@ const formSchema = z.object({
   name: z.string().min(2, "Имя должно содержать минимум 2 символа"),
   email: z.string().email("Некорректный email").optional().or(z.literal("")),
   phone: z.string().optional(),
-  passport: z.string().optional(),
+  passport: z.string()
+    .regex(/^\d{0,9}$/, "Загранпаспорт должен содержать 9 цифр")
+    .optional()
+    .or(z.literal("")),
   birthDate: z.string().optional(),
   amount: z.string().optional(),
   currency: z.string().optional(),
@@ -244,12 +247,18 @@ export default function TouristForm({ onSubmit, onCancel }: TouristFormProps) {
               name="passport"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Паспорт</FormLabel>
+                  <FormLabel>Загранпаспорт</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="1234 567890"
+                      placeholder="769699508"
+                      maxLength={9}
+                      pattern="\d*"
                       data-testid="input-tourist-passport"
                       {...field}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        field.onChange(value);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

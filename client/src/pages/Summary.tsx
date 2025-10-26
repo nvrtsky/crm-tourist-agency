@@ -116,7 +116,7 @@ export default function Summary() {
       const touristInfo = [
         tourist.name,
         tourist.phone || "",
-        tourist.passport ? `Паспорт: ${tourist.passport}` : "",
+        tourist.passport ? `Загранпаспорт: ${tourist.passport}` : "",
         tourist.birthDate ? `ДР: ${format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}` : "",
         tourist.amount ? `Сумма: ${tourist.amount} ${tourist.currency === "CNY" ? "¥" : "₽"}` : "",
         tourist.nights ? `Ночей: ${tourist.nights}` : "",
@@ -190,7 +190,7 @@ export default function Summary() {
       const touristInfo = [
         tourist.name,
         tourist.phone || "",
-        tourist.passport ? `Паспорт: ${tourist.passport}` : "",
+        tourist.passport ? `Загранпаспорт: ${tourist.passport}` : "",
         tourist.birthDate ? `ДР: ${format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}` : "",
         tourist.amount ? `Сумма: ${tourist.amount} ${tourist.currency === "CNY" ? "¥" : "₽"}` : "",
         tourist.nights ? `Ночей: ${tourist.nights}` : "",
@@ -348,7 +348,7 @@ export default function Summary() {
                             <div className="text-xs text-muted-foreground">{tourist.phone}</div>
                           )}
                           {tourist.passport && (
-                            <div className="text-xs text-muted-foreground">Паспорт: {tourist.passport}</div>
+                            <div className="text-xs text-muted-foreground">Загранпаспорт: {tourist.passport}</div>
                           )}
                           {tourist.birthDate && (
                             <div className="text-xs text-muted-foreground">
@@ -485,7 +485,7 @@ export default function Summary() {
                       </div>
                       <div className="space-y-0.5 text-sm text-muted-foreground">
                         {tourist.phone && <div>{tourist.phone}</div>}
-                        {tourist.passport && <div>Паспорт: {tourist.passport}</div>}
+                        {tourist.passport && <div>Загранпаспорт: {tourist.passport}</div>}
                         {tourist.birthDate && (
                           <div>ДР: {format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}</div>
                         )}

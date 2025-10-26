@@ -63,7 +63,15 @@ export default function Summary() {
     const data = tourists.map((tourist, index) => {
       const visitsByCity = CITIES.reduce((acc, city) => {
         const visit = tourist.visits.find(v => v.city === city);
-        acc[CITY_NAMES[city]] = visit ? format(new Date(visit.arrivalDate), "dd.MM.yyyy", { locale: ru }) : "—";
+        if (visit) {
+          const arrivalDate = format(new Date(visit.arrivalDate), "dd.MM.yyyy", { locale: ru });
+          const departureDate = visit.departureDate 
+            ? format(new Date(visit.departureDate), "dd.MM.yyyy", { locale: ru })
+            : "";
+          acc[CITY_NAMES[city]] = departureDate ? `${arrivalDate} - ${departureDate}` : arrivalDate;
+        } else {
+          acc[CITY_NAMES[city]] = "—";
+        }
         return acc;
       }, {} as Record<string, string>);
 
@@ -183,7 +191,7 @@ export default function Summary() {
                   Транспорт
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[160px]" data-testid="header-dates">
-                  Даты прибытия
+                  Даты (прибытие - выезд)
                 </th>
               </tr>
             </thead>
@@ -206,7 +214,10 @@ export default function Summary() {
                     .filter((name, i, arr) => arr.indexOf(name) === i);
 
                   const transports = tourist.visits.map(v => v.transportType);
-                  const dates = tourist.visits.map(v => v.arrivalDate).sort();
+                  const dateRanges = tourist.visits.map(v => ({
+                    arrival: v.arrivalDate,
+                    departure: v.departureDate,
+                  })).sort((a, b) => a.arrival.localeCompare(b.arrival));
 
                   return (
                     <tr
@@ -232,9 +243,14 @@ export default function Summary() {
                             data-testid={`tourist-${index}-city-${city.toLowerCase()}`}
                           >
                             {visit ? (
-                              <Badge variant="secondary" className="text-xs">
-                                {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
-                              </Badge>
+                              <div className="flex flex-col gap-1">
+                                <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                                  {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
+                                  {visit.departureDate && (
+                                    <span> - {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}</span>
+                                  )}
+                                </Badge>
+                              </div>
                             ) : (
                               <span className="text-muted-foreground">—</span>
                             )}
@@ -265,9 +281,12 @@ export default function Summary() {
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground" data-testid={`tourist-dates-${index}`}>
                         <div className="space-y-1">
-                          {dates.map((date, i) => (
-                            <div key={i} className="text-xs">
-                              {format(new Date(date), "dd.MM.yyyy", { locale: ru })}
+                          {dateRanges.map((range, i) => (
+                            <div key={i} className="text-xs whitespace-nowrap">
+                              {format(new Date(range.arrival), "dd.MM.yyyy", { locale: ru })}
+                              {range.departure && (
+                                <> - {format(new Date(range.departure), "dd.MM.yyyy", { locale: ru })}</>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -339,8 +358,11 @@ export default function Summary() {
                       {CITIES.map((city) => {
                         const visit = visitsByCity[city];
                         return visit ? (
-                          <Badge key={city} variant="secondary" className="text-xs">
+                          <Badge key={city} variant="secondary" className="text-xs whitespace-nowrap">
                             {CITY_NAMES[city]} {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
+                            {visit.departureDate && (
+                              <> - {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}</>
+                            )}
                           </Badge>
                         ) : null;
                       })}

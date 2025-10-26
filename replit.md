@@ -29,8 +29,8 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
 - **Tourist Management**: Create, edit, delete tourists; link tourists to Bitrix24 smart process items and CRM contacts.
 - **Itinerary Management**: Select cities, specify arrival/departure dates and times, choose transport types (flight/train), enter flight/train numbers, record hotel information. Includes validation for departure dates (must be after arrival).
 - **Dashboard**: Displays tourist statistics, city distribution, upcoming arrivals, and hotel usage.
-- **Summary Table**: Comprehensive table showing all tourists, date/time ranges for arrival/departure, flight numbers, hotel lists, and transport icons. Features sticky header, responsive design with horizontal scrolling, and a total tourist count.
-- **Sharing & Export**: Copy link functionality and export to Excel (including times and flight numbers).
+- **Summary Table**: Comprehensive table showing all tourists, date/time ranges for arrival/departure, flight numbers, hotel lists, and transport icons. Features sticky header, responsive design with horizontal scrolling, and a total tourist count. City information is consolidated within each city column (dates/times, hotel, transport, flight numbers) instead of separate columns.
+- **Sharing & Export**: Copy link functionality and export to Excel (including times and flight numbers). Each city column has a Share2 button that exports data only for that specific city, generating an Excel file with columns: №, Tourist, Phone, and the selected city's data.
 - **Bitrix24 Integration**: Operates as an embedded tab, synchronizes tourists with CRM contacts, and stores route information in custom fields of the Bitrix24 smart process item.
 - **Development Mode**: Supports standalone operation with mock data for development and testing without Bitrix24 integration.
 

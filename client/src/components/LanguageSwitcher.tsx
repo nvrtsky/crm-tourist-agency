@@ -6,12 +6,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Globe } from "lucide-react";
+import { Globe, Check } from "lucide-react";
 
 const languages = [
-  { code: "ru", name: "Русский", flag: "🇷🇺" },
-  { code: "en", name: "English", flag: "🇺🇸" },
-  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "ru", name: "Русский" },
+  { code: "en", name: "English" },
+  { code: "zh", name: "中文" },
 ];
 
 export default function LanguageSwitcher() {
@@ -36,11 +36,10 @@ export default function LanguageSwitcher() {
           <DropdownMenuItem
             key={lang.code}
             onClick={() => changeLanguage(lang.code)}
-            className={i18n.language === lang.code ? "bg-accent" : ""}
             data-testid={`language-${lang.code}`}
           >
-            <span className="mr-2">{lang.flag}</span>
-            <span>{lang.name}</span>
+            <span className="flex-1">{lang.name}</span>
+            {i18n.language === lang.code && <Check className="h-4 w-4 ml-2" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

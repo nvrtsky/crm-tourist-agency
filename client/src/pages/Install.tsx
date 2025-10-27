@@ -37,6 +37,11 @@ export default function Install() {
           setStatus("success");
           setMessage("Вкладка успешно зарегистрирована! Теперь она появится во всех карточках Smart Process 'Событие'.");
           console.log("Placement registered successfully:", result.data());
+          
+          // REQUIRED: Call installFinish after successful placement registration
+          if (window.BX24?.installFinish) {
+            window.BX24.installFinish();
+          }
         }
       }
     );

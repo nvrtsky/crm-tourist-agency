@@ -48,6 +48,7 @@ declare global {
         callback?: (result: any) => void
       ) => void;
       resizeWindow: (width: number, height: number) => void;
+      installFinish?: () => void;
     };
   }
 }

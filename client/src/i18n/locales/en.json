@@ -74,7 +74,7 @@
   },
   "install": {
     "title": "Install \"Group Management\" Application",
-    "description": "Register tab in Smart Process \"Event\" (ENTITY_TYPE_ID = 176)",
+    "description": "Register tab in Smart Process \"Event\" via REST API (ENTITY_TYPE_ID = 176)",
     "checking": "Checking...",
     "checkingDescription": "Checking for existing placements in Bitrix24.",
     "registering": "Registering...",

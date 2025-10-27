@@ -74,7 +74,7 @@
   },
   "install": {
     "title": "安装团体管理应用程序",
-    "description": "在智能流程事件中注册选项卡 (ENTITY_TYPE_ID = 176)",
+    "description": "通过REST API在智能流程事件中注册选项卡 (ENTITY_TYPE_ID = 176)",
     "checking": "检查中...",
     "checkingDescription": "正在检查Bitrix24中的现有位置。",
     "registering": "注册中...",

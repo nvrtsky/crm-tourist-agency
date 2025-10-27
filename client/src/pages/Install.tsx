@@ -14,155 +14,101 @@ export default function Install() {
   const [autoInstallAttempted, setAutoInstallAttempted] = useState(false);
   const [existingPlacement, setExistingPlacement] = useState<any>(null);
 
-  const checkExistingPlacements = () => {
+  const checkExistingPlacements = async () => {
     setStatus("checking");
     setMessage("");
 
-    if (!window.BX24) {
-      setStatus("error");
-      setMessage(t("install.sdkNotLoaded"));
-      return;
-    }
+    try {
+      const response = await fetch("/api/placement/check");
+      const data = await response.json();
 
-    window.BX24.callMethod(
-      "placement.get",
-      {},
-      (result: any) => {
-        if (result.error()) {
-          console.error("Error checking placements:", result.error());
-          setStatus("idle");
-          setMessage("");
-        } else {
-          const placements = result.data();
-          console.log("Existing placements:", placements);
-          
-          const targetPlacement = placements.find(
-            (p: any) => p.placement === "CRM_DYNAMIC_176_DETAIL_TAB"
-          );
-
-          if (targetPlacement) {
-            setExistingPlacement(targetPlacement);
-            setStatus("already_exists");
-            setMessage(t("install.alreadyExists"));
-          } else {
-            setStatus("idle");
-            setMessage("");
-          }
-        }
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to check placements");
       }
-    );
+
+      console.log("Placement check result:", data);
+
+      if (data.exists) {
+        setExistingPlacement(data.placement);
+        setStatus("already_exists");
+        setMessage(t("install.alreadyExists"));
+      } else {
+        setStatus("idle");
+        setMessage("");
+      }
+    } catch (error: any) {
+      console.error("Error checking placements:", error);
+      setStatus("error");
+      setMessage(t("install.errorMessage") + " " + error.message);
+    }
   };
 
-  const unbindPlacement = () => {
+  const unbindPlacement = async () => {
     setStatus("loading");
     setMessage("");
 
-    if (!window.BX24) {
-      setStatus("error");
-      setMessage(t("install.sdkNotLoaded"));
-      return;
-    }
+    try {
+      const response = await fetch("/api/placement/unbind", {
+        method: "POST",
+      });
+      const data = await response.json();
 
-    window.BX24.callMethod(
-      "placement.unbind",
-      {
-        PLACEMENT: "CRM_DYNAMIC_176_DETAIL_TAB",
-      },
-      (result: any) => {
-        if (result.error()) {
-          setStatus("error");
-          setMessage(`${t("install.unbindError")} ${result.error()}`);
-          console.error("Placement unbind error:", result.error());
-        } else {
-          console.log("Placement unbound successfully");
-          setExistingPlacement(null);
-          setStatus("idle");
-          setMessage(t("install.unbindSuccess"));
-        }
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to unbind placement");
       }
-    );
+
+      console.log("Placement unbound successfully");
+      setExistingPlacement(null);
+      setStatus("idle");
+      setMessage(t("install.unbindSuccess"));
+    } catch (error: any) {
+      console.error("Placement unbind error:", error);
+      setStatus("error");
+      setMessage(`${t("install.unbindError")} ${error.message}`);
+    }
   };
 
-  const installPlacement = () => {
+  const installPlacement = async () => {
     setStatus("loading");
     setMessage("");
 
-    if (!window.BX24) {
-      setStatus("error");
-      setMessage(t("install.sdkNotLoaded"));
-      return;
-    }
+    try {
+      const response = await fetch("/api/placement/register", {
+        method: "POST",
+      });
+      const data = await response.json();
 
-    window.BX24.callMethod(
-      "placement.bind",
-      {
-        PLACEMENT: "CRM_DYNAMIC_176_DETAIL_TAB",
-        HANDLER: "https://travel-group-manager-ndt72.replit.app/",
-        TITLE: "Управление группой",
-      },
-      (result: any) => {
-        if (result.error()) {
-          const errorStr = String(result.error());
-          console.log("🔍 Full error object:", result.error());
-          console.log("🔍 Error string:", errorStr);
-          console.log("🔍 Checking for 'already binded':", errorStr.includes("already binded"));
-          
-          // Check if placement already exists
-          if (errorStr.includes("Handler already binded") || errorStr.includes("already binded")) {
-            console.log("✅ Detected 'already binded' error, switching to already_exists state");
-            setStatus("already_exists");
-            setMessage(t("install.alreadyExists"));
-            checkExistingPlacements(); // Fetch existing placement details
-          } else {
-            console.log("❌ Other error detected");
-            setStatus("error");
-            setMessage(`${t("install.errorMessage")} ${errorStr}`);
-          }
-          console.error("Placement registration error:", result.error());
-        } else {
-          setStatus("success");
-          setMessage(t("install.successMessage"));
-          console.log("Placement registered successfully:", result.data());
-          
-          // REQUIRED: Call installFinish after successful placement registration
-          if (window.BX24?.installFinish) {
-            window.BX24.installFinish();
-          }
-        }
+      if (response.status === 409) {
+        // Already exists
+        console.log("✅ Placement already exists");
+        setStatus("already_exists");
+        setMessage(t("install.alreadyExists"));
+        checkExistingPlacements(); // Fetch existing placement details
+        return;
       }
-    );
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to register placement");
+      }
+
+      console.log("Placement registered successfully:", data);
+      setStatus("success");
+      setMessage(t("install.successMessage"));
+    } catch (error: any) {
+      console.error("Placement registration error:", error);
+      setStatus("error");
+      setMessage(`${t("install.errorMessage")} ${error.message}`);
+    }
   };
 
   useEffect(() => {
     // Auto-check placements on first load
     if (!autoInstallAttempted) {
       setAutoInstallAttempted(true);
-      
-      // Wait for BX24 to be ready
-      const checkAndInstall = () => {
-        if (window.BX24) {
-          window.BX24.init(() => {
-            // First check if placement already exists
-            checkExistingPlacements();
-          });
-        } else {
-          // If no BX24, try to load it
-          setTimeout(() => {
-            if (window.BX24) {
-              window.BX24.init(() => {
-                checkExistingPlacements();
-              });
-            } else {
-              setStatus("error");
-              setMessage(t("install.openFromBitrix"));
-            }
-          }, 1000);
-        }
-      };
-
-      checkAndInstall();
+      // Check placements via server API (no SDK required)
+      checkExistingPlacements();
     }
-  }, [autoInstallAttempted, t]);
+  }, [autoInstallAttempted]);
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">

@@ -74,7 +74,7 @@
   },
   "install": {
     "title": "Установка приложения \"Управление группой\"",
-    "description": "Регистрация вкладки в Smart Process \"Событие\" (ENTITY_TYPE_ID = 176)",
+    "description": "Регистрация вкладки в Smart Process \"Событие\" через REST API (ENTITY_TYPE_ID = 176)",
     "checking": "Проверка...",
     "checkingDescription": "Проверяется наличие существующих placements в Bitrix24.",
     "registering": "Регистрация...",

@@ -165,6 +165,19 @@ export class Bitrix24Service {
     }
     return deals;
   }
+
+  // Placement management methods
+  async bindPlacement(params: { PLACEMENT: string; HANDLER: string; TITLE: string }): Promise<any> {
+    return await this.call("placement.bind", params);
+  }
+
+  async getPlacementsAsync(): Promise<any[]> {
+    return await this.call("placement.get", {});
+  }
+
+  async unbindPlacement(placement: string): Promise<void> {
+    await this.call("placement.unbind", { PLACEMENT: placement });
+  }
 }
 
 // Create singleton instance

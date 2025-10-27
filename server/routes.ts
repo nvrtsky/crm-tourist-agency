@@ -8,6 +8,95 @@ import { insertTouristSchema, insertCityVisitSchema } from "@shared/schema";
 export async function registerRoutes(app: Express): Promise<Server> {
   const bitrix24 = getBitrix24Service();
 
+  // Server-side placement registration (bypass client SDK requirement)
+  app.post("/api/placement/register", async (req, res) => {
+    try {
+      if (!bitrix24) {
+        return res.status(503).json({
+          error: "Bitrix24 service not configured",
+          message: "BITRIX24_WEBHOOK_URL not set"
+        });
+      }
+
+      const result = await bitrix24.bindPlacement({
+        PLACEMENT: "CRM_DYNAMIC_176_DETAIL_TAB",
+        HANDLER: "https://travel-group-manager-ndt72.replit.app/",
+        TITLE: "Управление группой",
+      });
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error: any) {
+      console.error("Placement registration error:", error);
+      
+      // Check if already binded
+      if (error.message?.includes("already binded") || error.message?.includes("Handler already binded")) {
+        return res.status(409).json({
+          error: "already_exists",
+          message: "Placement уже зарегистрирован"
+        });
+      }
+
+      res.status(500).json({
+        error: "registration_failed",
+        message: error.message || "Failed to register placement"
+      });
+    }
+  });
+
+  // Server-side placement check
+  app.get("/api/placement/check", async (req, res) => {
+    try {
+      if (!bitrix24) {
+        return res.status(503).json({
+          error: "Bitrix24 service not configured"
+        });
+      }
+
+      const placements = await bitrix24.getPlacementsAsync();
+      const targetPlacement = placements.find(
+        (p: any) => p.placement === "CRM_DYNAMIC_176_DETAIL_TAB"
+      );
+
+      res.json({
+        exists: !!targetPlacement,
+        placement: targetPlacement || null
+      });
+    } catch (error: any) {
+      console.error("Placement check error:", error);
+      res.status(500).json({
+        error: "check_failed",
+        message: error.message || "Failed to check placements"
+      });
+    }
+  });
+
+  // Server-side placement removal
+  app.post("/api/placement/unbind", async (req, res) => {
+    try {
+      if (!bitrix24) {
+        return res.status(503).json({
+          error: "Bitrix24 service not configured"
+        });
+      }
+
+      await bitrix24.unbindPlacement("CRM_DYNAMIC_176_DETAIL_TAB");
+
+      res.json({
+        success: true,
+        message: "Placement удалён"
+      });
+    } catch (error: any) {
+      console.error("Placement unbind error:", error);
+      res.status(500).json({
+        error: "unbind_failed",
+        message: error.message || "Failed to unbind placement"
+      });
+    }
+  });
+
   // Get tourists for a specific entity (smart process element)
   app.get("/api/tourists/:entityId", async (req, res) => {
     try {

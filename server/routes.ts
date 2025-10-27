@@ -546,6 +546,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Install placement - register tab in Bitrix24 Smart Process
+  app.get("/api/install-placement", async (req, res) => {
+    try {
+      if (!bitrix24) {
+        return res.status(503).json({
+          success: false,
+          error: "Bitrix24 integration not configured",
+          message: "BITRIX24_WEBHOOK_URL is not set. Please configure the webhook URL to register placements.",
+        });
+      }
+
+      const placement = "CRM_DYNAMIC_176_DETAIL_TAB";
+      const handler = "https://travel-group-manager-ndt72.replit.app/";
+      const title = "Управление группой";
+
+      console.log(`Registering placement: ${placement}`);
+      console.log(`Handler URL: ${handler}`);
+      console.log(`Title: ${title}`);
+
+      const result = await bitrix24.bindPlacement(placement, handler, title);
+
+      console.log("Placement registration result:", result);
+
+      res.json({
+        success: true,
+        message: "Вкладка успешно зарегистрирована! Теперь она появится во всех карточках Smart Process 'Событие' (ENTITY_TYPE_ID = 176).",
+        placement,
+        handler,
+        title,
+        result,
+      });
+    } catch (error: any) {
+      console.error("Error registering placement:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to register placement",
+        message: error.message || "Unknown error occurred while registering the placement tab.",
+        details: error.toString(),
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

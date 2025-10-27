@@ -78,8 +78,11 @@ export default function Install() {
       });
       const data = await response.json();
 
-      if (response.status === 409) {
-        // Already exists
+      // Check for "already exists" - both by status code and error message
+      if (response.status === 409 || 
+          data.error === "already_exists" ||
+          data.message?.toLowerCase().includes("already bind") ||
+          data.message?.toLowerCase().includes("уже зарегистрирован")) {
         console.log("✅ Placement already exists");
         setStatus("already_exists");
         setMessage(t("install.alreadyExists"));
@@ -96,6 +99,17 @@ export default function Install() {
       setMessage(t("install.successMessage"));
     } catch (error: any) {
       console.error("Placement registration error:", error);
+      
+      // Last resort: check error message for "already binded"
+      const errorMsg = error.message?.toLowerCase() || "";
+      if (errorMsg.includes("already bind") || errorMsg.includes("handler already")) {
+        console.log("✅ Caught 'already binded' in error handler");
+        setStatus("already_exists");
+        setMessage(t("install.alreadyExists"));
+        checkExistingPlacements();
+        return;
+      }
+      
       setStatus("error");
       setMessage(`${t("install.errorMessage")} ${error.message}`);
     }

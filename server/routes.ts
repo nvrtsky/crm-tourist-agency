@@ -546,6 +546,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint: Fetch data from Bitrix24
+  app.get("/api/bitrix/test-fetch", async (req, res) => {
+    try {
+      if (!bitrix24) {
+        return res.status(503).json({ 
+          error: "Bitrix24 integration not configured",
+          message: "BITRIX24_WEBHOOK_URL not set"
+        });
+      }
+
+      const entityTypeId = String(req.query.entityTypeId || "176");
+      const entityId = String(req.query.entityId || "303");
+
+      console.log(`\n🔍 Fetching Bitrix24 data for Smart Process ${entityTypeId}/${entityId}...`);
+
+      // Шаг 1: Получить элемент Smart Process "Событие"
+      const smartProcessItem = await bitrix24.getSmartProcessItem(entityTypeId, entityId);
+      console.log("📦 Smart Process Item:", JSON.stringify(smartProcessItem, null, 2));
+
+      // Шаг 2: Извлечь поле UF_CRM_9_1711887457 (массив сделок)
+      const dealIds = smartProcessItem?.ufCrm9_1711887457 || smartProcessItem?.UF_CRM_9_1711887457 || [];
+      console.log(`\n💼 Found ${dealIds.length} deal IDs:`, dealIds);
+
+      if (dealIds.length === 0) {
+        return res.json({
+          success: true,
+          smartProcessItem,
+          dealIds: [],
+          deals: [],
+          tourists: [],
+          message: "No deals found in UF_CRM_9_1711887457 field"
+        });
+      }
+
+      // Шаг 3: Получить данные по каждой сделке
+      const deals = await bitrix24.getDeals(dealIds);
+      console.log(`\n✅ Fetched ${deals.length} deals`);
+
+      // Шаг 4: Извлечь туристов из каждой сделки
+      const allTourists = [];
+      for (const deal of deals) {
+        console.log(`\n🎫 Processing deal ${deal.ID}:`);
+        console.log("Deal data:", JSON.stringify(deal, null, 2));
+
+        // Попробуем разные варианты имени поля
+        const touristsField = deal?.ufCrm1702460537 || 
+                            deal?.UF_CRM_1702460537 || 
+                            deal?.uf_crm_1702460537 ||
+                            null;
+
+        console.log("Tourists field value:", touristsField);
+
+        if (touristsField) {
+          // Если поле - это JSON-строка, распарсим
+          let touristsData = touristsField;
+          if (typeof touristsField === 'string') {
+            try {
+              touristsData = JSON.parse(touristsField);
+            } catch (e) {
+              console.error("Failed to parse tourists field as JSON:", e);
+            }
+          }
+
+          // Если это массив объектов
+          if (Array.isArray(touristsData)) {
+            for (const tourist of touristsData) {
+              const name = tourist?.ufCrm1700666127661 || 
+                          tourist?.UF_CRM_1700666127661 || 
+                          tourist?.uf_crm_1700666127661 ||
+                          null;
+              const passport = tourist?.ufCrm1700667203530 || 
+                              tourist?.UF_CRM_1700667203530 || 
+                              tourist?.uf_crm_1700667203530 ||
+                              null;
+
+              allTourists.push({
+                dealId: deal.ID,
+                name,
+                passport,
+                rawData: tourist
+              });
+
+              console.log(`  👤 Tourist: ${name}, Passport: ${passport}`);
+            }
+          } else {
+            // Если это объект
+            const name = touristsData?.ufCrm1700666127661 || 
+                        touristsData?.UF_CRM_1700666127661 || 
+                        touristsData?.uf_crm_1700666127661 ||
+                        null;
+            const passport = touristsData?.ufCrm1700667203530 || 
+                            touristsData?.UF_CRM_1700667203530 || 
+                            touristsData?.uf_crm_1700667203530 ||
+                            null;
+
+            allTourists.push({
+              dealId: deal.ID,
+              name,
+              passport,
+              rawData: touristsData
+            });
+
+            console.log(`  👤 Tourist: ${name}, Passport: ${passport}`);
+          }
+        }
+      }
+
+      console.log(`\n✨ Total tourists found: ${allTourists.length}`);
+
+      res.json({
+        success: true,
+        smartProcessItem,
+        dealIds,
+        deals,
+        tourists: allTourists,
+        summary: {
+          entityTypeId,
+          entityId,
+          dealsCount: deals.length,
+          touristsCount: allTourists.length
+        }
+      });
+
+    } catch (error: any) {
+      console.error("❌ Error fetching Bitrix24 data:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch Bitrix24 data",
+        message: error.message,
+        details: error.toString()
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

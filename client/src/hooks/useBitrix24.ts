@@ -52,6 +52,33 @@ declare global {
   }
 }
 
+function loadBitrix24Script(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // If BX24 already exists, resolve immediately
+    if (window.BX24) {
+      resolve();
+      return;
+    }
+
+    // Try to load from default endpoint
+    const script = document.createElement('script');
+    script.src = '//api.bitrix24.com/api/v1/';
+    script.async = true;
+    
+    script.onload = () => {
+      console.log('✅ Bitrix24 SDK loaded successfully');
+      resolve();
+    };
+    
+    script.onerror = () => {
+      console.error('❌ Failed to load Bitrix24 SDK');
+      reject(new Error('Failed to load Bitrix24 SDK'));
+    };
+    
+    document.head.appendChild(script);
+  });
+}
+
 export function useBitrix24(): Bitrix24Context {
   const [context, setContext] = useState<Bitrix24Context>({
     entityId: null,
@@ -81,14 +108,39 @@ export function useBitrix24(): Bitrix24Context {
       return;
     }
 
-    if (!window.BX24) {
-      setContext((prev) => ({
-        ...prev,
-        error: "Bitrix24 SDK не загружен",
-        isReady: true,
-      }));
-      return;
-    }
+    // Try to load Bitrix24 SDK if not present
+    const initializeBitrix = async () => {
+      try {
+        // Wait for script to load if not present
+        if (!window.BX24) {
+          await loadBitrix24Script();
+          // Wait a bit for BX24 to initialize
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        if (!window.BX24) {
+          throw new Error("Bitrix24 SDK не загружен после попытки загрузки");
+        }
+        
+        // Continue with normal initialization
+        initializeBX24();
+      } catch (error) {
+        console.error("❌ Ошибка загрузки Bitrix24 SDK:", error);
+        setContext((prev) => ({
+          ...prev,
+          error: "Bitrix24 SDK не может быть загружен. Работаю в DEMO-режиме.",
+          entityId: "demo-entity-" + Date.now(),
+          entityTypeId: "demo-type-smart-process",
+          domain: "demo",
+          isReady: true,
+        }));
+      }
+    };
+    
+    const initializeBX24 = () => {
+      if (!window.BX24) {
+        return;
+      }
 
     window.BX24.init(() => {
       try {
@@ -214,6 +266,10 @@ export function useBitrix24(): Bitrix24Context {
         }));
       }
     });
+    };
+    
+    // Start initialization
+    initializeBitrix();
   }, []);
 
   return context;

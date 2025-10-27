@@ -20,7 +20,7 @@
   },
   "dashboard": {
     "title": "Обзор группового тура",
-    "subtitle": "Групповой тур по 4 городам Китая",
+    "subtitle": "Групповой тур по 5 городам Китая",
     "seedData": "Загрузить тестовые данные",
     "clearData": "Очистить все данные",
     "totalTourists": "Всего туристов",
@@ -66,7 +66,8 @@
     "Beijing": "Пекин",
     "Luoyang": "Лоян",
     "Xian": "Сиань",
-    "Zhangjiajie": "Чжанцзяцзе"
+    "Zhangjiajie": "Чжанцзяцзе",
+    "Shanghai": "Шанхай"
   },
   "errors": {
     "bitrixInitError": "Ошибка инициализации Bitrix24"

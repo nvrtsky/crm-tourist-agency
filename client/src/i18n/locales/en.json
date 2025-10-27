@@ -20,7 +20,7 @@
   },
   "dashboard": {
     "title": "Group Tour Overview",
-    "subtitle": "Group tour across 4 cities in China",
+    "subtitle": "Group tour across 5 cities in China",
     "seedData": "Load Test Data",
     "clearData": "Clear All Data",
     "totalTourists": "Total Tourists",
@@ -66,7 +66,8 @@
     "Beijing": "Beijing",
     "Luoyang": "Luoyang",
     "Xian": "Xi'an",
-    "Zhangjiajie": "Zhangjiajie"
+    "Zhangjiajie": "Zhangjiajie",
+    "Shanghai": "Shanghai"
   },
   "errors": {
     "bitrixInitError": "Bitrix24 initialization error"

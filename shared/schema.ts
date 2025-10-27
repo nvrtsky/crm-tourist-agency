@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Cities enum
-export const CITIES = ["Beijing", "Luoyang", "Xian", "Zhangjiajie"] as const;
+export const CITIES = ["Beijing", "Luoyang", "Xian", "Zhangjiajie", "Shanghai"] as const;
 export type City = typeof CITIES[number];
 
 // Transport types

@@ -1,7 +1,7 @@
 # Веб-сервис для туристического агентства
 
 ## Overview
-This project is a web application designed to manage group tours across four cities in China: Beijing, Luoyang, Xi'an, and Zhangjiajie. Tourists can join or leave a tour at any stage of the itinerary. The application integrates with Bitrix24 as an embedded tab within a "Smart Process" (specifically, the "Event" smart process), where each smart process item represents a single group tour. It aims to streamline tour management, provide comprehensive tourist and itinerary tracking, and offer various reporting features.
+This project is a web application designed to manage group tours across five cities in China: Beijing, Luoyang, Xi'an, Zhangjiajie, and Shanghai. Tourists can join or leave a tour at any stage of the itinerary. The application integrates with Bitrix24 as an embedded tab within a "Smart Process" (specifically, the "Event" smart process), where each smart process item represents a single group tour. It aims to streamline tour management, provide comprehensive tourist and itinerary tracking, and offer various reporting features.
 
 ## User Preferences
 I prefer detailed explanations.
@@ -19,6 +19,7 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
 - **Frontend**: React, TypeScript, Wouter (routing), TanStack Query (API state management), Shadcn UI, Tailwind CSS, Bitrix24 JS SDK, react-i18next (internationalization).
 - **Backend**: Express.js, TypeScript, In-memory storage (MemStorage for development), Bitrix24 REST API integration (`crm.item.*` methods for smart processes).
 - **Data Structure**: Shared TypeScript types and Zod schemas define the data models across frontend and backend.
+- **Supported Cities**: Beijing (北京/Пекин), Luoyang (洛阳/Лоян), Xi'an (西安/Сиань), Zhangjiajie (张家界/Чжанцзяцзе), Shanghai (上海/Шанхай)
 - **Internationalization**: i18next with react-i18next for multilingual support (Russian, English, Chinese). Language detection from browser/localStorage, language switcher in header.
 - **Project Structure**:
     - `client/`: Frontend React application.

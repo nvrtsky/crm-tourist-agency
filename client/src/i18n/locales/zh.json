@@ -20,7 +20,7 @@
   },
   "dashboard": {
     "title": "团体旅游概览",
-    "subtitle": "中国4城市团体游",
+    "subtitle": "中国5城市团体游",
     "seedData": "加载测试数据",
     "clearData": "清除所有数据",
     "totalTourists": "游客总数",
@@ -66,7 +66,8 @@
     "Beijing": "北京",
     "Luoyang": "洛阳",
     "Xian": "西安",
-    "Zhangjiajie": "张家界"
+    "Zhangjiajie": "张家界",
+    "Shanghai": "上海"
   },
   "errors": {
     "bitrixInitError": "Bitrix24初始化错误"

@@ -19,8 +19,13 @@ declare global {
         info: () => {
           options?: {
             ID?: string;
+            ENTITY_ID?: string;
             ENTITY_TYPE_ID?: string;
           };
+          entityId?: string;
+          entityTypeId?: string;
+          placement?: string;
+          [key: string]: any; // Allow any additional fields
         };
       };
       getDomain: () => string;
@@ -83,10 +88,57 @@ export function useBitrix24(): Bitrix24Context {
     window.BX24.init(() => {
       try {
         const placementInfo = window.BX24!.placement.info();
-        const entityId = placementInfo?.options?.ID || null;
-        const entityTypeId = placementInfo?.options?.ENTITY_TYPE_ID || null;
         const auth = window.BX24!.getAuth();
         const domain = auth.domain || window.BX24!.getDomain();
+
+        // Debug: Log full placement info structure
+        console.log("🔍 Bitrix24 Placement Info (полная структура):", JSON.stringify(placementInfo, null, 2));
+        console.log("🔍 Bitrix24 Auth Info:", JSON.stringify(auth, null, 2));
+        
+        // Try multiple possible field names for Smart Process
+        let entityId = null;
+        let entityTypeId = null;
+
+        // Method 1: Check options.ID and options.ENTITY_TYPE_ID
+        if (placementInfo?.options?.ID) {
+          entityId = String(placementInfo.options.ID);
+          console.log("✅ Found entityId in options.ID:", entityId);
+        }
+        if (placementInfo?.options?.ENTITY_TYPE_ID) {
+          entityTypeId = String(placementInfo.options.ENTITY_TYPE_ID);
+          console.log("✅ Found entityTypeId in options.ENTITY_TYPE_ID:", entityTypeId);
+        }
+
+        // Method 2: Check for ENTITY_ID (alternative naming)
+        if (!entityId && placementInfo?.options?.ENTITY_ID) {
+          entityId = String(placementInfo.options.ENTITY_ID);
+          console.log("✅ Found entityId in options.ENTITY_ID:", entityId);
+        }
+
+        // Method 3: Check root level fields
+        if (!entityId && placementInfo?.entityId) {
+          entityId = String(placementInfo.entityId);
+          console.log("✅ Found entityId in root level:", entityId);
+        }
+        if (!entityTypeId && placementInfo?.entityTypeId) {
+          entityTypeId = String(placementInfo.entityTypeId);
+          console.log("✅ Found entityTypeId in root level:", entityTypeId);
+        }
+
+        // Method 4: Check for placement-specific fields
+        if (!entityId && placementInfo?.placement) {
+          console.log("🔍 Checking placement object:", placementInfo.placement);
+        }
+
+        console.log("📊 Final values - entityId:", entityId, "entityTypeId:", entityTypeId);
+
+        const errorMessage = !entityId && !entityTypeId 
+          ? "Не удалось получить ID элемента Smart Process. Убедитесь, что приложение открыто из карточки Smart Process 'Событие'"
+          : !entityId 
+            ? "Не найден ID элемента (Deal ID)"
+            : !entityTypeId
+              ? "Не найден тип сущности (Entity Type ID)"
+              : null;
 
         setContext({
           entityId,
@@ -96,7 +148,7 @@ export function useBitrix24(): Bitrix24Context {
           accessToken: auth.access_token || null,
           expiresIn: auth.expires_in || null,
           isReady: true,
-          error: entityId && entityTypeId ? null : "Entity ID или Entity Type ID не найдены",
+          error: errorMessage,
         });
 
         // Auto-resize iframe
@@ -104,7 +156,7 @@ export function useBitrix24(): Bitrix24Context {
           window.BX24.resizeWindow(window.innerWidth, window.innerHeight);
         }
       } catch (error) {
-        console.error("Ошибка инициализации Bitrix24:", error);
+        console.error("❌ Ошибка инициализации Bitrix24:", error);
         setContext((prev) => ({
           ...prev,
           error: "Ошибка инициализации Bitrix24",

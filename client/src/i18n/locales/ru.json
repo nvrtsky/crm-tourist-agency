@@ -1,0 +1,66 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успешно",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "add": "Добавить",
+    "close": "Закрыть",
+    "confirm": "Подтвердить"
+  },
+  "nav": {
+    "dashboard": "Панель управления",
+    "table": "Сводная таблица",
+    "addTourist": "Добавить туриста"
+  },
+  "dashboard": {
+    "title": "Обзор группового тура",
+    "subtitle": "Групповой тур по 4 городам Китая",
+    "seedData": "Загрузить тестовые данные",
+    "clearData": "Очистить все данные",
+    "totalTourists": "Всего туристов",
+    "registeredInTour": "Зарегистрировано в туре",
+    "cityRoute": "Города маршрута",
+    "citiesWithTourists": "Городов с туристами",
+    "upcomingArrivals": "Предстоящие прибытия",
+    "nextSevenDays": "В ближайшие 7 дней",
+    "hotels": "Отели",
+    "usedHotels": "Используемых отелей",
+    "financialSummary": "Финансовая сводка",
+    "totalAmount": "Общая сумма",
+    "averageCheck": "Средний чек",
+    "citiesOnRoute": "Города на маршруте",
+    "twin": "Twin",
+    "double": "Double"
+  },
+  "table": {
+    "title": "Сводная таблица туристов",
+    "number": "№",
+    "touristName": "ФИО туриста",
+    "phone": "Телефон",
+    "copyLink": "Скопировать ссылку",
+    "exportExcel": "Экспорт в Excel",
+    "linkCopied": "Ссылка скопирована"
+  },
+  "tourist": {
+    "addTourist": "Добавить туриста",
+    "editTourist": "Редактировать туриста",
+    "name": "ФИО",
+    "email": "Email",
+    "phone": "Телефон",
+    "touristCreated": "Турист создан",
+    "touristUpdated": "Турист обновлён"
+  },
+  "cities": {
+    "Beijing": "Пекин",
+    "Luoyang": "Лоян",
+    "Xian": "Сиань",
+    "Zhangjiajie": "Чжанцзяцзе"
+  },
+  "errors": {
+    "bitrixInitError": "Ошибка инициализации Bitrix24"
+  }
+}

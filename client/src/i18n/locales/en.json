@@ -1,0 +1,66 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "confirm": "Confirm"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "table": "Summary Table",
+    "addTourist": "Add Tourist"
+  },
+  "dashboard": {
+    "title": "Group Tour Overview",
+    "subtitle": "Group tour across 4 cities in China",
+    "seedData": "Load Test Data",
+    "clearData": "Clear All Data",
+    "totalTourists": "Total Tourists",
+    "registeredInTour": "Registered in tour",
+    "cityRoute": "City Route",
+    "citiesWithTourists": "Cities with tourists",
+    "upcomingArrivals": "Upcoming Arrivals",
+    "nextSevenDays": "In next 7 days",
+    "hotels": "Hotels",
+    "usedHotels": "Hotels in use",
+    "financialSummary": "Financial Summary",
+    "totalAmount": "Total Amount",
+    "averageCheck": "Average Check",
+    "citiesOnRoute": "Cities on Route",
+    "twin": "Twin",
+    "double": "Double"
+  },
+  "table": {
+    "title": "Tourist Summary Table",
+    "number": "#",
+    "touristName": "Tourist Name",
+    "phone": "Phone",
+    "copyLink": "Copy Link",
+    "exportExcel": "Export to Excel",
+    "linkCopied": "Link copied"
+  },
+  "tourist": {
+    "addTourist": "Add Tourist",
+    "editTourist": "Edit Tourist",
+    "name": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "touristCreated": "Tourist created",
+    "touristUpdated": "Tourist updated"
+  },
+  "cities": {
+    "Beijing": "Beijing",
+    "Luoyang": "Luoyang",
+    "Xian": "Xi'an",
+    "Zhangjiajie": "Zhangjiajie"
+  },
+  "errors": {
+    "bitrixInitError": "Bitrix24 initialization error"
+  }
+}

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Dashboard from "@/pages/Dashboard";
 import Tourists from "@/pages/Tourists";
 import Summary from "@/pages/Summary";
@@ -12,6 +13,7 @@ import NotFound from "@/pages/not-found";
 import { useBitrix24 } from "@/hooks/useBitrix24";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2, LayoutDashboard, Users, TableProperties } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function Router() {
   return (
@@ -26,6 +28,7 @@ function Router() {
 
 function Navigation() {
   const [location, setLocation] = useLocation();
+  const { t } = useTranslation();
 
   return (
     <nav className="flex gap-1">
@@ -37,7 +40,7 @@ function Navigation() {
         className="flex-1 sm:flex-none"
       >
         <LayoutDashboard className="h-4 w-4 sm:mr-2" />
-        <span className="hidden sm:inline">Обзор</span>
+        <span className="hidden sm:inline">{t("nav.dashboard")}</span>
       </Button>
       <Button
         variant={location === "/tourists" ? "default" : "ghost"}
@@ -47,7 +50,7 @@ function Navigation() {
         className="flex-1 sm:flex-none"
       >
         <Users className="h-4 w-4 sm:mr-2" />
-        <span className="hidden sm:inline">Туристы</span>
+        <span className="hidden sm:inline">{t("nav.addTourist")}</span>
       </Button>
       <Button
         variant={location === "/summary" ? "default" : "ghost"}
@@ -57,7 +60,7 @@ function Navigation() {
         className="flex-1 sm:flex-none"
       >
         <TableProperties className="h-4 w-4 sm:mr-2" />
-        <span className="hidden sm:inline">Сводная</span>
+        <span className="hidden sm:inline">{t("nav.table")}</span>
       </Button>
     </nav>
   );
@@ -65,13 +68,14 @@ function Navigation() {
 
 export default function App() {
   const { entityId, isReady, error } = useBitrix24();
+  const { t } = useTranslation();
 
   if (!isReady) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground">Загрузка приложения...</p>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -82,7 +86,7 @@ export default function App() {
       <div className="flex items-center justify-center h-screen p-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Ошибка инициализации</AlertTitle>
+          <AlertTitle>{t("errors.bitrixInitError")}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       </div>
@@ -106,7 +110,10 @@ export default function App() {
                   </span>
                 )}
               </div>
-              <ThemeToggle />
+              <div className="flex items-center gap-1">
+                <LanguageSwitcher />
+                <ThemeToggle />
+              </div>
             </div>
             <Navigation />
           </header>

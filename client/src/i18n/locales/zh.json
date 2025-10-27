@@ -1,0 +1,66 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "add": "添加",
+    "close": "关闭",
+    "confirm": "确认"
+  },
+  "nav": {
+    "dashboard": "控制面板",
+    "table": "汇总表",
+    "addTourist": "添加游客"
+  },
+  "dashboard": {
+    "title": "团体旅游概览",
+    "subtitle": "中国4城市团体游",
+    "seedData": "加载测试数据",
+    "clearData": "清除所有数据",
+    "totalTourists": "游客总数",
+    "registeredInTour": "已注册在团",
+    "cityRoute": "城市路线",
+    "citiesWithTourists": "有游客的城市",
+    "upcomingArrivals": "即将到达",
+    "nextSevenDays": "未来7天内",
+    "hotels": "酒店",
+    "usedHotels": "使用的酒店",
+    "financialSummary": "财务摘要",
+    "totalAmount": "总金额",
+    "averageCheck": "平均消费",
+    "citiesOnRoute": "路线城市",
+    "twin": "双床房",
+    "double": "大床房"
+  },
+  "table": {
+    "title": "游客汇总表",
+    "number": "序号",
+    "touristName": "游客姓名",
+    "phone": "电话",
+    "copyLink": "复制链接",
+    "exportExcel": "导出Excel",
+    "linkCopied": "链接已复制"
+  },
+  "tourist": {
+    "addTourist": "添加游客",
+    "editTourist": "编辑游客",
+    "name": "姓名",
+    "email": "电子邮箱",
+    "phone": "电话",
+    "touristCreated": "游客创建成功",
+    "touristUpdated": "游客更新成功"
+  },
+  "cities": {
+    "Beijing": "北京",
+    "Luoyang": "洛阳",
+    "Xian": "西安",
+    "Zhangjiajie": "张家界"
+  },
+  "errors": {
+    "bitrixInitError": "Bitrix24初始化错误"
+  }
+}

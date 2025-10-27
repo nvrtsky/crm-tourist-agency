@@ -127,6 +127,17 @@ export class Bitrix24Service {
   async deleteContact(contactId: string): Promise<void> {
     await this.call("crm.contact.delete", { id: contactId });
   }
+
+  // Register placement (embed tab in Bitrix24)
+  async bindPlacement(placement: string, handler: string, title: string): Promise<any> {
+    const params = {
+      PLACEMENT: placement,
+      HANDLER: handler,
+      TITLE: title,
+    };
+
+    return await this.call("placement.bind", params);
+  }
 }
 
 // Create singleton instance

@@ -29,6 +29,7 @@ const CITY_NAMES: Record<City, string> = {
   Luoyang: "Лоян",
   Xian: "Сиань",
   Zhangjiajie: "Чжанцзяцзе",
+  Shanghai: "Шанхай",
 };
 
 export default function Summary() {

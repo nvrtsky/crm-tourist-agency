@@ -15,12 +15,14 @@ import beijingImg from '@assets/generated_images/Beijing_Forbidden_City_landmark
 import luoyangImg from '@assets/generated_images/Luoyang_Longmen_Grottoes_sculptures_ddd49a2d.png';
 import xianImg from "@assets/generated_images/Xi'an_Terracotta_Warriors_site_4830e36b.png";
 import zhangjiajieImg from '@assets/generated_images/Zhangjiajie_Avatar_Mountains_landscape_30f1cc22.png';
+import shanghaiImg from '@assets/generated_images/Shanghai_Oriental_Pearl_Tower_skyline_97bf97cf.png';
 
 const cityImages: Record<City, string> = {
   Beijing: beijingImg,
   Luoyang: luoyangImg,
   Xian: xianImg,
   Zhangjiajie: zhangjiajieImg,
+  Shanghai: shanghaiImg,
 };
 
 const cityNames: Record<City, { en: string; cn: string }> = {
@@ -28,6 +30,7 @@ const cityNames: Record<City, { en: string; cn: string }> = {
   Luoyang: { en: "Luoyang", cn: "洛阳" },
   Xian: { en: "Xi'an", cn: "西安" },
   Zhangjiajie: { en: "Zhangjiajie", cn: "张家界" },
+  Shanghai: { en: "Shanghai", cn: "上海" },
 };
 
 export default function Dashboard() {
@@ -115,6 +118,7 @@ export default function Dashboard() {
       Luoyang: { touristCount: 0, hotels: new Set() },
       Xian: { touristCount: 0, hotels: new Set() },
       Zhangjiajie: { touristCount: 0, hotels: new Set() },
+      Shanghai: { touristCount: 0, hotels: new Set() },
     };
 
     const now = new Date();
@@ -286,7 +290,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-active-cities">
-              {stats.activeCities} / 4
+              {stats.activeCities} / 5
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {t("dashboard.citiesWithTourists")}

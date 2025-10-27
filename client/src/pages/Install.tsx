@@ -265,12 +265,21 @@ export default function Install() {
             )}
           </div>
 
+          {/* Info banner */}
+          <Alert className="mt-4">
+            <AlertDescription className="text-sm">
+              ℹ️ Эта страница работает через <strong>серверный REST API</strong>. 
+              Bitrix24 SDK не требуется - можно открывать напрямую в браузере.
+            </AlertDescription>
+          </Alert>
+
           {/* Debug info */}
           {import.meta.env.DEV && (
             <div className="mt-4 p-4 bg-muted rounded text-xs font-mono">
               <div>Status: {status}</div>
-              <div>BX24 Available: {window.BX24 ? "Yes" : "No"}</div>
-              <div>Auto Install Attempted: {autoInstallAttempted ? "Yes" : "No"}</div>
+              <div>Mode: Server-side REST API (no SDK required)</div>
+              <div>BX24 SDK Available: {window.BX24 ? "Yes (not used)" : "No (not needed)"}</div>
+              <div>Auto Check Attempted: {autoInstallAttempted ? "Yes" : "No"}</div>
             </div>
           )}
         </CardContent>

@@ -43,6 +43,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Check for permission errors
+      if (errorStr.includes("forbidden") || errorStr.includes("access denied")) {
+        return res.status(403).json({
+          error: "permission_denied",
+          message: "Недостаточно прав для регистрации placement. Методы placement.* требуют OAuth-приложения с правами на управление интерфейсом. Вебхуки (incoming webhook) не имеют доступа к этим методам."
+        });
+      }
+
       res.status(500).json({
         error: "registration_failed",
         message: error.message || "Failed to register placement"
@@ -70,6 +78,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Placement check error:", error);
+      
+      // Check for permission errors
+      const errorStr = String(error.message || error).toLowerCase();
+      if (errorStr.includes("forbidden") || errorStr.includes("access denied")) {
+        return res.status(403).json({
+          error: "permission_denied",
+          message: "Недостаточно прав для проверки placements. Методы placement.* требуют OAuth-приложения."
+        });
+      }
+      
       res.status(500).json({
         error: "check_failed",
         message: error.message || "Failed to check placements"

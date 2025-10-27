@@ -38,6 +38,15 @@ export default function Install() {
       }
     } catch (error: any) {
       console.error("Error checking placements:", error);
+      
+      // Check for permission errors
+      const errorMsg = error.message?.toLowerCase() || "";
+      if (errorMsg.includes("недостаточно прав") || errorMsg.includes("permission") || errorMsg.includes("oauth")) {
+        setStatus("error");
+        setMessage(error.message);
+        return;
+      }
+      
       setStatus("error");
       setMessage(t("install.errorMessage") + " " + error.message);
     }
@@ -107,6 +116,13 @@ export default function Install() {
         setStatus("already_exists");
         setMessage(t("install.alreadyExists"));
         checkExistingPlacements();
+        return;
+      }
+      
+      // Check for permission errors
+      if (errorMsg.includes("недостаточно прав") || errorMsg.includes("permission") || errorMsg.includes("oauth")) {
+        setStatus("error");
+        setMessage(error.message);
         return;
       }
       

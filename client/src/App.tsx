@@ -81,6 +81,7 @@ export default function App() {
     );
   }
 
+  // Show blocking error only if no entityId at all
   if (error && !entityId) {
     return (
       <div className="flex items-center justify-center h-screen p-4">
@@ -119,6 +120,15 @@ export default function App() {
           </header>
           <main className="flex-1 overflow-auto">
             <div className="p-4 md:p-6">
+              {error && entityId && (
+                <Alert className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>DEMO-режим</AlertTitle>
+                  <AlertDescription className="text-sm whitespace-pre-wrap">
+                    {error}
+                  </AlertDescription>
+                </Alert>
+              )}
               <Router />
             </div>
           </main>

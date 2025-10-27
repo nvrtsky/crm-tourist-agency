@@ -9,7 +9,9 @@
     "edit": "Edit",
     "add": "Add",
     "close": "Close",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "noData": "No data",
+    "total": "Total"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -33,8 +35,14 @@
     "totalAmount": "Total Amount",
     "averageCheck": "Average Check",
     "citiesOnRoute": "Cities on Route",
+    "touristDistribution": "Tourist Distribution by Cities",
+    "hotelRoomSummary": "Hotel Room Type Summary",
     "twin": "Twin",
-    "double": "Double"
+    "double": "Double",
+    "dataLoaded": "Test data loaded",
+    "dataCleared": "Data cleared",
+    "loadDataError": "Failed to load test data",
+    "clearDataError": "Failed to clear data"
   },
   "table": {
     "title": "Tourist Summary Table",
@@ -48,7 +56,7 @@
   "tourist": {
     "addTourist": "Add Tourist",
     "editTourist": "Edit Tourist",
-    "name": "Full Name",
+    "name": "tourist",
     "email": "Email",
     "phone": "Phone",
     "touristCreated": "Tourist created",

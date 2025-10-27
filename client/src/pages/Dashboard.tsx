@@ -9,6 +9,7 @@ import { useBitrix24 } from "@/hooks/useBitrix24";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { City, TouristWithVisits } from "@shared/schema";
+import { useTranslation } from "react-i18next";
 
 import beijingImg from '@assets/generated_images/Beijing_Forbidden_City_landmark_8163e9fe.png';
 import luoyangImg from '@assets/generated_images/Luoyang_Longmen_Grottoes_sculptures_ddd49a2d.png';
@@ -32,6 +33,7 @@ const cityNames: Record<City, { en: string; cn: string }> = {
 export default function Dashboard() {
   const { entityId, entityTypeId } = useBitrix24();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // Fetch tourists for current entity
   const { data: tourists, isLoading } = useQuery<TouristWithVisits[]>({
@@ -48,14 +50,14 @@ export default function Dashboard() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
       toast({
-        title: "Тестовые данные загружены",
+        title: t("dashboard.dataLoaded"),
         description: data.message,
       });
     },
     onError: () => {
       toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить тестовые данные",
+        title: t("common.error"),
+        description: t("dashboard.loadDataError") || "Failed to load test data",
         variant: "destructive",
       });
     },
@@ -70,14 +72,14 @@ export default function Dashboard() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
       toast({
-        title: "Данные очищены",
+        title: t("dashboard.dataCleared"),
         description: data.message,
       });
     },
     onError: () => {
       toast({
-        title: "Ошибка",
-        description: "Не удалось очистить данные",
+        title: t("common.error"),
+        description: t("dashboard.clearDataError") || "Failed to clear data",
         variant: "destructive",
       });
     },
@@ -219,10 +221,10 @@ export default function Dashboard() {
     <div className="space-y-4 sm:space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-page-title">
-          Обзор группового тура
+          {t("dashboard.title")}
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1">
-          Групповой тур по 4 городам Китая: Пекин → Лоян → Сиань → Чжанцзяцзе
+          {t("dashboard.subtitle")}
         </p>
       </div>
 
@@ -239,7 +241,7 @@ export default function Dashboard() {
           ) : (
             <Database className="h-4 w-4 mr-2" />
           )}
-          Загрузить тестовые данные
+          {t("dashboard.seedData")}
         </Button>
         <Button
           variant="outline"
@@ -253,7 +255,7 @@ export default function Dashboard() {
           ) : (
             <Trash2 className="h-4 w-4 mr-2" />
           )}
-          Очистить все данные
+          {t("dashboard.clearData")}
         </Button>
       </div>
 
@@ -261,7 +263,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Всего туристов
+              {t("dashboard.totalTourists")}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -270,7 +272,7 @@ export default function Dashboard() {
               {stats.totalTourists}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Зарегистрировано в туре
+              {t("dashboard.registeredInTour")}
             </p>
           </CardContent>
         </Card>
@@ -278,7 +280,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Города маршрута
+              {t("dashboard.cityRoute")}
             </CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -287,7 +289,7 @@ export default function Dashboard() {
               {stats.activeCities} / 4
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Городов с туристами
+              {t("dashboard.citiesWithTourists")}
             </p>
           </CardContent>
         </Card>
@@ -295,7 +297,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Предстоящие прибытия
+              {t("dashboard.upcomingArrivals")}
             </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -304,7 +306,7 @@ export default function Dashboard() {
               {stats.upcomingArrivals}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              В ближайшие 7 дней
+              {t("dashboard.nextSevenDays")}
             </p>
           </CardContent>
         </Card>
@@ -312,7 +314,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Отели
+              {t("dashboard.hotels")}
             </CardTitle>
             <Hotel className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -321,7 +323,7 @@ export default function Dashboard() {
               {stats.totalHotels}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Используемых отелей
+              {t("dashboard.usedHotels")}
             </p>
           </CardContent>
         </Card>
@@ -331,7 +333,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
-              <CardTitle>Финансовая сводка</CardTitle>
+              <CardTitle>{t("dashboard.financialSummary")}</CardTitle>
               <DollarSign className="h-5 w-5 text-muted-foreground" />
             </div>
           </CardHeader>
@@ -342,7 +344,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">RUB</Badge>
                     <span className="text-sm text-muted-foreground">
-                      {stats.touristsCountRUB} {stats.touristsCountRUB === 1 ? 'турист' : 'туристов'}
+                      {stats.touristsCountRUB} {stats.touristsCountRUB === 1 ? t("tourist.name") : t("tourist.name")}
                     </span>
                   </div>
                   <div>
@@ -350,7 +352,7 @@ export default function Dashboard() {
                       {stats.revenueByRUB.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Общая сумма
+                      {t("dashboard.totalAmount")}
                     </p>
                   </div>
                   <div>
@@ -358,7 +360,7 @@ export default function Dashboard() {
                       {stats.averageRevenueRUB.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Средний чек
+                      {t("dashboard.averageCheck")}
                     </p>
                   </div>
                 </div>
@@ -368,7 +370,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">CNY</Badge>
                     <span className="text-sm text-muted-foreground">
-                      {stats.touristsCountCNY} {stats.touristsCountCNY === 1 ? 'турист' : 'туристов'}
+                      {stats.touristsCountCNY} {stats.touristsCountCNY === 1 ? t("tourist.name") : t("tourist.name")}
                     </span>
                   </div>
                   <div>
@@ -376,7 +378,7 @@ export default function Dashboard() {
                       {stats.revenueByCNY.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ¥
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Общая сумма
+                      {t("dashboard.totalAmount")}
                     </p>
                   </div>
                   <div>
@@ -384,14 +386,14 @@ export default function Dashboard() {
                       {stats.averageRevenueCNY.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ¥
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Средний чек
+                      {t("dashboard.averageCheck")}
                     </p>
                   </div>
                 </div>
               )}
               {stats.touristsCountRUB === 0 && stats.touristsCountCNY === 0 && (
                 <div className="col-span-2 text-center text-muted-foreground py-4">
-                  Нет данных о платежах
+                  {t("common.noData")}
                 </div>
               )}
             </div>
@@ -400,7 +402,7 @@ export default function Dashboard() {
       )}
 
       <div>
-        <h2 className="text-2xl font-semibold mb-4">Города на маршруте</h2>
+        <h2 className="text-2xl font-semibold mb-4">{t("dashboard.citiesOnRoute")}</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {(Object.keys(cityNames) as City[]).map((city) => (
             <CityCard
@@ -419,7 +421,7 @@ export default function Dashboard() {
       {stats.totalTourists > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Распределение туристов по городам</CardTitle>
+            <CardTitle>{t("dashboard.touristDistribution")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -432,13 +434,13 @@ export default function Dashboard() {
                   <div key={city} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{cityNames[city].en}</span>
+                        <span className="font-medium">{t(`cities.${city}`)}</span>
                         <span className="text-sm text-muted-foreground">
                           {cityNames[city].cn}
                         </span>
                       </div>
                       <Badge variant="secondary">
-                        {data.touristCount} {data.touristCount === 1 ? "турист" : "туристов"}
+                        {data.touristCount} {data.touristCount === 1 ? t("tourist.name") : t("tourist.name")}
                       </Badge>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -459,7 +461,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
-              <CardTitle>Сводка по типам номеров в отелях</CardTitle>
+              <CardTitle>{t("dashboard.hotelRoomSummary")}</CardTitle>
               <Bed className="h-5 w-5 text-muted-foreground" />
             </div>
           </CardHeader>
@@ -472,7 +474,7 @@ export default function Dashboard() {
                 return (
                   <div key={city} className="space-y-3">
                     <div className="flex items-center gap-2 pb-2 border-b">
-                      <span className="font-semibold">{cityNames[city].en}</span>
+                      <span className="font-semibold">{t(`cities.${city}`)}</span>
                       <span className="text-sm text-muted-foreground">
                         {cityNames[city].cn}
                       </span>
@@ -489,7 +491,7 @@ export default function Dashboard() {
                           <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-xs">
-                                Twin
+                                {t("dashboard.twin")}
                               </Badge>
                               <span className="text-sm font-semibold" data-testid={`hotel-${hotel.hotelName}-twin`}>
                                 {hotel.twinCount}
@@ -497,7 +499,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-xs">
-                                Double
+                                {t("dashboard.double")}
                               </Badge>
                               <span className="text-sm font-semibold" data-testid={`hotel-${hotel.hotelName}-double`}>
                                 {hotel.doubleCount}
@@ -505,7 +507,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex items-center gap-2">
                               <Badge variant="secondary" className="text-xs">
-                                Всего
+                                {t("common.total")}
                               </Badge>
                               <span className="text-sm font-bold" data-testid={`hotel-${hotel.hotelName}-total`}>
                                 {hotel.totalRooms}

@@ -9,7 +9,9 @@
     "edit": "Редактировать",
     "add": "Добавить",
     "close": "Закрыть",
-    "confirm": "Подтвердить"
+    "confirm": "Подтвердить",
+    "noData": "Нет данных",
+    "total": "Всего"
   },
   "nav": {
     "dashboard": "Панель управления",
@@ -33,8 +35,14 @@
     "totalAmount": "Общая сумма",
     "averageCheck": "Средний чек",
     "citiesOnRoute": "Города на маршруте",
+    "touristDistribution": "Распределение туристов по городам",
+    "hotelRoomSummary": "Сводка по типам номеров в отелях",
     "twin": "Twin",
-    "double": "Double"
+    "double": "Double",
+    "dataLoaded": "Тестовые данные загружены",
+    "dataCleared": "Данные очищены",
+    "loadDataError": "Не удалось загрузить тестовые данные",
+    "clearDataError": "Не удалось очистить данные"
   },
   "table": {
     "title": "Сводная таблица туристов",
@@ -48,7 +56,7 @@
   "tourist": {
     "addTourist": "Добавить туриста",
     "editTourist": "Редактировать туриста",
-    "name": "ФИО",
+    "name": "турист",
     "email": "Email",
     "phone": "Телефон",
     "touristCreated": "Турист создан",

@@ -34,8 +34,17 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
 - **Summary Table**: Comprehensive table showing all tourists, date/time ranges for arrival/departure, flight numbers, hotel lists, and transport icons. Features sticky header, responsive design with horizontal scrolling, and a total tourist count. City information is consolidated within each city column (dates/times, hotel, transport, flight numbers) instead of separate columns.
 - **Sharing & Export**: Copy link functionality and export to Excel (including times and flight numbers). Each city column has a Share2 button that exports data only for that specific city, generating an Excel file with columns: №, Tourist, Phone, and the selected city's data.
 - **Multilingual Support**: Full i18n implementation with support for Russian (default), English, and Chinese. Language switcher in application header with persistent language selection via localStorage. Dashboard fully translated.
-- **Bitrix24 Integration**: Operates as an embedded tab, synchronizes tourists with CRM contacts, and stores route information in custom fields of the Bitrix24 smart process item.
-- **Development Mode**: Supports standalone operation with mock data for development and testing without Bitrix24 integration.
+- **Bitrix24 Integration**: 
+  - Operates as an embedded tab within Smart Process "Событие" (Event)
+  - Advanced entity ID detection with 7 fallback methods (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, id, DEAL_ID, root level fields)
+  - Comprehensive debug logging with all available placement.info() keys for diagnostics
+  - Detailed error messages with troubleshooting instructions
+  - Automatic DEMO-mode fallback when entity ID cannot be retrieved
+  - Synchronizes tourists with CRM contacts and stores route information in custom fields
+- **Development Mode**: Three operational modes:
+  1. **Dev mode** (no Bitrix24 SDK): Uses hardcoded dev-entity-123 for local development
+  2. **Demo mode** (Bitrix24 SDK present, no entity ID): Generates temporary demo entity ID with user instructions
+  3. **Production mode** (full Bitrix24 integration): Real Smart Process entity ID from placement
 
 ### System Design Choices
 - **Smart Process Integration**: The system leverages Bitrix24's smart processes, with each "Event" smart process item representing a unique group tour.

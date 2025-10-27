@@ -18,9 +18,9 @@ import { useTranslation } from "react-i18next";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={Summary} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/tourists" component={Tourists} />
-      <Route path="/summary" component={Summary} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -36,6 +36,16 @@ function Navigation() {
         variant={location === "/" ? "default" : "ghost"}
         size="sm"
         onClick={() => setLocation("/")}
+        data-testid="nav-summary"
+        className="flex-1 sm:flex-none"
+      >
+        <TableProperties className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">{t("nav.table")}</span>
+      </Button>
+      <Button
+        variant={location === "/dashboard" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setLocation("/dashboard")}
         data-testid="nav-dashboard"
         className="flex-1 sm:flex-none"
       >
@@ -51,16 +61,6 @@ function Navigation() {
       >
         <Users className="h-4 w-4 sm:mr-2" />
         <span className="hidden sm:inline">{t("nav.addTourist")}</span>
-      </Button>
-      <Button
-        variant={location === "/summary" ? "default" : "ghost"}
-        size="sm"
-        onClick={() => setLocation("/summary")}
-        data-testid="nav-summary"
-        className="flex-1 sm:flex-none"
-      >
-        <TableProperties className="h-4 w-4 sm:mr-2" />
-        <span className="hidden sm:inline">{t("nav.table")}</span>
       </Button>
     </nav>
   );

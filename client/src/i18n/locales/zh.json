@@ -75,12 +75,20 @@
   "install": {
     "title": "安装团体管理应用程序",
     "description": "在智能流程事件中注册选项卡 (ENTITY_TYPE_ID = 176)",
+    "checking": "检查中...",
+    "checkingDescription": "正在检查Bitrix24中的现有位置。",
     "registering": "注册中...",
     "registeringDescription": "请稍候，正在Bitrix24中注册选项卡。",
+    "pleaseWait": "请稍候...",
     "success": "成功！",
     "successMessage": "选项卡注册成功！现在它将出现在所有智能流程事件卡片中。",
+    "alreadyExistsTitle": "选项卡已注册",
+    "alreadyExistsDescription": "此智能流程的位置已存在。您可以删除它并重新注册，或保持原样。",
+    "alreadyExists": "位置已在Bitrix24中注册",
     "errorTitle": "错误",
     "errorMessage": "注册错误：",
+    "unbindError": "删除位置错误：",
+    "unbindSuccess": "位置已成功删除。您现在可以注册新的位置。",
     "sdkNotLoaded": "Bitrix24 SDK未加载。请从Bitrix24打开此页面。",
     "openFromBitrix": "从Bitrix24打开此页面以进行自动安装。",
     "idleMessage": "点击下面的按钮在智能流程事件中注册选项卡。",
@@ -94,6 +102,8 @@
     "findTab": "找到团体管理选项卡",
     "startUsing": "开始添加游客并规划路线",
     "registerButton": "注册选项卡",
-    "reinstallButton": "重新安装"
+    "reinstallButton": "重新安装",
+    "unbindButton": "删除位置",
+    "recheckButton": "重新检查"
   }
 }

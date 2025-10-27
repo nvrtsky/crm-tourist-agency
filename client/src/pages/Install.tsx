@@ -2,16 +2,86 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, XCircle, Loader2, RefreshCw } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-type InstallStatus = "idle" | "loading" | "success" | "error";
+type InstallStatus = "idle" | "checking" | "loading" | "success" | "error" | "already_exists";
 
 export default function Install() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<InstallStatus>("idle");
   const [message, setMessage] = useState<string>("");
   const [autoInstallAttempted, setAutoInstallAttempted] = useState(false);
+  const [existingPlacement, setExistingPlacement] = useState<any>(null);
+
+  const checkExistingPlacements = () => {
+    setStatus("checking");
+    setMessage("");
+
+    if (!window.BX24) {
+      setStatus("error");
+      setMessage(t("install.sdkNotLoaded"));
+      return;
+    }
+
+    window.BX24.callMethod(
+      "placement.get",
+      {},
+      (result: any) => {
+        if (result.error()) {
+          console.error("Error checking placements:", result.error());
+          setStatus("idle");
+          setMessage("");
+        } else {
+          const placements = result.data();
+          console.log("Existing placements:", placements);
+          
+          const targetPlacement = placements.find(
+            (p: any) => p.placement === "CRM_DYNAMIC_176_DETAIL_TAB"
+          );
+
+          if (targetPlacement) {
+            setExistingPlacement(targetPlacement);
+            setStatus("already_exists");
+            setMessage(t("install.alreadyExists"));
+          } else {
+            setStatus("idle");
+            setMessage("");
+          }
+        }
+      }
+    );
+  };
+
+  const unbindPlacement = () => {
+    setStatus("loading");
+    setMessage("");
+
+    if (!window.BX24) {
+      setStatus("error");
+      setMessage(t("install.sdkNotLoaded"));
+      return;
+    }
+
+    window.BX24.callMethod(
+      "placement.unbind",
+      {
+        PLACEMENT: "CRM_DYNAMIC_176_DETAIL_TAB",
+      },
+      (result: any) => {
+        if (result.error()) {
+          setStatus("error");
+          setMessage(`${t("install.unbindError")} ${result.error()}`);
+          console.error("Placement unbind error:", result.error());
+        } else {
+          console.log("Placement unbound successfully");
+          setExistingPlacement(null);
+          setStatus("idle");
+          setMessage(t("install.unbindSuccess"));
+        }
+      }
+    );
+  };
 
   const installPlacement = () => {
     setStatus("loading");
@@ -32,8 +102,17 @@ export default function Install() {
       },
       (result: any) => {
         if (result.error()) {
-          setStatus("error");
-          setMessage(`${t("install.errorMessage")} ${result.error()}`);
+          const errorStr = String(result.error());
+          
+          // Check if placement already exists
+          if (errorStr.includes("Handler already binded") || errorStr.includes("already binded")) {
+            setStatus("already_exists");
+            setMessage(t("install.alreadyExists"));
+            checkExistingPlacements(); // Fetch existing placement details
+          } else {
+            setStatus("error");
+            setMessage(`${t("install.errorMessage")} ${errorStr}`);
+          }
           console.error("Placement registration error:", result.error());
         } else {
           setStatus("success");
@@ -50,7 +129,7 @@ export default function Install() {
   };
 
   useEffect(() => {
-    // Auto-install on first load
+    // Auto-check placements on first load
     if (!autoInstallAttempted) {
       setAutoInstallAttempted(true);
       
@@ -58,14 +137,15 @@ export default function Install() {
       const checkAndInstall = () => {
         if (window.BX24) {
           window.BX24.init(() => {
-            installPlacement();
+            // First check if placement already exists
+            checkExistingPlacements();
           });
         } else {
           // If no BX24, try to load it
           setTimeout(() => {
             if (window.BX24) {
               window.BX24.init(() => {
-                installPlacement();
+                checkExistingPlacements();
               });
             } else {
               setStatus("error");
@@ -90,6 +170,16 @@ export default function Install() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Status indicator */}
+          {status === "checking" && (
+            <Alert>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertTitle>{t("install.checking")}</AlertTitle>
+              <AlertDescription>
+                {t("install.checkingDescription")}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {status === "loading" && (
             <Alert>
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -106,6 +196,24 @@ export default function Install() {
               <AlertTitle className="text-green-800 dark:text-green-200">{t("install.success")}</AlertTitle>
               <AlertDescription className="text-green-700 dark:text-green-300">
                 {message}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {status === "already_exists" && (
+            <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+              <CheckCircle2 className="h-4 w-4 text-yellow-600" />
+              <AlertTitle className="text-yellow-800 dark:text-yellow-200">
+                {t("install.alreadyExistsTitle")}
+              </AlertTitle>
+              <AlertDescription className="text-yellow-700 dark:text-yellow-300 space-y-2">
+                <p>{t("install.alreadyExistsDescription")}</p>
+                {existingPlacement && (
+                  <div className="text-xs font-mono bg-yellow-100 dark:bg-yellow-900 p-2 rounded">
+                    <div>Placement: {existingPlacement.placement}</div>
+                    <div>Handler: {existingPlacement.handler}</div>
+                  </div>
+                )}
               </AlertDescription>
             </Alert>
           )}
@@ -149,32 +257,60 @@ export default function Install() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-2">
-            {(status === "idle" || status === "error" || status === "loading") && (
+          <div className="flex gap-2 flex-wrap">
+            {(status === "idle" || status === "error") && (
               <Button
                 onClick={installPlacement}
                 disabled={status === "loading"}
                 data-testid="button-install-placement"
               >
-                {status === "loading" ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("install.registering")}
-                  </>
-                ) : (
-                  t("install.registerButton")
-                )}
+                {t("install.registerButton")}
               </Button>
+            )}
+
+            {status === "loading" && (
+              <Button disabled data-testid="button-loading">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t("install.pleaseWait")}
+              </Button>
+            )}
+
+            {status === "checking" && (
+              <Button disabled data-testid="button-checking">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t("install.checking")}
+              </Button>
+            )}
+
+            {status === "already_exists" && (
+              <>
+                <Button
+                  onClick={unbindPlacement}
+                  variant="destructive"
+                  data-testid="button-unbind-placement"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t("install.unbindButton")}
+                </Button>
+                <Button
+                  onClick={checkExistingPlacements}
+                  variant="outline"
+                  data-testid="button-recheck-placements"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {t("install.recheckButton")}
+                </Button>
+              </>
             )}
 
             {status === "success" && (
               <Button
-                onClick={installPlacement}
+                onClick={checkExistingPlacements}
                 variant="outline"
-                data-testid="button-reinstall-placement"
+                data-testid="button-recheck-after-success"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
-                {t("install.reinstallButton")}
+                {t("install.recheckButton")}
               </Button>
             )}
           </div>

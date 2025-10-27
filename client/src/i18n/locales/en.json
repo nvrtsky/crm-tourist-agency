@@ -75,12 +75,20 @@
   "install": {
     "title": "Install \"Group Management\" Application",
     "description": "Register tab in Smart Process \"Event\" (ENTITY_TYPE_ID = 176)",
+    "checking": "Checking...",
+    "checkingDescription": "Checking for existing placements in Bitrix24.",
     "registering": "Registering...",
     "registeringDescription": "Please wait, registering tab in Bitrix24.",
+    "pleaseWait": "Please wait...",
     "success": "Success!",
     "successMessage": "Tab successfully registered! It will now appear in all Smart Process 'Event' cards.",
+    "alreadyExistsTitle": "Tab already registered",
+    "alreadyExistsDescription": "Placement for this Smart Process already exists. You can delete it and re-register, or leave it as is.",
+    "alreadyExists": "Placement already registered in Bitrix24",
     "errorTitle": "Error",
     "errorMessage": "Registration error:",
+    "unbindError": "Error removing placement:",
+    "unbindSuccess": "Placement successfully removed. You can now register a new one.",
     "sdkNotLoaded": "Bitrix24 SDK not loaded. Open this page from Bitrix24.",
     "openFromBitrix": "Open this page from Bitrix24 for automatic installation.",
     "idleMessage": "Click the button below to register the tab in Smart Process \"Event\".",
@@ -94,6 +102,8 @@
     "findTab": "Find \"Group Management\" tab",
     "startUsing": "Start adding tourists and planning routes",
     "registerButton": "Register Tab",
-    "reinstallButton": "Reinstall"
+    "reinstallButton": "Reinstall",
+    "unbindButton": "Remove placement",
+    "recheckButton": "Check again"
   }
 }

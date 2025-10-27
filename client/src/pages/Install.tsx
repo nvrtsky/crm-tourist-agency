@@ -103,13 +103,18 @@ export default function Install() {
       (result: any) => {
         if (result.error()) {
           const errorStr = String(result.error());
+          console.log("🔍 Full error object:", result.error());
+          console.log("🔍 Error string:", errorStr);
+          console.log("🔍 Checking for 'already binded':", errorStr.includes("already binded"));
           
           // Check if placement already exists
           if (errorStr.includes("Handler already binded") || errorStr.includes("already binded")) {
+            console.log("✅ Detected 'already binded' error, switching to already_exists state");
             setStatus("already_exists");
             setMessage(t("install.alreadyExists"));
             checkExistingPlacements(); // Fetch existing placement details
           } else {
+            console.log("❌ Other error detected");
             setStatus("error");
             setMessage(`${t("install.errorMessage")} ${errorStr}`);
           }
@@ -261,7 +266,6 @@ export default function Install() {
             {(status === "idle" || status === "error") && (
               <Button
                 onClick={installPlacement}
-                disabled={status === "loading"}
                 data-testid="button-install-placement"
               >
                 {t("install.registerButton")}

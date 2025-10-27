@@ -112,6 +112,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Placement unbind error:", error);
+      
+      // Check for permission errors
+      const errorStr = String(error.message || error).toLowerCase();
+      if (errorStr.includes("forbidden") || errorStr.includes("access denied")) {
+        return res.status(403).json({
+          error: "permission_denied",
+          message: "Недостаточно прав для удаления placement. Методы placement.* требуют OAuth-приложения."
+        });
+      }
+      
       res.status(500).json({
         error: "unbind_failed",
         message: error.message || "Failed to unbind placement"

@@ -72,6 +72,15 @@ export default function Install() {
       setMessage(t("install.unbindSuccess"));
     } catch (error: any) {
       console.error("Placement unbind error:", error);
+      
+      // Check for permission errors
+      const errorMsg = error.message?.toLowerCase() || "";
+      if (errorMsg.includes("недостаточно прав") || errorMsg.includes("permission") || errorMsg.includes("oauth")) {
+        setStatus("error");
+        setMessage(error.message);
+        return;
+      }
+      
       setStatus("error");
       setMessage(`${t("install.unbindError")} ${error.message}`);
     }

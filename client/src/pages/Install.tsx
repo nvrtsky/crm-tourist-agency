@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, XCircle, Loader2, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type InstallStatus = "idle" | "loading" | "success" | "error";
 
 export default function Install() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<InstallStatus>("idle");
   const [message, setMessage] = useState<string>("");
   const [autoInstallAttempted, setAutoInstallAttempted] = useState(false);
@@ -17,7 +19,7 @@ export default function Install() {
 
     if (!window.BX24) {
       setStatus("error");
-      setMessage("Bitrix24 SDK не загружен. Откройте эту страницу из Bitrix24.");
+      setMessage(t("install.sdkNotLoaded"));
       return;
     }
 
@@ -31,11 +33,11 @@ export default function Install() {
       (result: any) => {
         if (result.error()) {
           setStatus("error");
-          setMessage(`Ошибка регистрации: ${result.error()}`);
+          setMessage(`${t("install.errorMessage")} ${result.error()}`);
           console.error("Placement registration error:", result.error());
         } else {
           setStatus("success");
-          setMessage("Вкладка успешно зарегистрирована! Теперь она появится во всех карточках Smart Process 'Событие'.");
+          setMessage(t("install.successMessage"));
           console.log("Placement registered successfully:", result.data());
           
           // REQUIRED: Call installFinish after successful placement registration
@@ -67,7 +69,7 @@ export default function Install() {
               });
             } else {
               setStatus("error");
-              setMessage("Откройте эту страницу из Bitrix24 для автоматической установки.");
+              setMessage(t("install.openFromBitrix"));
             }
           }, 1000);
         }
@@ -75,15 +77,15 @@ export default function Install() {
 
       checkAndInstall();
     }
-  }, [autoInstallAttempted]);
+  }, [autoInstallAttempted, t]);
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
       <Card className="max-w-2xl w-full">
         <CardHeader>
-          <CardTitle>Установка приложения "Управление группой"</CardTitle>
+          <CardTitle>{t("install.title")}</CardTitle>
           <CardDescription>
-            Регистрация вкладки в Smart Process "Событие" (ENTITY_TYPE_ID = 176)
+            {t("install.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -91,9 +93,9 @@ export default function Install() {
           {status === "loading" && (
             <Alert>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <AlertTitle>Регистрация...</AlertTitle>
+              <AlertTitle>{t("install.registering")}</AlertTitle>
               <AlertDescription>
-                Подождите, идет регистрация вкладки в Bitrix24.
+                {t("install.registeringDescription")}
               </AlertDescription>
             </Alert>
           )}
@@ -101,7 +103,7 @@ export default function Install() {
           {status === "success" && (
             <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertTitle className="text-green-800 dark:text-green-200">Успешно!</AlertTitle>
+              <AlertTitle className="text-green-800 dark:text-green-200">{t("install.success")}</AlertTitle>
               <AlertDescription className="text-green-700 dark:text-green-300">
                 {message}
               </AlertDescription>
@@ -111,7 +113,7 @@ export default function Install() {
           {status === "error" && (
             <Alert variant="destructive">
               <XCircle className="h-4 w-4" />
-              <AlertTitle>Ошибка</AlertTitle>
+              <AlertTitle>{t("install.errorTitle")}</AlertTitle>
               <AlertDescription>{message}</AlertDescription>
             </Alert>
           )}
@@ -119,7 +121,7 @@ export default function Install() {
           {status === "idle" && (
             <Alert>
               <AlertDescription>
-                Нажмите кнопку ниже для регистрации вкладки в Smart Process "Событие".
+                {t("install.idleMessage")}
               </AlertDescription>
             </Alert>
           )}
@@ -127,21 +129,21 @@ export default function Install() {
           {/* Instructions */}
           <div className="space-y-4 text-sm text-muted-foreground">
             <div>
-              <h3 className="font-semibold text-foreground mb-2">Что произойдет:</h3>
+              <h3 className="font-semibold text-foreground mb-2">{t("install.whatWillHappen")}</h3>
               <ul className="list-disc list-inside space-y-1">
-                <li>Будет зарегистрирована вкладка "Управление группой"</li>
-                <li>Вкладка появится во всех карточках Smart Process "Событие"</li>
-                <li>Placement: CRM_DYNAMIC_176_DETAIL_TAB</li>
-                <li>После установки можно закрыть эту страницу</li>
+                <li>{t("install.willRegisterTab")}</li>
+                <li>{t("install.willAppearInCards")}</li>
+                <li>{t("install.placementCode")}</li>
+                <li>{t("install.canCloseAfter")}</li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-semibold text-foreground mb-2">Инструкции после установки:</h3>
+              <h3 className="font-semibold text-foreground mb-2">{t("install.afterInstallation")}</h3>
               <ol className="list-decimal list-inside space-y-1">
-                <li>Откройте любую карточку Smart Process "Событие"</li>
-                <li>Найдите вкладку "Управление группой"</li>
-                <li>Начните добавлять туристов и планировать маршруты</li>
+                <li>{t("install.openCard")}</li>
+                <li>{t("install.findTab")}</li>
+                <li>{t("install.startUsing")}</li>
               </ol>
             </div>
           </div>
@@ -157,10 +159,10 @@ export default function Install() {
                 {status === "loading" ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Регистрация...
+                    {t("install.registering")}
                   </>
                 ) : (
-                  "Зарегистрировать вкладку"
+                  t("install.registerButton")
                 )}
               </Button>
             )}
@@ -172,7 +174,7 @@ export default function Install() {
                 data-testid="button-reinstall-placement"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Переустановить
+                {t("install.reinstallButton")}
               </Button>
             )}
           </div>

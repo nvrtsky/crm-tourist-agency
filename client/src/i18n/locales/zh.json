@@ -70,5 +70,29 @@
   },
   "errors": {
     "bitrixInitError": "Bitrix24初始化错误"
+  },
+  "install": {
+    "title": "安装团体管理应用程序",
+    "description": "在智能流程事件中注册选项卡 (ENTITY_TYPE_ID = 176)",
+    "registering": "注册中...",
+    "registeringDescription": "请稍候，正在Bitrix24中注册选项卡。",
+    "success": "成功！",
+    "successMessage": "选项卡注册成功！现在它将出现在所有智能流程事件卡片中。",
+    "errorTitle": "错误",
+    "errorMessage": "注册错误：",
+    "sdkNotLoaded": "Bitrix24 SDK未加载。请从Bitrix24打开此页面。",
+    "openFromBitrix": "从Bitrix24打开此页面以进行自动安装。",
+    "idleMessage": "点击下面的按钮在智能流程事件中注册选项卡。",
+    "whatWillHappen": "将发生什么：",
+    "willRegisterTab": "将注册团体管理选项卡",
+    "willAppearInCards": "选项卡将出现在所有智能流程事件卡片中",
+    "placementCode": "位置: CRM_DYNAMIC_176_DETAIL_TAB",
+    "canCloseAfter": "安装后可以关闭此页面",
+    "afterInstallation": "安装后说明：",
+    "openCard": "打开任何智能流程事件卡片",
+    "findTab": "找到团体管理选项卡",
+    "startUsing": "开始添加游客并规划路线",
+    "registerButton": "注册选项卡",
+    "reinstallButton": "重新安装"
   }
 }

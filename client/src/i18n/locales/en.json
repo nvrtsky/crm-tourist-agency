@@ -70,5 +70,29 @@
   },
   "errors": {
     "bitrixInitError": "Bitrix24 initialization error"
+  },
+  "install": {
+    "title": "Install \"Group Management\" Application",
+    "description": "Register tab in Smart Process \"Event\" (ENTITY_TYPE_ID = 176)",
+    "registering": "Registering...",
+    "registeringDescription": "Please wait, registering tab in Bitrix24.",
+    "success": "Success!",
+    "successMessage": "Tab successfully registered! It will now appear in all Smart Process 'Event' cards.",
+    "errorTitle": "Error",
+    "errorMessage": "Registration error:",
+    "sdkNotLoaded": "Bitrix24 SDK not loaded. Open this page from Bitrix24.",
+    "openFromBitrix": "Open this page from Bitrix24 for automatic installation.",
+    "idleMessage": "Click the button below to register the tab in Smart Process \"Event\".",
+    "whatWillHappen": "What will happen:",
+    "willRegisterTab": "\"Group Management\" tab will be registered",
+    "willAppearInCards": "Tab will appear in all Smart Process \"Event\" cards",
+    "placementCode": "Placement: CRM_DYNAMIC_176_DETAIL_TAB",
+    "canCloseAfter": "You can close this page after installation",
+    "afterInstallation": "Instructions after installation:",
+    "openCard": "Open any Smart Process \"Event\" card",
+    "findTab": "Find \"Group Management\" tab",
+    "startUsing": "Start adding tourists and planning routes",
+    "registerButton": "Register Tab",
+    "reinstallButton": "Reinstall"
   }
 }

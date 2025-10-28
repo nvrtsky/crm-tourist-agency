@@ -81,6 +81,8 @@
     "successMessage": "Tab successfully registered! It will now appear in all Smart Process 'Event' cards.",
     "errorTitle": "Error",
     "errorMessage": "Registration error:",
+    "errorAlreadyBinded": "Handler was already registered. It has been removed and re-registered. If error persists, contact your Bitrix24 administrator.",
+    "errorAccessDenied": "Insufficient permissions to register. Make sure you are logged into Bitrix24 as an administrator.",
     "sdkNotLoaded": "Bitrix24 SDK not loaded. Open this page from Bitrix24.",
     "openFromBitrix": "Open this page from Bitrix24 for automatic installation.",
     "idleMessage": "Click the button below to register the tab in Smart Process \"Event\".",

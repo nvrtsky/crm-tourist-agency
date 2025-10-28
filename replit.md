@@ -44,11 +44,14 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
   - Synchronizes tourists with CRM contacts and stores route information in custom fields
   - **Placement Registration**: Automated installation via `/install` page
     - Open `https://travel-group-manager-ndt72.replit.app/install` from Bitrix24
-    - Page automatically registers `CRM_DYNAMIC_176_DETAIL_TAB` placement using BX24.callMethod('placement.bind')
-    - Calls BX24.installFinish() after successful registration (required by Bitrix24 SDK)
+    - Page automatically handles placement registration with safe unbind/bind sequence:
+      1. Calls `placement.unbind` to remove existing handler (prevents "Handler already binded" error)
+      2. Calls `placement.bind` to register new handler for `CRM_DYNAMIC_176_DETAIL_TAB`
+      3. Calls `BX24.installFinish()` after successful registration (required by Bitrix24 SDK)
     - Tab "Управление группой" will appear in all Smart Process "Событие" cards
     - Full multilingual support (Russian, English, Chinese) with status indicators
     - Manual re-registration available via button if needed
+    - Helpful error messages with troubleshooting instructions for common issues
 - **Development Mode**: Three operational modes:
   1. **Dev mode** (no Bitrix24 SDK): Uses hardcoded dev-entity-123 for local development
   2. **Demo mode** (Bitrix24 SDK present, no entity ID): Generates temporary demo entity ID with user instructions

@@ -23,28 +23,62 @@ export default function Install() {
       return;
     }
 
+    const PLACEMENT_CODE = "CRM_DYNAMIC_176_DETAIL_TAB";
+    const HANDLER_URL = "https://travel-group-manager-ndt72.replit.app/";
+    const TITLE = "Управление группой";
+
+    // Step 1: Unbind existing handler (if any) to prevent "Handler already binded" error
     window.BX24.callMethod(
-      "placement.bind",
+      "placement.unbind",
       {
-        PLACEMENT: "CRM_DYNAMIC_176_DETAIL_TAB",
-        HANDLER: "https://travel-group-manager-ndt72.replit.app/",
-        TITLE: "Управление группой",
+        PLACEMENT: PLACEMENT_CODE,
+        HANDLER: HANDLER_URL,
       },
-      (result: any) => {
-        if (result.error()) {
+      (unbindResult: any) => {
+        console.log("Unbind result:", unbindResult.data());
+        
+        // Step 2: Bind new handler (even if unbind failed, it may not exist)
+        if (!window.BX24) {
           setStatus("error");
-          setMessage(`${t("install.errorMessage")} ${result.error()}`);
-          console.error("Placement registration error:", result.error());
-        } else {
-          setStatus("success");
-          setMessage(t("install.successMessage"));
-          console.log("Placement registered successfully:", result.data());
-          
-          // REQUIRED: Call installFinish after successful placement registration
-          if (window.BX24?.installFinish) {
-            window.BX24.installFinish();
-          }
+          setMessage(t("install.sdkNotLoaded"));
+          return;
         }
+        
+        window.BX24.callMethod(
+          "placement.bind",
+          {
+            PLACEMENT: PLACEMENT_CODE,
+            HANDLER: HANDLER_URL,
+            TITLE: TITLE,
+          },
+          (bindResult: any) => {
+            if (bindResult.error()) {
+              setStatus("error");
+              const errorText = bindResult.error();
+              const errorCode = bindResult.error_description ? bindResult.error_description() : "";
+              
+              // Provide helpful error messages
+              let helpText = "";
+              if (errorText.includes("Handler already binded")) {
+                helpText = t("install.errorAlreadyBinded");
+              } else if (errorText.includes("ACCESS_DENIED")) {
+                helpText = t("install.errorAccessDenied");
+              }
+              
+              setMessage(`${t("install.errorMessage")} ${errorText}\n${errorCode}\n\n${helpText}`);
+              console.error("Placement registration error:", errorText, errorCode);
+            } else {
+              setStatus("success");
+              setMessage(t("install.successMessage"));
+              console.log("Placement registered successfully:", bindResult.data());
+              
+              // Step 3: Call installFinish (REQUIRED by Bitrix24 for app installation)
+              if (window.BX24?.installFinish) {
+                window.BX24.installFinish();
+              }
+            }
+          }
+        );
       }
     );
   };

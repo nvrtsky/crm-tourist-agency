@@ -123,9 +123,44 @@ export class Bitrix24Service {
     return null;
   }
 
+  // Get contact from Bitrix24 CRM
+  async getContact(contactId: string): Promise<any> {
+    return await this.call("crm.contact.get", { id: contactId });
+  }
+
+  // Update contact user fields (custom fields like passport)
+  async updateContactUserFields(contactId: string, userFields: Record<string, any>): Promise<void> {
+    await this.call("crm.contact.update", { 
+      id: contactId, 
+      fields: userFields 
+    });
+  }
+
   // Delete contact
   async deleteContact(contactId: string): Promise<void> {
     await this.call("crm.contact.delete", { id: contactId });
+  }
+
+  // Get deal from Bitrix24 CRM
+  async getDeal(dealId: string): Promise<any> {
+    return await this.call("crm.deal.get", { id: dealId });
+  }
+
+  // List deals with filter
+  async listDeals(filter: Record<string, any> = {}): Promise<any[]> {
+    const result = await this.call("crm.deal.list", { 
+      filter,
+      select: ["*", "UF_*"]  // Include all fields and user fields
+    });
+    return result || [];
+  }
+
+  // Get entity (smart process item) with all fields
+  async getEntity(entityId: string, entityTypeId: string): Promise<any> {
+    return await this.call("crm.item.get", { 
+      entityTypeId: Number(entityTypeId),
+      id: Number(entityId)
+    });
   }
 }
 

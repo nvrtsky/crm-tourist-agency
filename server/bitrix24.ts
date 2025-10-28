@@ -162,6 +162,123 @@ export class Bitrix24Service {
       id: Number(entityId)
     });
   }
+
+  // Load tourists from Bitrix24 event structure:
+  // Event -> UF_CRM_9_1711887457 (deals) -> UF_CRM_1702460537 (contacts) -> UF fields (name, passport)
+  async loadTouristsFromEvent(entityId: string, entityTypeId: string): Promise<any[]> {
+    try {
+      console.log(`Loading tourists from event ${entityId}...`);
+      
+      // 1. Get event (smart process element)
+      const event = await this.getEntity(entityId, entityTypeId);
+      if (!event) {
+        console.log("Event not found");
+        return [];
+      }
+
+      // 2. Extract deal IDs from UF_CRM_9_1711887457
+      const dealIds = event.UF_CRM_9_1711887457;
+      if (!dealIds || !Array.isArray(dealIds) || dealIds.length === 0) {
+        console.log("No deals found in event");
+        return [];
+      }
+
+      console.log(`Found ${dealIds.length} deals:`, dealIds);
+
+      // 3. Process each deal
+      const tourists: any[] = [];
+      for (const dealId of dealIds) {
+        try {
+          const deal = await this.getDeal(String(dealId));
+          if (!deal) {
+            console.log(`Deal ${dealId} not found`);
+            continue;
+          }
+
+          // 4. Extract contact IDs from UF_CRM_1702460537 (tourists field in deal)
+          const contactIds = deal.UF_CRM_1702460537;
+          if (!contactIds || !Array.isArray(contactIds) || contactIds.length === 0) {
+            console.log(`No tourists in deal ${dealId}`);
+            continue;
+          }
+
+          console.log(`Deal ${dealId} has ${contactIds.length} tourists:`, contactIds);
+
+          // 5. Get each contact and extract tourist data
+          for (const contactId of contactIds) {
+            try {
+              const contact = await this.getContact(String(contactId));
+              if (!contact) {
+                console.log(`Contact ${contactId} not found`);
+                continue;
+              }
+
+              // 6. Extract tourist fields
+              const name = contact.UF_CRM_1700666127661 || contact.NAME || contact.LAST_NAME 
+                ? `${contact.NAME || ""} ${contact.LAST_NAME || ""}`.trim() 
+                : "Unknown";
+              const passport = contact.UF_CRM_1700667203530 || "";
+              const phone = contact.PHONE && contact.PHONE[0] ? contact.PHONE[0].VALUE : "";
+              const email = contact.EMAIL && contact.EMAIL[0] ? contact.EMAIL[0].VALUE : "";
+
+              tourists.push({
+                bitrixContactId: String(contactId),
+                bitrixDealId: String(dealId),
+                name,
+                passport,
+                phone,
+                email,
+              });
+
+              console.log(`Loaded tourist: ${name} (contact ${contactId})`);
+            } catch (contactError) {
+              console.error(`Error loading contact ${contactId}:`, contactError);
+            }
+          }
+        } catch (dealError) {
+          console.error(`Error loading deal ${dealId}:`, dealError);
+        }
+      }
+
+      console.log(`Loaded ${tourists.length} tourists from Bitrix24`);
+      return tourists;
+    } catch (error) {
+      console.error("Error loading tourists from Bitrix24:", error);
+      throw error;
+    }
+  }
+
+  // Save tourist to Bitrix24 - update contact with custom fields
+  async saveTouristToContact(contactId: string, touristData: any): Promise<void> {
+    const fields: Record<string, any> = {};
+
+    // Update standard fields
+    if (touristData.name) {
+      const nameParts = touristData.name.split(" ");
+      fields.NAME = nameParts[0] || "";
+      fields.LAST_NAME = nameParts.slice(1).join(" ") || "";
+    }
+    
+    if (touristData.email !== undefined) {
+      fields.EMAIL = touristData.email ? [{ VALUE: touristData.email, VALUE_TYPE: "WORK" }] : [];
+    }
+    
+    if (touristData.phone !== undefined) {
+      fields.PHONE = touristData.phone ? [{ VALUE: touristData.phone, VALUE_TYPE: "WORK" }] : [];
+    }
+
+    // Update custom user fields
+    if (touristData.name) {
+      fields.UF_CRM_1700666127661 = touristData.name; // ФИО in custom field
+    }
+    
+    if (touristData.passport !== undefined) {
+      fields.UF_CRM_1700667203530 = touristData.passport; // Passport number
+    }
+
+    await this.call("crm.contact.update", { id: contactId, fields });
+    console.log(`Updated contact ${contactId} in Bitrix24`);
+  }
 }
 
 // Create singleton instance

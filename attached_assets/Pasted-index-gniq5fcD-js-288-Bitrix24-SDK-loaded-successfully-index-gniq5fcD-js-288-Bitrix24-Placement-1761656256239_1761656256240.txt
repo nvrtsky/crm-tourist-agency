@@ -1,0 +1,65 @@
+index-gniq5fcD.js:288 ✅ Bitrix24 SDK loaded successfully
+index-gniq5fcD.js:288 🔍 Bitrix24 Placement Info (полная структура): {
+  "placement": "DEFAULT",
+  "options": {
+    "any": "133/"
+  }
+}
+index-gniq5fcD.js:288 🔍 Available keys in placementInfo: (2) ['placement', 'options']
+index-gniq5fcD.js:288 🔍 Available keys in placementInfo.options: ['any']
+index-gniq5fcD.js:288 🔍 Bitrix24 Auth Info: {
+  "access_token": "b0cb0069007d5b4c00673594000000f90000075c081baf26df99a335e2d107c9ca2084",
+  "refresh_token": "a04a2869007d5b4c00673594000000f900000788baecc07b4cbe7871f5c360820a4201",
+  "expires_in": 1761659827208,
+  "domain": "mitclick.bitrix24.ru",
+  "member_id": "f26c88fe53a7884a9b1c4f1e7a306bc8"
+}
+index-gniq5fcD.js:288 📊 Final values - entityId: null entityTypeId: null
+index-gniq5fcD.js:288 ⚠️ Entity ID не найден! Проверьте консоль для диагностики.
+(anonymous) @ index-gniq5fcD.js:288
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-gniq5fcD.js:288
+n @ index-gniq5fcD.js:288
+await in n
+(anonymous) @ index-gniq5fcD.js:300
+D0 @ index-gniq5fcD.js:40
+xl @ index-gniq5fcD.js:40
+(anonymous) @ index-gniq5fcD.js:40
+E @ index-gniq5fcD.js:25
+L @ index-gniq5fcD.js:25
+index-gniq5fcD.js:288 💡 Доступные поля в placement.info(): placement, options
+(anonymous) @ index-gniq5fcD.js:288
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-gniq5fcD.js:288
+n @ index-gniq5fcD.js:288
+await in n
+(anonymous) @ index-gniq5fcD.js:300
+D0 @ index-gniq5fcD.js:40
+xl @ index-gniq5fcD.js:40
+(anonymous) @ index-gniq5fcD.js:40
+E @ index-gniq5fcD.js:25
+L @ index-gniq5fcD.js:25
+index-gniq5fcD.js:288 💡 Доступные поля в options: any
+(anonymous) @ index-gniq5fcD.js:288
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-gniq5fcD.js:288
+n @ index-gniq5fcD.js:288
+await in n
+(anonymous) @ index-gniq5fcD.js:300
+D0 @ index-gniq5fcD.js:40
+xl @ index-gniq5fcD.js:40
+(anonymous) @ index-gniq5fcD.js:40
+E @ index-gniq5fcD.js:25
+L @ index-gniq5fcD.js:25
+index-gniq5fcD.js:300 🎭 Включен DEMO-режим. EntityId: demo-entity-1761656227319
+index-gniq5fcD.js:404 🔍 Router - current location: /install
+index-gniq5fcD.js:404 🔍 Router - window.location: {href: 'https://travel-group-manager-ndt72.replit.app/inst…&LANG=ru&APP_SID=bfe10f7ef5b3da2fa8b9d801fd51f015', pathname: '/install', search: '?DOMAIN=mitclick.bitrix24.ru&PROTOCOL=1&LANG=ru&APP_SID=bfe10f7ef5b3da2fa8b9d801fd51f015', hash: ''}

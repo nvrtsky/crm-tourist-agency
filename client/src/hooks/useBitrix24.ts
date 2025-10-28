@@ -61,22 +61,78 @@ function loadBitrix24Script(): Promise<void> {
       return;
     }
 
-    // Try to load from default endpoint
-    const script = document.createElement('script');
-    script.src = '//api.bitrix24.com/api/v1/';
-    script.async = true;
+    // Check if we're in an iframe (embedded in Bitrix24)
+    const isInIframe = window !== window.top;
     
-    script.onload = () => {
-      console.log('✅ Bitrix24 SDK loaded successfully');
-      resolve();
-    };
-    
-    script.onerror = () => {
-      console.error('❌ Failed to load Bitrix24 SDK');
-      reject(new Error('Failed to load Bitrix24 SDK'));
-    };
-    
-    document.head.appendChild(script);
+    if (isInIframe) {
+      // Check if this is a Bitrix24 iframe (referrer contains bitrix24)
+      const isBitrix24Iframe = document.referrer.includes('bitrix24');
+      
+      console.log('🔍 IFRAME CONTEXT:', {
+        inIframe: isInIframe,
+        isBitrix24Iframe,
+        hasBX24: !!window.BX24,
+        referrer: document.referrer
+      });
+      
+      if (isBitrix24Iframe) {
+        // In Bitrix24 iframe, wait for BX24 to be injected by parent
+        let attempts = 0;
+        const maxAttempts = 30; // 3 seconds total
+        
+        const checkInterval = setInterval(() => {
+          attempts++;
+          
+          if (window.BX24) {
+            clearInterval(checkInterval);
+            console.log('✅ Bitrix24 SDK detected in iframe after', attempts * 100, 'ms');
+            resolve();
+          } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+            console.error('❌ Bitrix24 SDK timeout after', attempts * 100, 'ms');
+            reject(new Error('Bitrix24 SDK не обнаружен после ожидания. Попробуйте обновить страницу.'));
+          }
+        }, 100);
+      } else {
+        // Not a Bitrix24 iframe (e.g., Replit preview) - try loading SDK
+        const script = document.createElement('script');
+        script.src = '//api.bitrix24.com/api/v1/';
+        script.async = true;
+        
+        script.onload = () => {
+          if (window.BX24) {
+            console.log('✅ Bitrix24 SDK loaded in non-Bitrix24 iframe');
+            resolve();
+          } else {
+            reject(new Error('SDK загружен, но BX24 недоступен'));
+          }
+        };
+        
+        script.onerror = () => {
+          console.error('❌ SDK loading failed in non-Bitrix24 iframe');
+          reject(new Error('Не удалось загрузить Bitrix24 SDK. Откройте из Bitrix24.'));
+        };
+        
+        document.head.appendChild(script);
+      }
+    } else {
+      // Standalone mode - try to load SDK (for development/testing)
+      const script = document.createElement('script');
+      script.src = '//api.bitrix24.com/api/v1/';
+      script.async = true;
+      
+      script.onload = () => {
+        console.log('✅ Bitrix24 SDK loaded successfully');
+        resolve();
+      };
+      
+      script.onerror = () => {
+        console.error('❌ Failed to load Bitrix24 SDK');
+        reject(new Error('Failed to load Bitrix24 SDK'));
+      };
+      
+      document.head.appendChild(script);
+    }
   });
 }
 
@@ -130,15 +186,33 @@ export function useBitrix24(): Bitrix24Context {
         const auth = window.BX24!.getAuth();
         const domain = auth.domain || window.BX24!.getDomain();
         
+        // DIAGNOSTIC: Log what Bitrix24 provides
+        console.log('🔍 BITRIX24 DIAGNOSTIC INFO:', {
+          placement: placementInfo?.placement,
+          options: placementInfo?.options,
+          allFields: placementInfo,
+          parentUrl: document.referrer,
+          iframeUrl: window.location.href
+        });
+        
         // Try multiple possible field names for Smart Process
         let entityId = null;
         let entityTypeId = null;
 
-        // Method 0: Extract from URL pathname (primary method for iframe placements)
-        // URL format: /sobytie/176/details/303/ or /303/ or similar
-        const pathMatch = window.location.pathname.match(/\/(\d+)\/?(?:\?|$)/);
-        if (pathMatch && pathMatch[1]) {
-          entityId = pathMatch[1];
+        // Method 0: Extract from parent URL (document.referrer)
+        // The parent Bitrix24 page URL contains the entity ID
+        // URL format: .../176/details/3039/ or similar - we want the LAST number before query string
+        if (document.referrer) {
+          // Extract path part (before query string)
+          const urlPath = document.referrer.split('?')[0];
+          // Match all numbers in the path, take the last one
+          const allNumbers = urlPath.match(/\/(\d+)/g);
+          if (allNumbers && allNumbers.length > 0) {
+            // Get the last number (most likely the entity ID)
+            const lastNumber = allNumbers[allNumbers.length - 1];
+            entityId = lastNumber.replace('/', '');
+            console.log('✓ Found entityId in parent URL (document.referrer):', entityId);
+          }
         }
 
         // Method 1: Check options.ID (основной метод для Smart Process)

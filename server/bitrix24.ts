@@ -30,13 +30,7 @@ export class Bitrix24Service {
       const data = await response.json();
       
       if (data.error) {
-        const errorMsg = data.error_description || data.error;
-        console.error(`❌ Bitrix24 returned error for ${method}:`, {
-          error: data.error,
-          error_description: data.error_description,
-          fullMessage: errorMsg
-        });
-        throw new Error(errorMsg);
+        throw new Error(`Bitrix24 error: ${data.error_description || data.error}`);
       }
 
       return data.result;
@@ -132,57 +126,6 @@ export class Bitrix24Service {
   // Delete contact
   async deleteContact(contactId: string): Promise<void> {
     await this.call("crm.contact.delete", { id: contactId });
-  }
-
-  // Get Smart Process item (элемент смарт-процесса)
-  async getSmartProcessItem(entityTypeId: string | number, entityId: string | number): Promise<any> {
-    const result = await this.call("crm.item.get", {
-      entityTypeId: Number(entityTypeId),
-      id: Number(entityId),
-    });
-    // crm.item.get returns { item: {...} }
-    return result?.item || result;
-  }
-
-  // Get Deal (сделка)
-  async getDeal(dealId: string | number): Promise<any> {
-    const result = await this.call("crm.deal.get", {
-      id: Number(dealId),
-    });
-    // crm.deal.get returns the deal object directly
-    return result;
-  }
-
-  // Get multiple deals by IDs
-  async getDeals(dealIds: Array<string | number>): Promise<any[]> {
-    if (!dealIds || dealIds.length === 0) {
-      return [];
-    }
-
-    // Bitrix24 batch API для получения нескольких сделок
-    const deals = [];
-    for (const dealId of dealIds) {
-      try {
-        const deal = await this.getDeal(dealId);
-        deals.push(deal);
-      } catch (error) {
-        console.error(`Failed to fetch deal ${dealId}:`, error);
-      }
-    }
-    return deals;
-  }
-
-  // Placement management methods
-  async bindPlacement(params: { PLACEMENT: string; HANDLER: string; TITLE: string }): Promise<any> {
-    return await this.call("placement.bind", params);
-  }
-
-  async getPlacementsAsync(): Promise<any[]> {
-    return await this.call("placement.get", {});
-  }
-
-  async unbindPlacement(placement: string): Promise<void> {
-    await this.call("placement.unbind", { PLACEMENT: placement });
   }
 }
 

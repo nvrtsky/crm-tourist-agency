@@ -10,7 +10,6 @@ import Dashboard from "@/pages/Dashboard";
 import Tourists from "@/pages/Tourists";
 import Summary from "@/pages/Summary";
 import Install from "@/pages/Install";
-import Debug from "@/pages/Debug";
 import NotFound from "@/pages/not-found";
 import { useBitrix24 } from "@/hooks/useBitrix24";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -24,7 +23,6 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/tourists" component={Tourists} />
       <Route path="/install" component={Install} />
-      <Route path="/debug" component={Debug} />
       <Route component={NotFound} />
     </Switch>
   );

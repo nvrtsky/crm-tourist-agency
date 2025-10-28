@@ -44,8 +44,13 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
   - **Data Synchronization Architecture**:
     - Event (Smart Process #303) → `UF_CRM_9_1711887457` (deals array) → each deal has `UF_CRM_1702460537` (contacts array)
     - Contact fields: `UF_CRM_1700666127661` (ФИО/Name), `UF_CRM_1700667203530` (Passport), standard PHONE/EMAIL fields
-    - Auto-loading: First GET request to `/api/tourists/:entityId` loads tourists from Bitrix24 deals/contacts structure
-    - Bi-directional sync: PATCH requests update both local storage and Bitrix24 contact custom fields
+    - Auto-loading: First GET request to `/api/tourists/:entityId` loads tourists from Bitrix24 deals/contacts structure (skipped for dev/demo entities)
+    - **Contact Management Policy**:
+      - **Does NOT create** new Bitrix24 contacts (POST endpoint only creates tourists in local storage)
+      - **ONLY updates** existing Bitrix24 contacts when `bitrixContactId` is provided (POST and PATCH endpoints)
+      - DELETE operations only remove tourists from local storage, Bitrix24 contacts remain untouched
+    - Dev/Demo mode: Bitrix24 API calls are automatically skipped for entities with `dev-` or `demo-` prefixes
+    - Bi-directional sync: PATCH requests update both local storage and Bitrix24 contact custom fields (when bitrixContactId exists)
     - Fallback: Application works fully offline if `BITRIX24_WEBHOOK_URL` is not configured
   - **Placement Registration**: Automated installation via `/install` page
     - Open `https://travel-group-manager-ndt72.replit.app/install` from Bitrix24

@@ -460,6 +460,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
             { city: "Luoyang", arrivalDate: "2025-11-03", arrivalTime: "17:15", departureDate: "2025-11-05", departureTime: "09:00", transportType: "train", departureTransportType: "train", flightNumber: "G208", airport: "Beijing South Station", transfer: "Гид встретит", departureFlightNumber: "G302", departureAirport: "Luoyang Railway", departureTransfer: "Автобус к поезду", hotelName: "Luoyang Peony Plaza", roomType: "twin" as const },
             { city: "Xian", arrivalDate: "2025-11-05", arrivalTime: "14:45", departureDate: "2025-11-09", departureTime: "16:30", transportType: "train", departureTransportType: "plane", flightNumber: "G302", airport: "Luoyang Station", transfer: "Со станции до отеля", departureFlightNumber: "HU555", departureAirport: "Xian Xianyang", departureTransfer: "Премиум трансфер", hotelName: "Grand Park Xian", roomType: "twin" as const }
           ]
+        },
+        {
+          name: "Wang Li",
+          phone: "+86 138 1234 5678",
+          passport: "E12345678",
+          birthDate: "1995-03-15",
+          amount: "12000",
+          currency: "CNY" as const,
+          nights: "3",
+          visits: [
+            { city: "Shanghai", arrivalDate: "2025-11-10", arrivalTime: "09:30", departureDate: "2025-11-13", departureTime: "18:00", transportType: "plane", departureTransportType: "plane", flightNumber: "MU5678", airport: "Pudong International", transfer: "Такси до отеля", departureFlightNumber: "CA999", departureAirport: "Hongqiao Airport", departureTransfer: "Метро до аэропорта", hotelName: "Shanghai Marriott Hotel City Centre", roomType: "double" as const }
+          ]
+        },
+        {
+          name: "Chen Wei",
+          phone: "+86 139 9876 5432",
+          passport: "E87654321",
+          birthDate: "1988-07-22",
+          amount: "15000",
+          currency: "CNY" as const,
+          nights: "4",
+          visits: [
+            { city: "Beijing", arrivalDate: "2025-11-15", arrivalTime: "10:00", departureDate: "2025-11-17", departureTime: "14:30", transportType: "train", departureTransportType: "train", flightNumber: "G123", airport: "Beijing Railway Station", transfer: "Групповой", departureFlightNumber: "G456", departureAirport: "Beijing South", departureTransfer: "Автобус", hotelName: "Park Plaza Beijing Wangfujing", roomType: "twin" as const },
+            { city: "Shanghai", arrivalDate: "2025-11-17", arrivalTime: "20:15", departureDate: "2025-11-19", departureTime: "11:00", transportType: "train", departureTransportType: "plane", flightNumber: "G456", airport: "Shanghai Hongqiao Station", transfer: "Такси", departureFlightNumber: "FM789", departureAirport: "Pudong International", departureTransfer: "Экспресс", hotelName: "The Portman Ritz-Carlton Shanghai", roomType: "twin" as const }
+          ]
+        },
+        {
+          name: "Liu Xiaoming",
+          phone: "+86 137 5555 8888",
+          passport: "E99887766",
+          birthDate: "1990-12-05",
+          amount: "18000",
+          currency: "CNY" as const,
+          nights: "5",
+          visits: [
+            { city: "Zhangjiajie", arrivalDate: "2025-11-20", arrivalTime: "08:45", departureDate: "2025-11-22", departureTime: "16:00", transportType: "plane", departureTransportType: "train", flightNumber: "CZ234", airport: "Zhangjiajie Hehua Airport", transfer: "Автобус от аэропорта", departureFlightNumber: "K567", departureAirport: "Zhangjiajie Railway", departureTransfer: "До вокзала", hotelName: "Pullman Zhangjiajie", roomType: "double" as const },
+            { city: "Shanghai", arrivalDate: "2025-11-22", arrivalTime: "22:30", departureDate: "2025-11-25", departureTime: "13:45", transportType: "train", departureTransportType: "plane", flightNumber: "K567", airport: "Shanghai Station", transfer: "Метро + такси", departureFlightNumber: "HO888", departureAirport: "Pudong International", departureTransfer: "Магнитная подвеска", hotelName: "Fairmont Peace Hotel Shanghai", roomType: "double" as const }
+          ]
+        },
+        {
+          name: "Zhang Hua",
+          phone: "+86 136 2222 3333",
+          passport: "E55443322",
+          birthDate: "1993-09-18",
+          amount: "14500",
+          currency: "CNY" as const,
+          nights: "3",
+          visits: [
+            { city: "Shanghai", arrivalDate: "2025-11-25", arrivalTime: "14:00", departureDate: "2025-11-28", departureTime: "09:30", transportType: "train", departureTransportType: "plane", flightNumber: "D789", airport: "Shanghai Hongqiao Station", transfer: "Такси до отеля", departureFlightNumber: "MU123", departureAirport: "Pudong International", departureTransfer: "Аэроэкспресс", hotelName: "JW Marriott Marquis Hotel Shanghai Pudong", roomType: "twin" as const }
+          ]
         }
       ];
 

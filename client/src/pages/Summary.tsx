@@ -343,7 +343,7 @@ export default function Summary() {
             <tbody>
               {!tourists || tourists.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground" data-testid="empty-message">
+                  <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground" data-testid="empty-message">
                     Туристы не добавлены
                   </td>
                 </tr>

@@ -38,16 +38,11 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  // Debug logging
-  console.log("🔍 Dashboard - entityId:", entityId, "enabled:", !!entityId);
-
   // Fetch tourists for current entity
   const { data: tourists, isLoading, error } = useQuery<TouristWithVisits[]>({
     queryKey: ["/api/tourists", entityId],
     enabled: !!entityId,
   });
-
-  console.log("🔍 Dashboard - tourists query:", { tourists, isLoading, error, entityId });
 
   // Seed test data mutation
   const seedDataMutation = useMutation({

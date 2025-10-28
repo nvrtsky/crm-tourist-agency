@@ -152,11 +152,6 @@ export function useBitrix24(): Bitrix24Context {
         const auth = window.BX24!.getAuth();
         const domain = auth.domain || window.BX24!.getDomain();
 
-        // Debug: Log full placement info structure with all available keys
-        console.log("🔍 Bitrix24 Placement Info (полная структура):", JSON.stringify(placementInfo, null, 2));
-        console.log("🔍 Available keys in placementInfo:", Object.keys(placementInfo || {}));
-        console.log("🔍 Available keys in placementInfo.options:", Object.keys(placementInfo?.options || {}));
-        console.log("🔍 Bitrix24 Auth Info:", JSON.stringify(auth, null, 2));
         
         // Try multiple possible field names for Smart Process
         let entityId = null;
@@ -165,66 +160,51 @@ export function useBitrix24(): Bitrix24Context {
         // Method 1: Check options.ID (основной метод для Smart Process)
         if (placementInfo?.options?.ID) {
           entityId = String(placementInfo.options.ID);
-          console.log("✅ Found entityId in options.ID:", entityId);
         }
 
         // Method 2: Check options.ITEM_ID (альтернатива для Smart Process)
         if (!entityId && placementInfo?.options?.ITEM_ID) {
           entityId = String(placementInfo.options.ITEM_ID);
-          console.log("✅ Found entityId in options.ITEM_ID:", entityId);
         }
 
         // Method 3: Check options.ELEMENT_ID
         if (!entityId && placementInfo?.options?.ELEMENT_ID) {
           entityId = String(placementInfo.options.ELEMENT_ID);
-          console.log("✅ Found entityId in options.ELEMENT_ID:", entityId);
         }
 
         // Method 4: Check options.ENTITY_ID
         if (!entityId && placementInfo?.options?.ENTITY_ID) {
           entityId = String(placementInfo.options.ENTITY_ID);
-          console.log("✅ Found entityId in options.ENTITY_ID:", entityId);
         }
 
         // Method 5: Check lowercase variants
         if (!entityId && placementInfo?.options?.id) {
           entityId = String(placementInfo.options.id);
-          console.log("✅ Found entityId in options.id:", entityId);
         }
 
         // Method 6: Check root level fields
         if (!entityId && placementInfo?.entityId) {
           entityId = String(placementInfo.entityId);
-          console.log("✅ Found entityId in placementInfo.entityId:", entityId);
         }
 
         // Method 7: Check DEAL_ID for compatibility
         if (!entityId && placementInfo?.options?.DEAL_ID) {
           entityId = String(placementInfo.options.DEAL_ID);
-          console.log("✅ Found entityId in options.DEAL_ID:", entityId);
         }
 
         // Entity Type ID checks
         if (placementInfo?.options?.ENTITY_TYPE_ID) {
           entityTypeId = String(placementInfo.options.ENTITY_TYPE_ID);
-          console.log("✅ Found entityTypeId in options.ENTITY_TYPE_ID:", entityTypeId);
         }
         if (!entityTypeId && placementInfo?.entityTypeId) {
           entityTypeId = String(placementInfo.entityTypeId);
-          console.log("✅ Found entityTypeId in placementInfo.entityTypeId:", entityTypeId);
         }
-
-        console.log("📊 Final values - entityId:", entityId, "entityTypeId:", entityTypeId);
 
         // If no entityId found, provide detailed error message with instructions
         let errorMessage = null;
         let useDemoMode = false;
 
         if (!entityId) {
-          console.warn("⚠️ Entity ID не найден! Проверьте консоль для диагностики.");
-          console.warn("💡 Доступные поля в placement.info():", Object.keys(placementInfo || {}).join(", "));
-          console.warn("💡 Доступные поля в options:", Object.keys(placementInfo?.options || {}).join(", "));
-          
           errorMessage = `ID элемента не найден.
           
 Возможные причины:
@@ -243,7 +223,6 @@ export function useBitrix24(): Bitrix24Context {
           useDemoMode = true;
           entityId = "demo-entity-" + Date.now();
           entityTypeId = "demo-type-smart-process";
-          console.log("🎭 Включен DEMO-режим. EntityId:", entityId);
         }
 
         setContext({

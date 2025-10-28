@@ -16,16 +16,6 @@ import { AlertCircle, Loader2, LayoutDashboard, Users, TableProperties } from "l
 import { useTranslation } from "react-i18next";
 
 function Router() {
-  const [location, setLocation] = useLocation();
-  
-  console.log('🔍 Router - current location:', location);
-  console.log('🔍 Router - window.location:', {
-    href: window.location.href,
-    pathname: window.location.pathname,
-    search: window.location.search,
-    hash: window.location.hash
-  });
-  
   return (
     <Switch>
       <Route path="/" component={Summary} />
@@ -84,7 +74,6 @@ export default function App() {
   // Auto-redirect from /install to / when loaded as placement tab
   // (if loaded with entityId, it's a working tab, not installation page)
   if (isReady && entityId && location === '/install') {
-    console.log('🔄 Auto-redirecting from /install to / (placement mode)');
     setLocation('/');
   }
 

@@ -24,16 +24,11 @@ export default function Tourists() {
   const { entityId, entityTypeId } = useBitrix24();
   const { toast } = useToast();
 
-  // Debug logging
-  console.log("🔍 Tourists - entityId:", entityId, "enabled:", !!entityId);
-
   // Fetch tourists for current entity
   const { data: tourists, isLoading, error } = useQuery<TouristWithVisits[]>({
     queryKey: ["/api/tourists", entityId],
     enabled: !!entityId,
   });
-
-  console.log("🔍 Tourists - tourists query:", { tourists, isLoading, error, entityId });
 
   // Create tourist mutation
   const createMutation = useMutation({

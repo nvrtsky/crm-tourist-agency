@@ -1,0 +1,147 @@
+core.bundle.js:125 TypeError: Cannot read properties of null (reading 'getters')
+    at Z.updateRecentCallsList (call-manager.bundle.js:330:80)
+    at y.K (init.bundle.js:114:45)
+    at new y (init.bundle.js:64:70)
+    at y.getInstance (init.bundle.js:25:218)
+    at y.init (init.bundle.js:29:18)
+    at Proxy.created (quick-access.bundle.js:14:33)
+    at nr (vue.bundle.js:20:1)
+    at ni (vue.bundle.js:20:1)
+    at ii (vue.bundle.js:20:1)
+    at vue.bundle.js:20:1 Proxy(Object) {_: {…}} 'https://vuejs.org/error-reference/#runtime-c'
+r.config.errorHandler @ core.bundle.js:125
+nr @ vue.bundle.js:20
+nl @ vue.bundle.js:20
+nr @ vue.bundle.js:20
+ni @ vue.bundle.js:20
+ii @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lJ @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lW @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+a @ vue.bundle.js:20
+run @ vue.bundle.js:20
+q @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+es @ vue.bundle.js:20
+mount @ vue.bundle.js:20
+t.mount @ vue.bundle.js:20
+(anonymous) @ core.bundle.js:140
+createVue @ core.bundle.js:115
+initComponent @ quick-access.js.bundle.js:36
+(anonymous) @ quick-access.js.bundle.js:28
+Promise.then
+r @ quick-access.js.bundle.js:28
+r @ launch.bundle.js:29
+(anonymous) @ VM17581:3
+oe @ core.js:8092
+(anonymous) @ VM17581:2
+BX.evalGlobal @ core.js:14019
+l @ core.js:16706
+t.ajax.processScripts @ core.js:16717
+t.ajax.processRequestData @ core.js:16678
+a.frameCache.processInlineJS @ core_frame_cache.js:223
+a.frameCache.insertBlock @ core_frame_cache.js:184
+(anonymous) @ core_frame_cache.js:557
+n @ core.js:14357
+(anonymous) @ core.js:14428
+i @ core.js:14463
+script
+loadAsset @ core.js:14500
+load @ core.js:14424
+n @ core.js:14353
+(anonymous) @ core.js:14428
+i @ core.js:14463
+script
+loadAsset @ core.js:14500
+load @ core.js:14424
+n @ core.js:14353
+(anonymous) @ core.js:14428
+i @ core.js:14463
+ui.toolbar.bundle.js:383 BX.UI.Toolbar: the button "uibtn-qkh9bxy0" wasn't initialized.
+(anonymous) @ ui.toolbar.bundle.js:383
+T @ ui.toolbar.bundle.js:367
+create @ ui.toolbar.bundle.js:541
+(anonymous) @ 303/?categoryId=15&IFRAME=Y&IFRAME_TYPE=SIDE_SLIDER:1398
+index-2hnMMZWr.js:303 ✅ Bitrix24 SDK loaded successfully
+index-2hnMMZWr.js:303 🔍 Bitrix24 Placement Info (полная структура): {
+  "placement": "CRM_DYNAMIC_176_DETAIL_TAB",
+  "options": {
+    "ID": "303"
+  }
+}
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo: (2) ['placement', 'options']
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo.options: ['ID']
+index-2hnMMZWr.js:303 🔍 Bitrix24 Auth Info: {
+  "access_token": "817f0069007d5b4c00673594000000f9000007607da413e0a62370f5f5b9d2461d2528",
+  "refresh_token": "71fe2769007d5b4c00673594000000f9000007ce180a1f6fb537f99d37c5200682435d",
+  "expires_in": 1761640322483,
+  "domain": "mitclick.bitrix24.ru",
+  "member_id": "f26c88fe53a7884a9b1c4f1e7a306bc8"
+}
+index-2hnMMZWr.js:303 ✅ Found entityId in options.ID: 303
+index-2hnMMZWr.js:303 📊 Final values - entityId: 303 entityTypeId: null
+v1/:784  POST https://mitclick.bitrix24.ru/rest/placement.bind.json 400 (Bad Request)
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+(anonymous) @ v1/:1058
+ajax.prepareData @ v1/:1235
+ajax.call @ v1/:1056
+(anonymous) @ v1/:960
+RestrictionManager.run @ v1/:1417
+RestrictionManager.check @ v1/:1411
+ajax @ v1/:959
+BX24.callMethod @ v1/:54
+a @ index-2hnMMZWr.js:419
+(anonymous) @ index-2hnMMZWr.js:419
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+(anonymous) @ index-2hnMMZWr.js:419
+F0 @ index-2hnMMZWr.js:40
+_l @ index-2hnMMZWr.js:40
+vw @ index-2hnMMZWr.js:40
+Aa @ index-2hnMMZWr.js:38
+RL @ index-2hnMMZWr.js:40
+La @ index-2hnMMZWr.js:40
+ZN @ index-2hnMMZWr.js:40
+T @ index-2hnMMZWr.js:25
+j @ index-2hnMMZWr.js:25
+index-2hnMMZWr.js:419 Placement registration error: ajaxError {status: 400, ex: {…}}
+(anonymous) @ index-2hnMMZWr.js:419
+xhr.onload @ v1/:1028
+XMLHttpRequest.send
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+(anonymous) @ v1/:1058
+ajax.prepareData @ v1/:1235
+ajax.call @ v1/:1056
+(anonymous) @ v1/:960
+RestrictionManager.run @ v1/:1417
+RestrictionManager.check @ v1/:1411
+ajax @ v1/:959
+BX24.callMethod @ v1/:54
+a @ index-2hnMMZWr.js:419
+(anonymous) @ index-2hnMMZWr.js:419
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+(anonymous) @ index-2hnMMZWr.js:419
+F0 @ index-2hnMMZWr.js:40
+_l @ index-2hnMMZWr.js:40
+vw @ index-2hnMMZWr.js:40
+Aa @ index-2hnMMZWr.js:38
+RL @ index-2hnMMZWr.js:40
+La @ index-2hnMMZWr.js:40
+ZN @ index-2hnMMZWr.js:40
+T @ index-2hnMMZWr.js:25
+j @ index-2hnMMZWr.js:25

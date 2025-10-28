@@ -49,13 +49,8 @@ export default function Install() {
   };
 
   useEffect(() => {
-    // Initialize BX24 SDK but don't auto-install
-    if (window.BX24) {
-      window.BX24.init(() => {
-        console.log("BX24 initialized, ready for manual installation");
-      });
-    } else {
-      // Check if BX24 is available after a delay
+    // Check if BX24 is available (it should be initialized by useBitrix24 hook in App.tsx)
+    if (!window.BX24) {
       setTimeout(() => {
         if (!window.BX24) {
           setStatus("error");

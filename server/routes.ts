@@ -12,7 +12,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tourists/:entityId", async (req, res) => {
     try {
       const { entityId } = req.params;
-      const tourists = await storage.getTouristsByEntity(entityId);
+      const entityTypeId = req.query.entityTypeId as string || "176"; // Default to Event entity type
+      
+      // Check if we have data in storage
+      let tourists = await storage.getTouristsByEntity(entityId);
+      
+      // If no data and Bitrix24 is available, try to load from Bitrix24
+      if (tourists.length === 0 && bitrix24) {
+        try {
+          console.log(`No tourists in storage for entity ${entityId}, attempting to load from Bitrix24...`);
+          const bitrixTourists = await bitrix24.loadTouristsFromEvent(entityId, entityTypeId);
+          
+          // Save loaded tourists to storage
+          for (const bitrixTourist of bitrixTourists) {
+            const created = await storage.createTourist({
+              entityId,
+              entityTypeId,
+              name: bitrixTourist.name,
+              email: bitrixTourist.email || undefined,
+              phone: bitrixTourist.phone || undefined,
+              passport: bitrixTourist.passport || undefined,
+              bitrixContactId: bitrixTourist.bitrixContactId,
+            });
+            console.log(`Imported tourist from Bitrix24: ${created.name} (${created.id})`);
+          }
+          
+          // Reload from storage to get the full data
+          tourists = await storage.getTouristsByEntity(entityId);
+          console.log(`Loaded ${tourists.length} tourists from Bitrix24`);
+        } catch (bitrixError) {
+          console.error("Failed to load from Bitrix24, using empty data:", bitrixError);
+          // Continue with empty array - not critical error
+        }
+      }
+      
       res.json(tourists);
     } catch (error) {
       console.error("Error fetching tourists:", error);
@@ -190,7 +223,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update contact in Bitrix24 if exists and service is available
       if (bitrix24 && tourist.bitrixContactId) {
-        await bitrix24.updateContact(tourist.bitrixContactId, updates);
+        try {
+          await bitrix24.saveTouristToContact(tourist.bitrixContactId, {
+            name: updates.name || tourist.name,
+            email: updates.email !== undefined ? updates.email : tourist.email,
+            phone: updates.phone !== undefined ? updates.phone : tourist.phone,
+            passport: updates.passport !== undefined ? updates.passport : tourist.passport,
+          });
+        } catch (bitrixError) {
+          console.error("Failed to sync tourist update to Bitrix24:", bitrixError);
+          // Continue - not critical, data is saved locally
+        }
       }
 
       // Update in storage

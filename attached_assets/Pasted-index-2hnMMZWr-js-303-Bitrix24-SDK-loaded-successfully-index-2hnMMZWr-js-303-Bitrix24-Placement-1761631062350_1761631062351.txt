@@ -1,0 +1,173 @@
+index-2hnMMZWr.js:303 ✅ Bitrix24 SDK loaded successfully
+index-2hnMMZWr.js:303 🔍 Bitrix24 Placement Info (полная структура): {
+  "placement": "DEFAULT",
+  "options": {
+    "any": "133/"
+  }
+}
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo: (2) ['placement', 'options']
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo.options: ['any']
+index-2hnMMZWr.js:303 🔍 Bitrix24 Auth Info: {
+  "access_token": "4d690069007d5b4c00673594000000f9000007244e90f963c676e90afe7426306f20fa",
+  "refresh_token": "3de82769007d5b4c00673594000000f900000737da067195d2b7eabd160dd9739552a7",
+  "expires_in": 1761634642195,
+  "domain": "mitclick.bitrix24.ru",
+  "member_id": "f26c88fe53a7884a9b1c4f1e7a306bc8"
+}
+index-2hnMMZWr.js:303 📊 Final values - entityId: null entityTypeId: null
+index-2hnMMZWr.js:303 ⚠️ Entity ID не найден! Проверьте консоль для диагностики.
+(anonymous) @ index-2hnMMZWr.js:303
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+n @ index-2hnMMZWr.js:303
+r @ index-2hnMMZWr.js:303
+await in r
+(anonymous) @ index-2hnMMZWr.js:315
+F0 @ index-2hnMMZWr.js:40
+_l @ index-2hnMMZWr.js:40
+(anonymous) @ index-2hnMMZWr.js:40
+T @ index-2hnMMZWr.js:25
+j @ index-2hnMMZWr.js:25
+index-2hnMMZWr.js:303 💡 Доступные поля в placement.info(): placement, options
+(anonymous) @ index-2hnMMZWr.js:303
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+n @ index-2hnMMZWr.js:303
+r @ index-2hnMMZWr.js:303
+await in r
+(anonymous) @ index-2hnMMZWr.js:315
+F0 @ index-2hnMMZWr.js:40
+_l @ index-2hnMMZWr.js:40
+(anonymous) @ index-2hnMMZWr.js:40
+T @ index-2hnMMZWr.js:25
+j @ index-2hnMMZWr.js:25
+index-2hnMMZWr.js:303 💡 Доступные поля в options: any
+(anonymous) @ index-2hnMMZWr.js:303
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+n @ index-2hnMMZWr.js:303
+r @ index-2hnMMZWr.js:303
+await in r
+(anonymous) @ index-2hnMMZWr.js:315
+F0 @ index-2hnMMZWr.js:40
+_l @ index-2hnMMZWr.js:40
+(anonymous) @ index-2hnMMZWr.js:40
+T @ index-2hnMMZWr.js:25
+j @ index-2hnMMZWr.js:25
+index-2hnMMZWr.js:315 🎭 Включен DEMO-режим. EntityId: demo-entity-1761631042304
+v1/:784  POST https://mitclick.bitrix24.ru/rest/placement.bind.json 400 (Bad Request)
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+(anonymous) @ v1/:1058
+ajax.prepareData @ v1/:1235
+ajax.call @ v1/:1056
+(anonymous) @ v1/:960
+RestrictionManager.run @ v1/:1417
+RestrictionManager.check @ v1/:1411
+ajax @ v1/:959
+BX24.callMethod @ v1/:54
+a @ index-2hnMMZWr.js:419
+(anonymous) @ index-2hnMMZWr.js:419
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+(anonymous) @ index-2hnMMZWr.js:419
+F0 @ index-2hnMMZWr.js:40
+_l @ index-2hnMMZWr.js:40
+vw @ index-2hnMMZWr.js:40
+Aa @ index-2hnMMZWr.js:38
+RL @ index-2hnMMZWr.js:40
+La @ index-2hnMMZWr.js:40
+ZN @ index-2hnMMZWr.js:40
+T @ index-2hnMMZWr.js:25
+j @ index-2hnMMZWr.js:25
+index-2hnMMZWr.js:419 Placement registration error: ajaxError {status: 400, ex: {…}}
+(anonymous) @ index-2hnMMZWr.js:419
+xhr.onload @ v1/:1028
+XMLHttpRequest.send
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+(anonymous) @ v1/:1058
+ajax.prepareData @ v1/:1235
+ajax.call @ v1/:1056
+(anonymous) @ v1/:960
+RestrictionManager.run @ v1/:1417
+RestrictionManager.check @ v1/:1411
+ajax @ v1/:959
+BX24.callMethod @ v1/:54
+a @ index-2hnMMZWr.js:419
+(anonymous) @ index-2hnMMZWr.js:419
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+(anonymous) @ index-2hnMMZWr.js:419
+F0 @ index-2hnMMZWr.js:40
+_l @ index-2hnMMZWr.js:40
+vw @ index-2hnMMZWr.js:40
+Aa @ index-2hnMMZWr.js:38
+RL @ index-2hnMMZWr.js:40
+La @ index-2hnMMZWr.js:40
+ZN @ index-2hnMMZWr.js:40
+T @ index-2hnMMZWr.js:25
+j @ index-2hnMMZWr.js:25
+v1/:784  POST https://mitclick.bitrix24.ru/rest/placement.bind.json 400 (Bad Request)
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+(anonymous) @ v1/:1058
+ajax.prepareData @ v1/:1235
+ajax.call @ v1/:1056
+(anonymous) @ v1/:960
+RestrictionManager.run @ v1/:1417
+RestrictionManager.check @ v1/:1411
+ajax @ v1/:959
+BX24.callMethod @ v1/:54
+a @ index-2hnMMZWr.js:419
+ZI @ index-2hnMMZWr.js:37
+eM @ index-2hnMMZWr.js:37
+tM @ index-2hnMMZWr.js:37
+Uy @ index-2hnMMZWr.js:37
+iN @ index-2hnMMZWr.js:37
+(anonymous) @ index-2hnMMZWr.js:37
+Cx @ index-2hnMMZWr.js:40
+kb @ index-2hnMMZWr.js:37
+Kp @ index-2hnMMZWr.js:37
+Jv @ index-2hnMMZWr.js:37
+vM @ index-2hnMMZWr.js:37
+index-2hnMMZWr.js:419 Placement registration error: ajaxError {status: 400, ex: {…}}
+(anonymous) @ index-2hnMMZWr.js:419
+xhr.onload @ v1/:1028
+XMLHttpRequest.send
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+(anonymous) @ v1/:1058
+ajax.prepareData @ v1/:1235
+ajax.call @ v1/:1056
+(anonymous) @ v1/:960
+RestrictionManager.run @ v1/:1417
+RestrictionManager.check @ v1/:1411
+ajax @ v1/:959
+BX24.callMethod @ v1/:54
+a @ index-2hnMMZWr.js:419
+ZI @ index-2hnMMZWr.js:37
+eM @ index-2hnMMZWr.js:37
+tM @ index-2hnMMZWr.js:37
+Uy @ index-2hnMMZWr.js:37
+iN @ index-2hnMMZWr.js:37
+(anonymous) @ index-2hnMMZWr.js:37
+Cx @ index-2hnMMZWr.js:40
+kb @ index-2hnMMZWr.js:37
+Kp @ index-2hnMMZWr.js:37
+Jv @ index-2hnMMZWr.js:37
+vM @ index-2hnMMZWr.js:37

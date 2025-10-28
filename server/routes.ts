@@ -17,11 +17,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if we have data in storage
       let tourists = await storage.getTouristsByEntity(entityId);
       
-      // Skip Bitrix24 loading for dev/demo entities
-      const isDevOrDemo = entityId.startsWith('dev-') || entityId.startsWith('demo-');
-      
       // If no data and Bitrix24 is available, try to load from Bitrix24
-      if (tourists.length === 0 && bitrix24 && !isDevOrDemo) {
+      if (tourists.length === 0 && bitrix24) {
         try {
           console.log(`No tourists in storage for entity ${entityId}, attempting to load from Bitrix24...`);
           const bitrixTourists = await bitrix24.loadTouristsFromEvent(entityId, entityTypeId);

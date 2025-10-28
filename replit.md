@@ -37,20 +37,18 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
 - **Multilingual Support**: Full i18n implementation with support for Russian (default), English, and Chinese. Language switcher in application header with persistent language selection via localStorage. Dashboard fully translated.
 - **Bitrix24 Integration**: 
   - Operates as an embedded tab within Smart Process "Событие" (Event)
-  - Advanced entity ID detection with 7 fallback methods (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, id, DEAL_ID, root level fields)
-  - Detailed error messages with troubleshooting instructions
-  - Automatic DEMO-mode fallback when entity ID cannot be retrieved
+  - Advanced entity ID detection: Primary method extracts from URL pathname, with 7 fallback methods (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, id, DEAL_ID, root level fields)
+  - Detailed error messages with troubleshooting instructions when entity ID cannot be retrieved
   - **Data Synchronization Architecture**:
     - Event (Smart Process #303) → `UF_CRM_9_1711887457` (deals array) → each deal has `UF_CRM_1702460537` (contacts array)
     - Contact fields: `UF_CRM_1700666127661` (ФИО/Name), `UF_CRM_1700667203530` (Passport), standard PHONE/EMAIL fields
-    - Auto-loading: First GET request to `/api/tourists/:entityId` loads tourists from Bitrix24 deals/contacts structure (skipped for dev/demo entities)
+    - Auto-loading: First GET request to `/api/tourists/:entityId` loads tourists from Bitrix24 deals/contacts structure
     - **Contact Management Policy**:
       - **Does NOT create** new Bitrix24 contacts (POST endpoint only creates tourists in local storage)
       - **ONLY updates** existing Bitrix24 contacts when `bitrixContactId` is provided (POST and PATCH endpoints)
       - DELETE operations only remove tourists from local storage, Bitrix24 contacts remain untouched
-    - Dev/Demo mode: Bitrix24 API calls are automatically skipped for entities with `dev-` or `demo-` prefixes
     - Bi-directional sync: PATCH requests update both local storage and Bitrix24 contact custom fields (when bitrixContactId exists)
-    - Fallback: Application works fully offline if `BITRIX24_WEBHOOK_URL` is not configured
+    - Fallback: Application continues to function if `BITRIX24_WEBHOOK_URL` is not configured
   - **Placement Registration**: One-time installation via static page
     - **Installation file**: `/public/install.html` (separate static page, NOT bundled with main app)
     - **Installation URL**: `https://travel-group-manager-ndt72.replit.app/install.html`
@@ -63,14 +61,10 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
     - Main application (`client/src/`) contains ZERO placement.bind code - only reads placement.info()
     - File `client/src/pages/Install.tsx` was completely removed from project to prevent HTTP 400 errors
     - The main app hook `useBitrix24.ts` only calls BX24.init() and reads placement context (entityId), never attempts to register placement
-- **Development Mode**: Three operational modes:
-  1. **Dev mode** (no Bitrix24 SDK): Uses hardcoded dev-entity-123 for local development
-  2. **Demo mode** (Bitrix24 SDK present, no entity ID): Generates temporary demo entity ID with user instructions
-  3. **Production mode** (full Bitrix24 integration): Real Smart Process entity ID from placement
 
 ### System Design Choices
 - **Smart Process Integration**: The system leverages Bitrix24's smart processes, with each "Event" smart process item representing a unique group tour.
-- **API Endpoints**: Dedicated API for managing tourists (GET, POST, PATCH, DELETE) and for seeding/clearing test data.
+- **API Endpoints**: Dedicated REST API for managing tourists (GET, POST, PATCH, DELETE).
 - **Environment Variables**: Uses `BITRIX24_WEBHOOK_URL` for production and optional `UF_CRM_TOUR_ROUTE`, `SESSION_SECRET`.
 
 ## External Dependencies

@@ -129,15 +129,6 @@ export function useBitrix24(): Bitrix24Context {
         const placementInfo = window.BX24!.placement.info();
         const auth = window.BX24!.getAuth();
         const domain = auth.domain || window.BX24!.getDomain();
-
-        // 🔍 DIAGNOSTIC LOGGING - Display full placementInfo structure
-        console.log("🔍 === BITRIX24 PLACEMENT INFO DIAGNOSTIC ===");
-        console.log("📦 Full placementInfo object:", JSON.stringify(placementInfo, null, 2));
-        console.log("📦 placementInfo.options:", placementInfo?.options);
-        console.log("📦 placementInfo.placement:", placementInfo?.placement);
-        console.log("📦 window.location.pathname:", window.location.pathname);
-        console.log("📦 window.location.href:", window.location.href);
-        console.log("🔍 === END DIAGNOSTIC ===");
         
         // Try multiple possible field names for Smart Process
         let entityId = null;
@@ -148,7 +139,6 @@ export function useBitrix24(): Bitrix24Context {
         const pathMatch = window.location.pathname.match(/\/(\d+)\/?(?:\?|$)/);
         if (pathMatch && pathMatch[1]) {
           entityId = pathMatch[1];
-          console.log("✅ Found entityId in URL pathname:", entityId);
         }
 
         // Method 1: Check options.ID (основной метод для Smart Process)
@@ -192,7 +182,6 @@ export function useBitrix24(): Bitrix24Context {
           const typeMatch = placementInfo.placement.match(/CRM_DYNAMIC_(\d+)_DETAIL_TAB/);
           if (typeMatch && typeMatch[1]) {
             entityTypeId = typeMatch[1];
-            console.log("✅ Found entityTypeId in placement name:", entityTypeId);
           }
         }
         

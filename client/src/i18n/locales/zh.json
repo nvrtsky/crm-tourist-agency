@@ -81,8 +81,6 @@
     "successMessage": "选项卡注册成功！现在它将出现在所有智能流程事件卡片中。",
     "errorTitle": "错误",
     "errorMessage": "注册错误：",
-    "errorAlreadyBinded": "处理程序已经注册。它已被删除并重新注册。如果错误仍然存在，请联系您的Bitrix24管理员。",
-    "errorAccessDenied": "权限不足无法注册。请确保您以管理员身份登录Bitrix24。",
     "sdkNotLoaded": "Bitrix24 SDK未加载。请从Bitrix24打开此页面。",
     "openFromBitrix": "从Bitrix24打开此页面以进行自动安装。",
     "idleMessage": "点击下面的按钮在智能流程事件中注册选项卡。",

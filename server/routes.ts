@@ -17,8 +17,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if we have data in storage
       let tourists = await storage.getTouristsByEntity(entityId);
       
+      // Skip Bitrix24 loading for dev/demo entities
+      const isDevOrDemo = entityId.startsWith('dev-') || entityId.startsWith('demo-');
+      
       // If no data and Bitrix24 is available, try to load from Bitrix24
-      if (tourists.length === 0 && bitrix24) {
+      if (tourists.length === 0 && bitrix24 && !isDevOrDemo) {
         try {
           console.log(`No tourists in storage for entity ${entityId}, attempting to load from Bitrix24...`);
           const bitrixTourists = await bitrix24.loadTouristsFromEvent(entityId, entityTypeId);
@@ -53,10 +56,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create tourist (with Bitrix24 integration)
+  // Create tourist (updates existing Bitrix24 contacts if bitrixContactId provided, does not create new contacts)
   app.post("/api/tourists", async (req, res) => {
     let createdTourist: any = null;
-    let bitrixContactId: string | undefined;
 
     try {
       // Validate tourist data
@@ -96,37 +98,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         nights: nights || undefined,
       };
 
-      // Create contact in Bitrix24 only if service is available
-      if (bitrix24) {
-        try {
-          bitrixContactId = await bitrix24.createContact(touristData);
-          await bitrix24.linkContactToEntity(entityId, entityTypeId, bitrixContactId);
-        } catch (bitrixError) {
-          console.error("Bitrix24 integration failed:", bitrixError);
-          return res.status(502).json({
-            error: "Failed to create tourist in Bitrix24 CRM",
-            details: "Unable to create or link contact in smart process. Please check webhook configuration.",
-          });
-        }
-      }
+      // Create tourist in storage
+      // Note: bitrixContactId can be provided from frontend if linking to existing contact
+      createdTourist = await storage.createTourist({
+        ...touristData,
+        bitrixContactId: touristValidation.data.bitrixContactId,
+      });
 
-      // Create tourist in our storage only after Bitrix24 success
-      try {
-        createdTourist = await storage.createTourist({
-          ...touristData,
-          bitrixContactId,
-        });
-      } catch (storageError) {
-        // Rollback Bitrix24 contact if storage creation failed
-        if (bitrix24 && bitrixContactId) {
-          try {
-            await bitrix24.deleteContact(bitrixContactId);
-            console.log("Cleaned up Bitrix24 contact after storage failure:", bitrixContactId);
-          } catch (cleanupError) {
-            console.error("Failed to cleanup Bitrix24 contact:", cleanupError);
-          }
+      // Update existing Bitrix24 contact if bitrixContactId was provided
+      if (bitrix24 && createdTourist.bitrixContactId) {
+        try {
+          await bitrix24.saveTouristToContact(createdTourist.bitrixContactId, {
+            name: createdTourist.name,
+            email: createdTourist.email,
+            phone: createdTourist.phone,
+            passport: createdTourist.passport,
+          });
+          console.log(`Updated existing Bitrix24 contact ${createdTourist.bitrixContactId}`);
+        } catch (bitrixError) {
+          console.error("Failed to update Bitrix24 contact (non-critical):", bitrixError);
+          // Non-critical error - tourist is already created locally
         }
-        throw storageError;
       }
 
       // Create city visits
@@ -175,23 +167,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating tourist:", error);
 
-      // Rollback: delete created tourist (and cleanup Bitrix contact if needed)
+      // Rollback: delete created tourist from storage
       if (createdTourist) {
         try {
           await storage.deleteTourist(createdTourist.id);
           console.log("Rolled back tourist creation:", createdTourist.id);
         } catch (rollbackError) {
           console.error("Failed to rollback tourist creation:", rollbackError);
-        }
-      }
-
-      // If we created Bitrix contact but never created tourist, clean it up
-      if (bitrix24 && bitrixContactId && !createdTourist) {
-        try {
-          await bitrix24.deleteContact(bitrixContactId);
-          console.log("Cleaned up orphaned Bitrix24 contact:", bitrixContactId);
-        } catch (cleanupError) {
-          console.error("Failed to cleanup Bitrix24 contact:", cleanupError);
         }
       }
 
@@ -283,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete tourist
+  // Delete tourist (only removes from local storage, does not delete Bitrix24 contacts)
   app.delete("/api/tourists/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -293,16 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Tourist not found" });
       }
 
-      // Delete from Bitrix24 if exists and service is available
-      if (bitrix24 && tourist.bitrixContactId) {
-        try {
-          await bitrix24.deleteContact(tourist.bitrixContactId);
-        } catch (error) {
-          console.error("Error deleting Bitrix24 contact:", error);
-        }
-      }
-
-      // Delete from storage
+      // Delete from storage only (Bitrix24 contacts are not deleted)
       await storage.deleteTourist(id);
 
       res.json({ success: true });
@@ -558,23 +531,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Clear all tourists for an entity (useful for testing)
+  // Clear all tourists for an entity (useful for testing, only removes from local storage)
   app.delete("/api/tourists/entity/:entityId", async (req, res) => {
     try {
       const { entityId } = req.params;
       const tourists = await storage.getTouristsByEntity(entityId);
 
       for (const tourist of tourists) {
-        // Delete from Bitrix24 if exists and service is available
-        if (bitrix24 && tourist.bitrixContactId) {
-          try {
-            await bitrix24.deleteContact(tourist.bitrixContactId);
-          } catch (error) {
-            console.error("Error deleting Bitrix24 contact:", error);
-          }
-        }
-
-        // Delete from storage
+        // Delete from storage only (Bitrix24 contacts are not deleted)
         await storage.deleteTourist(tourist.id);
       }
 

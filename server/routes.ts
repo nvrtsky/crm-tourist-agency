@@ -29,13 +29,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: result
       });
     } catch (error: any) {
-      console.error("Placement registration error:", error);
-      console.error("Error message:", error.message);
-      console.error("Error string:", String(error));
+      console.error("❌ Placement registration error:", error);
+      console.error("📝 Error message:", error.message);
+      console.error("📝 Error string:", String(error));
       
       // Check if already binded - check both message and stringified error
       const errorStr = String(error.message || error).toLowerCase();
-      if (errorStr.includes("already bind") || errorStr.includes("handler already")) {
+      console.log("🔍 Checking error string:", errorStr);
+      
+      if (errorStr.includes("already bind") || 
+          errorStr.includes("handler already") ||
+          errorStr.includes("уже привязан")) {
         console.log("✅ Detected 'already binded' error - returning 409");
         return res.status(409).json({
           error: "already_exists",

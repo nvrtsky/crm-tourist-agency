@@ -30,7 +30,13 @@ export class Bitrix24Service {
       const data = await response.json();
       
       if (data.error) {
-        throw new Error(`Bitrix24 error: ${data.error_description || data.error}`);
+        const errorMsg = data.error_description || data.error;
+        console.error(`❌ Bitrix24 returned error for ${method}:`, {
+          error: data.error,
+          error_description: data.error_description,
+          fullMessage: errorMsg
+        });
+        throw new Error(errorMsg);
       }
 
       return data.result;

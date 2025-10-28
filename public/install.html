@@ -219,38 +219,41 @@
       status = 'loading';
       updateUI();
       
+      // STEP 1: First unbind any existing placement
       BX24.callMethod(
-        'placement.bind',
+        'placement.unbind',
         {
-          PLACEMENT: 'CRM_DYNAMIC_176_DETAIL_TAB',
-          HANDLER: 'https://travel-group-manager-ndt72.replit.app/',
-          TITLE: 'Управление группой'
+          PLACEMENT: 'CRM_DYNAMIC_176_DETAIL_TAB'
         },
-        function(result) {
-          if (result.error()) {
-            status = 'error';
-            const errorMsg = result.error();
-            // If already bound, treat as success
-            if (errorMsg.indexOf('already') !== -1 || errorMsg.indexOf('уже') !== -1) {
-              status = 'success';
-              updateUI();
-              if (BX24.installFinish) {
-                BX24.installFinish();
+        function(unbindResult) {
+          console.log('Unbind result:', unbindResult.error() || 'success');
+          
+          // STEP 2: Now bind with correct URL
+          BX24.callMethod(
+            'placement.bind',
+            {
+              PLACEMENT: 'CRM_DYNAMIC_176_DETAIL_TAB',
+              HANDLER: 'https://travel-group-manager-ndt72.replit.app/',
+              TITLE: 'Управление группой'
+            },
+            function(result) {
+              if (result.error()) {
+                status = 'error';
+                const errorMsg = result.error();
+                document.getElementById('error-message').textContent = errorMsg;
+                updateUI();
+              } else {
+                status = 'success';
+                updateUI();
+                console.log('✅ Placement registered successfully:', result.data());
+                
+                // REQUIRED: Call installFinish after successful placement registration
+                if (BX24.installFinish) {
+                  BX24.installFinish();
+                }
               }
-            } else {
-              document.getElementById('error-message').textContent = errorMsg;
-              updateUI();
             }
-          } else {
-            status = 'success';
-            updateUI();
-            console.log('✅ Placement registered successfully:', result.data());
-            
-            // REQUIRED: Call installFinish after successful placement registration
-            if (BX24.installFinish) {
-              BX24.installFinish();
-            }
-          }
+          );
         }
       );
     }

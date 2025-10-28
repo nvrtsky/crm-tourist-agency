@@ -40,7 +40,7 @@ export class Bitrix24Service {
     }
   }
 
-  // Create contact in Bitrix24 CRM
+  // Create contact in Bitrix24 CRM with custom fields
   async createContact(tourist: InsertTourist): Promise<string> {
     const params = {
       fields: {
@@ -48,6 +48,9 @@ export class Bitrix24Service {
         LAST_NAME: tourist.name.split(" ").slice(1).join(" ") || "",
         EMAIL: tourist.email ? [{ VALUE: tourist.email, VALUE_TYPE: "WORK" }] : [],
         PHONE: tourist.phone ? [{ VALUE: tourist.phone, VALUE_TYPE: "WORK" }] : [],
+        // Add custom fields for consistency with load/save operations
+        UF_CRM_1700666127661: tourist.name, // ФИО in custom field
+        UF_CRM_1700667203530: tourist.passport || "", // Passport number
       },
     };
 
@@ -213,11 +216,19 @@ export class Bitrix24Service {
                 continue;
               }
 
-              // 6. Extract tourist fields
-              const name = contact.UF_CRM_1700666127661 || contact.NAME || contact.LAST_NAME 
-                ? `${contact.NAME || ""} ${contact.LAST_NAME || ""}`.trim() 
-                : "Unknown";
-              const passport = contact.UF_CRM_1700667203530 || "";
+              // 6. Extract tourist fields - prefer custom field UF_CRM_1700666127661
+              let name = "";
+              if (contact.UF_CRM_1700666127661) {
+                name = String(contact.UF_CRM_1700666127661).trim();
+              } else if (contact.NAME || contact.LAST_NAME) {
+                name = `${contact.NAME || ""} ${contact.LAST_NAME || ""}`.trim();
+              } else {
+                name = "Unknown";
+              }
+              
+              const passport = contact.UF_CRM_1700667203530 
+                ? String(contact.UF_CRM_1700667203530).trim() 
+                : "";
               const phone = contact.PHONE && contact.PHONE[0] ? contact.PHONE[0].VALUE : "";
               const email = contact.EMAIL && contact.EMAIL[0] ? contact.EMAIL[0].VALUE : "";
 

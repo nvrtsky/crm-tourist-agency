@@ -93,11 +93,15 @@ function AdminMenu() {
     setRebindLog([]);
     addLog("🔄 Начинаем переустановку placement...");
 
-    // Step 1: Unbind
-    addLog("📤 Отвязываем старый placement...");
+    // Step 1: Unbind OLD handler
+    const OLD_HANDLER = 'https://travel-group-manager-ndt72.replit.app/install';
+    addLog(`📤 Отвязываем старый placement (handler: ${OLD_HANDLER})...`);
     window.BX24!.callMethod(
       'placement.unbind',
-      { PLACEMENT: 'CRM_DYNAMIC_176_DETAIL_TAB' },
+      { 
+        PLACEMENT: 'CRM_DYNAMIC_176_DETAIL_TAB',
+        HANDLER: OLD_HANDLER
+      },
       (unbindResult: any) => {
         if (unbindResult.error()) {
           addLog("⚠️ Unbind: " + unbindResult.error() + " (может быть норма)");
@@ -105,13 +109,14 @@ function AdminMenu() {
           addLog("✅ Старый placement отвязан");
         }
 
-        // Step 2: Bind
-        addLog("📥 Привязываем placement к URL: /");
+        // Step 2: Bind NEW handler
+        const NEW_HANDLER = 'https://travel-group-manager-ndt72.replit.app/';
+        addLog(`📥 Привязываем placement к новому URL: ${NEW_HANDLER}`);
         window.BX24!.callMethod(
           'placement.bind',
           {
             PLACEMENT: 'CRM_DYNAMIC_176_DETAIL_TAB',
-            HANDLER: 'https://travel-group-manager-ndt72.replit.app/',
+            HANDLER: NEW_HANDLER,
             TITLE: 'Управление группой'
           },
           (bindResult: any) => {

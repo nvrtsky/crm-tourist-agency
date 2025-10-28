@@ -93,25 +93,6 @@ export function useBitrix24(): Bitrix24Context {
   });
 
   useEffect(() => {
-    // Check if we're in an iframe (Bitrix24 embeds apps in iframes)
-    const isInIframe = window.self !== window.top;
-    
-    // Only use dev mode if NOT in iframe and no BX24 SDK
-    if (!isInIframe && !window.BX24) {
-      console.log("Running in development mode without Bitrix24");
-      setContext({
-        entityId: "dev-entity-123",
-        entityTypeId: "dev-type-1",
-        domain: "localhost",
-        memberId: "dev-member",
-        accessToken: "dev-token",
-        expiresIn: 3600,
-        isReady: true,
-        error: null,
-      });
-      return;
-    }
-
     // Try to load Bitrix24 SDK if not present
     const initializeBitrix = async () => {
       try {
@@ -123,7 +104,7 @@ export function useBitrix24(): Bitrix24Context {
         }
         
         if (!window.BX24) {
-          throw new Error("Bitrix24 SDK не загружен после попытки загрузки");
+          throw new Error("Bitrix24 SDK не загружен");
         }
         
         // Continue with normal initialization
@@ -132,10 +113,7 @@ export function useBitrix24(): Bitrix24Context {
         console.error("❌ Ошибка загрузки Bitrix24 SDK:", error);
         setContext((prev) => ({
           ...prev,
-          error: "Bitrix24 SDK не может быть загружен. Работаю в DEMO-режиме.",
-          entityId: "demo-entity-" + Date.now(),
-          entityTypeId: "demo-type-smart-process",
-          domain: "demo",
+          error: "Bitrix24 SDK не может быть загружен. Откройте приложение из Bitrix24.",
           isReady: true,
         }));
       }
@@ -225,29 +203,22 @@ export function useBitrix24(): Bitrix24Context {
           entityTypeId = String(placementInfo.entityTypeId);
         }
 
-        // If no entityId found, provide detailed error message with instructions
+        // If no entityId found, show error without fallback
         let errorMessage = null;
-        let useDemoMode = false;
 
         if (!entityId) {
-          errorMessage = `ID элемента не найден.
-          
+          errorMessage = `ID элемента Smart Process не найден.
+
 Возможные причины:
 1. Приложение открыто НЕ из карточки Smart Process "Событие"
 2. Неправильно настроен placement в Bitrix24
 3. Отсутствуют необходимые права доступа
 
-Инструкции:
-✓ Откройте приложение из карточки Smart Process
-✓ Убедитесь, что placement настроен как "CRM_DYNAMIC_*_DETAIL_TAB"
-✓ Проверьте консоль браузера для детальной диагностики
-
-Временно работаю в DEMO-режиме с тестовыми данными.`;
-          
-          // Fallback to demo mode
-          useDemoMode = true;
-          entityId = "demo-entity-" + Date.now();
-          entityTypeId = "demo-type-smart-process";
+Инструкции для решения:
+✓ Откройте приложение из карточки Smart Process (элемент "Событие")
+✓ Убедитесь, что placement настроен как "CRM_DYNAMIC_176_DETAIL_TAB"
+✓ Проверьте консоль браузера (F12) для диагностики
+✓ При необходимости переустановите приложение через /install.html`;
         }
 
         setContext({

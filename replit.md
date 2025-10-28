@@ -41,7 +41,12 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
   - Comprehensive debug logging with all available placement.info() keys for diagnostics
   - Detailed error messages with troubleshooting instructions
   - Automatic DEMO-mode fallback when entity ID cannot be retrieved
-  - Synchronizes tourists with CRM contacts and stores route information in custom fields
+  - **Data Synchronization Architecture**:
+    - Event (Smart Process #303) → `UF_CRM_9_1711887457` (deals array) → each deal has `UF_CRM_1702460537` (contacts array)
+    - Contact fields: `UF_CRM_1700666127661` (ФИО/Name), `UF_CRM_1700667203530` (Passport), standard PHONE/EMAIL fields
+    - Auto-loading: First GET request to `/api/tourists/:entityId` loads tourists from Bitrix24 deals/contacts structure
+    - Bi-directional sync: PATCH requests update both local storage and Bitrix24 contact custom fields
+    - Fallback: Application works fully offline if `BITRIX24_WEBHOOK_URL` is not configured
   - **Placement Registration**: Automated installation via `/install` page
     - Open `https://travel-group-manager-ndt72.replit.app/install` from Bitrix24
     - Page automatically registers `CRM_DYNAMIC_176_DETAIL_TAB` placement using BX24.callMethod('placement.bind')

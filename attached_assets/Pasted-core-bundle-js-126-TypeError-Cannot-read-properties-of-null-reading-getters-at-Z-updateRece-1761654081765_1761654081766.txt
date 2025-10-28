@@ -1,0 +1,67 @@
+core.bundle.js:126 TypeError: Cannot read properties of null (reading 'getters')
+    at Z.updateRecentCallsList (call-manager.bundle.js:330:80)
+    at y.K (init.bundle.js:114:45)
+    at new y (init.bundle.js:64:70)
+    at y.getInstance (init.bundle.js:25:218)
+    at y.init (init.bundle.js:29:18)
+    at Proxy.created (quick-access.bundle.js:14:33)
+    at nr (vue.bundle.js:20:1)
+    at ni (vue.bundle.js:20:1)
+    at ii (vue.bundle.js:20:1)
+    at vue.bundle.js:20:1 Proxy(Object) {_: {…}} 'https://vuejs.org/error-reference/#runtime-c'
+r.config.errorHandler @ core.bundle.js:126
+nr @ vue.bundle.js:20
+nl @ vue.bundle.js:20
+nr @ vue.bundle.js:20
+ni @ vue.bundle.js:20
+ii @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lJ @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lW @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+a @ vue.bundle.js:20
+run @ vue.bundle.js:20
+q @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+es @ vue.bundle.js:20
+mount @ vue.bundle.js:20
+t.mount @ vue.bundle.js:20
+(anonymous) @ core.bundle.js:149
+createVue @ core.bundle.js:116
+initComponent @ quick-access.js.bundle.js:36
+(anonymous) @ quick-access.js.bundle.js:28
+Promise.then
+r @ quick-access.js.bundle.js:28
+r @ launch.bundle.js:29
+(anonymous) @ 303/?categoryId=15:1784
+(anonymous) @ core.js:8100
+(anonymous) @ core.js:8099
+i @ core.js:6345
+ui.toolbar.bundle.js:383 BX.UI.Toolbar: the button "uibtn-808glxsr" wasn't initialized.
+(anonymous) @ ui.toolbar.bundle.js:383
+T @ ui.toolbar.bundle.js:367
+create @ ui.toolbar.bundle.js:541
+(anonymous) @ 303/?categoryId=15&IFRAME=Y&IFRAME_TYPE=SIDE_SLIDER:1398
+index-BcFh6tnz.js:288 ✅ Bitrix24 SDK loaded successfully
+index-BcFh6tnz.js:288 🔍 Bitrix24 Placement Info (полная структура): {
+  "placement": "CRM_DYNAMIC_176_DETAIL_TAB",
+  "options": {
+    "ID": "303"
+  }
+}
+index-BcFh6tnz.js:288 🔍 Available keys in placementInfo: (2) ['placement', 'options']
+index-BcFh6tnz.js:288 🔍 Available keys in placementInfo.options: ['ID']
+index-BcFh6tnz.js:288 🔍 Bitrix24 Auth Info: {
+  "access_token": "f8c20069007d5b4c00673594000000f900000710299a0ba593946e00aabbb5948cc7ba",
+  "refresh_token": "e8412869007d5b4c00673594000000f90000075b28def63a9ed1ab322e61c3166eaeef",
+  "expires_in": 1761657599798,
+  "domain": "mitclick.bitrix24.ru",
+  "member_id": "f26c88fe53a7884a9b1c4f1e7a306bc8"
+}
+index-BcFh6tnz.js:288 ✅ Found entityId in options.ID: 303
+index-BcFh6tnz.js:288 📊 Final values - entityId: 303 entityTypeId: null

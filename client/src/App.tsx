@@ -16,6 +16,16 @@ import { AlertCircle, Loader2, LayoutDashboard, Users, TableProperties } from "l
 import { useTranslation } from "react-i18next";
 
 function Router() {
+  const [location] = useLocation();
+  
+  console.log('🔍 Router - current location:', location);
+  console.log('🔍 Router - window.location:', {
+    href: window.location.href,
+    pathname: window.location.pathname,
+    search: window.location.search,
+    hash: window.location.hash
+  });
+  
   return (
     <Switch>
       <Route path="/" component={Summary} />

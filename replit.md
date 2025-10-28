@@ -53,12 +53,17 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
     - Bi-directional sync: PATCH requests update both local storage and Bitrix24 contact custom fields (when bitrixContactId exists)
     - Fallback: Application works fully offline if `BITRIX24_WEBHOOK_URL` is not configured
   - **Placement Registration**: One-time installation via static page
-    - Open `https://travel-group-manager-ndt72.replit.app/install.html` from Bitrix24 (standalone page, NOT part of main app)
-    - Page registers `CRM_DYNAMIC_176_DETAIL_TAB` placement using BX24.callMethod('placement.bind')
-    - Calls BX24.installFinish() after successful registration (required by Bitrix24 SDK)
-    - Tab "Управление группой" will appear in all Smart Process "Событие" cards
-    - **IMPORTANT**: placement.bind is NEVER called from the main application tab - only during initial setup
-    - The main application tab (`/`) only reads placement context (entityId), never attempts to re-register
+    - **Installation file**: `/public/install.html` (separate static page, NOT bundled with main app)
+    - **Installation URL**: `https://travel-group-manager-ndt72.replit.app/install.html`
+    - Installation process:
+      1. Open install.html from Bitrix24 admin panel
+      2. Page registers `CRM_DYNAMIC_176_DETAIL_TAB` placement using BX24.callMethod('placement.bind')
+      3. Calls BX24.installFinish() after successful registration (required by Bitrix24 SDK)
+      4. Tab "Управление группой" will appear in all Smart Process "Событие" cards
+    - **CRITICAL**: placement.bind is NEVER called from the main application (`/`)
+    - Main application (`client/src/`) contains ZERO placement.bind code - only reads placement.info()
+    - File `client/src/pages/Install.tsx` was completely removed from project to prevent HTTP 400 errors
+    - The main app hook `useBitrix24.ts` only calls BX24.init() and reads placement context (entityId), never attempts to register placement
 - **Development Mode**: Three operational modes:
   1. **Dev mode** (no Bitrix24 SDK): Uses hardcoded dev-entity-123 for local development
   2. **Demo mode** (Bitrix24 SDK present, no entity ID): Generates temporary demo entity ID with user instructions

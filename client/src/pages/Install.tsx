@@ -43,12 +43,34 @@ export default function Install() {
           TITLE: TITLE,
         },
         (bindResult: any) => {
+          // Log full result for debugging
+          console.log("Bind result:", bindResult);
+          
           if (bindResult.error()) {
-            const errorText = bindResult.error();
-            const errorCode = bindResult.error_description ? bindResult.error_description() : "";
+            const errorText = String(bindResult.error());
+            const errorDesc = bindResult.error_description ? String(bindResult.error_description()) : "";
             
-            // If "Handler already binded" error and first attempt, try unbind then retry
-            if (errorText.includes("Handler already binded") && retryCount === 0) {
+            // Get full error object if available
+            const errorObj = bindResult.ex || {};
+            const errorMessage = errorObj.error || errorObj.error_description || errorText;
+            
+            console.error("Placement registration error details:", {
+              error: errorText,
+              description: errorDesc,
+              ex: errorObj,
+              fullMessage: errorMessage
+            });
+            
+            // Check for "Handler already exists" error codes
+            const isHandlerExistsError = 
+              errorText.includes("Handler already binded") || 
+              errorText.includes("ERROR_HANDLER_ALREADY_EXIST") ||
+              errorMessage.includes("Handler already binded") ||
+              errorMessage.includes("Handler already exists") ||
+              errorMessage.includes("ERROR_HANDLER_ALREADY_EXIST");
+            
+            // If "Handler already exists" error and first attempt, try unbind then retry
+            if (isHandlerExistsError && retryCount === 0) {
               console.log("Handler already binded, attempting unbind and retry...");
               
               if (!window.BX24) {
@@ -78,14 +100,21 @@ export default function Install() {
               setStatus("error");
               
               let helpText = "";
-              if (errorText.includes("Handler already binded")) {
+              const isHandlerError = 
+                errorText.includes("Handler already binded") || 
+                errorText.includes("ERROR_HANDLER_ALREADY_EXIST") ||
+                errorMessage.includes("Handler already binded") ||
+                errorMessage.includes("Handler already exists") ||
+                errorMessage.includes("ERROR_HANDLER_ALREADY_EXIST");
+              
+              if (isHandlerError) {
                 helpText = t("install.errorAlreadyBinded");
-              } else if (errorText.includes("ACCESS_DENIED")) {
+              } else if (errorText.includes("ACCESS_DENIED") || errorMessage.includes("ACCESS_DENIED")) {
                 helpText = t("install.errorAccessDenied");
               }
               
-              setMessage(`${t("install.errorMessage")} ${errorText}\n${errorCode}\n\n${helpText}`);
-              console.error("Placement registration error:", errorText, errorCode);
+              const fullError = errorDesc || errorMessage || errorText;
+              setMessage(`${t("install.errorMessage")} ${fullError}\n\n${helpText}`);
             }
           } else {
             // Success!

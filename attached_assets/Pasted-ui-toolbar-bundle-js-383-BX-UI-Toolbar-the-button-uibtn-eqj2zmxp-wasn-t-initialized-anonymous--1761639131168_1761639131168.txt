@@ -1,0 +1,87 @@
+ui.toolbar.bundle.js:383 BX.UI.Toolbar: the button "uibtn-eqj2zmxp" wasn't initialized.
+(anonymous) @ ui.toolbar.bundle.js:383
+ui.toolbar.bundle.js:383 BX.UI.Toolbar: the button "uibtn-wg1r9kaf" wasn't initialized.
+(anonymous) @ ui.toolbar.bundle.js:383
+vue.global.min.js:7 You are running a development build of Vue.
+Make sure to use the production build (*.prod.js) when deploying for production.
+app.js?ver=1761639043:55 Array(1)
+app.js?ver=1761639043:55 Array(1)
+app.js?ver=1761639043:55 Array(1)
+app.js?ver=1761639043:55 Array(1)
+app.js?ver=1761639043:55 Array(1)
+app.js?ver=1761639043:55 Array(1)
+app.js?ver=1761639043:55 Array(1)
+app.js?ver=1761639043:55 Array(1)
+app.js?ver=1761639043:55 Array(1)
+index-2hnMMZWr.js:303 ✅ Bitrix24 SDK loaded successfully
+index-2hnMMZWr.js:303 🔍 Bitrix24 Placement Info (полная структура): {
+  "placement": "CRM_DYNAMIC_176_DETAIL_TAB",
+  "options": {
+    "ID": "179"
+  }
+}
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo: Array(2)
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo.options: Array(1)
+index-2hnMMZWr.js:303 🔍 Bitrix24 Auth Info: {
+  "access_token": "b3880069007d5b4c00673594000000f9000007c213d48b12678567c32680a9f8be4534",
+  "refresh_token": "a3072869007d5b4c00673594000000f90000072c5e1480e0838158c2a6208717c6f70b",
+  "expires_in": 1761642676028,
+  "domain": "mitclick.bitrix24.ru",
+  "member_id": "f26c88fe53a7884a9b1c4f1e7a306bc8"
+}
+index-2hnMMZWr.js:303 ✅ Found entityId in options.ID: 179
+index-2hnMMZWr.js:303 📊 Final values - entityId: 179 entityTypeId: null
+/rest/placement.bind.json:1  Failed to load resource: the server responded with a status of 400 ()
+index-2hnMMZWr.js:419 Placement registration error: ajaxError
+(anonymous) @ index-2hnMMZWr.js:419
+index-2hnMMZWr.js:303 🔍 Bitrix24 Placement Info (полная структура): {
+  "placement": "CRM_DYNAMIC_176_DETAIL_TAB",
+  "options": {
+    "ID": "179"
+  }
+}
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo: Array(2)
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo.options: Array(1)
+index-2hnMMZWr.js:303 🔍 Bitrix24 Auth Info: {
+  "access_token": "b3880069007d5b4c00673594000000f9000007c213d48b12678567c32680a9f8be4534",
+  "refresh_token": "a3072869007d5b4c00673594000000f90000072c5e1480e0838158c2a6208717c6f70b",
+  "expires_in": 1761642676028,
+  "domain": "mitclick.bitrix24.ru",
+  "member_id": "f26c88fe53a7884a9b1c4f1e7a306bc8"
+}
+index-2hnMMZWr.js:303 ✅ Found entityId in options.ID: 179
+index-2hnMMZWr.js:303 📊 Final values - entityId: 179 entityTypeId: null
+index-2hnMMZWr.js:303 🔍 Bitrix24 Placement Info (полная структура): {
+  "placement": "CRM_DYNAMIC_176_DETAIL_TAB",
+  "options": {
+    "ID": "179"
+  }
+}
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo: Array(2)
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo.options: Array(1)
+index-2hnMMZWr.js:303 🔍 Bitrix24 Auth Info: {
+  "access_token": "b3880069007d5b4c00673594000000f9000007c213d48b12678567c32680a9f8be4534",
+  "refresh_token": "a3072869007d5b4c00673594000000f90000072c5e1480e0838158c2a6208717c6f70b",
+  "expires_in": 1761642676028,
+  "domain": "mitclick.bitrix24.ru",
+  "member_id": "f26c88fe53a7884a9b1c4f1e7a306bc8"
+}
+index-2hnMMZWr.js:303 ✅ Found entityId in options.ID: 179
+index-2hnMMZWr.js:303 📊 Final values - entityId: 179 entityTypeId: null
+index-2hnMMZWr.js:303 🔍 Bitrix24 Placement Info (полная структура): {
+  "placement": "CRM_DYNAMIC_176_DETAIL_TAB",
+  "options": {
+    "ID": "179"
+  }
+}
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo: Array(2)
+index-2hnMMZWr.js:303 🔍 Available keys in placementInfo.options: Array(1)
+index-2hnMMZWr.js:303 🔍 Bitrix24 Auth Info: {
+  "access_token": "b3880069007d5b4c00673594000000f9000007c213d48b12678567c32680a9f8be4534",
+  "refresh_token": "a3072869007d5b4c00673594000000f90000072c5e1480e0838158c2a6208717c6f70b",
+  "expires_in": 1761642676028,
+  "domain": "mitclick.bitrix24.ru",
+  "member_id": "f26c88fe53a7884a9b1c4f1e7a306bc8"
+}
+index-2hnMMZWr.js:303 ✅ Found entityId in options.ID: 179
+index-2hnMMZWr.js:303 📊 Final values - entityId: 179 entityTypeId: null

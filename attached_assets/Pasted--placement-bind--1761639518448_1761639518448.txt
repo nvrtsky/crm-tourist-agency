@@ -1,0 +1,164 @@
+Что надо изменить в коде — конкретно
+
+Нужно сделать две вещи:
+
+(А) УБРАТЬ вызов placement.bind из боевого UI-кода
+
+В твоём index-2hnMMZWr.js (или эквивалентном bootstrap-скрипте интерфейса вкладки) у тебя что-то вроде:
+
+BX24.init(function() {
+  // ... возможно ты делаешь BX24.placement.info(...) и логируешь результат
+
+  // ❌ вот это надо вырезать:
+  BX24.callMethod(
+    'placement.bind',
+    {
+      PLACEMENT: 'CRM_DYNAMIC_176_DETAIL_TAB',
+      HANDLER: 'https://твой-url...',
+      TITLE: 'Управление группами'
+    },
+    function(result) {
+      if (result.error()) {
+        console.error('Placement registration error:', result.error());
+      } else {
+        console.log('Placement registered');
+      }
+    }
+  );
+});
+
+
+Этого кода в проде быть не должно.
+Эта регистрация — одноразовая операция, которая уже успешно произошла.
+Оставляя её, ты сам каждый раз создаёшь 400-ошибку.
+
+👉 Нужно просто закомментировать или удалить этот блок BX24.callMethod('placement.bind', ...) на странице, которая показывается во вкладке.
+
+После этого:
+
+400 исчезнет,
+
+в консоли перестанет вылетать Placement registration error,
+
+у тебя в консоли останутся только твои логи про entityId, и всё.
+
+(B) Страница вкладки должна только читать контекст, а не регистрировать себя
+
+Вот эталон минимального кода, который должен жить в UI вкладки (это то, что должно грузиться по handler URL в Bitrix24):
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Управление группами</title>
+
+  <!-- Важно: подключение SDK Bitrix24 -->
+  <script src="https://mitclick.bitrix24.ru/bitrix/js/crm/install/v1/"></script>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 16px;
+      line-height: 1.4;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 16px;
+      max-width: 480px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.05);
+      background: #fff;
+    }
+    .label {
+      color: #555;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    h1 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 12px;
+    }
+    .row {
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    code {
+      background: #f5f5f5;
+      border-radius: 4px;
+      padding: 2px 4px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Управление группами</h1>
+
+    <div class="row">
+      <div class="label">ID элемента смарт-процесса:</div>
+      <div id="entityIdValue">—</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Тип размещения (placement):</div>
+      <div id="placementValue">—</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Домен портала:</div>
+      <div id="domainValue">—</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Токен доступа (обрезан):</div>
+      <div id="tokenValue">—</div>
+    </div>
+
+    <div style="font-size:12px; color:#888; margin-top:12px;">
+      Эта страница НЕ вызывает placement.bind.  
+      Теперь вкладка не должна ругаться 400.
+    </div>
+  </div>
+
+  <script>
+    BX24.init(function() {
+      // 1. Получаем контекст вкладки (placement + options)
+      BX24.placement.info(function(info) {
+        console.log("placement.info ->", info);
+
+        const placement = info.placement;        // CRM_DYNAMIC_176_DETAIL_TAB
+        const entityId = info.options?.ID || ""; // например "179"
+
+        document.getElementById("entityIdValue").textContent = entityId || "—";
+        document.getElementById("placementValue").textContent = placement || "—";
+
+        // 2. Получаем данные авторизации (домен, токены)
+        const auth = BX24.getAuth();
+        console.log("auth ->", auth);
+
+        document.getElementById("domainValue").textContent = auth?.domain || "—";
+
+        // В целях безопасности не показываем полный токен
+        if (auth?.access_token) {
+          document.getElementById("tokenValue").textContent =
+            auth.access_token.substring(0, 10) + "...";
+        }
+      });
+
+      // ❌ ВАЖНО: Здесь НЕТ BX24.callMethod('placement.bind', {...})
+    });
+  </script>
+</body>
+</html>
+
+
+Если ты вместо своего React сейчас просто временно отдашь такое (чтобы проверить, что всё чисто):
+
+вкладка будет открываться без ошибки,
+
+в консоли останутся только Vue-шум от Битрикса (их внутренние бинды),
+
+ты увидишь entityId прямо в интерфейсе.
+
+Это покажет, что всё ок с интеграцией и проблема была только в лишнем placement.bind.

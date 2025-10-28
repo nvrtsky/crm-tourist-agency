@@ -160,33 +160,39 @@ export class Bitrix24Service {
 
   // Get entity (smart process item) with all fields
   async getEntity(entityId: string, entityTypeId: string): Promise<any> {
-    return await this.call("crm.item.get", { 
+    const result = await this.call("crm.item.get", { 
       entityTypeId: Number(entityTypeId),
       id: Number(entityId)
     });
+    
+    // Bitrix24 REST API returns data in { item: { ... } } structure
+    return result?.item || result;
   }
 
   // Load tourists from Bitrix24 event structure:
   // Event -> UF_CRM_9_1711887457 (deals) -> UF_CRM_1702460537 (contacts) -> UF fields (name, passport)
   async loadTouristsFromEvent(entityId: string, entityTypeId: string): Promise<any[]> {
     try {
-      console.log(`Loading tourists from event ${entityId}...`);
+      console.log(`\n📥 Loading tourists from event ${entityId}...`);
       
       // 1. Get event (smart process element)
       const event = await this.getEntity(entityId, entityTypeId);
       if (!event) {
-        console.log("Event not found");
+        console.log("❌ Event not found");
         return [];
       }
 
-      // 2. Extract deal IDs from UF_CRM_9_1711887457
-      const dealIds = event.UF_CRM_9_1711887457;
+      console.log("✅ Event loaded:", event.title || event.TITLE || `ID ${event.id}`);
+
+      // 2. Extract deal IDs from ufCrm9_1711887457 (camelCase in REST API)
+      const dealIds = event.ufCrm9_1711887457;
       if (!dealIds || !Array.isArray(dealIds) || dealIds.length === 0) {
-        console.log("No deals found in event");
+        console.log("⚠️ No deals found in ufCrm9_1711887457");
+        console.log("   Current value:", dealIds);
         return [];
       }
 
-      console.log(`Found ${dealIds.length} deals:`, dealIds);
+      console.log(`✅ Found ${dealIds.length} deals:`, dealIds);
 
       // 3. Process each deal
       const tourists: any[] = [];
@@ -194,40 +200,40 @@ export class Bitrix24Service {
         try {
           const deal = await this.getDeal(String(dealId));
           if (!deal) {
-            console.log(`Deal ${dealId} not found`);
+            console.log(`❌ Deal ${dealId} not found`);
             continue;
           }
 
-          // 4. Extract contact IDs from UF_CRM_1702460537 (tourists field in deal)
-          const contactIds = deal.UF_CRM_1702460537;
+          // 4. Extract contact IDs from ufCrm1702460537 (tourists field in deal - camelCase)
+          const contactIds = deal.ufCrm1702460537 || deal.UF_CRM_1702460537;
           if (!contactIds || !Array.isArray(contactIds) || contactIds.length === 0) {
-            console.log(`No tourists in deal ${dealId}`);
+            console.log(`⚠️ No tourists in deal ${dealId}`);
             continue;
           }
 
-          console.log(`Deal ${dealId} has ${contactIds.length} tourists:`, contactIds);
+          console.log(`✅ Deal ${dealId} has ${contactIds.length} tourists:`, contactIds);
 
           // 5. Get each contact and extract tourist data
           for (const contactId of contactIds) {
             try {
               const contact = await this.getContact(String(contactId));
               if (!contact) {
-                console.log(`Contact ${contactId} not found`);
+                console.log(`❌ Contact ${contactId} not found`);
                 continue;
               }
 
-              // 6. Extract tourist fields - prefer custom field UF_CRM_1700666127661
+              // 6. Extract tourist fields - prefer custom field ufCrm1700666127661 (camelCase)
               let name = "";
-              if (contact.UF_CRM_1700666127661) {
-                name = String(contact.UF_CRM_1700666127661).trim();
+              if (contact.ufCrm1700666127661 || contact.UF_CRM_1700666127661) {
+                name = String(contact.ufCrm1700666127661 || contact.UF_CRM_1700666127661).trim();
               } else if (contact.NAME || contact.LAST_NAME) {
                 name = `${contact.NAME || ""} ${contact.LAST_NAME || ""}`.trim();
               } else {
                 name = "Unknown";
               }
               
-              const passport = contact.UF_CRM_1700667203530 
-                ? String(contact.UF_CRM_1700667203530).trim() 
+              const passport = (contact.ufCrm1700667203530 || contact.UF_CRM_1700667203530)
+                ? String(contact.ufCrm1700667203530 || contact.UF_CRM_1700667203530).trim() 
                 : "";
               const phone = contact.PHONE && contact.PHONE[0] ? contact.PHONE[0].VALUE : "";
               const email = contact.EMAIL && contact.EMAIL[0] ? contact.EMAIL[0].VALUE : "";

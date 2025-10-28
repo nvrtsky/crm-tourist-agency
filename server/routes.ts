@@ -603,6 +603,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual load from Bitrix24 (for testing)
+  app.post("/api/load-from-bitrix24", async (req, res) => {
+    try {
+      const { entityId = "303", entityTypeId = "176" } = req.body;
+      
+      if (!bitrix24) {
+        return res.status(400).json({ 
+          error: "Bitrix24 integration not available",
+          message: "BITRIX24_WEBHOOK_URL not configured"
+        });
+      }
+
+      console.log(`\n=== Manual Load from Bitrix24 ===`);
+      console.log(`Entity ID: ${entityId}`);
+      console.log(`Entity Type ID: ${entityTypeId}`);
+      
+      // Clear existing data for this entity
+      const existingTourists = await storage.getTouristsByEntity(entityId);
+      for (const tourist of existingTourists) {
+        await storage.deleteTourist(tourist.id);
+      }
+      console.log(`Cleared ${existingTourists.length} existing tourists`);
+
+      // Load from Bitrix24
+      const bitrixTourists = await bitrix24.loadTouristsFromEvent(entityId, entityTypeId);
+      console.log(`Loaded ${bitrixTourists.length} tourists from Bitrix24`);
+
+      // Save to storage
+      const savedTourists = [];
+      for (const bitrixTourist of bitrixTourists) {
+        const created = await storage.createTourist({
+          entityId,
+          entityTypeId,
+          name: bitrixTourist.name,
+          email: bitrixTourist.email || undefined,
+          phone: bitrixTourist.phone || undefined,
+          passport: bitrixTourist.passport || undefined,
+          bitrixContactId: bitrixTourist.bitrixContactId,
+        });
+        savedTourists.push(created);
+        console.log(`Saved tourist: ${created.name} (ID: ${created.id})`);
+      }
+
+      console.log(`=== Load Complete ===\n`);
+
+      res.json({
+        success: true,
+        count: savedTourists.length,
+        message: `Загружено ${savedTourists.length} туристов из Bitrix24`,
+        tourists: savedTourists,
+      });
+    } catch (error) {
+      console.error("Error loading from Bitrix24:", error);
+      res.status(500).json({ 
+        error: "Failed to load from Bitrix24",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

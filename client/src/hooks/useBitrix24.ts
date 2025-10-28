@@ -55,84 +55,35 @@ declare global {
 
 function loadBitrix24Script(): Promise<void> {
   return new Promise((resolve, reject) => {
-    // If BX24 already exists, resolve immediately
+    // BX24 should already be loaded from <script> tag in index.html
+    // Just wait for it to be available
     if (window.BX24) {
+      console.log('✅ Bitrix24 SDK уже загружен');
       resolve();
       return;
     }
 
-    // Check if we're in an iframe (embedded in Bitrix24)
-    const isInIframe = window !== window.top;
+    // Wait for SDK to load (it's in HTML <script> tag)
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds total
     
-    if (isInIframe) {
-      // Check if this is a Bitrix24 iframe (referrer contains bitrix24)
-      const isBitrix24Iframe = document.referrer.includes('bitrix24');
+    const checkInterval = setInterval(() => {
+      attempts++;
       
-      console.log('🔍 IFRAME CONTEXT:', {
-        inIframe: isInIframe,
-        isBitrix24Iframe,
-        hasBX24: !!window.BX24,
-        referrer: document.referrer
-      });
-      
-      if (isBitrix24Iframe) {
-        // In Bitrix24 iframe, wait for BX24 to be injected by parent
-        let attempts = 0;
-        const maxAttempts = 30; // 3 seconds total
-        
-        const checkInterval = setInterval(() => {
-          attempts++;
-          
-          if (window.BX24) {
-            clearInterval(checkInterval);
-            console.log('✅ Bitrix24 SDK detected in iframe after', attempts * 100, 'ms');
-            resolve();
-          } else if (attempts >= maxAttempts) {
-            clearInterval(checkInterval);
-            console.error('❌ Bitrix24 SDK timeout after', attempts * 100, 'ms');
-            reject(new Error('Bitrix24 SDK не обнаружен после ожидания. Попробуйте обновить страницу.'));
-          }
-        }, 100);
-      } else {
-        // Not a Bitrix24 iframe (e.g., Replit preview) - try loading SDK
-        const script = document.createElement('script');
-        script.src = '//api.bitrix24.com/api/v1/';
-        script.async = true;
-        
-        script.onload = () => {
-          if (window.BX24) {
-            console.log('✅ Bitrix24 SDK loaded in non-Bitrix24 iframe');
-            resolve();
-          } else {
-            reject(new Error('SDK загружен, но BX24 недоступен'));
-          }
-        };
-        
-        script.onerror = () => {
-          console.error('❌ SDK loading failed in non-Bitrix24 iframe');
-          reject(new Error('Не удалось загрузить Bitrix24 SDK. Откройте из Bitrix24.'));
-        };
-        
-        document.head.appendChild(script);
-      }
-    } else {
-      // Standalone mode - try to load SDK (for development/testing)
-      const script = document.createElement('script');
-      script.src = '//api.bitrix24.com/api/v1/';
-      script.async = true;
-      
-      script.onload = () => {
-        console.log('✅ Bitrix24 SDK loaded successfully');
+      if (window.BX24) {
+        clearInterval(checkInterval);
+        console.log('✅ Bitrix24 SDK обнаружен после', attempts * 100, 'ms');
         resolve();
-      };
-      
-      script.onerror = () => {
-        console.error('❌ Failed to load Bitrix24 SDK');
-        reject(new Error('Failed to load Bitrix24 SDK'));
-      };
-      
-      document.head.appendChild(script);
-    }
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        console.error('❌ Bitrix24 SDK не загрузился после', attempts * 100, 'ms');
+        console.error('Проверьте: 1) Приложение открыто из Bitrix24, 2) Нет блокировки скриптов, 3) Есть интернет');
+        reject(new Error('Bitrix24 SDK не загрузился. Откройте приложение из Bitrix24.'));
+      } else if (attempts % 10 === 0) {
+        // Лог каждую секунду
+        console.log(`⏳ Ожидание загрузки BX24... (${attempts * 100}ms)`);
+      }
+    }, 100);
   });
 }
 

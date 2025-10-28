@@ -137,68 +137,69 @@ export function useBitrix24(): Bitrix24Context {
         const auth = window.BX24!.getAuth();
         const domain = auth.domain || window.BX24!.getDomain();
         
-        // DIAGNOSTIC: Log what Bitrix24 provides
-        console.log('🔍 BITRIX24 DIAGNOSTIC INFO:', {
-          placement: placementInfo?.placement,
-          options: placementInfo?.options,
-          allFields: placementInfo,
-          parentUrl: document.referrer,
-          iframeUrl: window.location.href
-        });
-        
         // Try multiple possible field names for Smart Process
         let entityId = null;
         let entityTypeId = null;
 
-        // Method 0: Extract from parent URL (document.referrer)
-        // The parent Bitrix24 page URL contains the entity ID
-        // URL format: .../176/details/3039/ or similar - we want the LAST number before query string
-        if (document.referrer) {
-          // Extract path part (before query string)
-          const urlPath = document.referrer.split('?')[0];
-          // Match all numbers in the path, take the last one
-          const allNumbers = urlPath.match(/\/(\d+)/g);
-          if (allNumbers && allNumbers.length > 0) {
-            // Get the last number (most likely the entity ID)
-            const lastNumber = allNumbers[allNumbers.length - 1];
-            entityId = lastNumber.replace('/', '');
-            console.log('✓ Found entityId in parent URL (document.referrer):', entityId);
+        // Method 0: Extract from iframe URL parameters (window.location.href)
+        // Bitrix24 может передавать entity ID через URL параметры iframe
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Попытка извлечь из различных параметров
+        const possibleIdParams = ['ENTITY_ID', 'entityId', 'ID', 'id', 'ITEM_ID', 'itemId'];
+        for (const param of possibleIdParams) {
+          const value = urlParams.get(param);
+          if (value && /^\d+$/.test(value)) {
+            entityId = value;
+            console.log(`✓ Найден entityId в URL параметре "${param}":`, entityId);
+            break;
           }
         }
 
-        // Method 1: Check options.ID (основной метод для Smart Process)
-        if (!entityId && placementInfo?.options?.ID) {
-          entityId = String(placementInfo.options.ID);
+        // Method 1: Extract from parent URL (document.referrer) 
+        // URL формат: https://mitclick.bitrix24.ru/sobytie/176/details/3039/?...
+        if (!entityId && document.referrer) {
+          console.log('🔍 Парсинг document.referrer:', document.referrer);
+          
+          // Извлекаем путь из URL
+          try {
+            const referrerUrl = new URL(document.referrer);
+            const pathname = referrerUrl.pathname; // Например: /sobytie/176/details/3039/
+            console.log('   Путь (pathname):', pathname);
+            
+            // Ищем все числа в пути
+            const allNumbers = pathname.match(/\/(\d+)/g);
+            console.log('   Найденные числа:', allNumbers);
+            
+            if (allNumbers && allNumbers.length > 0) {
+              // Берём последнее число (скорее всего это ID элемента)
+              const lastNumber = allNumbers[allNumbers.length - 1].replace('/', '');
+              entityId = lastNumber;
+              console.log('✓ Извлечён entityId из document.referrer:', entityId);
+            }
+          } catch (e) {
+            console.warn('Не удалось распарсить document.referrer:', e);
+          }
         }
 
-        // Method 2: Check options.ITEM_ID (альтернатива для Smart Process)
-        if (!entityId && placementInfo?.options?.ITEM_ID) {
-          entityId = String(placementInfo.options.ITEM_ID);
+        // Method 2: Check placementInfo.options (разные варианты полей)
+        if (!entityId && placementInfo?.options) {
+          const options = placementInfo.options;
+          const possibleFields = ['ID', 'ITEM_ID', 'ELEMENT_ID', 'ENTITY_ID', 'id', 'DEAL_ID'];
+          
+          for (const field of possibleFields) {
+            if (options[field]) {
+              entityId = String(options[field]);
+              console.log(`✓ Найден entityId в placementInfo.options.${field}:`, entityId);
+              break;
+            }
+          }
         }
 
-        // Method 3: Check options.ELEMENT_ID
-        if (!entityId && placementInfo?.options?.ELEMENT_ID) {
-          entityId = String(placementInfo.options.ELEMENT_ID);
-        }
-
-        // Method 4: Check options.ENTITY_ID
-        if (!entityId && placementInfo?.options?.ENTITY_ID) {
-          entityId = String(placementInfo.options.ENTITY_ID);
-        }
-
-        // Method 5: Check lowercase variants
-        if (!entityId && placementInfo?.options?.id) {
-          entityId = String(placementInfo.options.id);
-        }
-
-        // Method 6: Check root level fields
+        // Method 3: Check root level fields
         if (!entityId && placementInfo?.entityId) {
           entityId = String(placementInfo.entityId);
-        }
-
-        // Method 7: Check DEAL_ID for compatibility
-        if (!entityId && placementInfo?.options?.DEAL_ID) {
-          entityId = String(placementInfo.options.DEAL_ID);
+          console.log('✓ Найден entityId в placementInfo.entityId:', entityId);
         }
 
         // Entity Type ID checks
@@ -207,6 +208,7 @@ export function useBitrix24(): Bitrix24Context {
           const typeMatch = placementInfo.placement.match(/CRM_DYNAMIC_(\d+)_DETAIL_TAB/);
           if (typeMatch && typeMatch[1]) {
             entityTypeId = typeMatch[1];
+            console.log('✓ Извлечён entityTypeId из placement:', entityTypeId);
           }
         }
         
@@ -216,6 +218,16 @@ export function useBitrix24(): Bitrix24Context {
         if (!entityTypeId && placementInfo?.entityTypeId) {
           entityTypeId = String(placementInfo.entityTypeId);
         }
+
+        // ИТОГОВАЯ ДИАГНОСТИКА
+        console.log('📋 РЕЗУЛЬТАТ ИЗВЛЕЧЕНИЯ:', {
+          entityId: entityId || '❌ НЕ НАЙДЕН',
+          entityTypeId: entityTypeId || '❌ НЕ НАЙДЕН',
+          placement: placementInfo?.placement,
+          options: placementInfo?.options,
+          referrer: document.referrer,
+          iframeUrl: window.location.href
+        });
 
         // If no entityId found, show error without fallback
         let errorMessage = null;

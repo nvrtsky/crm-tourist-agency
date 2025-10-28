@@ -27,37 +27,56 @@ export default function Install() {
     const HANDLER_URL = "https://travel-group-manager-ndt72.replit.app/";
     const TITLE = "Управление группой";
 
-    // Step 1: Unbind existing handler (if any) to prevent "Handler already binded" error
-    window.BX24.callMethod(
-      "placement.unbind",
-      {
-        PLACEMENT: PLACEMENT_CODE,
-        HANDLER: HANDLER_URL,
-      },
-      (unbindResult: any) => {
-        console.log("Unbind result:", unbindResult.data());
-        
-        // Step 2: Bind new handler (even if unbind failed, it may not exist)
-        if (!window.BX24) {
-          setStatus("error");
-          setMessage(t("install.sdkNotLoaded"));
-          return;
-        }
-        
-        window.BX24.callMethod(
-          "placement.bind",
-          {
-            PLACEMENT: PLACEMENT_CODE,
-            HANDLER: HANDLER_URL,
-            TITLE: TITLE,
-          },
-          (bindResult: any) => {
-            if (bindResult.error()) {
-              setStatus("error");
-              const errorText = bindResult.error();
-              const errorCode = bindResult.error_description ? bindResult.error_description() : "";
+    // Helper function to bind placement with retry on "already binded" error
+    const tryBindPlacement = (retryCount = 0) => {
+      if (!window.BX24) {
+        setStatus("error");
+        setMessage(t("install.sdkNotLoaded"));
+        return;
+      }
+
+      window.BX24.callMethod(
+        "placement.bind",
+        {
+          PLACEMENT: PLACEMENT_CODE,
+          HANDLER: HANDLER_URL,
+          TITLE: TITLE,
+        },
+        (bindResult: any) => {
+          if (bindResult.error()) {
+            const errorText = bindResult.error();
+            const errorCode = bindResult.error_description ? bindResult.error_description() : "";
+            
+            // If "Handler already binded" error and first attempt, try unbind then retry
+            if (errorText.includes("Handler already binded") && retryCount === 0) {
+              console.log("Handler already binded, attempting unbind and retry...");
               
-              // Provide helpful error messages
+              if (!window.BX24) {
+                setStatus("error");
+                setMessage(t("install.sdkNotLoaded"));
+                return;
+              }
+              
+              // Unbind ALL handlers for this placement (omitting HANDLER parameter)
+              window.BX24.callMethod(
+                "placement.unbind",
+                {
+                  PLACEMENT: PLACEMENT_CODE,
+                  // HANDLER omitted - this removes ALL handlers for the placement
+                },
+                (unbindResult: any) => {
+                  console.log("Unbind result:", unbindResult.data(), unbindResult.error());
+                  
+                  // Wait 500ms then retry bind
+                  setTimeout(() => {
+                    tryBindPlacement(1); // Retry once
+                  }, 500);
+                }
+              );
+            } else {
+              // Show error
+              setStatus("error");
+              
               let helpText = "";
               if (errorText.includes("Handler already binded")) {
                 helpText = t("install.errorAlreadyBinded");
@@ -67,20 +86,24 @@ export default function Install() {
               
               setMessage(`${t("install.errorMessage")} ${errorText}\n${errorCode}\n\n${helpText}`);
               console.error("Placement registration error:", errorText, errorCode);
-            } else {
-              setStatus("success");
-              setMessage(t("install.successMessage"));
-              console.log("Placement registered successfully:", bindResult.data());
-              
-              // Step 3: Call installFinish (REQUIRED by Bitrix24 for app installation)
-              if (window.BX24?.installFinish) {
-                window.BX24.installFinish();
-              }
+            }
+          } else {
+            // Success!
+            setStatus("success");
+            setMessage(t("install.successMessage"));
+            console.log("Placement registered successfully:", bindResult.data());
+            
+            // Call installFinish (REQUIRED by Bitrix24 for app installation)
+            if (window.BX24?.installFinish) {
+              window.BX24.installFinish();
             }
           }
-        );
-      }
-    );
+        }
+      );
+    };
+
+    // Start the bind process
+    tryBindPlacement();
   };
 
   useEffect(() => {

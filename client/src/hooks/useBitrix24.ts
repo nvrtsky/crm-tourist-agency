@@ -93,8 +93,11 @@ export function useBitrix24(): Bitrix24Context {
   });
 
   useEffect(() => {
-    // Check if running in development mode (not in Bitrix24 iframe)
-    if (import.meta.env.DEV && !window.BX24) {
+    // Check if we're in an iframe (Bitrix24 embeds apps in iframes)
+    const isInIframe = window.self !== window.top;
+    
+    // Only use dev mode if NOT in iframe and no BX24 SDK
+    if (!isInIframe && !window.BX24) {
       console.log("Running in development mode without Bitrix24");
       setContext({
         entityId: "dev-entity-123",

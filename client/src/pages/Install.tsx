@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, XCircle, Loader2, RefreshCw } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, RefreshCw, Bug } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "wouter";
 
 type InstallStatus = "idle" | "loading" | "success" | "error";
 
@@ -233,6 +234,25 @@ export default function Install() {
               </ol>
             </div>
           </div>
+
+          {/* Debug link */}
+          {status === "error" && (
+            <Alert>
+              <Bug className="h-4 w-4" />
+              <AlertTitle>Проблемы с установкой?</AlertTitle>
+              <AlertDescription>
+                <p className="mb-2">
+                  Если ошибка повторяется, используйте страницу отладки для просмотра и удаления зарегистрированных placement'ов:
+                </p>
+                <Link href="/debug-placement">
+                  <Button variant="outline" size="sm">
+                    <Bug className="mr-2 h-4 w-4" />
+                    Открыть страницу отладки
+                  </Button>
+                </Link>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Action buttons */}
           <div className="flex gap-2">

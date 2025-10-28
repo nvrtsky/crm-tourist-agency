@@ -52,6 +52,12 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
     - Full multilingual support (Russian, English, Chinese) with status indicators
     - Manual re-registration available via button if needed
     - Helpful error messages with troubleshooting instructions for common issues
+  - **Debug Placement Tool**: Troubleshooting page at `/debug-placement`
+    - View all registered placements via `placement.get`
+    - Manually unbind specific or all handlers for a placement
+    - Detailed error logging for diagnostics
+    - Useful for resolving "Handler already binded" errors
+    - Access directly: `https://travel-group-manager-ndt72.replit.app/debug-placement`
 - **Development Mode**: Three operational modes:
   1. **Dev mode** (no Bitrix24 SDK): Uses hardcoded dev-entity-123 for local development
   2. **Demo mode** (Bitrix24 SDK present, no entity ID): Generates temporary demo entity ID with user instructions

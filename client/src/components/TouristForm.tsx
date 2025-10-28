@@ -39,6 +39,7 @@ const cityNames: Record<City, { en: string; cn: string }> = {
   Luoyang: { en: "Luoyang", cn: "洛阳" },
   Xian: { en: "Xi'an", cn: "西安" },
   Zhangjiajie: { en: "Zhangjiajie", cn: "张家界" },
+  Shanghai: { en: "Shanghai", cn: "上海" },
 };
 
 const formSchema = z.object({

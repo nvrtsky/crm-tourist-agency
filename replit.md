@@ -38,7 +38,6 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
 - **Bitrix24 Integration**: 
   - Operates as an embedded tab within Smart Process "Событие" (Event)
   - Advanced entity ID detection with 7 fallback methods (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, id, DEAL_ID, root level fields)
-  - Comprehensive debug logging with all available placement.info() keys for diagnostics
   - Detailed error messages with troubleshooting instructions
   - Automatic DEMO-mode fallback when entity ID cannot be retrieved
   - **Data Synchronization Architecture**:

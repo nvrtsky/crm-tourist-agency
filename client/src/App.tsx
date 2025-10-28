@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -73,9 +74,11 @@ export default function App() {
 
   // Auto-redirect from /install to / when loaded as placement tab
   // (if loaded with entityId, it's a working tab, not installation page)
-  if (isReady && entityId && location === '/install') {
-    setLocation('/');
-  }
+  useEffect(() => {
+    if (isReady && entityId && location === '/install') {
+      setLocation('/');
+    }
+  }, [isReady, entityId, location, setLocation]);
 
   if (!isReady) {
     return (

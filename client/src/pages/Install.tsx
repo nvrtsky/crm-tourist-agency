@@ -11,7 +11,6 @@ export default function Install() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<InstallStatus>("idle");
   const [message, setMessage] = useState<string>("");
-  const [autoInstallAttempted, setAutoInstallAttempted] = useState(false);
 
   const installPlacement = () => {
     setStatus("loading");
@@ -50,34 +49,21 @@ export default function Install() {
   };
 
   useEffect(() => {
-    // Auto-install on first load
-    if (!autoInstallAttempted) {
-      setAutoInstallAttempted(true);
-      
-      // Wait for BX24 to be ready
-      const checkAndInstall = () => {
-        if (window.BX24) {
-          window.BX24.init(() => {
-            installPlacement();
-          });
-        } else {
-          // If no BX24, try to load it
-          setTimeout(() => {
-            if (window.BX24) {
-              window.BX24.init(() => {
-                installPlacement();
-              });
-            } else {
-              setStatus("error");
-              setMessage(t("install.openFromBitrix"));
-            }
-          }, 1000);
+    // Initialize BX24 SDK but don't auto-install
+    if (window.BX24) {
+      window.BX24.init(() => {
+        console.log("BX24 initialized, ready for manual installation");
+      });
+    } else {
+      // Check if BX24 is available after a delay
+      setTimeout(() => {
+        if (!window.BX24) {
+          setStatus("error");
+          setMessage(t("install.openFromBitrix"));
         }
-      };
-
-      checkAndInstall();
+      }, 1000);
     }
-  }, [autoInstallAttempted, t]);
+  }, [t]);
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
@@ -184,7 +170,6 @@ export default function Install() {
             <div className="mt-4 p-4 bg-muted rounded text-xs font-mono">
               <div>Status: {status}</div>
               <div>BX24 Available: {window.BX24 ? "Yes" : "No"}</div>
-              <div>Auto Install Attempted: {autoInstallAttempted ? "Yes" : "No"}</div>
             </div>
           )}
         </CardContent>

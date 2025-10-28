@@ -157,18 +157,24 @@ export function useBitrix24(): Bitrix24Context {
         console.log("📦 Full placementInfo object:", JSON.stringify(placementInfo, null, 2));
         console.log("📦 placementInfo.options:", placementInfo?.options);
         console.log("📦 placementInfo.placement:", placementInfo?.placement);
-        console.log("📦 All keys in placementInfo:", Object.keys(placementInfo || {}));
-        if (placementInfo?.options) {
-          console.log("📦 All keys in options:", Object.keys(placementInfo.options));
-        }
+        console.log("📦 window.location.pathname:", window.location.pathname);
+        console.log("📦 window.location.href:", window.location.href);
         console.log("🔍 === END DIAGNOSTIC ===");
         
         // Try multiple possible field names for Smart Process
         let entityId = null;
         let entityTypeId = null;
 
+        // Method 0: Extract from URL pathname (primary method for iframe placements)
+        // URL format: /sobytie/176/details/303/ or /303/ or similar
+        const pathMatch = window.location.pathname.match(/\/(\d+)\/?(?:\?|$)/);
+        if (pathMatch && pathMatch[1]) {
+          entityId = pathMatch[1];
+          console.log("✅ Found entityId in URL pathname:", entityId);
+        }
+
         // Method 1: Check options.ID (основной метод для Smart Process)
-        if (placementInfo?.options?.ID) {
+        if (!entityId && placementInfo?.options?.ID) {
           entityId = String(placementInfo.options.ID);
         }
 
@@ -203,7 +209,16 @@ export function useBitrix24(): Bitrix24Context {
         }
 
         // Entity Type ID checks
-        if (placementInfo?.options?.ENTITY_TYPE_ID) {
+        // Extract from placement name: "CRM_DYNAMIC_176_DETAIL_TAB" -> entityTypeId = "176"
+        if (placementInfo?.placement) {
+          const typeMatch = placementInfo.placement.match(/CRM_DYNAMIC_(\d+)_DETAIL_TAB/);
+          if (typeMatch && typeMatch[1]) {
+            entityTypeId = typeMatch[1];
+            console.log("✅ Found entityTypeId in placement name:", entityTypeId);
+          }
+        }
+        
+        if (!entityTypeId && placementInfo?.options?.ENTITY_TYPE_ID) {
           entityTypeId = String(placementInfo.options.ENTITY_TYPE_ID);
         }
         if (!entityTypeId && placementInfo?.entityTypeId) {

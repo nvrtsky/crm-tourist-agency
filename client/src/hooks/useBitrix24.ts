@@ -152,6 +152,16 @@ export function useBitrix24(): Bitrix24Context {
         const auth = window.BX24!.getAuth();
         const domain = auth.domain || window.BX24!.getDomain();
 
+        // 🔍 DIAGNOSTIC LOGGING - Display full placementInfo structure
+        console.log("🔍 === BITRIX24 PLACEMENT INFO DIAGNOSTIC ===");
+        console.log("📦 Full placementInfo object:", JSON.stringify(placementInfo, null, 2));
+        console.log("📦 placementInfo.options:", placementInfo?.options);
+        console.log("📦 placementInfo.placement:", placementInfo?.placement);
+        console.log("📦 All keys in placementInfo:", Object.keys(placementInfo || {}));
+        if (placementInfo?.options) {
+          console.log("📦 All keys in options:", Object.keys(placementInfo.options));
+        }
+        console.log("🔍 === END DIAGNOSTIC ===");
         
         // Try multiple possible field names for Smart Process
         let entityId = null;

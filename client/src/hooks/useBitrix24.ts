@@ -126,114 +126,154 @@ export function useBitrix24(): Bitrix24Context {
       }
     };
     
-    const initializeBX24 = () => {
-      if (!window.BX24) {
-        return;
+    // Helper function to extract entityId from various sources
+    const tryExtractEntityId = (source: string, attempt: number = 1): string | null => {
+      let entityId: string | null = null;
+      let extractionMethod = '';
+
+      // PRIORITY 0: Extract from iframe pathname (window.location.pathname)
+      // URL format: "179/" or "179/?IFRAME=Y&IFRAME_TYPE=SIDE_SLIDER"
+      // This is THE MOST RELIABLE method for side-slider mode
+      const pathname = window.location.pathname;
+      const pathSegments = pathname.split('/').filter(Boolean);
+      
+      // Look for first numeric segment
+      for (const segment of pathSegments) {
+        if (/^\d+$/.test(segment)) {
+          entityId = segment;
+          extractionMethod = `window.location.pathname (сегмент "${segment}")`;
+          console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
+          break;
+        }
       }
 
-    window.BX24.init(() => {
-      try {
-        const placementInfo = window.BX24!.placement.info();
-        const auth = window.BX24!.getAuth();
-        const domain = auth.domain || window.BX24!.getDomain();
-        
-        // Try multiple possible field names for Smart Process
-        let entityId = null;
-        let entityTypeId = null;
-
-        // Method 0: Extract from iframe URL parameters (window.location.href)
-        // Bitrix24 может передавать entity ID через URL параметры iframe
+      // PRIORITY 1: Extract from URL query parameters
+      if (!entityId) {
         const urlParams = new URLSearchParams(window.location.search);
-        
-        // Попытка извлечь из различных параметров
         const possibleIdParams = ['ENTITY_ID', 'entityId', 'ID', 'id', 'ITEM_ID', 'itemId'];
+        
         for (const param of possibleIdParams) {
           const value = urlParams.get(param);
           if (value && /^\d+$/.test(value)) {
             entityId = value;
-            console.log(`✓ Найден entityId в URL параметре "${param}":`, entityId);
+            extractionMethod = `URL параметр "?${param}=${value}"`;
+            console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
             break;
           }
         }
+      }
 
-        // Method 1: Extract from parent URL (document.referrer) 
-        // URL формат: https://mitclick.bitrix24.ru/sobytie/176/details/3039/?...
-        if (!entityId && document.referrer) {
-          console.log('🔍 Парсинг document.referrer:', document.referrer);
-          
-          // Извлекаем путь из URL
-          try {
-            const referrerUrl = new URL(document.referrer);
-            const pathname = referrerUrl.pathname; // Например: /sobytie/176/details/3039/
-            console.log('   Путь (pathname):', pathname);
-            
-            // Ищем все числа в пути
-            const allNumbers = pathname.match(/\/(\d+)/g);
-            console.log('   Найденные числа:', allNumbers);
-            
-            if (allNumbers && allNumbers.length > 0) {
-              // Берём последнее число (скорее всего это ID элемента)
-              const lastNumber = allNumbers[allNumbers.length - 1].replace('/', '');
-              entityId = lastNumber;
-              console.log('✓ Извлечён entityId из document.referrer:', entityId);
-            }
-          } catch (e) {
-            console.warn('Не удалось распарсить document.referrer:', e);
-          }
-        }
-
-        // Method 2: Check placementInfo.options (разные варианты полей)
-        if (!entityId && placementInfo?.options) {
+      // PRIORITY 2: Check placementInfo.options
+      if (!entityId && window.BX24) {
+        const placementInfo = window.BX24.placement.info();
+        
+        if (placementInfo?.options && typeof placementInfo.options === 'object') {
           const options = placementInfo.options;
           const possibleFields = ['ID', 'ITEM_ID', 'ELEMENT_ID', 'ENTITY_ID', 'id', 'DEAL_ID'];
           
           for (const field of possibleFields) {
             if (options[field]) {
               entityId = String(options[field]);
-              console.log(`✓ Найден entityId в placementInfo.options.${field}:`, entityId);
+              extractionMethod = `placementInfo.options.${field}`;
+              console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
               break;
             }
           }
         }
 
-        // Method 3: Check root level fields
+        // Check root level entityId field
         if (!entityId && placementInfo?.entityId) {
           entityId = String(placementInfo.entityId);
-          console.log('✓ Найден entityId в placementInfo.entityId:', entityId);
+          extractionMethod = 'placementInfo.entityId';
+          console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
         }
+      }
 
-        // Entity Type ID checks
-        // Extract from placement name: "CRM_DYNAMIC_176_DETAIL_TAB" -> entityTypeId = "176"
-        if (placementInfo?.placement) {
-          const typeMatch = placementInfo.placement.match(/CRM_DYNAMIC_(\d+)_DETAIL_TAB/);
-          if (typeMatch && typeMatch[1]) {
-            entityTypeId = typeMatch[1];
-            console.log('✓ Извлечён entityTypeId из placement:', entityTypeId);
+      // PRIORITY 3: Fallback to document.referrer (least reliable)
+      if (!entityId && document.referrer) {
+        try {
+          const referrerUrl = new URL(document.referrer);
+          const refPathname = referrerUrl.pathname;
+          
+          // Look for pattern like /crm/type/176/details/179/
+          const pathParts = refPathname.split('/').filter(Boolean);
+          
+          // Take the last numeric segment (most likely the entity ID)
+          for (let i = pathParts.length - 1; i >= 0; i--) {
+            if (/^\d+$/.test(pathParts[i])) {
+              entityId = pathParts[i];
+              extractionMethod = `document.referrer pathname (сегмент "${pathParts[i]}")`;
+              console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
+              break;
+            }
           }
+        } catch (e) {
+          // Ignore parsing errors
         }
-        
-        if (!entityTypeId && placementInfo?.options?.ENTITY_TYPE_ID) {
-          entityTypeId = String(placementInfo.options.ENTITY_TYPE_ID);
-        }
-        if (!entityTypeId && placementInfo?.entityTypeId) {
-          entityTypeId = String(placementInfo.entityTypeId);
-        }
+      }
 
-        // ИТОГОВАЯ ДИАГНОСТИКА
-        console.log('📋 РЕЗУЛЬТАТ ИЗВЛЕЧЕНИЯ:', {
-          entityId: entityId || '❌ НЕ НАЙДЕН',
-          entityTypeId: entityTypeId || '❌ НЕ НАЙДЕН',
-          placement: placementInfo?.placement,
-          options: placementInfo?.options,
-          referrer: document.referrer,
-          iframeUrl: window.location.href
-        });
+      if (!entityId && attempt === 1) {
+        console.warn(`⚠️ [Попытка ${attempt}] entityId не найден. Будет повтор...`);
+      }
 
-        // If no entityId found, show error without fallback
-        let errorMessage = null;
+      return entityId;
+    };
 
-        if (!entityId) {
-          errorMessage = `ID элемента Smart Process не найден.
+    // Function with retry logic
+    const initializeBX24WithRetry = (attempt: number = 1) => {
+      if (!window.BX24) {
+        return;
+      }
+
+      window.BX24.init(() => {
+        try {
+          const placementInfo = window.BX24!.placement.info();
+          const auth = window.BX24!.getAuth();
+          const domain = auth.domain || window.BX24!.getDomain();
+
+          // Extract entityTypeId from placement name
+          let entityTypeId: string | null = null;
+          if (placementInfo?.placement) {
+            const typeMatch = placementInfo.placement.match(/CRM_DYNAMIC_(\d+)_DETAIL_TAB/);
+            if (typeMatch && typeMatch[1]) {
+              entityTypeId = typeMatch[1];
+            }
+          }
+
+          if (!entityTypeId && placementInfo?.options?.ENTITY_TYPE_ID) {
+            entityTypeId = String(placementInfo.options.ENTITY_TYPE_ID);
+          }
+          if (!entityTypeId && placementInfo?.entityTypeId) {
+            entityTypeId = String(placementInfo.entityTypeId);
+          }
+
+          // Try to extract entityId
+          const entityId = tryExtractEntityId('init', attempt);
+
+          // Log final result
+          console.log('📋 ИТОГОВЫЙ РЕЗУЛЬТАТ:', {
+            entityId: entityId || '❌ НЕ НАЙДЕН',
+            entityTypeId: entityTypeId || '❌ НЕ НАЙДЕН',
+            attempt,
+            placement: placementInfo?.placement,
+            pathname: window.location.pathname,
+            search: window.location.search,
+            optionsLength: Array.isArray(placementInfo?.options) ? placementInfo.options.length : 'object'
+          });
+
+          // If no entityId found and we haven't tried 3 times yet, retry
+          if (!entityId && attempt < 3) {
+            console.log(`⏳ Повтор через 100ms (попытка ${attempt + 1}/3)...`);
+            setTimeout(() => {
+              initializeBX24WithRetry(attempt + 1);
+            }, 100);
+            return;
+          }
+
+          // Set context with final result
+          let errorMessage: string | null = null;
+          if (!entityId) {
+            errorMessage = `ID элемента Smart Process не найден после ${attempt} попыток.
 
 Возможные причины:
 1. Приложение открыто НЕ из карточки Smart Process "Событие"
@@ -242,35 +282,39 @@ export function useBitrix24(): Bitrix24Context {
 
 Инструкции для решения:
 ✓ Откройте приложение из карточки Smart Process (элемент "Событие")
-✓ Убедитесь, что placement настроен как "CRM_DYNAMIC_176_DETAIL_TAB"
+✓ Убедитесь, что открыта именно КАРТОЧКА (не preview/side-slider)
 ✓ Проверьте консоль браузера (F12) для диагностики
 ✓ При необходимости переустановите приложение через /install.html`;
-        }
+          }
 
-        setContext({
-          entityId,
-          entityTypeId,
-          domain,
-          memberId: auth.member_id || null,
-          accessToken: auth.access_token || null,
-          expiresIn: auth.expires_in || null,
-          isReady: true,
-          error: errorMessage,
-        });
+          setContext({
+            entityId,
+            entityTypeId,
+            domain,
+            memberId: auth.member_id || null,
+            accessToken: auth.access_token || null,
+            expiresIn: auth.expires_in || null,
+            isReady: true,
+            error: errorMessage,
+          });
 
-        // Auto-resize iframe
-        if (window.BX24?.resizeWindow) {
-          window.BX24.resizeWindow(window.innerWidth, window.innerHeight);
+          // Auto-resize iframe
+          if (window.BX24?.resizeWindow) {
+            window.BX24.resizeWindow(window.innerWidth, window.innerHeight);
+          }
+        } catch (error) {
+          console.error("❌ Ошибка инициализации Bitrix24:", error);
+          setContext((prev) => ({
+            ...prev,
+            error: "Ошибка инициализации Bitrix24",
+            isReady: true,
+          }));
         }
-      } catch (error) {
-        console.error("❌ Ошибка инициализации Bitrix24:", error);
-        setContext((prev) => ({
-          ...prev,
-          error: "Ошибка инициализации Bitrix24",
-          isReady: true,
-        }));
-      }
-    });
+      });
+    };
+
+    const initializeBX24 = () => {
+      initializeBX24WithRetry(1);
     };
     
     // Start initialization

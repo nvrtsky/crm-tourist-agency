@@ -1,0 +1,91 @@
+core.bundle.js:126 TypeError: Cannot read properties of null (reading 'getters')
+    at Z.updateRecentCallsList (call-manager.bundle.js:330:80)
+    at y.K (init.bundle.js:114:45)
+    at new y (init.bundle.js:64:70)
+    at y.getInstance (init.bundle.js:25:218)
+    at y.init (init.bundle.js:29:18)
+    at Proxy.created (quick-access.bundle.js:14:33)
+    at nr (vue.bundle.js:20:1)
+    at ni (vue.bundle.js:20:1)
+    at ii (vue.bundle.js:20:1)
+    at vue.bundle.js:20:1 Proxy(Object) {_: {…}} 'https://vuejs.org/error-reference/#runtime-c'
+r.config.errorHandler @ core.bundle.js:126
+nr @ vue.bundle.js:20
+nl @ vue.bundle.js:20
+nr @ vue.bundle.js:20
+ni @ vue.bundle.js:20
+ii @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lJ @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lW @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+a @ vue.bundle.js:20
+run @ vue.bundle.js:20
+q @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+es @ vue.bundle.js:20
+mount @ vue.bundle.js:20
+t.mount @ vue.bundle.js:20
+(anonymous) @ core.bundle.js:149
+createVue @ core.bundle.js:116
+initComponent @ quick-access.js.bundle.js:36
+(anonymous) @ quick-access.js.bundle.js:28
+Promise.then
+r @ quick-access.js.bundle.js:28
+r @ launch.bundle.js:29
+(anonymous) @ VM16407:3
+oe @ core.js:8092
+(anonymous) @ VM16407:2
+BX.evalGlobal @ core.js:14019
+l @ core.js:16706
+t.ajax.processScripts @ core.js:16717
+t.ajax.processRequestData @ core.js:16678
+a.frameCache.processInlineJS @ core_frame_cache.js:223
+a.frameCache.insertBlock @ core_frame_cache.js:184
+(anonymous) @ core_frame_cache.js:557
+n @ core.js:14357
+(anonymous) @ core.js:14428
+i @ core.js:14463
+script
+loadAsset @ core.js:14500
+load @ core.js:14424
+n @ core.js:14353
+(anonymous) @ core.js:14428
+i @ core.js:14463
+script
+loadAsset @ core.js:14500
+load @ core.js:14424
+n @ core.js:14353
+(anonymous) @ core.js:14428
+i @ core.js:14463
+ui.toolbar.bundle.js:383 BX.UI.Toolbar: the button "uibtn-s7olcn93" wasn't initialized.
+(anonymous) @ ui.toolbar.bundle.js:383
+T @ ui.toolbar.bundle.js:367
+create @ ui.toolbar.bundle.js:541
+(anonymous) @ 179/?categoryId=15&IFRAME=Y&IFRAME_TYPE=SIDE_SLIDER:1398
+index-CnAADaTJ.js:288 ⚠️ [Попытка 1] entityId не найден. Будет повтор...
+n @ index-CnAADaTJ.js:288
+(anonymous) @ index-CnAADaTJ.js:288
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-CnAADaTJ.js:288
+s @ index-CnAADaTJ.js:299
+r @ index-CnAADaTJ.js:288
+(anonymous) @ index-CnAADaTJ.js:299
+D0 @ index-CnAADaTJ.js:40
+xl @ index-CnAADaTJ.js:40
+(anonymous) @ index-CnAADaTJ.js:40
+E @ index-CnAADaTJ.js:25
+L @ index-CnAADaTJ.js:25
+index-CnAADaTJ.js:288 📋 ИТОГОВЫЙ РЕЗУЛЬТАТ: {entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', attempt: 1, placement: 'CRM_DYNAMIC_176_DETAIL_TAB', pathname: '/install', …}
+index-CnAADaTJ.js:288 ⏳ Повтор через 100ms (попытка 2/3)...
+index-CnAADaTJ.js:288 📋 ИТОГОВЫЙ РЕЗУЛЬТАТ: {entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', attempt: 2, placement: 'CRM_DYNAMIC_176_DETAIL_TAB', pathname: '/install', …}
+index-CnAADaTJ.js:288 ⏳ Повтор через 100ms (попытка 3/3)...
+index-CnAADaTJ.js:288 📋 ИТОГОВЫЙ РЕЗУЛЬТАТ: {entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', attempt: 3, placement: 'CRM_DYNAMIC_176_DETAIL_TAB', pathname: '/install', …}

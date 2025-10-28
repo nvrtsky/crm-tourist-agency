@@ -52,6 +52,7 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
   - **Placement Registration**: One-time installation via static page
     - **Installation file**: `/public/install.html` (separate static page, NOT bundled with main app)
     - **Installation URL**: `https://travel-group-manager-ndt72.replit.app/install.html`
+    - **Rebind/Fix URL**: `https://travel-group-manager-ndt72.replit.app/rebind.html` (use if entityId not detected)
     - Installation process:
       1. Open install.html from Bitrix24 admin panel
       2. Page registers `CRM_DYNAMIC_176_DETAIL_TAB` placement using BX24.callMethod('placement.bind')
@@ -61,6 +62,20 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
     - Main application (`client/src/`) contains ZERO placement.bind code - only reads placement.info()
     - File `client/src/pages/Install.tsx` was completely removed from project to prevent HTTP 400 errors
     - The main app hook `useBitrix24.ts` only calls BX24.init() and reads placement context (entityId), never attempts to register placement
+  - **EntityId Extraction Architecture**:
+    - **Multi-method approach with priority-based fallbacks**:
+      - **PRIORITY 0** (Most reliable): `window.location.pathname` - extracts first numeric segment (e.g., "/179/" → entityId = "179")
+      - **PRIORITY 1**: URL query parameters (`?ENTITY_ID=...`, `?ID=...`, etc.)
+      - **PRIORITY 2**: `BX24.placement.info().options` fields (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, etc.) - **with retry mechanism**
+      - **PRIORITY 3**: `document.referrer` pathname parsing (least reliable, often returns only domain in iframe context)
+    - **Retry mechanism**: Makes 3 attempts with 100ms delay if `placementInfo.options` is empty on first call (handles SDK initialization race condition)
+    - **Common issue**: If placement HANDLER points to `/install` or wrong URL, Bitrix24 won't provide `options.ID` → use `/rebind.html` to fix
+    - **Diagnostic logging**: Console shows extraction method used and all attempts made
+  - **Troubleshooting EntityId Issues**:
+    - **Symptom**: Error "ID элемента Smart Process не найден" and console shows `pathname: '/install'`
+    - **Cause**: Placement HANDLER configured with wrong URL (e.g., points to `/install` instead of `/`)
+    - **Solution**: Open `https://travel-group-manager-ndt72.replit.app/rebind.html` from Bitrix24 to rebind placement with correct URL
+    - **After rebind**: Placement will load main app (`/`) instead of installation page, enabling proper entityId extraction
 
 ### System Design Choices
 - **Smart Process Integration**: The system leverages Bitrix24's smart processes, with each "Event" smart process item representing a unique group tour.

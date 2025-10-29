@@ -67,10 +67,14 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
       - **PRIORITY 0** (Most reliable): `window.location.pathname` - extracts first numeric segment (e.g., "/179/" → entityId = "179")
       - **PRIORITY 1**: URL query parameters (`?ENTITY_ID=...`, `?ID=...`, etc.)
       - **PRIORITY 2**: `BX24.placement.info().options` fields (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, etc.) - **with retry mechanism**
-      - **PRIORITY 3**: `document.referrer` pathname parsing (least reliable, often returns only domain in iframe context)
+      - **PRIORITY 3**: `document.referrer` pathname parsing via `extractIdFromReferrer()` helper function
+        - **Critical for side-slider mode** when placement.info() doesn't provide options.ID
+        - Safely parses referrer URLs like `https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y`
+        - Scans pathname segments from end to start, returns first numeric ID found
+        - Guards against empty/invalid referrer strings, returns null on parse errors
     - **Retry mechanism**: Makes 3 attempts with 100ms delay if `placementInfo.options` is empty on first call (handles SDK initialization race condition)
     - **Common issue**: If placement HANDLER points to `/install` or wrong URL, Bitrix24 won't provide `options.ID` → use `/rebind.html` to fix
-    - **Diagnostic logging**: Console shows extraction method used and all attempts made
+    - **Diagnostic logging**: Console shows `📋 CONTEXT TRY` with attempt number, entityId, entityTypeId, placement, options object, referrer URL, and pathname - materially improves troubleshooting
   - **Troubleshooting EntityId Issues**:
     - **Symptom**: Error "ID элемента Smart Process не найден" and console shows `pathname: '/install'`
     - **Cause**: Placement HANDLER configured with wrong URL (e.g., points to `/install` instead of `/`)

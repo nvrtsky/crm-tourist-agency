@@ -53,6 +53,28 @@ declare global {
   }
 }
 
+// Helper function to extract entityId from document.referrer
+// Bitrix24 often provides the element ID in the referrer URL like:
+// https://mitclick.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y&IFRAME_TYPE=SIDE_SLIDER
+function extractIdFromReferrer(ref: string): string | null {
+  try {
+    if (!ref) return null;
+    const url = new URL(ref);
+    const parts = url.pathname.split('/').filter(Boolean);
+    
+    // Go from the end and find the first purely numeric value
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (/^\d+$/.test(parts[i])) {
+        return parts[i]; // e.g., "127", "303"
+      }
+    }
+    return null;
+  } catch (e) {
+    console.warn("extractIdFromReferrer: не смог распарсить referrer", ref, e);
+    return null;
+  }
+}
+
 function loadBitrix24Script(): Promise<void> {
   return new Promise((resolve, reject) => {
     // BX24 should already be loaded from <script> tag in index.html
@@ -189,26 +211,15 @@ export function useBitrix24(): Bitrix24Context {
         }
       }
 
-      // PRIORITY 3: Fallback to document.referrer (least reliable)
-      if (!entityId && document.referrer) {
-        try {
-          const referrerUrl = new URL(document.referrer);
-          const refPathname = referrerUrl.pathname;
-          
-          // Look for pattern like /crm/type/176/details/179/
-          const pathParts = refPathname.split('/').filter(Boolean);
-          
-          // Take the last numeric segment (most likely the entity ID)
-          for (let i = pathParts.length - 1; i >= 0; i--) {
-            if (/^\d+$/.test(pathParts[i])) {
-              entityId = pathParts[i];
-              extractionMethod = `document.referrer pathname (сегмент "${pathParts[i]}")`;
-              console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
-              break;
-            }
-          }
-        } catch (e) {
-          // Ignore parsing errors
+      // PRIORITY 3: Fallback to document.referrer
+      // This is critical for side-slider mode when placement.info() doesn't provide options.ID
+      // Bitrix24 URL format: https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y...
+      if (!entityId) {
+        const refGuess = extractIdFromReferrer(document.referrer);
+        if (refGuess) {
+          entityId = refGuess;
+          extractionMethod = `document.referrer (${refGuess} из ${document.referrer})`;
+          console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
         }
       }
 
@@ -250,15 +261,16 @@ export function useBitrix24(): Bitrix24Context {
           // Try to extract entityId
           const entityId = tryExtractEntityId('init', attempt);
 
-          // Log final result
-          console.log('📋 ИТОГОВЫЙ РЕЗУЛЬТАТ:', {
+          // Log final result with comprehensive context information
+          console.log('📋 CONTEXT TRY (ИТОГОВЫЙ РЕЗУЛЬТАТ):', {
+            attempt,
             entityId: entityId || '❌ НЕ НАЙДЕН',
             entityTypeId: entityTypeId || '❌ НЕ НАЙДЕН',
-            attempt,
-            placement: placementInfo?.placement,
+            placement: placementInfo?.placement || '❌',
+            options: placementInfo?.options || {},
+            referrer: document.referrer || '(пусто)',
             pathname: window.location.pathname,
-            search: window.location.search,
-            optionsLength: Array.isArray(placementInfo?.options) ? placementInfo.options.length : 'object'
+            search: window.location.search || '(нет параметров)'
           });
 
           // If no entityId found and we haven't tried 3 times yet, retry

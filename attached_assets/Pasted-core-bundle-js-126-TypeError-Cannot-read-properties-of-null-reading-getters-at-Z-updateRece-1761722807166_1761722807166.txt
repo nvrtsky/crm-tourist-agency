@@ -1,0 +1,250 @@
+core.bundle.js:126 TypeError: Cannot read properties of null (reading 'getters')
+    at Z.updateRecentCallsList (call-manager.bundle.js:330:80)
+    at y.K (init.bundle.js:114:45)
+    at new y (init.bundle.js:64:70)
+    at y.getInstance (init.bundle.js:25:218)
+    at y.init (init.bundle.js:29:18)
+    at Proxy.created (quick-access.bundle.js:14:33)
+    at nr (vue.bundle.js:20:1)
+    at ni (vue.bundle.js:20:1)
+    at ii (vue.bundle.js:20:1)
+    at vue.bundle.js:20:1 Proxy(Object) {_: {…}} 'https://vuejs.org/error-reference/#runtime-c'
+r.config.errorHandler @ core.bundle.js:126
+nr @ vue.bundle.js:20
+nl @ vue.bundle.js:20
+nr @ vue.bundle.js:20
+ni @ vue.bundle.js:20
+ii @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lJ @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lW @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+a @ vue.bundle.js:20
+run @ vue.bundle.js:20
+q @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+es @ vue.bundle.js:20
+mount @ vue.bundle.js:20
+t.mount @ vue.bundle.js:20
+(anonymous) @ core.bundle.js:149
+createVue @ core.bundle.js:116
+initComponent @ quick-access.js.bundle.js:36
+(anonymous) @ quick-access.js.bundle.js:28
+Promise.then
+r @ quick-access.js.bundle.js:28
+r @ launch.bundle.js:29
+(anonymous) @ VM2670:3
+oe @ core.js:8092
+(anonymous) @ VM2670:2
+BX.evalGlobal @ core.js:14019
+l @ core.js:16706
+t.ajax.processScripts @ core.js:16717
+t.ajax.processRequestData @ core.js:16678
+a.frameCache.processInlineJS @ core_frame_cache.js:223
+a.frameCache.insertBlock @ core_frame_cache.js:184
+(anonymous) @ core_frame_cache.js:557
+n @ core.js:14357
+(anonymous) @ core.js:14428
+i @ core.js:14463
+script
+loadAsset @ core.js:14500
+load @ core.js:14424
+n @ core.js:14353
+(anonymous) @ core.js:14428
+i @ core.js:14463
+script
+loadAsset @ core.js:14500
+load @ core.js:14424
+n @ core.js:14353
+(anonymous) @ core.js:14428
+i @ core.js:14463
+ui.toolbar.bundle.js:383 BX.UI.Toolbar: the button "uibtn-cud2muh1" wasn't initialized.
+(anonymous) @ ui.toolbar.bundle.js:383
+T @ ui.toolbar.bundle.js:367
+create @ ui.toolbar.bundle.js:541
+(anonymous) @ 303/?categoryId=15&IFRAME=Y&IFRAME_TYPE=SIDE_SLIDER:1398
+index-Bv5PgAcl.js:307 🔍 [Попытка 1] PRIORITY 0 - pathname: /install segments: ['install']
+index-Bv5PgAcl.js:307 📋 [Попытка 1] window.name (только диагностика): mitclick.bitrix24.ru|1|a05d91fff589a9deeec01d4ed22dbc57
+index-Bv5PgAcl.js:307 🔍 [Попытка 1] PRIORITY 4 - document.referrer: https://mitclick.bitrix24.ru/
+index-Bv5PgAcl.js:307 🔍 [Попытка 1] PRIORITY 4 - extractIdFromReferrer result: null
+index-Bv5PgAcl.js:307 ⚠️ [Попытка 1] PRIORITY 4 не смог извлечь ID из referrer: https://mitclick.bitrix24.ru/
+n @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+s @ index-Bv5PgAcl.js:307
+r @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+M0 @ index-Bv5PgAcl.js:40
+_l @ index-Bv5PgAcl.js:40
+(anonymous) @ index-Bv5PgAcl.js:40
+E @ index-Bv5PgAcl.js:25
+L @ index-Bv5PgAcl.js:25
+index-Bv5PgAcl.js:307 🔍 [Попытка 1] PRIORITY 5 - пробую window.parent.location.href
+index-Bv5PgAcl.js:307 ⚠️ [Попытка 1] PRIORITY 5 заблокирован CORS: Failed to read a named property 'href' from 'Location': Blocked a frame with origin "https://travel-group-manager-ndt72.replit.app" from accessing a cross-origin frame.
+n @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+s @ index-Bv5PgAcl.js:307
+r @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+M0 @ index-Bv5PgAcl.js:40
+_l @ index-Bv5PgAcl.js:40
+(anonymous) @ index-Bv5PgAcl.js:40
+E @ index-Bv5PgAcl.js:25
+L @ index-Bv5PgAcl.js:25
+index-Bv5PgAcl.js:307 ⚠️ [Попытка 1] entityId не найден во всех приоритетах. Будет повтор...
+n @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+s @ index-Bv5PgAcl.js:307
+r @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+M0 @ index-Bv5PgAcl.js:40
+_l @ index-Bv5PgAcl.js:40
+(anonymous) @ index-Bv5PgAcl.js:40
+E @ index-Bv5PgAcl.js:25
+L @ index-Bv5PgAcl.js:25
+index-Bv5PgAcl.js:307 📋 CONTEXT TRY (ИТОГОВЫЙ РЕЗУЛЬТАТ): {attempt: 1, entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', extractionMethod: 'не определён', placement: 'CRM_DYNAMIC_176_DETAIL_TAB', …}
+index-Bv5PgAcl.js:307 ⏳ Повтор через 100ms (попытка 2/3)...
+index-Bv5PgAcl.js:307 🔍 [Попытка 2] PRIORITY 0 - pathname: /install segments: ['install']
+index-Bv5PgAcl.js:307 📋 [Попытка 2] window.name (только диагностика): mitclick.bitrix24.ru|1|a05d91fff589a9deeec01d4ed22dbc57
+index-Bv5PgAcl.js:307 🔍 [Попытка 2] PRIORITY 4 - document.referrer: https://mitclick.bitrix24.ru/
+index-Bv5PgAcl.js:307 🔍 [Попытка 2] PRIORITY 4 - extractIdFromReferrer result: null
+index-Bv5PgAcl.js:307 ⚠️ [Попытка 2] PRIORITY 4 не смог извлечь ID из referrer: https://mitclick.bitrix24.ru/
+n @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+setTimeout
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+s @ index-Bv5PgAcl.js:307
+r @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+M0 @ index-Bv5PgAcl.js:40
+_l @ index-Bv5PgAcl.js:40
+(anonymous) @ index-Bv5PgAcl.js:40
+E @ index-Bv5PgAcl.js:25
+L @ index-Bv5PgAcl.js:25
+index-Bv5PgAcl.js:307 🔍 [Попытка 2] PRIORITY 5 - пробую window.parent.location.href
+index-Bv5PgAcl.js:307 ⚠️ [Попытка 2] PRIORITY 5 заблокирован CORS: Failed to read a named property 'href' from 'Location': Blocked a frame with origin "https://travel-group-manager-ndt72.replit.app" from accessing a cross-origin frame.
+n @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+setTimeout
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+s @ index-Bv5PgAcl.js:307
+r @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+M0 @ index-Bv5PgAcl.js:40
+_l @ index-Bv5PgAcl.js:40
+(anonymous) @ index-Bv5PgAcl.js:40
+E @ index-Bv5PgAcl.js:25
+L @ index-Bv5PgAcl.js:25
+index-Bv5PgAcl.js:307 📋 CONTEXT TRY (ИТОГОВЫЙ РЕЗУЛЬТАТ): {attempt: 2, entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', extractionMethod: 'не определён', placement: 'CRM_DYNAMIC_176_DETAIL_TAB', …}
+index-Bv5PgAcl.js:307 ⏳ Повтор через 100ms (попытка 3/3)...
+index-Bv5PgAcl.js:307 🔍 [Попытка 3] PRIORITY 0 - pathname: /install segments: ['install']
+index-Bv5PgAcl.js:307 📋 [Попытка 3] window.name (только диагностика): mitclick.bitrix24.ru|1|a05d91fff589a9deeec01d4ed22dbc57
+index-Bv5PgAcl.js:307 🔍 [Попытка 3] PRIORITY 4 - document.referrer: https://mitclick.bitrix24.ru/
+index-Bv5PgAcl.js:307 🔍 [Попытка 3] PRIORITY 4 - extractIdFromReferrer result: null
+index-Bv5PgAcl.js:307 ⚠️ [Попытка 3] PRIORITY 4 не смог извлечь ID из referrer: https://mitclick.bitrix24.ru/
+n @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+setTimeout
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+setTimeout
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+s @ index-Bv5PgAcl.js:307
+r @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+M0 @ index-Bv5PgAcl.js:40
+_l @ index-Bv5PgAcl.js:40
+(anonymous) @ index-Bv5PgAcl.js:40
+E @ index-Bv5PgAcl.js:25
+L @ index-Bv5PgAcl.js:25
+index-Bv5PgAcl.js:307 🔍 [Попытка 3] PRIORITY 5 - пробую window.parent.location.href
+index-Bv5PgAcl.js:307 ⚠️ [Попытка 3] PRIORITY 5 заблокирован CORS: Failed to read a named property 'href' from 'Location': Blocked a frame with origin "https://travel-group-manager-ndt72.replit.app" from accessing a cross-origin frame.
+n @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+setTimeout
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+setTimeout
+(anonymous) @ index-Bv5PgAcl.js:307
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-Bv5PgAcl.js:307
+s @ index-Bv5PgAcl.js:307
+r @ index-Bv5PgAcl.js:307
+(anonymous) @ index-Bv5PgAcl.js:307
+M0 @ index-Bv5PgAcl.js:40
+_l @ index-Bv5PgAcl.js:40
+(anonymous) @ index-Bv5PgAcl.js:40
+E @ index-Bv5PgAcl.js:25
+L @ index-Bv5PgAcl.js:25
+index-Bv5PgAcl.js:307 📋 CONTEXT TRY (ИТОГОВЫЙ РЕЗУЛЬТАТ): {attempt: 3, entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', extractionMethod: 'не определён', placement: 'CRM_DYNAMIC_176_DETAIL_TAB', …}

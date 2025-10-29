@@ -16,6 +16,12 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
+// Log ALL incoming requests for debugging
+app.use((req, _res, next) => {
+  console.log(`📥 ${req.method} ${req.url}`);
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -51,7 +57,14 @@ app.use((req, res, next) => {
 
   // Auto-rebind endpoint - MUST be registered before Vite middleware
   // This fixes placement HANDLER to point to '/' instead of '/install'
-  app.get("/install", (_req: Request, res: Response) => {
+  app.get("/install", (req: Request, res: Response) => {
+    console.log("🔧 [AUTO-REBIND] GET /install triggered!");
+    console.log("  - URL:", req.url);
+    console.log("  - Path:", req.path);
+    console.log("  - Query:", req.query);
+    console.log("  - Headers User-Agent:", req.headers['user-agent']);
+    console.log("  - Headers Referer:", req.headers['referer']);
+    
     res.send(`
 <!DOCTYPE html>
 <html lang="ru">

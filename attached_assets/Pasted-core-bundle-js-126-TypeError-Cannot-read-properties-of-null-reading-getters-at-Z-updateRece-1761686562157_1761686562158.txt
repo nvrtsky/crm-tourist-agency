@@ -1,0 +1,242 @@
+core.bundle.js:126 TypeError: Cannot read properties of null (reading 'getters')
+    at Z.updateRecentCallsList (call-manager.bundle.js:330:80)
+    at y.K (init.bundle.js:114:45)
+    at new y (init.bundle.js:64:70)
+    at y.getInstance (init.bundle.js:25:218)
+    at y.init (init.bundle.js:29:18)
+    at Proxy.created (quick-access.bundle.js:14:33)
+    at nr (vue.bundle.js:20:1)
+    at ni (vue.bundle.js:20:1)
+    at ii (vue.bundle.js:20:1)
+    at vue.bundle.js:20:1 Proxy(Object) {_: {…}} 'https://vuejs.org/error-reference/#runtime-c'
+(anonymous) @ core.bundle.js:126
+nr @ vue.bundle.js:20
+nl @ vue.bundle.js:20
+nr @ vue.bundle.js:20
+ni @ vue.bundle.js:20
+ii @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lJ @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lW @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+a @ vue.bundle.js:20
+run @ vue.bundle.js:20
+q @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+es @ vue.bundle.js:20
+mount @ vue.bundle.js:20
+t.mount @ vue.bundle.js:20
+(anonymous) @ core.bundle.js:149
+createVue @ core.bundle.js:116
+initComponent @ quick-access.js.bundle.js:36
+(anonymous) @ quick-access.js.bundle.js:28
+Promise.then
+r @ quick-access.js.bundle.js:28
+r @ launch.bundle.js:29
+(anonymous) @ VM23684:3
+oe @ core.js:8092
+(anonymous) @ VM23684:2
+BX.evalGlobal @ core.js:14019
+l @ core.js:16706
+t.ajax.processScripts @ core.js:16717
+t.ajax.processRequestData @ core.js:16678
+a.frameCache.processInlineJS @ core_frame_cache.js:223
+a.frameCache.insertBlock @ core_frame_cache.js:184
+(anonymous) @ core_frame_cache.js:557
+n @ core.js:14357
+(anonymous) @ core.js:14428
+i @ core.js:14463
+script
+loadAsset @ core.js:14500
+load @ core.js:14424
+n @ core.js:14353
+(anonymous) @ core.js:14428
+i @ core.js:14463
+script
+loadAsset @ core.js:14500
+load @ core.js:14424
+n @ core.js:14353
+(anonymous) @ core.js:14428
+i @ core.js:14463
+ui.toolbar.bundle.js:383 BX.UI.Toolbar: the button "uibtn-shd2cqqv" wasn't initialized.
+(anonymous) @ ui.toolbar.bundle.js:383
+T @ ui.toolbar.bundle.js:367
+create @ ui.toolbar.bundle.js:541
+(anonymous) @ 127/?categoryId=15&IFRAME=Y&IFRAME_TYPE=SIDE_SLIDER:1398
+index-BiMm3Lc3.js:302 ⚠️ [Попытка 1] entityId не найден. Будет повтор...
+n @ index-BiMm3Lc3.js:302
+(anonymous) @ index-BiMm3Lc3.js:302
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-BiMm3Lc3.js:302
+s @ index-BiMm3Lc3.js:313
+r @ index-BiMm3Lc3.js:302
+(anonymous) @ index-BiMm3Lc3.js:313
+j0 @ index-BiMm3Lc3.js:40
+yl @ index-BiMm3Lc3.js:40
+(anonymous) @ index-BiMm3Lc3.js:40
+E @ index-BiMm3Lc3.js:25
+L @ index-BiMm3Lc3.js:25
+index-BiMm3Lc3.js:302 📋 ИТОГОВЫЙ РЕЗУЛЬТАТ: {entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', attempt: 1, placement: 'CRM_DYNAMIC_176_DETAIL_TAB', pathname: '/install', …}
+index-BiMm3Lc3.js:302 ⏳ Повтор через 100ms (попытка 2/3)...
+index-BiMm3Lc3.js:302 📋 ИТОГОВЫЙ РЕЗУЛЬТАТ: {entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', attempt: 2, placement: 'CRM_DYNAMIC_176_DETAIL_TAB', pathname: '/install', …}
+index-BiMm3Lc3.js:302 ⏳ Повтор через 100ms (попытка 3/3)...
+index-BiMm3Lc3.js:302 📋 ИТОГОВЫЙ РЕЗУЛЬТАТ: {entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', attempt: 3, placement: 'CRM_DYNAMIC_176_DETAIL_TAB', pathname: '/install', …}
+// Переустановка placement
+const OLD_HANDLER = 'https://travel-group-manager-ndt72.replit.app/install';
+const NEW_HANDLER = 'https://travel-group-manager-ndt72.replit.app/';
+
+console.log('🔄 Начинаем переустановку...');
+
+BX24.callMethod(
+  'placement.unbind',
+  {
+    PLACEMENT: 'CRM_DYNAMIC_176_DETAIL_TAB',
+    HANDLER: OLD_HANDLER
+  },
+  function(unbindResult) {
+    if (unbindResult.error()) {
+      console.log('⚠️ Unbind:', unbindResult.error(), '(может быть норма)');
+    } else {
+      console.log('✅ Старый placement отвязан');
+    }
+    
+    console.log('📥 Привязываем новый handler:', NEW_HANDLER);
+    BX24.callMethod(
+      'placement.bind',
+      {
+        PLACEMENT: 'CRM_DYNAMIC_176_DETAIL_TAB',
+        HANDLER: NEW_HANDLER,
+        TITLE: 'Управление группой'
+      },
+      function(bindResult) {
+        if (bindResult.error()) {
+          console.log('❌ Ошибка bind:', bindResult.error());
+        } else {
+          console.log('✅ Placement успешно переустановлен!');
+          console.log('✅ Теперь обновите страницу (Ctrl+Shift+R)');
+          if (BX24.installFinish) {
+            BX24.installFinish();
+          }
+        }
+      }
+    );
+  }
+);
+VM105:5 🔄 Начинаем переустановку...
+undefined
+VM105:17 ✅ Старый placement отвязан
+VM105:20 📥 Привязываем новый handler: https://travel-group-manager-ndt72.replit.app/
+v1/:784  POST https://mitclick.bitrix24.ru/rest/placement.bind.json 400 (Bad Request)
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+(anonymous) @ v1/:1058
+ajax.prepareData @ v1/:1235
+ajax.call @ v1/:1056
+(anonymous) @ v1/:960
+RestrictionManager.run @ v1/:1417
+RestrictionManager.check @ v1/:1411
+ajax @ v1/:959
+BX24.callMethod @ v1/:54
+(anonymous) @ VM105:21
+xhr.onload @ v1/:1028
+XMLHttpRequest.send
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+(anonymous) @ v1/:1058
+ajax.prepareData @ v1/:1235
+ajax.call @ v1/:1056
+(anonymous) @ v1/:960
+RestrictionManager.run @ v1/:1417
+RestrictionManager.check @ v1/:1411
+ajax @ v1/:959
+BX24.callMethod @ v1/:54
+(anonymous) @ VM105:7
+VM105:30 ❌ Ошибка bind: ajaxError {status: 400, ex: {…}}
+const NEW_HANDLER = 'https://travel-group-manager-ndt72.replit.app/';
+
+console.log('📥 Привязываем placement с полными параметрами...');
+
+BX24.callMethod(
+  'placement.bind',
+  {
+    PLACEMENT: 'CRM_DYNAMIC_176_DETAIL_TAB',
+    HANDLER: NEW_HANDLER,
+    TITLE: 'Управление группой',
+    LANG_ALL: {
+      ru: {
+        TITLE: 'Управление группой'
+      },
+      en: {
+        TITLE: 'Group Management'
+      }
+    }
+  },
+  function(bindResult) {
+    if (bindResult.error()) {
+      console.log('❌ Ошибка:', bindResult.error());
+      console.log('📋 Детали:', bindResult.data());
+    } else {
+      console.log('✅ Placement успешно переустановлен!');
+      console.log('✅ Обновите страницу (Ctrl+Shift+R)');
+      if (BX24.installFinish) {
+        BX24.installFinish();
+      }
+    }
+  }
+);
+VM109:3 📥 Привязываем placement с полными параметрами...
+undefined
+v1/:784  POST https://mitclick.bitrix24.ru/rest/placement.bind.json 400 (Bad Request)
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+(anonymous) @ v1/:1058
+cb @ v1/:1183
+cb @ v1/:1183
+ajax.prepareData @ v1/:1235
+ajax.prepareData @ v1/:1229
+ajax.prepareData @ v1/:1229
+ajax.call @ v1/:1056
+(anonymous) @ v1/:960
+RestrictionManager.run @ v1/:1417
+RestrictionManager.check @ v1/:1411
+ajax @ v1/:959
+BX24.callMethod @ v1/:54
+(anonymous) @ VM109:5
+VM109:22 ❌ Ошибка: ajaxError {status: 400, ex: {…}}
+VM109:23 📋 Детали: undefined
+console.log('🔍 Проверяем существующие placement...');
+
+BX24.callMethod('placement.get', {}, function(result) {
+  if (result.error()) {
+    console.log('❌ Ошибка:', result.error());
+  } else {
+    console.log('📋 Все placement:', result.data());
+    
+    // Ищем наш placement
+    const placements = result.data();
+    const ourPlacement = placements.find(p => p.placement === 'CRM_DYNAMIC_176_DETAIL_TAB');
+    
+    if (ourPlacement) {
+      console.log('🎯 Наш placement:', ourPlacement);
+      console.log('📍 Текущий HANDLER:', ourPlacement.handler);
+    } else {
+      console.log('⚠️ Placement CRM_DYNAMIC_176_DETAIL_TAB не найден');
+    }
+  }
+});
+VM113:1 🔍 Проверяем существующие placement...
+undefined
+VM113:7 📋 Все placement: [{…}]
+VM113:14 🎯 Наш placement: {placement: 'CRM_DYNAMIC_176_DETAIL_TAB', userId: 0, handler: 'https://travel-group-manager-ndt72.replit.app/', options: Array(0), title: 'Управление группой', …}
+VM113:15 📍 Текущий HANDLER: https://travel-group-manager-ndt72.replit.app/

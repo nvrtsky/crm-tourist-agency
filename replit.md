@@ -84,7 +84,6 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
       - **PRIORITY 0** (Most reliable): `window.location.pathname` - extracts first numeric segment (e.g., "/179/" → entityId = "179")
       - **PRIORITY 1**: URL query parameters (`?ENTITY_ID=...`, `?ID=...`, etc.)
       - **PRIORITY 2**: `BX24.placement.info().options` fields (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, etc.) - **with retry mechanism**
-      - **PRIORITY 3A**: `window.name` - attempts JSON parse or numeric extraction (Bitrix24 sometimes passes context via window.name)
       - **PRIORITY 4**: `document.referrer` pathname parsing via `extractIdFromReferrer()` helper function
         - **Critical for side-slider mode** when placement.info() doesn't provide options.ID
         - **PRIORITY 1**: Regex match for `/details/{id}/` pattern (e.g., `/crm/type/176/details/303/` → entityId = "303")
@@ -92,9 +91,8 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
         - Safely parses referrer URLs like `https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y`
         - Guards against empty/invalid referrer strings, returns null on parse errors
         - Logs which extraction method succeeded for troubleshooting
-      - **PRIORITY 5**: `window.parent.location.href` - attempts to read parent URL (may be blocked by CORS)
-        - CORS errors are caught and logged gracefully
-        - Only attempted as last resort when all other methods fail
+      - **NOTE**: `window.name` is logged for diagnostics only (contains Bitrix24 internal iframe ID, not entityId)
+      - **NOTE**: `window.parent.location.href` is NOT attempted (always blocked by browser CORS policy)
     - **Retry mechanism**: Makes 3 attempts with 100ms delay if `placementInfo.options` is empty on first call (handles SDK initialization race condition)
     - **Common issue**: If placement HANDLER points to `/install` or wrong URL, Bitrix24 won't provide `options.ID` → use `/rebind.html` to fix
     - **Diagnostic logging**: Console shows `📋 CONTEXT TRY` with attempt number, entityId, entityTypeId, placement, options object, referrer URL, pathname, and window.name - materially improves troubleshooting
@@ -108,6 +106,28 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
     - **Cause**: Placement HANDLER configured with wrong URL (e.g., points to `/install` instead of `/`)
     - **Solution**: Open `https://travel-group-manager-ndt72.replit.app/rebind.html` from Bitrix24 to rebind placement with correct URL
     - **After rebind**: Placement will load main app (`/`) instead of installation page, enabling proper entityId extraction
+
+### Platform Limitation: Side-Slider Preview Mode
+
+**Important Known Limitation:**
+
+Sometimes Bitrix24 opens the application not in the full Smart Process "Событие" card, but in a "temporary preview" (right sidebar with slider icon).
+
+In this mode, Bitrix24:
+- Does NOT pass element ID through `BX24.placement.info().options`
+- Does NOT pass element ID in `document.referrer` (referrer is truncated to `https://<portal>.bitrix24.ru/`)
+- Loads the application at path `/install` (not `/[ID]`)
+- Blocks access to `window.parent.location.href` due to browser CORS policy
+
+**Result**: It is technically impossible to determine which element is open.
+
+**This is not a bug in our code. This is a platform limitation.**
+
+**Default Behavior:**
+- ✅ If we successfully obtain `entityId` → load `crm.item.get` and render "Управление группой" UI
+- ⚠️ If we cannot obtain `entityId` → show "Нужно открыть карточку события полностью" screen with instructions for the manager
+
+**This is expected, normal behavior.** The `EntityIdNotFound` component provides clear instructions to close the preview sidebar and open the full event card.
 
 ### System Design Choices
 - **Smart Process Integration**: The system leverages Bitrix24's smart processes, with each "Event" smart process item representing a unique group tour.

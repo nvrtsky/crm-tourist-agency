@@ -28,10 +28,10 @@ export function EntityIdNotFound({ entityTypeId, diagnosticInfo, onRetry }: Enti
             <AlertCircle className="h-8 w-8 text-yellow-500" />
             <div>
               <CardTitle className="text-2xl">
-                {t('errors.entityIdNotFound', 'ID элемента не определён')}
+                Нужно открыть карточку события полностью
               </CardTitle>
               <CardDescription>
-                {t('errors.entityIdNotFoundDesc', 'Не удалось определить ID Smart Process элемента')}
+                Откройте событие в полной карточке, а не в предпросмотре
               </CardDescription>
             </div>
           </div>
@@ -39,86 +39,47 @@ export function EntityIdNotFound({ entityTypeId, diagnosticInfo, onRetry }: Enti
         <CardContent className="space-y-6">
           <Alert>
             <AlertDescription className="space-y-3">
-              <p className="font-medium">
-                {t('errors.possibleReasons', 'Возможные причины:')}
+              <p className="text-sm">
+                Сейчас вкладка <strong>"Управление группой"</strong> открыта во временном предпросмотре (сайдбар справа). 
+                В этом режиме Bitrix24 не передаёт ID события, поэтому мы не можем показать состав группы.
               </p>
-              <ul className="list-disc list-inside space-y-2 text-sm">
-                <li>{t('errors.reason1', 'Приложение открыто не из карточки Smart Process "Событие"')}</li>
-                <li>{t('errors.reason2', 'Placement настроен неправильно (handler указывает на /install)')}</li>
-                <li>{t('errors.reason3', 'Открыт preview/quick-view вместо полной карточки')}</li>
-                <li>{t('errors.reason4', 'Отсутствуют необходимые права доступа')}</li>
-              </ul>
             </AlertDescription>
           </Alert>
 
           <div className="space-y-3">
             <p className="font-medium text-sm">
-              {t('errors.howToFix', 'Как исправить:')}
+              Что сделать:
             </p>
             <div className="space-y-2">
               <div className="flex items-start gap-2 text-sm">
                 <span className="font-bold min-w-[24px]">1.</span>
-                <span>{t('errors.solution1', 'Откройте приложение из карточки Smart Process (элемент "Событие"), а не из списка')}</span>
+                <span>Закройте этот боковой предпросмотр.</span>
               </div>
               <div className="flex items-start gap-2 text-sm">
                 <span className="font-bold min-w-[24px]">2.</span>
-                <span>{t('errors.solution2', 'Убедитесь, что открыта ПОЛНАЯ карточка (не side-slider preview)')}</span>
+                <span>Откройте карточку события (смарт-процесс "Событие") полностью.</span>
               </div>
               <div className="flex items-start gap-2 text-sm">
                 <span className="font-bold min-w-[24px]">3.</span>
-                <div className="flex-1">
-                  <span>{t('errors.solution3', 'Если проблема повторяется, переустановите приложение через:')}</span>
-                  <div className="mt-1">
-                    <a 
-                      href="/rebind.html" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
-                    >
-                      /rebind.html <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                </div>
+                <span>Перейдите на вкладку "Управление группой" снова.</span>
               </div>
             </div>
           </div>
 
           {diagnosticInfo && (
-            <details className="text-xs bg-muted p-3 rounded-md">
-              <summary className="cursor-pointer font-medium mb-2">
-                {t('errors.diagnosticInfo', 'Диагностическая информация')} 
-                <span className="text-muted-foreground ml-2">(для разработчика)</span>
-              </summary>
-              <div className="space-y-1 font-mono text-xs mt-2">
-                <div><strong>entityTypeId:</strong> {entityTypeId || '❌'}</div>
-                <div><strong>extractionMethod:</strong> {diagnosticInfo.extractionMethod || 'не определён'}</div>
-                <div><strong>pathname:</strong> {diagnosticInfo.pathname}</div>
-                <div><strong>referrer:</strong> {diagnosticInfo.referrer || '(пусто)'}</div>
-                <div><strong>placement:</strong> {diagnosticInfo.placement || '❌'}</div>
-                <div><strong>window.name (только диагностика):</strong> {diagnosticInfo.windowName || '(пусто)'}</div>
-                <div><strong>options:</strong> {JSON.stringify(diagnosticInfo.options, null, 2)}</div>
-              </div>
-            </details>
+            <div className="pt-4 border-t">
+              <details className="text-xs text-muted-foreground">
+                <summary className="cursor-pointer font-medium mb-2">
+                  Техническая информация
+                </summary>
+                <div className="space-y-1 font-mono text-xs mt-2 pl-4">
+                  <div>placement: {diagnosticInfo.placement || 'не определён'}</div>
+                  <div>entityTypeId: {entityTypeId || 'не определён'}</div>
+                  <div>Открыт режим предпросмотра без ID.</div>
+                </div>
+              </details>
+            </div>
           )}
-
-          <div className="flex gap-3 justify-end pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => window.location.reload()}
-              data-testid="button-reload"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              {t('errors.reloadPage', 'Обновить страницу')}
-            </Button>
-            {onRetry && (
-              <Button
-                onClick={onRetry}
-                data-testid="button-retry"
-              >
-                {t('errors.tryAgain', 'Попробовать снова')}
-              </Button>
-            )}
-          </div>
         </CardContent>
       </Card>
     </div>

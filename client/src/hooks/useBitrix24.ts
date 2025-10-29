@@ -256,21 +256,11 @@ export function useBitrix24(): Bitrix24Context {
         }
       }
 
-      // PRIORITY 5: Try to get from parent window location (might be blocked by CORS)
-      if (!entityId) {
-        try {
-          console.log(`🔍 [Попытка ${attempt}] PRIORITY 5 - пробую window.parent.location.href`);
-          const parentHref = window.parent.location.href;
-          const parentId = extractIdFromReferrer(parentHref);
-          if (parentId) {
-            entityId = parentId;
-            extractionMethod = `window.parent.location (${parentId})`;
-            console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
-          }
-        } catch (e) {
-          console.warn(`⚠️ [Попытка ${attempt}] PRIORITY 5 заблокирован CORS:`, e instanceof Error ? e.message : 'Unknown error');
-        }
-      }
+      // PRIORITY 5 (window.parent.location.href) больше не используется.
+      // Браузер блокирует доступ к родительскому URL из iframe другого домена (CORS).
+      // Bitrix24 открыт на *.bitrix24.ru, наше приложение на *.replit.app,
+      // поэтому читать window.parent.location.href технически нельзя.
+      // Мы НЕ пытаемся это делать, чтобы не шуметь в консоли у пользователей.
 
       if (!entityId && attempt === 1) {
         console.warn(`⚠️ [Попытка ${attempt}] entityId не найден во всех приоритетах. Будет повтор...`);

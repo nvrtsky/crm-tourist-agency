@@ -65,7 +65,7 @@ function loadBitrix24Script(): Promise<void> {
 
     // Wait for SDK to load (it's in HTML <script> tag)
     let attempts = 0;
-    const maxAttempts = 50; // 5 seconds total
+    const maxAttempts = 100; // 10 seconds total (increased from 5s)
     
     const checkInterval = setInterval(() => {
       attempts++;

@@ -228,15 +228,7 @@ function AdminMenu() {
 export default function App() {
   const { entityId, isReady, error } = useBitrix24();
   const { t } = useTranslation();
-  const [location, setLocation] = useLocation();
-
-  // Auto-redirect from /install to / when loaded as placement tab
-  // (if loaded with entityId, it's a working tab, not installation page)
-  useEffect(() => {
-    if (isReady && entityId && location === '/install') {
-      setLocation('/');
-    }
-  }, [isReady, entityId, location, setLocation]);
+  const [location] = useLocation();
 
   if (!isReady) {
     return (
@@ -245,19 +237,6 @@ export default function App() {
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
           <p className="text-muted-foreground">{t("common.loading")}</p>
         </div>
-      </div>
-    );
-  }
-
-  // Show blocking error only if no entityId at all
-  if (error && !entityId) {
-    return (
-      <div className="flex items-center justify-center h-screen p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>{t("errors.bitrixInitError")}</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
       </div>
     );
   }
@@ -289,16 +268,20 @@ export default function App() {
           </header>
           <main className="flex-1 overflow-auto">
             <div className="p-4 md:p-6">
-              {error && entityId && (
-                <Alert className="mb-4">
+              {error && (
+                <Alert variant={entityId ? "default" : "destructive"} className="mb-4">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>DEMO-режим</AlertTitle>
+                  <AlertTitle>{entityId ? "DEMO-режим" : t("errors.bitrixInitError")}</AlertTitle>
                   <AlertDescription className="text-sm whitespace-pre-wrap">
                     {error}
                   </AlertDescription>
                 </Alert>
               )}
-              <Router />
+              {entityId ? <Router /> : (
+                <div className="text-center text-muted-foreground mt-8">
+                  <p>Используйте кнопку ⚙️ (Admin) в правом верхнем углу для переустановки placement</p>
+                </div>
+              )}
             </div>
           </main>
         </div>

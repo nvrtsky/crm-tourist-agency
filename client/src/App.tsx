@@ -13,6 +13,7 @@ import Tourists from "@/pages/Tourists";
 import Summary from "@/pages/Summary";
 import NotFound from "@/pages/not-found";
 import { useBitrix24 } from "@/hooks/useBitrix24";
+import { EntityIdNotFound } from "@/components/EntityIdNotFound";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2, LayoutDashboard, Users, TableProperties, Settings, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -226,7 +227,7 @@ function AdminMenu() {
 }
 
 export default function App() {
-  const { entityId, isReady, error } = useBitrix24();
+  const { entityId, entityTypeId, isReady, error, diagnosticInfo } = useBitrix24();
   const { t } = useTranslation();
   const [location] = useLocation();
 
@@ -238,6 +239,22 @@ export default function App() {
           <p className="text-muted-foreground">{t("common.loading")}</p>
         </div>
       </div>
+    );
+  }
+
+  // If no entityId found after all attempts, show friendly error screen
+  if (!entityId && error) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <EntityIdNotFound
+            entityTypeId={entityTypeId}
+            diagnosticInfo={diagnosticInfo}
+            onRetry={() => window.location.reload()}
+          />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
     );
   }
 
@@ -268,20 +285,16 @@ export default function App() {
           </header>
           <main className="flex-1 overflow-auto">
             <div className="p-4 md:p-6">
-              {error && (
-                <Alert variant={entityId ? "default" : "destructive"} className="mb-4">
+              {error && entityId && (
+                <Alert variant="default" className="mb-4">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>{entityId ? "DEMO-режим" : t("errors.bitrixInitError")}</AlertTitle>
+                  <AlertTitle>DEMO-режим</AlertTitle>
                   <AlertDescription className="text-sm whitespace-pre-wrap">
                     {error}
                   </AlertDescription>
                 </Alert>
               )}
-              {entityId ? <Router /> : (
-                <div className="text-center text-muted-foreground mt-8">
-                  <p>Используйте кнопку ⚙️ (Admin) в правом верхнем углу для переустановки placement</p>
-                </div>
-              )}
+              <Router />
             </div>
           </main>
         </div>

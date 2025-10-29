@@ -67,14 +67,23 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
       - **PRIORITY 0** (Most reliable): `window.location.pathname` - extracts first numeric segment (e.g., "/179/" → entityId = "179")
       - **PRIORITY 1**: URL query parameters (`?ENTITY_ID=...`, `?ID=...`, etc.)
       - **PRIORITY 2**: `BX24.placement.info().options` fields (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, etc.) - **with retry mechanism**
-      - **PRIORITY 3**: `document.referrer` pathname parsing via `extractIdFromReferrer()` helper function
+      - **PRIORITY 3A**: `window.name` - attempts JSON parse or numeric extraction (Bitrix24 sometimes passes context via window.name)
+      - **PRIORITY 4**: `document.referrer` pathname parsing via `extractIdFromReferrer()` helper function
         - **Critical for side-slider mode** when placement.info() doesn't provide options.ID
         - Safely parses referrer URLs like `https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y`
         - Scans pathname segments from end to start, returns first numeric ID found
         - Guards against empty/invalid referrer strings, returns null on parse errors
+      - **PRIORITY 5**: `window.parent.location.href` - attempts to read parent URL (may be blocked by CORS)
+        - CORS errors are caught and logged gracefully
+        - Only attempted as last resort when all other methods fail
     - **Retry mechanism**: Makes 3 attempts with 100ms delay if `placementInfo.options` is empty on first call (handles SDK initialization race condition)
     - **Common issue**: If placement HANDLER points to `/install` or wrong URL, Bitrix24 won't provide `options.ID` → use `/rebind.html` to fix
-    - **Diagnostic logging**: Console shows `📋 CONTEXT TRY` with attempt number, entityId, entityTypeId, placement, options object, referrer URL, and pathname - materially improves troubleshooting
+    - **Diagnostic logging**: Console shows `📋 CONTEXT TRY` with attempt number, entityId, entityTypeId, placement, options object, referrer URL, pathname, and window.name - materially improves troubleshooting
+    - **Error UX**: When entityId cannot be determined, shows `EntityIdNotFound` component with:
+      - Actionable troubleshooting steps
+      - Link to `/rebind.html` for placement re-registration
+      - Expandable diagnostic panel showing all extraction attempt data
+      - "Reload" and "Try Again" buttons for self-service recovery
   - **Troubleshooting EntityId Issues**:
     - **Symptom**: Error "ID элемента Smart Process не найден" and console shows `pathname: '/install'`
     - **Cause**: Placement HANDLER configured with wrong URL (e.g., points to `/install` instead of `/`)

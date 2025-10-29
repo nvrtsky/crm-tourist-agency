@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
 
+interface DiagnosticInfo {
+  pathname: string;
+  referrer: string;
+  options: any;
+  placement: string;
+  windowName?: string;
+}
+
 interface Bitrix24Context {
   entityId: string | null;
   entityTypeId: string | null;
@@ -9,6 +17,7 @@ interface Bitrix24Context {
   expiresIn: number | null;
   isReady: boolean;
   error: string | null;
+  diagnosticInfo?: DiagnosticInfo;
 }
 
 declare global {
@@ -212,24 +221,63 @@ export function useBitrix24(): Bitrix24Context {
         }
       }
 
-      // PRIORITY 3: Fallback to document.referrer
+      // PRIORITY 3: Try to extract from window.name
+      // Bitrix24 sometimes passes context through window.name
+      if (!entityId && window.name) {
+        console.log(`🔍 [Попытка ${attempt}] PRIORITY 3A - window.name:`, window.name);
+        try {
+          // Try to parse as JSON first
+          const nameData = JSON.parse(window.name);
+          if (nameData && (nameData.entityId || nameData.id || nameData.ID)) {
+            entityId = String(nameData.entityId || nameData.id || nameData.ID);
+            extractionMethod = `window.name JSON (${entityId})`;
+            console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
+          }
+        } catch {
+          // If not JSON, try to extract numeric value directly
+          const nameMatch = window.name.match(/\d+/);
+          if (nameMatch) {
+            entityId = nameMatch[0];
+            extractionMethod = `window.name (${entityId})`;
+            console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
+          }
+        }
+      }
+
+      // PRIORITY 4: Fallback to document.referrer
       // This is critical for side-slider mode when placement.info() doesn't provide options.ID
       // Bitrix24 URL format: https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y...
       if (!entityId) {
-        console.log(`🔍 [Попытка ${attempt}] PRIORITY 3 - document.referrer:`, document.referrer);
+        console.log(`🔍 [Попытка ${attempt}] PRIORITY 4 - document.referrer:`, document.referrer);
         const refGuess = extractIdFromReferrer(document.referrer);
-        console.log(`🔍 [Попытка ${attempt}] PRIORITY 3 - extractIdFromReferrer result:`, refGuess);
+        console.log(`🔍 [Попытка ${attempt}] PRIORITY 4 - extractIdFromReferrer result:`, refGuess);
         if (refGuess) {
           entityId = refGuess;
           extractionMethod = `document.referrer (${refGuess} из ${document.referrer})`;
           console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
         } else {
-          console.warn(`⚠️ [Попытка ${attempt}] PRIORITY 3 не смог извлечь ID из referrer:`, document.referrer);
+          console.warn(`⚠️ [Попытка ${attempt}] PRIORITY 4 не смог извлечь ID из referrer:`, document.referrer);
+        }
+      }
+
+      // PRIORITY 5: Try to get from parent window location (might be blocked by CORS)
+      if (!entityId) {
+        try {
+          console.log(`🔍 [Попытка ${attempt}] PRIORITY 5 - пробую window.parent.location.href`);
+          const parentHref = window.parent.location.href;
+          const parentId = extractIdFromReferrer(parentHref);
+          if (parentId) {
+            entityId = parentId;
+            extractionMethod = `window.parent.location (${parentId})`;
+            console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
+          }
+        } catch (e) {
+          console.warn(`⚠️ [Попытка ${attempt}] PRIORITY 5 заблокирован CORS:`, e instanceof Error ? e.message : 'Unknown error');
         }
       }
 
       if (!entityId && attempt === 1) {
-        console.warn(`⚠️ [Попытка ${attempt}] entityId не найден. Будет повтор...`);
+        console.warn(`⚠️ [Попытка ${attempt}] entityId не найден во всех приоритетах. Будет повтор...`);
       }
 
       return entityId;
@@ -290,19 +338,17 @@ export function useBitrix24(): Bitrix24Context {
           // Set context with final result
           let errorMessage: string | null = null;
           if (!entityId) {
-            errorMessage = `ID элемента Smart Process не найден после ${attempt} попыток.
-
-Возможные причины:
-1. Приложение открыто НЕ из карточки Smart Process "Событие"
-2. Неправильно настроен placement в Bitrix24
-3. Отсутствуют необходимые права доступа
-
-Инструкции для решения:
-✓ Откройте приложение из карточки Smart Process (элемент "Событие")
-✓ Убедитесь, что открыта именно КАРТОЧКА (не preview/side-slider)
-✓ Проверьте консоль браузера (F12) для диагностики
-✓ При необходимости переустановите приложение через /install.html`;
+            errorMessage = `ID элемента Smart Process не найден после ${attempt} попыток.`;
           }
+
+          // Prepare diagnostic info
+          const diagnosticInfo: DiagnosticInfo = {
+            pathname: window.location.pathname,
+            referrer: document.referrer,
+            options: placementInfo?.options || {},
+            placement: placementInfo?.placement || '',
+            windowName: window.name || undefined
+          };
 
           setContext({
             entityId,
@@ -313,6 +359,7 @@ export function useBitrix24(): Bitrix24Context {
             expiresIn: auth.expires_in || null,
             isReady: true,
             error: errorMessage,
+            diagnosticInfo,
           });
 
           // Auto-resize iframe

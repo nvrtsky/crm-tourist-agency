@@ -1,0 +1,44 @@
+ui.toolbar.bundle.js:383 BX.UI.Toolbar: the button "uibtn-6eakpsnp" wasn't initialized.
+(anonymous) @ ui.toolbar.bundle.js:383
+T @ ui.toolbar.bundle.js:367
+create @ ui.toolbar.bundle.js:541
+(anonymous) @ 303/?IFRAME=Y&IFRAME_TYPE=SIDE_SLIDER:1398
+index-DZz7ZfUh.js:302 ⚠️ [Попытка 1] entityId не найден. Будет повтор...
+n @ index-DZz7ZfUh.js:302
+(anonymous) @ index-DZz7ZfUh.js:302
+(anonymous) @ v1/:784
+setTimeout
+(anonymous) @ v1/:784
+BX24.init @ v1/:611
+i @ index-DZz7ZfUh.js:302
+s @ index-DZz7ZfUh.js:313
+r @ index-DZz7ZfUh.js:302
+(anonymous) @ index-DZz7ZfUh.js:313
+I0 @ index-DZz7ZfUh.js:40
+yl @ index-DZz7ZfUh.js:40
+(anonymous) @ index-DZz7ZfUh.js:40
+E @ index-DZz7ZfUh.js:25
+L @ index-DZz7ZfUh.js:25
+index-DZz7ZfUh.js:302 📋 ИТОГОВЫЙ РЕЗУЛЬТАТ: {entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', attempt: 1, placement: 'CRM_DYNAMIC_176_DETAIL_TAB', pathname: '/install', …}
+index-DZz7ZfUh.js:302 ⏳ Повтор через 100ms (попытка 2/3)...
+index-DZz7ZfUh.js:302 📋 ИТОГОВЫЙ РЕЗУЛЬТАТ: {entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', attempt: 2, placement: 'CRM_DYNAMIC_176_DETAIL_TAB', pathname: '/install', …}
+index-DZz7ZfUh.js:302 ⏳ Повтор через 100ms (попытка 3/3)...
+index-DZz7ZfUh.js:302 📋 ИТОГОВЫЙ РЕЗУЛЬТАТ: {entityId: '❌ НЕ НАЙДЕН', entityTypeId: '176', attempt: 3, placement: 'CRM_DYNAMIC_176_DETAIL_TAB', pathname: '/install', …}
+// Шаг 1: Проверяем текущее состояние
+console.log('🔍 Проверяем текущий placement...');
+BX24.callMethod('placement.get', {}, function(result) {
+  const placements = result.data();
+  const our = placements.find(p => p.placement === 'CRM_DYNAMIC_176_DETAIL_TAB');
+  console.log('📍 Текущий HANDLER:', our?.handler);
+  
+  if (our?.handler?.includes('/install')) {
+    console.log('❌ Handler все еще на /install - нужно исправить!');
+  } else {
+    console.log('✅ Handler правильный, но почему pathname=/install?');
+    console.log('🔍 window.location:', window.location.href);
+  }
+});
+VM12572:2 🔍 Проверяем текущий placement...
+VM12572:3 Uncaught ReferenceError: BX24 is not defined
+    at <anonymous>:3:1
+(anonymous) @ VM12572:3

@@ -158,6 +158,7 @@ export function useBitrix24(): Bitrix24Context {
       // This is THE MOST RELIABLE method for side-slider mode
       const pathname = window.location.pathname;
       const pathSegments = pathname.split('/').filter(Boolean);
+      console.log(`🔍 [Попытка ${attempt}] PRIORITY 0 - pathname:`, pathname, 'segments:', pathSegments);
       
       // Look for first numeric segment
       for (const segment of pathSegments) {
@@ -215,11 +216,15 @@ export function useBitrix24(): Bitrix24Context {
       // This is critical for side-slider mode when placement.info() doesn't provide options.ID
       // Bitrix24 URL format: https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y...
       if (!entityId) {
+        console.log(`🔍 [Попытка ${attempt}] PRIORITY 3 - document.referrer:`, document.referrer);
         const refGuess = extractIdFromReferrer(document.referrer);
+        console.log(`🔍 [Попытка ${attempt}] PRIORITY 3 - extractIdFromReferrer result:`, refGuess);
         if (refGuess) {
           entityId = refGuess;
           extractionMethod = `document.referrer (${refGuess} из ${document.referrer})`;
           console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
+        } else {
+          console.warn(`⚠️ [Попытка ${attempt}] PRIORITY 3 не смог извлечь ID из referrer:`, document.referrer);
         }
       }
 

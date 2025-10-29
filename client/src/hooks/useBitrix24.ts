@@ -6,6 +6,7 @@ interface DiagnosticInfo {
   options: any;
   placement: string;
   windowName?: string;
+  extractionMethod?: string;
 }
 
 interface Bitrix24Context {
@@ -169,7 +170,7 @@ export function useBitrix24(): Bitrix24Context {
     };
     
     // Helper function to extract entityId from various sources
-    const tryExtractEntityId = (source: string, attempt: number = 1): string | null => {
+    const tryExtractEntityId = (source: string, attempt: number = 1): { entityId: string | null; extractionMethod: string } => {
       let entityId: string | null = null;
       let extractionMethod = '';
 
@@ -232,27 +233,11 @@ export function useBitrix24(): Bitrix24Context {
         }
       }
 
-      // PRIORITY 3: Try to extract from window.name
-      // Bitrix24 sometimes passes context through window.name
-      if (!entityId && window.name) {
-        console.log(`🔍 [Попытка ${attempt}] PRIORITY 3A - window.name:`, window.name);
-        try {
-          // Try to parse as JSON first
-          const nameData = JSON.parse(window.name);
-          if (nameData && (nameData.entityId || nameData.id || nameData.ID)) {
-            entityId = String(nameData.entityId || nameData.id || nameData.ID);
-            extractionMethod = `window.name JSON (${entityId})`;
-            console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
-          }
-        } catch {
-          // If not JSON, try to extract numeric value directly
-          const nameMatch = window.name.match(/\d+/);
-          if (nameMatch) {
-            entityId = nameMatch[0];
-            extractionMethod = `window.name (${entityId})`;
-            console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
-          }
-        }
+      // NOTE: window.name is NOT used for entityId extraction
+      // It contains Bitrix24 internal iframe ID (e.g., "24"), not the Smart Process element ID
+      // We only log it for diagnostic purposes
+      if (window.name) {
+        console.log(`📋 [Попытка ${attempt}] window.name (только диагностика):`, window.name);
       }
 
       // PRIORITY 4: Fallback to document.referrer
@@ -291,7 +276,7 @@ export function useBitrix24(): Bitrix24Context {
         console.warn(`⚠️ [Попытка ${attempt}] entityId не найден во всех приоритетах. Будет повтор...`);
       }
 
-      return entityId;
+      return { entityId, extractionMethod };
     };
 
     // Function with retry logic
@@ -323,18 +308,22 @@ export function useBitrix24(): Bitrix24Context {
           }
 
           // Try to extract entityId
-          const entityId = tryExtractEntityId('init', attempt);
+          const extractionResult = tryExtractEntityId('init', attempt);
+          const entityId = extractionResult.entityId;
+          const finalExtractionMethod = extractionResult.extractionMethod || 'не определён';
 
           // Log final result with comprehensive context information
           console.log('📋 CONTEXT TRY (ИТОГОВЫЙ РЕЗУЛЬТАТ):', {
             attempt,
             entityId: entityId || '❌ НЕ НАЙДЕН',
             entityTypeId: entityTypeId || '❌ НЕ НАЙДЕН',
+            extractionMethod: finalExtractionMethod,
             placement: placementInfo?.placement || '❌',
             options: placementInfo?.options || {},
             referrer: document.referrer || '(пусто)',
             pathname: window.location.pathname,
-            search: window.location.search || '(нет параметров)'
+            search: window.location.search || '(нет параметров)',
+            windowName: window.name || '(пусто)' // Only for diagnostics
           });
 
           // If no entityId found and we haven't tried 3 times yet, retry
@@ -358,7 +347,8 @@ export function useBitrix24(): Bitrix24Context {
             referrer: document.referrer,
             options: placementInfo?.options || {},
             placement: placementInfo?.placement || '',
-            windowName: window.name || undefined
+            windowName: window.name || undefined,
+            extractionMethod: finalExtractionMethod
           };
 
           setContext({

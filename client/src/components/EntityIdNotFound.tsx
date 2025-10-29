@@ -12,6 +12,7 @@ interface EntityIdNotFoundProps {
     options: any;
     placement: string;
     windowName?: string;
+    extractionMethod?: string;
   };
   onRetry?: () => void;
 }
@@ -90,10 +91,11 @@ export function EntityIdNotFound({ entityTypeId, diagnosticInfo, onRetry }: Enti
               </summary>
               <div className="space-y-1 font-mono text-xs mt-2">
                 <div><strong>entityTypeId:</strong> {entityTypeId || '❌'}</div>
+                <div><strong>extractionMethod:</strong> {diagnosticInfo.extractionMethod || 'не определён'}</div>
                 <div><strong>pathname:</strong> {diagnosticInfo.pathname}</div>
                 <div><strong>referrer:</strong> {diagnosticInfo.referrer || '(пусто)'}</div>
                 <div><strong>placement:</strong> {diagnosticInfo.placement || '❌'}</div>
-                <div><strong>window.name:</strong> {diagnosticInfo.windowName || '(пусто)'}</div>
+                <div><strong>window.name (только диагностика):</strong> {diagnosticInfo.windowName || '(пусто)'}</div>
                 <div><strong>options:</strong> {JSON.stringify(diagnosticInfo.options, null, 2)}</div>
               </div>
             </details>

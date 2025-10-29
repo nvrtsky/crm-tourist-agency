@@ -64,6 +64,10 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
     - The main app hook `useBitrix24.ts` only calls BX24.init() and reads placement context (entityId), never attempts to register placement
   - **Auto-Rebind Mechanism** (GET `/install` endpoint):
     - **Purpose**: Automatically fixes placement when HANDLER points to wrong URL (e.g., `/install` instead of `/`)
+    - **Technical Implementation**:
+      - Endpoint registered in `server/index.ts` BEFORE `setupVite()` call (critical for avoiding Vite middleware interception)
+      - Returns standalone HTML page with embedded Bitrix24 SDK and auto-rebind script
+      - No frontend routing involved - pure backend endpoint response
     - **How it works**:
       1. When user opens app and placement loads `/install`, endpoint serves HTML page with auto-rebind script
       2. Script calls `BX24.placement.unbind` to remove old placement

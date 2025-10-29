@@ -62,6 +62,19 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
     - Main application (`client/src/`) contains ZERO placement.bind code - only reads placement.info()
     - File `client/src/pages/Install.tsx` was completely removed from project to prevent HTTP 400 errors
     - The main app hook `useBitrix24.ts` only calls BX24.init() and reads placement context (entityId), never attempts to register placement
+  - **Auto-Rebind Mechanism** (GET `/install` endpoint):
+    - **Purpose**: Automatically fixes placement when HANDLER points to wrong URL (e.g., `/install` instead of `/`)
+    - **How it works**:
+      1. When user opens app and placement loads `/install`, endpoint serves HTML page with auto-rebind script
+      2. Script calls `BX24.placement.unbind` to remove old placement
+      3. Then calls `BX24.placement.bind` with correct HANDLER=`/` (main app)
+      4. Shows progress indicators and status messages in Russian
+      5. After success, prompts user to reload page
+    - **User Experience**:
+      - Loading spinner during each step (initialization, unbind, bind)
+      - Success message with "Перезагрузить" button
+      - Error handling with actionable troubleshooting steps
+    - **Benefits**: One-time self-service fix without manual intervention or support team assistance
   - **EntityId Extraction Architecture**:
     - **Multi-method approach with priority-based fallbacks**:
       - **PRIORITY 0** (Most reliable): `window.location.pathname` - extracts first numeric segment (e.g., "/179/" → entityId = "179")
@@ -70,9 +83,11 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
       - **PRIORITY 3A**: `window.name` - attempts JSON parse or numeric extraction (Bitrix24 sometimes passes context via window.name)
       - **PRIORITY 4**: `document.referrer` pathname parsing via `extractIdFromReferrer()` helper function
         - **Critical for side-slider mode** when placement.info() doesn't provide options.ID
+        - **PRIORITY 1**: Regex match for `/details/{id}/` pattern (e.g., `/crm/type/176/details/303/` → entityId = "303")
+        - **PRIORITY 2**: Fallback - scans pathname segments from end to start, returns first numeric ID found
         - Safely parses referrer URLs like `https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y`
-        - Scans pathname segments from end to start, returns first numeric ID found
         - Guards against empty/invalid referrer strings, returns null on parse errors
+        - Logs which extraction method succeeded for troubleshooting
       - **PRIORITY 5**: `window.parent.location.href` - attempts to read parent URL (may be blocked by CORS)
         - CORS errors are caught and logged gracefully
         - Only attempted as last resort when all other methods fail

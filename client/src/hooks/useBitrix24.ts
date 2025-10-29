@@ -69,14 +69,25 @@ function extractIdFromReferrer(ref: string): string | null {
   try {
     if (!ref) return null;
     const url = new URL(ref);
-    const parts = url.pathname.split('/').filter(Boolean);
+    const pathname = url.pathname;
     
-    // Go from the end and find the first purely numeric value
+    // PRIORITY 1: Try to match /details/{id}/ pattern specifically
+    // This is the most reliable pattern for Bitrix24 Smart Process URLs
+    const detailsMatch = pathname.match(/\/details\/(\d+)/);
+    if (detailsMatch && detailsMatch[1]) {
+      console.log(`🎯 extractIdFromReferrer: найден ID в /details/ паттерне: ${detailsMatch[1]}`);
+      return detailsMatch[1]; // e.g., "303"
+    }
+    
+    // PRIORITY 2: Fallback - split pathname and find the first numeric value from the end
+    const parts = pathname.split('/').filter(Boolean);
     for (let i = parts.length - 1; i >= 0; i--) {
       if (/^\d+$/.test(parts[i])) {
+        console.log(`🎯 extractIdFromReferrer: найден ID в pathname части: ${parts[i]}`);
         return parts[i]; // e.g., "127", "303"
       }
     }
+    
     return null;
   } catch (e) {
     console.warn("extractIdFromReferrer: не смог распарсить referrer", ref, e);

@@ -33,7 +33,7 @@ const CITY_NAMES: Record<City, string> = {
 };
 
 export default function Summary() {
-  const { entityId } = useBitrix24();
+  const { entityId, domain } = useBitrix24();
   const [isGrouped, setIsGrouped] = useState(true);
   const [selectedTourists, setSelectedTourists] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -60,6 +60,44 @@ export default function Summary() {
       newSelected.add(id);
     }
     setSelectedTourists(newSelected);
+  };
+
+  const handleShowSelectedDeals = () => {
+    if (selectedTourists.size === 0) {
+      toast({
+        title: "Выберите туристов",
+        description: "Отметьте туристов для просмотра их сделок",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedTouristsList = tourists?.filter(t => selectedTourists.has(t.id)) || [];
+    
+    const dealInfo = selectedTouristsList
+      .map(t => {
+        const dealId = t.bitrixDealId || 'Без сделки';
+        return `${t.name}: Сделка #${dealId}`;
+      })
+      .join('\n');
+
+    toast({
+      title: `Сделки выбранных туристов (${selectedTourists.size})`,
+      description: dealInfo,
+      duration: 10000,
+    });
+  };
+
+  // Helper function to create Bitrix24 deal URL
+  const getBitrixDealUrl = (dealId: string | null | undefined): string | null => {
+    if (!dealId || dealId === 'no-deal' || !domain) return null;
+    return `https://${domain}/crm/deal/details/${dealId}/`;
+  };
+
+  // Helper function to create Bitrix24 contact URL
+  const getBitrixContactUrl = (contactId: string | null | undefined): string | null => {
+    if (!contactId || !domain) return null;
+    return `https://${domain}/crm/contact/details/${contactId}/`;
   };
 
   // Group tourists by dealId when isGrouped is true
@@ -322,14 +360,15 @@ export default function Summary() {
         </div>
         <div className="flex gap-2">
           <Button
-            variant={isGrouped ? "default" : "outline"}
+            variant="outline"
             size="sm"
-            onClick={() => setIsGrouped(!isGrouped)}
-            data-testid="button-toggle-group"
+            onClick={handleShowSelectedDeals}
+            disabled={selectedTourists.size === 0}
+            data-testid="button-show-selected-deals"
             className="hidden sm:flex"
           >
-            {isGrouped ? <List className="h-4 w-4 mr-2" /> : <Grid className="h-4 w-4 mr-2" />}
-            {isGrouped ? "Разгруппировать" : "Сгруппировать"}
+            <List className="h-4 w-4 mr-2" />
+            Показать сделки выбранных
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -419,7 +458,21 @@ export default function Summary() {
                         <tr key={`group-header-${dealId}`} className={`border-t-2 border-primary ${groupBgClass}`}>
                           <td colSpan={8} className="px-4 py-2">
                             <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                              <span>Сделка #{dealId === 'no-deal' ? 'Без сделки' : dealId}</span>
+                              {dealId === 'no-deal' ? (
+                                <span>Сделка #Без сделки</span>
+                              ) : getBitrixDealUrl(dealId) ? (
+                                <a 
+                                  href={getBitrixDealUrl(dealId)!} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                  data-testid={`link-deal-${dealId}`}
+                                >
+                                  Сделка #{dealId}
+                                </a>
+                              ) : (
+                                <span>Сделка #{dealId}</span>
+                              )}
                               <Badge variant="outline" className="text-xs">
                                 {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
                               </Badge>
@@ -446,7 +499,21 @@ export default function Summary() {
                         </td>
                       <td className="px-4 py-3" data-testid={`tourist-info-${originalIndex}`}>
                         <div className="flex flex-col gap-1">
-                          <div className="font-medium text-sm">{tourist.name}</div>
+                          <div className="font-medium text-sm">
+                            {getBitrixContactUrl(tourist.bitrixContactId) ? (
+                              <a 
+                                href={getBitrixContactUrl(tourist.bitrixContactId)!} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                                data-testid={`link-contact-${originalIndex}`}
+                              >
+                                {tourist.name}
+                              </a>
+                            ) : (
+                              <span>{tourist.name}</span>
+                            )}
+                          </div>
                           {tourist.phone && (
                             <div className="text-xs text-muted-foreground">{tourist.phone}</div>
                           )}
@@ -604,7 +671,21 @@ export default function Summary() {
                 {isGrouped && isFirstInGroup && (
                   <div key={`group-header-mobile-${dealId}`} className="px-2 py-2 bg-primary/10 rounded-md border-l-4 border-primary">
                     <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                      <span>Сделка #{dealId === 'no-deal' ? 'Без сделки' : dealId}</span>
+                      {dealId === 'no-deal' ? (
+                        <span>Сделка #Без сделки</span>
+                      ) : getBitrixDealUrl(dealId) ? (
+                        <a 
+                          href={getBitrixDealUrl(dealId)!} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                          data-testid={`link-deal-mobile-${dealId}`}
+                        >
+                          Сделка #{dealId}
+                        </a>
+                      ) : (
+                        <span>Сделка #{dealId}</span>
+                      )}
                       <Badge variant="outline" className="text-xs">
                         {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
                       </Badge>
@@ -625,7 +706,19 @@ export default function Summary() {
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant="outline" className="shrink-0">{originalIndex + 1}</Badge>
                         <h3 className="font-semibold truncate" data-testid={`tourist-card-name-${originalIndex}`}>
-                          {tourist.name}
+                          {getBitrixContactUrl(tourist.bitrixContactId) ? (
+                            <a 
+                              href={getBitrixContactUrl(tourist.bitrixContactId)!} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                              data-testid={`link-contact-mobile-${originalIndex}`}
+                            >
+                              {tourist.name}
+                            </a>
+                          ) : (
+                            <span>{tourist.name}</span>
+                          )}
                         </h3>
                       </div>
                       <div className="space-y-0.5 text-sm text-muted-foreground">

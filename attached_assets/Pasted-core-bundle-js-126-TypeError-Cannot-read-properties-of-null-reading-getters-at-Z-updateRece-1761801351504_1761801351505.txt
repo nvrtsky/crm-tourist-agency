@@ -1,0 +1,63 @@
+core.bundle.js:126 TypeError: Cannot read properties of null (reading 'getters')
+    at Z.updateRecentCallsList (call-manager.bundle.js:330:80)
+    at y.K (init.bundle.js:114:45)
+    at new y (init.bundle.js:64:70)
+    at y.getInstance (init.bundle.js:25:218)
+    at y.init (init.bundle.js:29:18)
+    at Proxy.created (quick-access.bundle.js:14:33)
+    at nr (vue.bundle.js:20:1)
+    at ni (vue.bundle.js:20:1)
+    at ii (vue.bundle.js:20:1)
+    at vue.bundle.js:20:1 Proxy(Object) {_: {…}} 'https://vuejs.org/error-reference/#runtime-c'
+r.config.errorHandler @ core.bundle.js:126
+nr @ vue.bundle.js:20
+nl @ vue.bundle.js:20
+nr @ vue.bundle.js:20
+ni @ vue.bundle.js:20
+ii @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lJ @ vue.bundle.js:20
+(anonymous) @ vue.bundle.js:20
+lW @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+a @ vue.bundle.js:20
+run @ vue.bundle.js:20
+q @ vue.bundle.js:20
+U @ vue.bundle.js:20
+B @ vue.bundle.js:20
+x @ vue.bundle.js:20
+es @ vue.bundle.js:20
+mount @ vue.bundle.js:20
+t.mount @ vue.bundle.js:20
+(anonymous) @ core.bundle.js:149
+createVue @ core.bundle.js:116
+initComponent @ quick-access.js.bundle.js:36
+(anonymous) @ quick-access.js.bundle.js:28
+Promise.then
+r @ quick-access.js.bundle.js:28
+r @ launch.bundle.js:29
+(anonymous) @ 303/?current_fieldset=SOCSERV:1788
+(anonymous) @ core.js:8100
+(anonymous) @ core.js:8099
+i @ core.js:6345
+ui.toolbar.bundle.js:383 BX.UI.Toolbar: the button "uibtn-29e0nhh0" wasn't initialized.
+(anonymous) @ ui.toolbar.bundle.js:383
+T @ ui.toolbar.bundle.js:367
+create @ ui.toolbar.bundle.js:541
+(anonymous) @ 303/?categoryId=15&current_fieldset=SOCSERV&IFRAME=Y&IFRAME_TYPE=SIDE_SLIDER:1398
+vue.global.min.js:7 You are running a development build of Vue.
+Make sure to use the production build (*.prod.js) when deploying for production.
+app.js?ver=1761801252:55 ['4787']
+app.js?ver=1761801252:55 (2) ['4915', '4549']
+app.js?ver=1761801252:55 ['5075']
+app.js?ver=1761801252:55 ['4767']
+app.js?ver=1761801252:55 ['4369']
+app.js?ver=1761801252:55 ['4761']
+app.js?ver=1761801252:55 ['5193']
+app.js?ver=1761801252:55 ['5311']
+index-B0iURllj.js:302 🔍 [Попытка 1] PRIORITY 0 - pathname: /install segments: ['install']
+index-B0iURllj.js:302 ✅ [Попытка 1] entityId найден в placementInfo.options.ID
+index-B0iURllj.js:302 📋 [Попытка 1] window.name (только диагностика): mitclick.bitrix24.ru|1|398351b8891e828cadc22bb219bbc770
+index-B0iURllj.js:302 📋 CONTEXT TRY (ИТОГОВЫЙ РЕЗУЛЬТАТ): {attempt: 1, entityId: '303', entityTypeId: '176', extractionMethod: 'placementInfo.options.ID', placement: 'CRM_DYNAMIC_176_DETAIL_TAB', …}

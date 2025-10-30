@@ -88,6 +88,28 @@ export default function Dashboard() {
     },
   });
 
+  // Reload data from Bitrix24 mutation (DEV MODE)
+  const reloadFromBitrix24Mutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/dev/reload/${entityId}`, { entityTypeId });
+      return await res.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
+      toast({
+        title: "Данные загружены из Bitrix24",
+        description: data.message,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t("common.error"),
+        description: error.message || "Ошибка загрузки данных из Bitrix24",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Calculate statistics
   const stats = useMemo(() => {
     if (!tourists) {
@@ -233,6 +255,20 @@ export default function Dashboard() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => reloadFromBitrix24Mutation.mutate()}
+          disabled={reloadFromBitrix24Mutation.isPending}
+          data-testid="button-reload-bitrix24"
+        >
+          {reloadFromBitrix24Mutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Database className="h-4 w-4 mr-2" />
+          )}
+          🔧 Загрузить из Bitrix24
+        </Button>
         <Button
           variant="outline"
           size="sm"

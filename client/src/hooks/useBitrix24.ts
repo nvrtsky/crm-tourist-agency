@@ -143,6 +143,37 @@ export function useBitrix24(): Bitrix24Context {
   });
 
   useEffect(() => {
+    // DEV MODE: Check for dev_entity_id in URL query params (for development without Bitrix24)
+    const urlParams = new URLSearchParams(window.location.search);
+    const devEntityIdParam = urlParams.get('dev_entity_id');
+    const devDomainParam = urlParams.get('dev_domain') || 'mitclick.bitrix24.ru';
+    
+    // Also check environment variables
+    const devEntityId = devEntityIdParam || import.meta.env.VITE_DEV_ENTITY_ID;
+    const devDomain = devDomainParam || import.meta.env.VITE_DEV_DOMAIN || 'mitclick.bitrix24.ru';
+    
+    if (devEntityId) {
+      console.log('🔧 DEV MODE активен: entityId =', devEntityId, 'domain =', devDomain);
+      setContext({
+        entityId: devEntityId,
+        entityTypeId: '176', // Smart Process "Событие"
+        domain: devDomain,
+        memberId: 'dev-member',
+        accessToken: null,
+        expiresIn: null,
+        isReady: true,
+        error: null,
+        diagnosticInfo: {
+          pathname: window.location.pathname,
+          referrer: '',
+          options: { DEV_MODE: true },
+          placement: 'DEV_MODE',
+          extractionMethod: devEntityIdParam ? 'URL query param ?dev_entity_id=' : 'VITE_DEV_ENTITY_ID environment variable'
+        }
+      });
+      return;
+    }
+    
     // Try to load Bitrix24 SDK if not present
     const initializeBitrix = async () => {
       try {

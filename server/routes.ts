@@ -283,6 +283,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DEV MODE: Force reload data from Bitrix24 for specific entity
+  app.post("/api/dev/reload/:entityId", async (req, res) => {
+    try {
+      const { entityId } = req.params;
+      const entityTypeId = req.body.entityTypeId || "176";
+      
+      if (!bitrix24) {
+        return res.status(503).json({ 
+          error: "Bitrix24 service not available",
+          message: "BITRIX24_WEBHOOK_URL not configured"
+        });
+      }
+
+      console.log(`🔧 DEV MODE: Force reloading data from Bitrix24 for entity ${entityId}...`);
+
+      // Clear existing tourists for this entity
+      const existingTourists = await storage.getTouristsByEntity(entityId);
+      for (const tourist of existingTourists) {
+        await storage.deleteTourist(tourist.id);
+      }
+      console.log(`Cleared ${existingTourists.length} existing tourists`);
+
+      // Load fresh data from Bitrix24
+      const bitrixTourists = await bitrix24.loadTouristsFromEvent(entityId, entityTypeId);
+      console.log(`Loaded ${bitrixTourists.length} tourists from Bitrix24`);
+
+      // Save to storage
+      const createdTourists = [];
+      for (const bitrixTourist of bitrixTourists) {
+        const created = await storage.createTourist({
+          entityId,
+          entityTypeId,
+          name: bitrixTourist.name,
+          email: bitrixTourist.email || undefined,
+          phone: bitrixTourist.phone || undefined,
+          passport: bitrixTourist.passport || undefined,
+          bitrixContactId: bitrixTourist.bitrixContactId,
+          bitrixDealId: bitrixTourist.bitrixDealId,
+        });
+        createdTourists.push(created);
+      }
+
+      res.json({
+        success: true,
+        message: `Loaded ${createdTourists.length} tourists from Bitrix24`,
+        tourists: createdTourists
+      });
+    } catch (error) {
+      console.error("Error reloading data from Bitrix24:", error);
+      res.status(500).json({ 
+        error: "Failed to reload data from Bitrix24",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

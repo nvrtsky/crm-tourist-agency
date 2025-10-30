@@ -283,6 +283,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete all tourists for a specific entity
+  app.delete("/api/tourists/entity/:entityId", async (req, res) => {
+    try {
+      const { entityId } = req.params;
+      
+      const tourists = await storage.getTouristsByEntity(entityId);
+      
+      // Delete each tourist from storage
+      for (const tourist of tourists) {
+        await storage.deleteTourist(tourist.id);
+      }
+
+      console.log(`Deleted ${tourists.length} tourists for entity ${entityId}`);
+
+      res.json({ 
+        success: true,
+        message: `Deleted ${tourists.length} tourists`,
+        count: tourists.length
+      });
+    } catch (error) {
+      console.error("Error deleting tourists for entity:", error);
+      res.status(500).json({ error: "Failed to delete tourists" });
+    }
+  });
+
+  // Seed test data (for development/testing)
+  app.post("/api/seed-tourists", async (req, res) => {
+    try {
+      const { entityId, entityTypeId } = req.body;
+      
+      if (!entityId) {
+        return res.status(400).json({ error: "entityId is required" });
+      }
+
+      console.log(`Seeding test tourists for entity ${entityId}...`);
+
+      // Create sample tourists
+      const sampleTourists = [
+        {
+          name: "Иван Петров",
+          email: "ivan@example.com",
+          phone: "+7 999 123-45-67",
+          passport: "1234 567890",
+          entityId,
+          entityTypeId: entityTypeId || "176",
+        },
+        {
+          name: "Maria Chen",
+          email: "maria@example.com",
+          phone: "+86 138 1234 5678",
+          passport: "G12345678",
+          entityId,
+          entityTypeId: entityTypeId || "176",
+        },
+        {
+          name: "John Smith",
+          email: "john@example.com",
+          phone: "+1 555 123-4567",
+          passport: "US1234567",
+          entityId,
+          entityTypeId: entityTypeId || "176",
+        },
+      ];
+
+      const createdTourists = [];
+      for (const touristData of sampleTourists) {
+        const created = await storage.createTourist(touristData);
+        createdTourists.push(created);
+      }
+
+      console.log(`Created ${createdTourists.length} test tourists`);
+
+      res.json({
+        success: true,
+        message: `Created ${createdTourists.length} test tourists`,
+        tourists: createdTourists
+      });
+    } catch (error) {
+      console.error("Error seeding tourists:", error);
+      res.status(500).json({ 
+        error: "Failed to seed test data",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // DEV MODE: Force reload data from Bitrix24 for specific entity
   app.post("/api/dev/reload/:entityId", async (req, res) => {
     try {

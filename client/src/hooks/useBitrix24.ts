@@ -192,11 +192,16 @@ export function useBitrix24(): Bitrix24Context {
         initializeBX24();
       } catch (error) {
         console.error("❌ Ошибка загрузки Bitrix24 SDK:", error);
-        setContext((prev) => ({
-          ...prev,
+        setContext({
+          entityId: null,
+          entityTypeId: null,
+          domain: null,
+          memberId: null,
+          accessToken: null,
+          expiresIn: null,
           error: "Bitrix24 SDK не может быть загружен. Откройте приложение из Bitrix24.",
           isReady: true,
-        }));
+        });
       }
     };
     

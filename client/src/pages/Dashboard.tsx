@@ -91,6 +91,9 @@ export default function Dashboard() {
   // Reload data from Bitrix24 mutation (DEV MODE)
   const reloadFromBitrix24Mutation = useMutation({
     mutationFn: async () => {
+      if (!entityId) {
+        throw new Error("Entity ID не найден");
+      }
       const res = await apiRequest("POST", `/api/dev/reload/${entityId}`, { entityTypeId });
       return await res.json();
     },
@@ -259,7 +262,7 @@ export default function Dashboard() {
           variant="default"
           size="sm"
           onClick={() => reloadFromBitrix24Mutation.mutate()}
-          disabled={reloadFromBitrix24Mutation.isPending}
+          disabled={!entityId || reloadFromBitrix24Mutation.isPending}
           data-testid="button-reload-bitrix24"
         >
           {reloadFromBitrix24Mutation.isPending ? (

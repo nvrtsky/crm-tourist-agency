@@ -34,7 +34,7 @@ const CITY_NAMES: Record<City, string> = {
 
 export default function Summary() {
   const { entityId } = useBitrix24();
-  const [isGrouped, setIsGrouped] = useState(false);
+  const [isGrouped, setIsGrouped] = useState(true);
   const [selectedTourists, setSelectedTourists] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 

@@ -84,8 +84,7 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
       - **PRIORITY 0** (Most reliable): `window.location.pathname` - extracts first numeric segment (e.g., "/179/" → entityId = "179")
       - **PRIORITY 1**: URL query parameters (`?ENTITY_ID=...`, `?ID=...`, etc.)
       - **PRIORITY 2**: `BX24.placement.info().options` fields (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, etc.) - **with retry mechanism**
-      - **PRIORITY 4**: `document.referrer` pathname parsing via `extractIdFromReferrer()` helper function
-        - **Critical for side-slider mode** when placement.info() doesn't provide options.ID
+      - **PRIORITY 4**: `document.referrer` pathname parsing via `extractIdFromReferrer()` helper function (fallback method)
         - **PRIORITY 1**: Regex match for `/details/{id}/` pattern (e.g., `/crm/type/176/details/303/` → entityId = "303")
         - **PRIORITY 2**: Fallback - scans pathname segments from end to start, returns first numeric ID found
         - Safely parses referrer URLs like `https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y`
@@ -106,28 +105,6 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
     - **Cause**: Placement HANDLER configured with wrong URL (e.g., points to `/install` instead of `/`)
     - **Solution**: Open `https://travel-group-manager-ndt72.replit.app/rebind.html` from Bitrix24 to rebind placement with correct URL
     - **After rebind**: Placement will load main app (`/`) instead of installation page, enabling proper entityId extraction
-
-### Platform Limitation: Side-Slider Preview Mode
-
-**Important Known Limitation:**
-
-Sometimes Bitrix24 opens the application not in the full Smart Process "Событие" card, but in a "temporary preview" (right sidebar with slider icon).
-
-In this mode, Bitrix24:
-- Does NOT pass element ID through `BX24.placement.info().options`
-- Does NOT pass element ID in `document.referrer` (referrer is truncated to `https://<portal>.bitrix24.ru/`)
-- Loads the application at path `/install` (not `/[ID]`)
-- Blocks access to `window.parent.location.href` due to browser CORS policy
-
-**Result**: It is technically impossible to determine which element is open.
-
-**This is not a bug in our code. This is a platform limitation.**
-
-**Default Behavior:**
-- ✅ If we successfully obtain `entityId` → load `crm.item.get` and render "Управление группой" UI
-- ⚠️ If we cannot obtain `entityId` → show "Нужно открыть карточку события полностью" screen with instructions for the manager
-
-**This is expected, normal behavior.** The `EntityIdNotFound` component provides clear instructions to close the preview sidebar and open the full event card.
 
 ### System Design Choices
 - **Smart Process Integration**: The system leverages Bitrix24's smart processes, with each "Event" smart process item representing a unique group tour.

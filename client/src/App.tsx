@@ -25,7 +25,7 @@ function Router() {
       <Route path="/" component={Summary} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/tourists" component={Tourists} />
-      <Route component={NotFound} />
+      <Route path="/:rest*" component={Summary} />
     </Switch>
   );
 }

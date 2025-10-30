@@ -241,7 +241,7 @@ export function useBitrix24(): Bitrix24Context {
       }
 
       // PRIORITY 4: Fallback to document.referrer
-      // This is critical for side-slider mode when placement.info() doesn't provide options.ID
+      // Используется как fallback если placement.info() не предоставил entityId
       // Bitrix24 URL format: https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y...
       if (!entityId) {
         console.log(`🔍 [Попытка ${attempt}] PRIORITY 4 - document.referrer:`, document.referrer);

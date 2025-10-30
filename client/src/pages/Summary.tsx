@@ -358,17 +358,25 @@ export default function Summary() {
             Всего туристов: {touristCount}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant={isGrouped ? "default" : "outline"}
+            size="sm"
+            onClick={() => setIsGrouped(!isGrouped)}
+            data-testid="button-toggle-group"
+          >
+            {isGrouped ? <List className="h-4 w-4 sm:mr-2" /> : <Grid className="h-4 w-4 sm:mr-2" />}
+            <span className="hidden sm:inline">{isGrouped ? "Разгруппировать" : "Сгруппировать"}</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleShowSelectedDeals}
             disabled={selectedTourists.size === 0}
             data-testid="button-show-selected-deals"
-            className="hidden sm:flex"
           >
-            <List className="h-4 w-4 mr-2" />
-            Показать сделки выбранных
+            <List className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Показать сделки</span>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

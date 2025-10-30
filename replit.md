@@ -55,7 +55,13 @@ The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwin
 - **Tourist Management**: Create, edit, delete tourists; link tourists to Bitrix24 smart process items and CRM contacts.
 - **Itinerary Management**: Select cities, specify arrival/departure dates and times, choose transport types (flight/train), enter flight/train numbers, record hotel information. Includes validation for departure dates (must be after arrival).
 - **Dashboard**: Displays tourist statistics, city distribution, upcoming arrivals, and hotel usage. Fully translated for multilingual support.
-- **Summary Table**: Comprehensive table showing all tourists, date/time ranges for arrival/departure, flight numbers, hotel lists, and transport icons. Features sticky header, responsive design with horizontal scrolling, and a total tourist count. City information is consolidated within each city column (dates/times, hotel, transport, flight numbers) instead of separate columns. **Grouping by Deals**: Toggle button to group tourists by their Bitrix24 deal ID (from `UF_CRM_9_1711887457`). When grouped: displays deal headers with tourist counts, alternating background colors for visual distinction, tourists sorted by deal ID with "no deal" tourists last. Works on both desktop and mobile views.
+- **Summary Table**: Comprehensive table showing all tourists, date/time ranges for arrival/departure, flight numbers, hotel lists, and transport icons. Features sticky header, responsive design with horizontal scrolling, and a total tourist count. City information is consolidated within each city column (dates/times, hotel, transport, flight numbers) instead of separate columns. 
+  - **Grouping by Deals**: Enabled by default. Displays deal headers with tourist counts, alternating background colors for visual distinction, tourists sorted by deal ID with "no deal" tourists last. Works on both desktop and mobile views.
+  - **Selective Operations**: Checkboxes allow selecting individual tourists. "Показать сделки выбранных" button displays deal information for selected tourists via toast notification.
+  - **Bitrix24 Hyperlinks**: 
+    - Deal headers ("Сделка #123") link to Bitrix24 deal details (`/crm/deal/details/{id}/`)
+    - Tourist names link to Bitrix24 contact details (`/crm/contact/details/{id}/`)
+    - Links open in new tab with proper security attributes
 - **Sharing & Export**: Copy link functionality and export to Excel (including times and flight numbers). Each city column has a Share2 button that exports data only for that specific city, generating an Excel file with columns: №, Tourist, Phone, and the selected city's data.
 - **Multilingual Support**: Full i18n implementation with support for Russian (default), English, and Chinese. Language switcher in application header with persistent language selection via localStorage. Dashboard fully translated.
 - **Bitrix24 Integration**: 

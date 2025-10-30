@@ -33,6 +33,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               phone: bitrixTourist.phone || undefined,
               passport: bitrixTourist.passport || undefined,
               bitrixContactId: bitrixTourist.bitrixContactId,
+              bitrixDealId: bitrixTourist.bitrixDealId,
             });
             console.log(`Imported tourist from Bitrix24: ${created.name} (${created.id})`);
           }

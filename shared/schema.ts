@@ -25,6 +25,7 @@ export const tourists = pgTable("tourists", {
   entityId: text("entity_id").notNull(), // Bitrix24 Smart Process Element ID
   entityTypeId: text("entity_type_id").notNull(), // Bitrix24 Smart Process Entity Type ID
   bitrixContactId: text("bitrix_contact_id"), // Bitrix24 Contact ID
+  bitrixDealId: text("bitrix_deal_id"), // Bitrix24 Deal ID from UF_CRM_9_1711887457
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
@@ -64,6 +65,7 @@ export const insertCityVisitWithoutTouristSchema = insertCityVisitSchema.omit({ 
 
 export const insertTouristSchema = createInsertSchema(tourists).omit({ id: true }).extend({
   bitrixContactId: z.string().optional(),
+  bitrixDealId: z.string().optional(),
   visits: z.array(insertCityVisitWithoutTouristSchema).optional(),
 });
 

@@ -62,6 +62,60 @@ export default function Summary() {
     setSelectedTourists(newSelected);
   };
 
+  // Group tourists by dealId when isGrouped is true
+  const getProcessedTourists = () => {
+    if (!tourists || tourists.length === 0) return [];
+
+    if (!isGrouped) {
+      return tourists.map((tourist, index) => ({
+        tourist,
+        originalIndex: index,
+        isFirstInGroup: false,
+        groupIndex: 0,
+        groupSize: 0,
+        dealId: tourist.bitrixDealId,
+      }));
+    }
+
+    // Group by dealId
+    const grouped = tourists.reduce((acc, tourist) => {
+      const dealId = tourist.bitrixDealId || 'no-deal';
+      if (!acc[dealId]) {
+        acc[dealId] = [];
+      }
+      acc[dealId].push(tourist);
+      return acc;
+    }, {} as Record<string, TouristWithVisits[]>);
+
+    // Convert to array and sort groups
+    const groupedArray = Object.entries(grouped).map(([dealId, tourists]) => ({
+      dealId,
+      tourists,
+    }));
+
+    // Sort groups by dealId (nulls last)
+    groupedArray.sort((a, b) => {
+      if (a.dealId === 'no-deal') return 1;
+      if (b.dealId === 'no-deal') return -1;
+      return a.dealId.localeCompare(b.dealId);
+    });
+
+    // Flatten with group metadata
+    let currentIndex = 0;
+    return groupedArray.flatMap((group, groupIndex) => 
+      group.tourists.map((tourist, indexInGroup) => ({
+        tourist,
+        originalIndex: currentIndex++,
+        isFirstInGroup: indexInGroup === 0,
+        groupIndex,
+        groupSize: group.tourists.length,
+        dealId: group.dealId,
+      }))
+    );
+  };
+
+  const processedTourists = getProcessedTourists();
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -348,29 +402,49 @@ export default function Summary() {
                   </td>
                 </tr>
               ) : (
-                tourists.map((tourist, index) => {
+                processedTourists.map((item) => {
+                  const { tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealId } = item;
                   const visitsByCity = CITIES.reduce((acc, city) => {
                     acc[city] = tourist.visits.find(v => v.city === city);
                     return acc;
                   }, {} as Record<City, typeof tourist.visits[0] | undefined>);
 
+                  // Alternating background for groups
+                  const groupBgClass = isGrouped && groupIndex % 2 === 1 ? "bg-muted/30" : "";
+
                   return (
-                    <tr
-                      key={tourist.id}
-                      className="hover-elevate border-b last:border-b-0"
-                      data-testid={`tourist-row-${index}`}
-                    >
-                      <td className="px-4 py-3" data-testid={`tourist-checkbox-${index}`}>
-                        <Checkbox
-                          checked={selectedTourists.has(tourist.id)}
-                          onCheckedChange={() => toggleTourist(tourist.id)}
-                          data-testid={`checkbox-tourist-${index}`}
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-sm" data-testid={`tourist-number-${index}`}>
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-3" data-testid={`tourist-info-${index}`}>
+                    <>
+                      {/* Group header - only show for first tourist in group when grouped */}
+                      {isGrouped && isFirstInGroup && (
+                        <tr key={`group-header-${dealId}`} className={`border-t-2 border-primary ${groupBgClass}`}>
+                          <td colSpan={8} className="px-4 py-2">
+                            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                              <span>Сделка #{dealId === 'no-deal' ? 'Без сделки' : dealId}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
+                              </Badge>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      
+                      {/* Tourist row */}
+                      <tr
+                        key={tourist.id}
+                        className={`hover-elevate border-b last:border-b-0 ${groupBgClass}`}
+                        data-testid={`tourist-row-${originalIndex}`}
+                      >
+                        <td className="px-4 py-3" data-testid={`tourist-checkbox-${originalIndex}`}>
+                          <Checkbox
+                            checked={selectedTourists.has(tourist.id)}
+                            onCheckedChange={() => toggleTourist(tourist.id)}
+                            data-testid={`checkbox-tourist-${originalIndex}`}
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-sm" data-testid={`tourist-number-${originalIndex}`}>
+                          {originalIndex + 1}
+                        </td>
+                      <td className="px-4 py-3" data-testid={`tourist-info-${originalIndex}`}>
                         <div className="flex flex-col gap-1">
                           <div className="font-medium text-sm">{tourist.name}</div>
                           {tourist.phone && (
@@ -400,7 +474,7 @@ export default function Summary() {
                           <td
                             key={city}
                             className="px-4 py-3 text-sm"
-                            data-testid={`tourist-${index}-city-${city.toLowerCase()}`}
+                            data-testid={`tourist-${originalIndex}-city-${city.toLowerCase()}`}
                           >
                             {visit ? (
                               <div className="flex flex-col gap-1.5">
@@ -488,6 +562,7 @@ export default function Summary() {
                         );
                       })}
                     </tr>
+                    </>
                   );
                 })
               )}
@@ -516,26 +591,40 @@ export default function Summary() {
             </p>
           </Card>
         ) : (
-          tourists.map((tourist, index) => {
+          processedTourists.map((item) => {
+            const { tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealId } = item;
             const visitsByCity = CITIES.reduce((acc, city) => {
               acc[city] = tourist.visits.find(v => v.city === city);
               return acc;
             }, {} as Record<City, typeof tourist.visits[0] | undefined>);
 
             return (
-              <Card key={tourist.id} data-testid={`tourist-card-mobile-${index}`}>
+              <>
+                {/* Group header mobile */}
+                {isGrouped && isFirstInGroup && (
+                  <div key={`group-header-mobile-${dealId}`} className="px-2 py-2 bg-primary/10 rounded-md border-l-4 border-primary">
+                    <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                      <span>Сделка #{dealId === 'no-deal' ? 'Без сделки' : dealId}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+                
+                <Card key={tourist.id} data-testid={`tourist-card-mobile-${originalIndex}`} className={isGrouped && groupIndex % 2 === 1 ? "bg-muted/30" : ""}>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start gap-3">
                     <Checkbox
                       checked={selectedTourists.has(tourist.id)}
                       onCheckedChange={() => toggleTourist(tourist.id)}
-                      data-testid={`checkbox-tourist-mobile-${index}`}
+                      data-testid={`checkbox-tourist-mobile-${originalIndex}`}
                       className="mt-1"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className="shrink-0">{index + 1}</Badge>
-                        <h3 className="font-semibold truncate" data-testid={`tourist-card-name-${index}`}>
+                        <Badge variant="outline" className="shrink-0">{originalIndex + 1}</Badge>
+                        <h3 className="font-semibold truncate" data-testid={`tourist-card-name-${originalIndex}`}>
                           {tourist.name}
                         </h3>
                       </div>
@@ -649,6 +738,7 @@ export default function Summary() {
                   </div>
                 </CardContent>
               </Card>
+              </>
             );
           })
         )}

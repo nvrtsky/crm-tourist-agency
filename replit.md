@@ -3,6 +3,29 @@
 ## Overview
 This project is a web application designed to manage group tours across five cities in China: Beijing, Luoyang, Xi'an, Zhangjiajie, and Shanghai. Tourists can join or leave a tour at any stage of the itinerary. The application integrates with Bitrix24 as an embedded tab within a "Smart Process" (specifically, the "Event" smart process), where each smart process item represents a single group tour. It aims to streamline tour management, provide comprehensive tourist and itinerary tracking, and offer various reporting features.
 
+## Version History
+
+### v1.0.0 (October 30, 2025)
+**Integration Bitrix24 completed - version 1.0**
+
+**MVP Features Completed:**
+- ✅ Full Bitrix24 integration as embedded tab in Smart Process "Событие" (ENTITY_TYPE_ID = 176)
+- ✅ Advanced entity ID detection with 7 fallback methods (pathname, query params, placement.options, referrer)
+- ✅ Tourist management (create, edit, delete) with Bitrix24 contact synchronization
+- ✅ Itinerary management across 5 cities (Beijing, Luoyang, Xi'an, Zhangjiajie, Shanghai)
+- ✅ Dashboard with statistics (tourist count, city distribution, upcoming arrivals, hotel usage)
+- ✅ Summary table with sticky headers, responsive design, and comprehensive tour overview
+- ✅ Export to Excel with city-specific data export functionality
+- ✅ Multilingual support (Russian, English, Chinese) with i18next
+- ✅ Full mobile adaptation across all pages
+- ✅ Catch-all routing for seamless Bitrix24 iframe integration
+- ✅ Auto-rebind mechanism for placement configuration fixes
+
+**Technical Stack:**
+- Frontend: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS
+- Backend: Express.js, TypeScript, In-memory storage (MemStorage)
+- Integration: Bitrix24 JS SDK, REST API (`crm.item.*`, `crm.contact.*`)
+
 ## User Preferences
 I prefer detailed explanations.
 I want iterative development.

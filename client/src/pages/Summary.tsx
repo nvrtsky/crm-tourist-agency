@@ -918,19 +918,19 @@ export default function Summary() {
                         className={`hover-elevate border-b last:border-b-0 ${groupBgClass}`}
                         data-testid={`tourist-row-${originalIndex}`}
                       >
-                        <td className="px-4 py-3" data-testid={`tourist-checkbox-${originalIndex}`}>
+                        <td className="px-4 py-2" data-testid={`tourist-checkbox-${originalIndex}`}>
                           <Checkbox
                             checked={selectedTourists.has(tourist.id)}
                             onCheckedChange={() => toggleTourist(tourist.id)}
                             data-testid={`checkbox-tourist-${originalIndex}`}
                           />
                         </td>
-                        <td className="px-4 py-3 text-sm" data-testid={`tourist-number-${originalIndex}`}>
+                        <td className="px-4 py-2 text-xs" data-testid={`tourist-number-${originalIndex}`}>
                           {originalIndex + 1}
                         </td>
-                      <td className="px-4 py-3" data-testid={`tourist-info-${originalIndex}`}>
-                        <div className="flex flex-col gap-1">
-                          <div className="font-medium text-sm">
+                      <td className="px-4 py-2" data-testid={`tourist-info-${originalIndex}`}>
+                        <div className="flex flex-col gap-0.5">
+                          <div className="font-medium text-xs leading-tight">
                             {getBitrixContactUrl(tourist.bitrixContactId) ? (
                               <a 
                                 href={getBitrixContactUrl(tourist.bitrixContactId)!} 
@@ -1024,11 +1024,11 @@ export default function Summary() {
                         return (
                           <td
                             key={city}
-                            className="px-4 py-3 text-sm align-top"
+                            className="px-4 py-2 text-xs align-top"
                             data-testid={`tourist-${originalIndex}-city-${city.toLowerCase()}`}
                             rowSpan={rowSpan}
                           >
-                            <div className="flex flex-col gap-1.5">
+                            <div className="flex flex-col gap-0.5">
                               {/* Dates and Times */}
                               <div className="flex flex-col gap-0.5">
                                 <div className="flex items-center gap-1">
@@ -1080,7 +1080,7 @@ export default function Summary() {
                               </div>
 
                               {/* Hotel */}
-                              <div className="flex flex-col gap-0.5 border-t pt-1">
+                              <div className="flex flex-col gap-0.5 pt-0.5">
                                 <div className="flex items-center gap-1">
                                   <span className="text-xs font-medium">Отель:</span>
                                   {visit ? (
@@ -1115,40 +1115,32 @@ export default function Summary() {
                                 </div>
                               </div>
 
-                              {/* Transport */}
-                              <div className="flex flex-col gap-0.5 border-t pt-1">
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs font-medium">Транспорт:</span>
-                                  {visit ? (
-                                    <EditableCell
-                                      value={visit.transportType}
-                                      type="select"
-                                      placeholder="Вид"
-                                      onSave={(value) => updateVisitField(tourist.id, visit.id, "transportType", value)}
-                                      selectOptions={[
-                                        { value: "plane", label: "✈️ Самолет" },
-                                        { value: "train", label: "🚂 Поезд" },
-                                      ]}
-                                      className="inline-flex text-xs"
-                                    />
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground">—</span>
-                                  )}
-                                </div>
-                                {visit && (
+                              {/* Transport - Compact */}
+                              <div className="flex flex-col gap-0.5 pt-0.5">
+                                {visit ? (
                                   <>
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-xs font-medium">Рейс:</span>
+                                    {/* Arrival Transport */}
+                                    <div className="flex items-center gap-0.5 flex-wrap text-xs leading-tight">
+                                      {visit.transportType === "plane" ? <Plane className="h-3 w-3 shrink-0" /> : <Train className="h-3 w-3 shrink-0" />}
+                                      <span className="font-medium">Приб:</span>
+                                      <EditableCell
+                                        value={visit.transportType}
+                                        type="select"
+                                        placeholder="Вид"
+                                        onSave={(value) => updateVisitField(tourist.id, visit.id, "transportType", value)}
+                                        selectOptions={[
+                                          { value: "plane", label: "Самолет" },
+                                          { value: "train", label: "Поезд" },
+                                        ]}
+                                        className="inline-flex text-xs"
+                                      />
                                       <EditableCell
                                         value={visit.flightNumber}
                                         type="text"
-                                        placeholder="Номер рейса"
+                                        placeholder="№"
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "flightNumber", value)}
                                         className="inline-flex text-xs"
                                       />
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-xs font-medium">Аэропорт:</span>
                                       <EditableCell
                                         value={visit.airport}
                                         type="text"
@@ -1156,9 +1148,7 @@ export default function Summary() {
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "airport", value)}
                                         className="inline-flex text-xs"
                                       />
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-xs font-medium">Трансфер:</span>
+                                      <span className="text-muted-foreground">•</span>
                                       <EditableCell
                                         value={visit.transfer}
                                         type="text"
@@ -1167,57 +1157,51 @@ export default function Summary() {
                                         className="inline-flex text-xs"
                                       />
                                     </div>
-
-                                    {/* Departure Transport - only show if data exists */}
-                                    {(visit.departureTransportType || visit.departureFlightNumber || visit.departureAirport || visit.departureTransfer) && (
-                                      <div className="flex flex-col gap-0.5 border-t pt-1 mt-1">
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-xs font-medium">Убытие:</span>
-                                          <EditableCell
-                                            value={visit.departureTransportType}
-                                            type="select"
-                                            placeholder="Транспорт"
-                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransportType", value)}
-                                            selectOptions={[
-                                              { value: "plane", label: "✈️ Самолет" },
-                                              { value: "train", label: "🚂 Поезд" },
-                                            ]}
-                                            className="inline-flex text-xs"
-                                          />
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-xs font-medium">Рейс:</span>
-                                          <EditableCell
-                                            value={visit.departureFlightNumber}
-                                            type="text"
-                                            placeholder="Номер рейса"
-                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "departureFlightNumber", value)}
-                                            className="inline-flex text-xs"
-                                          />
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-xs font-medium">Аэропорт:</span>
-                                          <EditableCell
-                                            value={visit.departureAirport}
-                                            type="text"
-                                            placeholder="Аэропорт"
-                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "departureAirport", value)}
-                                            className="inline-flex text-xs"
-                                          />
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-xs font-medium">Трансфер:</span>
-                                          <EditableCell
-                                            value={visit.departureTransfer}
-                                            type="text"
-                                            placeholder="Трансфер"
-                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransfer", value)}
-                                            className="inline-flex text-xs"
-                                          />
-                                        </div>
-                                      </div>
-                                    )}
+                                    
+                                    {/* Departure Transport - always show */}
+                                    <div className="flex items-center gap-0.5 flex-wrap text-xs leading-tight">
+                                      {visit.departureTransportType === "plane" ? <Plane className="h-3 w-3 shrink-0" /> : visit.departureTransportType === "train" ? <Train className="h-3 w-3 shrink-0" /> : <span className="w-3"></span>}
+                                      <span className="font-medium">Убыт:</span>
+                                      <EditableCell
+                                        value={visit.departureTransportType}
+                                        type="select"
+                                        placeholder="Вид"
+                                        onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransportType", value)}
+                                        selectOptions={[
+                                          { value: "plane", label: "Самолет" },
+                                          { value: "train", label: "Поезд" },
+                                        ]}
+                                        className="inline-flex text-xs"
+                                      />
+                                      <EditableCell
+                                        value={visit.departureFlightNumber}
+                                        type="text"
+                                        placeholder="№"
+                                        onSave={(value) => updateVisitField(tourist.id, visit.id, "departureFlightNumber", value)}
+                                        className="inline-flex text-xs"
+                                      />
+                                      <EditableCell
+                                        value={visit.departureAirport}
+                                        type="text"
+                                        placeholder="Аэропорт"
+                                        onSave={(value) => updateVisitField(tourist.id, visit.id, "departureAirport", value)}
+                                        className="inline-flex text-xs"
+                                      />
+                                      <span className="text-muted-foreground">•</span>
+                                      <EditableCell
+                                        value={visit.departureTransfer}
+                                        type="text"
+                                        placeholder="Трансфер"
+                                        onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransfer", value)}
+                                        className="inline-flex text-xs"
+                                      />
+                                    </div>
                                   </>
+                                ) : (
+                                  <div className="flex items-center gap-1 text-xs">
+                                    <span className="font-medium">Транспорт:</span>
+                                    <span className="text-muted-foreground">—</span>
+                                  </div>
                                 )}
                               </div>
                             </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Fragment } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -632,7 +632,7 @@ export default function DevTest() {
                     }, {} as Record<City, typeof tourist.visits[0] | undefined>);
 
                     return (
-                      <>
+                      <Fragment key={tourist.id}>
                         {isGrouped && isFirstInGroup && (
                           <tr key={`group-header-${groupKey}`} className="bg-primary/10 border-l-4 border-primary">
                             <td colSpan={3 + CITIES.length} className="px-4 py-2">
@@ -967,7 +967,7 @@ export default function DevTest() {
                             );
                           })}
                         </tr>
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>

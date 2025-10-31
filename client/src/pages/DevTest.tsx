@@ -4,18 +4,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { 
   getMockTouristsWithItineraries, 
   MOCK_EVENT_TITLE,
   MOCK_ENTITY_ID 
 } from "@/lib/mockData";
-import { Users, MapPin, Calendar, Hotel, AlertCircle, Share2, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, MapPin, Calendar, Hotel, AlertCircle, Share2, Link as LinkIcon, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { CITIES } from "@shared/schema";
 import type { City, TouristWithVisits } from "@shared/schema";
 import { EditableCell } from "@/components/EditableCell";
+import { copyToClipboard } from "@/lib/clipboard";
 
 const CITY_NAMES: Record<City, string> = {
   Beijing: "Пекин",
@@ -34,6 +42,8 @@ export default function DevTest() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [customGroupings, setCustomGroupings] = useState<Map<string, string[]>>(new Map());
   const [ungroupedTourists, setUngroupedTourists] = useState<Set<string>>(new Set());
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareDialogCity, setShareDialogCity] = useState<City | null>(null);
   const { toast } = useToast();
 
   // Load custom groupings from localStorage
@@ -231,6 +241,49 @@ export default function DevTest() {
       title: "Туристы разгруппированы (DEV режим)",
       description: `Разгруппировано ${touristIds.length} туристов. В реальном режиме разгруппировка сохраняется в localStorage.`,
     });
+  };
+
+  // Open share dialog for specific city
+  const handleShareCity = (city: City) => {
+    if (!tourists || tourists.length === 0) {
+      toast({
+        title: "Нет данных",
+        description: "Нечего экспортировать",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShareDialogCity(city);
+    setShareDialogOpen(true);
+  };
+
+  // Copy link for city or full table
+  const handleCopyLinkInDialog = async () => {
+    const success = await copyToClipboard(window.location.href);
+    
+    if (success) {
+      toast({
+        title: "Ссылка скопирована",
+        description: shareDialogCity 
+          ? `Ссылка на таблицу для ${CITY_NAMES[shareDialogCity]} скопирована в буфер обмена` 
+          : "Ссылка на сводную таблицу скопирована в буфер обмена",
+      });
+      setShareDialogOpen(false);
+    } else {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось скопировать ссылку",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Export Excel from dialog
+  const handleExportInDialog = () => {
+    if (shareDialogCity) {
+      handleExportCity(shareDialogCity);
+    }
+    setShareDialogOpen(false);
   };
 
   // Export to Excel with date validation
@@ -558,9 +611,9 @@ export default function DevTest() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => handleExportCity(city)}
+                            onClick={() => handleShareCity(city)}
                             className="h-6 w-6 shrink-0"
-                            title={`Экспорт ${CITY_NAMES[city]}`}
+                            title={`Поделиться ${CITY_NAMES[city]}`}
                             data-testid={`button-export-${city.toLowerCase()}`}
                           >
                             <Share2 className="h-3 w-3" />
@@ -1089,6 +1142,38 @@ export default function DevTest() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Поделиться: Полная таблица</DialogTitle>
+            <DialogDescription>
+              Выберите формат для экспорта данных
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={handleCopyLinkInDialog}
+              className="w-full justify-start"
+              variant="outline"
+              data-testid="dialog-button-copy-link"
+            >
+              <LinkIcon className="h-4 w-4 mr-2" />
+              Копировать ссылку
+            </Button>
+            <Button
+              onClick={handleExportInDialog}
+              className="w-full justify-start"
+              variant="outline"
+              data-testid="dialog-button-download-excel"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Скачать Excel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

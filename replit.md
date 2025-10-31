@@ -74,6 +74,22 @@ The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a moder
 - **i18next-browser-languagedetector**: Language detection.
 
 ## Recent Changes (October 31, 2025)
+- **Vertical Space Optimization (Latest)**: Comprehensive table height reduction for better Bitrix24 iframe display:
+  - **Desktop Tables**: Reduced spacing throughout Summary.tsx and DevTest.tsx
+    - Table cell padding: py-3 → py-2
+    - Element gaps: gap-1.5 → gap-0.5
+    - Font sizes: text-sm → text-xs
+  - **Compact Transport Display**: Consolidated 8+ separate transport fields into 2 inline rows with icons
+    - Row 1: ✈️ Приб: [Тип] [Рейс] [Аэропорт] • [Трансфер]
+    - Row 2: 🛬 Убыт: [Тип] [Рейс] [Аэропорт] • [Трансфер]
+    - All fields always visible with "—" placeholders when empty
+  - **Border Removal**: Removed border-t separators between Hotel and Transport sections, reduced pt-1 → pt-0.5
+  - **Mobile Card Optimization**: Reduced spacing in mobile tourist cards
+    - Card padding: p-4 → p-3
+    - Vertical spacing: space-y-3 → space-y-2
+    - Font sizes: text-sm → text-xs
+  - **Code Quality**: Fixed React Fragment import (added Fragment to imports from 'react') to eliminate console warnings
+  - **Testing**: E2E tests confirmed full functionality (grouping, share dialogs, Excel export, statistics) working correctly on /dev
 - **UI Cleanup**: Hidden "Показать сделки" buttons from Summary.tsx and DevTest.tsx (commented out for potential future restoration)
 - **Admin Menu**: Hidden "Административные функции" admin menu from App.tsx navigation (commented out)
 - **City Column Display**: Updated field rendering logic in both Summary.tsx and DevTest.tsx to always show field labels (Прибытие, Отъезд, Отель, Тип, Транспорт) in city columns. Empty values now display "—" placeholder instead of hiding the entire field structure. This improves UI consistency across desktop and mobile views.

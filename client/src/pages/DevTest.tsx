@@ -520,7 +520,8 @@ export default function DevTest() {
                   >
                     Разгруппировать
                   </Button>
-                  {selectedTourists.size > 0 && (
+                  {/* Hidden per user request */}
+                  {/* {selectedTourists.size > 0 && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -529,7 +530,7 @@ export default function DevTest() {
                     >
                       Показать сделки выбранных ({selectedTourists.size})
                     </Button>
-                  )}
+                  )} */}
                 </div>
               </div>
             </CardHeader>

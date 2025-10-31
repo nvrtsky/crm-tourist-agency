@@ -308,7 +308,8 @@ function AppWithBitrix24() {
                 )}
               </div>
               <div className="flex items-center gap-1">
-                <AdminMenu />
+                {/* Hidden per user request */}
+                {/* <AdminMenu /> */}
                 <LanguageSwitcher />
                 <ThemeToggle />
               </div>

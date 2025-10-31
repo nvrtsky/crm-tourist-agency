@@ -748,7 +748,8 @@ export default function Summary() {
             <List className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Разгруппировать</span>
           </Button>
-          <Button
+          {/* Hidden per user request */}
+          {/* <Button
             variant="outline"
             size="sm"
             onClick={handleShowSelectedDeals}
@@ -757,7 +758,7 @@ export default function Summary() {
           >
             <List className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Показать сделки</span>
-          </Button>
+          </Button> */}
           <Button
             size="sm"
             onClick={handleShareFull}

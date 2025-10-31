@@ -74,7 +74,18 @@ The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a moder
 - **i18next-browser-languagedetector**: Language detection.
 
 ## Recent Changes (October 31, 2025)
-- **Vertical Space Optimization (Latest)**: Comprehensive table height reduction for better Bitrix24 iframe display:
+- **Compact Header - Variant 4 (Latest)**: Объединение всех элементов над таблицей в одну строку для экономии места в iframe Bitrix24:
+  - **Формат заголовка**: "Туристы (N): [Название события]" - всё в одной строке вместо двух
+  - **Dropdown меню "Группировка"**: заменили 3 отдельные кнопки на одно dropdown-меню с опциями:
+    - Показать/Скрыть группировку (toggle)
+    - Сгруппировать (disabled если выбрано < 2 туристов)
+    - Разгруппировать (disabled если нет выбранных)
+  - **Кнопка "Поделиться"**: осталась отдельно справа от dropdown
+  - **Адаптивность**: на мобильных экранах кнопки показывают только иконки (текст скрыт с помощью `hidden sm:inline`)
+  - **Размеры**: заголовок `text-base sm:text-lg`, gap между элементами уменьшен до `gap-2`
+  - **Консистентность**: идентичная структура применена в Summary.tsx и DevTest.tsx
+  - **Тестирование**: E2E тесты подтвердили корректную работу dropdown, группировки, адаптивности на мобильных
+- **Vertical Space Optimization**: Comprehensive table height reduction for better Bitrix24 iframe display:
   - **Desktop Tables**: Reduced spacing throughout Summary.tsx and DevTest.tsx
     - Table cell padding: py-3 → py-2
     - Element gaps: gap-1.5 → gap-0.5

@@ -151,9 +151,11 @@ export default function Dashboard() {
           cityData[city].touristCount++;
           cityData[city].hotels.add(visit.hotelName);
 
-          const arrivalDate = new Date(visit.arrivalDate);
-          if (arrivalDate >= now && arrivalDate <= nextWeek) {
-            upcomingArrivals++;
+          if (visit.arrivalDate) {
+            const arrivalDate = new Date(visit.arrivalDate);
+            if (arrivalDate >= now && arrivalDate <= nextWeek) {
+              upcomingArrivals++;
+            }
           }
 
           // Count room types per hotel

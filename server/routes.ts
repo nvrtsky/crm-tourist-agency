@@ -336,6 +336,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create new city visit (empty template)
+  app.post("/api/tourists/:touristId/visits", async (req, res) => {
+    try {
+      const { touristId } = req.params;
+      const { city } = req.body;
+
+      // Validate tourist exists
+      const tourist = await storage.getTourist(touristId);
+      if (!tourist) {
+        return res.status(404).json({ error: "Tourist not found" });
+      }
+
+      // Validate city
+      if (!city || typeof city !== 'string') {
+        return res.status(400).json({ error: "City is required" });
+      }
+
+      // Check if visit already exists for this city
+      const existingVisits = await storage.getCityVisitsByTourist(touristId);
+      const hasVisit = existingVisits.some(v => v.city === city);
+      
+      if (hasVisit) {
+        return res.status(400).json({ error: "Visit already exists for this city" });
+      }
+
+      // Create empty visit with placeholder values
+      const visit = await storage.createCityVisit({
+        touristId,
+        city,
+        arrivalDate: "", // User will fill this
+        transportType: "plane", // Default value
+        hotelName: "", // User will fill this
+        // All other fields are optional and will be null
+      });
+
+      res.json(visit);
+    } catch (error) {
+      console.error("Error creating visit:", error);
+      res.status(500).json({ error: "Failed to create visit" });
+    }
+  });
+
   // Update city visit
   app.patch("/api/tourists/:touristId/visits/:visitId", async (req, res) => {
     try {

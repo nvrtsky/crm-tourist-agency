@@ -87,7 +87,8 @@
     "selectType": "Room type",
     "transportType": "Type",
     "hotelName": "Hotel name",
-    "selectRoomType": "Select"
+    "selectRoomType": "Select",
+    "clickToAddVisit": "Click to add visit"
   },
   "toasts": {
     "touristUpdated": "Tourist updated",
@@ -113,7 +114,12 @@
     "noDataToExport": "No data",
     "nothingToExport": "Nothing to export",
     "exportCompleted": "Export completed",
-    "fileDownloaded": "File {fileName} downloaded"
+    "fileDownloaded": "File {fileName} downloaded",
+    "creatingVisit": "Creating visit...",
+    "visitCreated": "Visit created",
+    "visitCreatedSuccess": "Visit to {city} successfully created",
+    "failedToCreateVisit": "Failed to create visit",
+    "visitAlreadyExists": "Visit to this city already exists"
   },
   "devMode": {
     "title": "DEV Test Mode",

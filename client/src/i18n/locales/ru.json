@@ -87,7 +87,8 @@
     "selectType": "Тип комнаты",
     "transportType": "Вид",
     "hotelName": "Название отеля",
-    "selectRoomType": "Выбрать"
+    "selectRoomType": "Выбрать",
+    "clickToAddVisit": "Нажмите чтобы добавить визит"
   },
   "toasts": {
     "touristUpdated": "Турист обновлен",
@@ -113,7 +114,12 @@
     "noDataToExport": "Нет данных",
     "nothingToExport": "Нечего экспортировать",
     "exportCompleted": "Экспорт завершен",
-    "fileDownloaded": "Файл {fileName} загружен"
+    "fileDownloaded": "Файл {fileName} загружен",
+    "creatingVisit": "Создаем визит...",
+    "visitCreated": "Визит создан",
+    "visitCreatedSuccess": "Визит в {city} успешно создан",
+    "failedToCreateVisit": "Не удалось создать визит",
+    "visitAlreadyExists": "Визит в этот город уже существует"
   },
   "devMode": {
     "title": "DEV Тестовый режим",

@@ -87,7 +87,8 @@
     "selectType": "房间类型",
     "transportType": "类型",
     "hotelName": "酒店名称",
-    "selectRoomType": "选择"
+    "selectRoomType": "选择",
+    "clickToAddVisit": "点击添加访问"
   },
   "toasts": {
     "touristUpdated": "游客已更新",
@@ -113,7 +114,12 @@
     "noDataToExport": "无数据",
     "nothingToExport": "无内容可导出",
     "exportCompleted": "导出完成",
-    "fileDownloaded": "文件 {fileName} 已下载"
+    "fileDownloaded": "文件 {fileName} 已下载",
+    "creatingVisit": "创建访问中...",
+    "visitCreated": "访问已创建",
+    "visitCreatedSuccess": "成功创建 {city} 的访问",
+    "failedToCreateVisit": "创建访问失败",
+    "visitAlreadyExists": "该城市的访问已存在"
   },
   "devMode": {
     "title": "开发测试模式",

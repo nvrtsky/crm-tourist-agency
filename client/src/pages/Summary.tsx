@@ -181,6 +181,36 @@ export default function Summary() {
     createVisitMutation.mutate({ touristId, city });
   };
 
+  // Auto-create missing visits for all cities
+  const [autoCreationDone, setAutoCreationDone] = useState(false);
+  
+  useEffect(() => {
+    if (!tourists || autoCreationDone || isLoading) return;
+    
+    let hasCreatedVisits = false;
+    tourists.forEach(tourist => {
+      const existingCities = new Set(tourist.visits.map(v => v.city));
+      const missingCities = CITIES.filter(city => !existingCities.has(city));
+      
+      missingCities.forEach(city => {
+        hasCreatedVisits = true;
+        apiRequest("POST", `/api/tourists/${tourist.id}/visits`, { city })
+          .catch(error => {
+            console.error(`Failed to auto-create visit for ${tourist.name} in ${city}:`, error);
+          });
+      });
+    });
+    
+    if (hasCreatedVisits) {
+      // Refetch tourists after creating all missing visits
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
+      }, 1000);
+    }
+    
+    setAutoCreationDone(true);
+  }, [tourists, autoCreationDone, isLoading, entityId]);
+
   const toggleSelectAll = () => {
     if (!tourists) return;
     if (selectedTourists.size === tourists.length) {
@@ -1049,17 +1079,7 @@ export default function Summary() {
                             data-testid={`tourist-${originalIndex}-city-${city.toLowerCase()}`}
                             rowSpan={rowSpan}
                           >
-                            {!visit ? (
-                              <div
-                                onClick={() => handleCreateVisit(tourist.id, city)}
-                                className="flex items-center justify-center min-h-[120px] cursor-pointer hover-elevate rounded-md border border-dashed border-muted-foreground/30 text-center text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors p-4"
-                                data-testid={`add-visit-${tourist.id}-${city.toLowerCase()}`}
-                              >
-                                <span className="text-xs leading-tight">
-                                  {createVisitMutation.isPending ? t("toasts.creatingVisit") : t("placeholders.clickToAddVisit")}
-                                </span>
-                              </div>
-                            ) : (
+                            {visit && (
                               <div className="flex flex-col gap-0.5">
                                 {/* Dates and Times */}
                                 <div className="flex flex-col gap-0.5">

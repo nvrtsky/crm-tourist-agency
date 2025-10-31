@@ -580,11 +580,13 @@ export default function Summary() {
       let cityData = "—";
       
       if (visit) {
-        const arrivalDate = format(new Date(visit.arrivalDate), "dd.MM.yyyy", { locale: ru });
+        const arrivalDate = visit.arrivalDate 
+          ? format(new Date(visit.arrivalDate), "dd.MM.yyyy", { locale: ru })
+          : "—";
         const arrivalTime = visit.arrivalTime ? ` ${visit.arrivalTime}` : "";
         const departureDate = visit.departureDate 
           ? format(new Date(visit.departureDate), "dd.MM.yyyy", { locale: ru })
-          : "";
+          : "—";
         const departureTime = visit.departureTime ? ` ${visit.departureTime}` : "";
         
         const dateRange = departureDate 
@@ -672,11 +674,13 @@ export default function Summary() {
       const visitsByCity = CITIES.reduce((acc, city) => {
         const visit = tourist.visits.find(v => v.city === city);
         if (visit) {
-          const arrivalDate = format(new Date(visit.arrivalDate), "dd.MM.yyyy", { locale: ru });
+          const arrivalDate = visit.arrivalDate 
+            ? format(new Date(visit.arrivalDate), "dd.MM.yyyy", { locale: ru })
+            : "—";
           const arrivalTime = visit.arrivalTime ? ` ${visit.arrivalTime}` : "";
           const departureDate = visit.departureDate 
             ? format(new Date(visit.departureDate), "dd.MM.yyyy", { locale: ru })
-            : "";
+            : "—";
           const departureTime = visit.departureTime ? ` ${visit.departureTime}` : "";
           
           const dateRange = departureDate 

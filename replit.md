@@ -77,3 +77,9 @@ The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a moder
 - **UI Cleanup**: Hidden "Показать сделки" buttons from Summary.tsx and DevTest.tsx (commented out for potential future restoration)
 - **Admin Menu**: Hidden "Административные функции" admin menu from App.tsx navigation (commented out)
 - **City Column Display**: Updated field rendering logic in both Summary.tsx and DevTest.tsx to always show field labels (Прибытие, Отъезд, Отель, Тип, Транспорт) in city columns. Empty values now display "—" placeholder instead of hiding the entire field structure. This improves UI consistency across desktop and mobile views.
+- **Clipboard Fix**: Fixed "Copy link" functionality that failed in Bitrix24 iframe environment:
+  - Created universal `copyToClipboard()` helper in `client/src/lib/clipboard.ts` with fallback mechanism
+  - Modern Clipboard API (navigator.clipboard) attempted first, falls back to document.execCommand method for iframe compatibility
+  - Updated Summary.tsx copy link functions to use new helper
+  - Added share dialog to DevTest.tsx (previously missing) with same "Copy link / Download Excel" options
+  - All copy link operations now work reliably in both standalone and Bitrix24 iframe contexts

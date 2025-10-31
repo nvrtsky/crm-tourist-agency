@@ -836,7 +836,7 @@ export default function Summary() {
                       {isGrouped && isFirstInGroup && (
                         <tr key={`group-header-${groupKey}`} className={`border-t-2 border-primary ${groupBgClass}`}>
                           <td colSpan={8} className="px-4 py-2">
-                            <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
+                            <div className="flex items-center gap-3 text-sm font-medium text-primary flex-wrap">
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -886,6 +886,23 @@ export default function Summary() {
                               <Badge variant="outline" className="text-xs">
                                 {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
                               </Badge>
+                              {/* Show surcharge/nights in group header when single deal */}
+                              {shouldMergeSurchargeNights && (
+                                <>
+                                  {tourist.surcharge && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-normal">
+                                      <span className="font-medium text-primary">Доплата:</span>
+                                      <span>{tourist.surcharge}</span>
+                                    </div>
+                                  )}
+                                  {tourist.nights && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-normal">
+                                      <span className="font-medium text-primary">Ночей:</span>
+                                      <span>{tourist.nights}</span>
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>

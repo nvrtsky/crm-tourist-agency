@@ -66,6 +66,38 @@ export default function DevTest() {
   const [shareDialogCity, setShareDialogCity] = useState<City | null>(null);
   const { toast } = useToast();
 
+  // Auto-create empty visits for all cities
+  useEffect(() => {
+    setTourists(prev => prev.map(tourist => {
+      const existingCities = new Set(tourist.visits.map(v => v.city));
+      const missingCities = CITIES.filter(city => !existingCities.has(city));
+      
+      if (missingCities.length === 0) return tourist;
+      
+      const newVisits = missingCities.map(city => ({
+        id: `visit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${city}`,
+        touristId: tourist.id,
+        city,
+        arrivalDate: "",
+        arrivalTime: "",
+        departureDate: "",
+        departureTime: "",
+        hotelName: "",
+        roomType: "",
+        transportType: "plane" as const,
+        flightNumber: "",
+        airport: "",
+        transfer: "",
+        departureTransportType: "",
+        departureFlightNumber: "",
+        departureAirport: "",
+        departureTransfer: "",
+      }));
+      
+      return { ...tourist, visits: [...tourist.visits, ...newVisits] };
+    }));
+  }, []);
+
   // Load custom groupings from localStorage
   useEffect(() => {
     try {
@@ -871,18 +903,9 @@ export default function DevTest() {
                                 key={city} 
                                 className="px-4 py-2 text-xs align-top"
                                 rowSpan={rowSpan}
+                                data-testid={`tourist-${originalIndex}-city-${city.toLowerCase()}`}
                               >
-                                {!visit ? (
-                                  <div
-                                    onClick={() => handleCreateVisit(tourist.id, city)}
-                                    className="flex items-center justify-center min-h-[120px] cursor-pointer hover-elevate rounded-md border border-dashed border-muted-foreground/30 text-center text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors p-4"
-                                    data-testid={`add-visit-${tourist.id}-${city.toLowerCase()}`}
-                                  >
-                                    <span className="text-xs leading-tight">
-                                      {t("placeholders.clickToAddVisit")}
-                                    </span>
-                                  </div>
-                                ) : (
+                                {visit && (
                                   <div className="flex flex-col gap-0.5">
                                     {/* Dates */}
                                     <div className="flex flex-col gap-0.5">

@@ -977,8 +977,8 @@ export default function Summary() {
                               className="inline-flex"
                             />
                           </div>
-                          {/* Only render surcharge/nights for first tourist in group when merging, or always when not merging */}
-                          {(!shouldMergeSurchargeNights || shouldRenderSurchargeNights) && (
+                          {/* Only show surcharge/nights in tourist card when NOT merged in group header */}
+                          {!shouldMergeSurchargeNights && (
                             <>
                               <div className="text-xs text-muted-foreground">
                                 <span className="font-medium">Доплата:</span>{" "}
@@ -1236,36 +1236,55 @@ export default function Summary() {
               <>
                 {/* Group header mobile */}
                 {isGrouped && isFirstInGroup && (
-                  <div key={`group-header-mobile-${groupKey}`} className="px-2 py-2 bg-primary/10 rounded-md border-l-4 border-primary">
-                    <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
-                      {!dealIds || dealIds.length === 0 ? (
-                        <span>Сделка #Без сделки</span>
-                      ) : (
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <span>Сделка:</span>
-                          {dealIds.map((dealId, idx) => (
-                            <span key={dealId} className="flex items-center gap-1">
-                              {getBitrixDealUrl(dealId) ? (
-                                <a 
-                                  href={getBitrixDealUrl(dealId)!} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="hover:underline"
-                                  data-testid={`link-deal-mobile-${dealId}`}
-                                >
-                                  #{dealId}
-                                </a>
-                              ) : (
-                                <span>#{dealId}</span>
-                              )}
-                              {idx < dealIds.length - 1 && <span>,</span>}
-                            </span>
-                          ))}
+                  <div key={`group-header-mobile-${groupKey}`} className="px-3 py-2 bg-primary/10 rounded-md border-l-4 border-primary">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
+                        {!dealIds || dealIds.length === 0 ? (
+                          <span>Сделка #Без сделки</span>
+                        ) : (
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span>Сделка:</span>
+                            {dealIds.map((dealId, idx) => (
+                              <span key={dealId} className="flex items-center gap-1">
+                                {getBitrixDealUrl(dealId) ? (
+                                  <a 
+                                    href={getBitrixDealUrl(dealId)!} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="hover:underline"
+                                    data-testid={`link-deal-mobile-${dealId}`}
+                                  >
+                                    #{dealId}
+                                  </a>
+                                ) : (
+                                  <span>#{dealId}</span>
+                                )}
+                                {idx < dealIds.length - 1 && <span>,</span>}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <Badge variant="outline" className="text-xs">
+                          {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
+                        </Badge>
+                      </div>
+                      {/* Show surcharge/nights in group header when single deal */}
+                      {shouldMergeSurchargeNights && (tourist.surcharge || tourist.nights) && (
+                        <div className="flex items-center gap-3 flex-wrap text-xs">
+                          {tourist.surcharge && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-primary">Доплата:</span>
+                              <span className="text-muted-foreground">{tourist.surcharge}</span>
+                            </div>
+                          )}
+                          {tourist.nights && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-primary">Ночей:</span>
+                              <span className="text-muted-foreground">{tourist.nights}</span>
+                            </div>
+                          )}
                         </div>
                       )}
-                      <Badge variant="outline" className="text-xs">
-                        {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
-                      </Badge>
                     </div>
                   </div>
                 )}
@@ -1329,8 +1348,8 @@ export default function Summary() {
                             className="inline-flex text-sm"
                           />
                         </div>
-                        {/* Only render surcharge/nights for first tourist in group when merging, or always when not merging */}
-                        {(!shouldMergeSurchargeNights || shouldRenderSurchargeNights) && (
+                        {/* Only show surcharge/nights in tourist card when NOT merged in group header */}
+                        {!shouldMergeSurchargeNights && (
                           <>
                             <div>
                               <span className="font-medium">Доплата:</span>{" "}

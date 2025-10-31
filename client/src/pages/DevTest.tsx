@@ -299,6 +299,8 @@ export default function DevTest() {
         dealIds: tourist.bitrixDealId ? [tourist.bitrixDealId] : [],
         cityRowSpans: {} as Record<City, number>,
         shouldRenderCityCell: {} as Record<City, boolean>,
+        shouldMergeSurchargeNights: false,
+        shouldRenderSurchargeNights: true,
       }));
     }
 
@@ -384,6 +386,8 @@ export default function DevTest() {
       dealIds: string[];
       cityRowSpans: Record<City, number>;
       shouldRenderCityCell: Record<City, boolean>;
+      shouldMergeSurchargeNights: boolean;
+      shouldRenderSurchargeNights: boolean;
     }> = [];
 
     let currentIndex = 0;
@@ -409,6 +413,10 @@ export default function DevTest() {
         });
       });
 
+      // Check if group is from single deal (for surcharge/nights merging)
+      const isSingleDealGroup = group.dealIds.length === 1 && group.dealIds[0] !== '';
+      const shouldMergeSurchargeNights = isSingleDealGroup && group.tourists.length > 1;
+
       group.tourists.forEach((tourist, indexInGroup) => {
         result.push({
           tourist,
@@ -423,6 +431,8 @@ export default function DevTest() {
             acc[city] = shouldRenderCityCell[city][indexInGroup];
             return acc;
           }, {} as Record<City, boolean>),
+          shouldMergeSurchargeNights,
+          shouldRenderSurchargeNights: indexInGroup === 0,
         });
       });
     });
@@ -560,7 +570,7 @@ export default function DevTest() {
                   </tr>
                 </thead>
                 <tbody>
-                  {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds, cityRowSpans, shouldRenderCityCell }) => {
+                  {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds, cityRowSpans, shouldRenderCityCell, shouldMergeSurchargeNights }) => {
                     const groupKey = `group-${groupIndex}`;
                     const visitsByCity = CITIES.reduce((acc, city) => {
                       acc[city] = tourist.visits.find(v => v.city.toLowerCase() === city.toLowerCase());
@@ -572,7 +582,7 @@ export default function DevTest() {
                         {isGrouped && isFirstInGroup && (
                           <tr key={`group-header-${groupKey}`} className="bg-primary/10 border-l-4 border-primary">
                             <td colSpan={3 + CITIES.length} className="px-4 py-2">
-                              <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
+                              <div className="flex items-center gap-3 text-sm font-medium text-primary flex-wrap">
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -602,6 +612,23 @@ export default function DevTest() {
                                 <Badge variant="outline" className="text-xs">
                                   {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
                                 </Badge>
+                                {/* Show surcharge/nights in group header when single deal */}
+                                {shouldMergeSurchargeNights && (
+                                  <>
+                                    {tourist.surcharge && (
+                                      <div className="flex items-center gap-1 text-xs text-muted-foreground font-normal">
+                                        <span className="font-medium text-primary">Доплата:</span>
+                                        <span>{tourist.surcharge}</span>
+                                      </div>
+                                    )}
+                                    {tourist.nights && (
+                                      <div className="flex items-center gap-1 text-xs text-muted-foreground font-normal">
+                                        <span className="font-medium text-primary">Ночей:</span>
+                                        <span>{tourist.nights}</span>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -660,26 +687,31 @@ export default function DevTest() {
                                   className="inline-flex"
                                 />
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                <span className="font-medium">Доплата:</span>{" "}
-                                <EditableCell
-                                  value={tourist.surcharge}
-                                  type="text"
-                                  placeholder="Добавить доплату"
-                                  onSave={(value) => updateField(tourist.id, "surcharge", value)}
-                                  className="inline-flex"
-                                />
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                <span className="font-medium">Ночей:</span>{" "}
-                                <EditableCell
-                                  value={tourist.nights}
-                                  type="text"
-                                  placeholder="Добавить кол-во"
-                                  onSave={(value) => updateField(tourist.id, "nights", value)}
-                                  className="inline-flex"
-                                />
-                              </div>
+                              {/* Only show surcharge/nights in tourist card when NOT merged in group header */}
+                              {!shouldMergeSurchargeNights && (
+                                <>
+                                  <div className="text-xs text-muted-foreground">
+                                    <span className="font-medium">Доплата:</span>{" "}
+                                    <EditableCell
+                                      value={tourist.surcharge}
+                                      type="text"
+                                      placeholder="Добавить доплату"
+                                      onSave={(value) => updateField(tourist.id, "surcharge", value)}
+                                      className="inline-flex"
+                                    />
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    <span className="font-medium">Ночей:</span>{" "}
+                                    <EditableCell
+                                      value={tourist.nights}
+                                      type="text"
+                                      placeholder="Добавить кол-во"
+                                      onSave={(value) => updateField(tourist.id, "nights", value)}
+                                      className="inline-flex"
+                                    />
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </td>
                           {CITIES.map((city) => {
@@ -873,24 +905,46 @@ export default function DevTest() {
 
           {/* Mobile Cards */}
           <div className="md:hidden space-y-3">
-            {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, dealIds }) => {
+            {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds, shouldMergeSurchargeNights }) => {
               const groupKey = `group-${groupIndex}`;
               return (
               <div key={tourist.id}>
                 {isGrouped && isFirstInGroup && (
-                  <div className="px-2 py-2 bg-primary/10 rounded-md border-l-4 border-primary mb-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
-                      {!dealIds || dealIds.length === 0 ? (
-                        <span>Сделка #Без сделки</span>
-                      ) : (
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <span>Сделка:</span>
-                          {dealIds.map((dealId, idx) => (
-                            <span key={dealId} className="flex items-center gap-1">
-                              <span>#{dealId}</span>
-                              {idx < dealIds.length - 1 && <span>,</span>}
-                            </span>
-                          ))}
+                  <div className="px-3 py-2 bg-primary/10 rounded-md border-l-4 border-primary mb-3">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
+                        {!dealIds || dealIds.length === 0 ? (
+                          <span>Сделка #Без сделки</span>
+                        ) : (
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span>Сделка:</span>
+                            {dealIds.map((dealId, idx) => (
+                              <span key={dealId} className="flex items-center gap-1">
+                                <span>#{dealId}</span>
+                                {idx < dealIds.length - 1 && <span>,</span>}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <Badge variant="outline" className="text-xs">
+                          {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
+                        </Badge>
+                      </div>
+                      {/* Show surcharge/nights in group header when single deal */}
+                      {shouldMergeSurchargeNights && (tourist.surcharge || tourist.nights) && (
+                        <div className="flex items-center gap-3 flex-wrap text-xs">
+                          {tourist.surcharge && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-primary">Доплата:</span>
+                              <span className="text-muted-foreground">{tourist.surcharge}</span>
+                            </div>
+                          )}
+                          {tourist.nights && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-primary">Ночей:</span>
+                              <span className="text-muted-foreground">{tourist.nights}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -920,16 +974,19 @@ export default function DevTest() {
                               className="inline-flex text-sm"
                             />
                           </div>
-                          <div>
-                            <span className="font-medium">Доплата:</span>{" "}
-                            <EditableCell
-                              value={tourist.surcharge}
-                              type="text"
-                              placeholder="Добавить"
-                              onSave={(value) => updateField(tourist.id, "surcharge", value)}
-                              className="inline-flex text-sm"
-                            />
-                          </div>
+                          {/* Only show surcharge/nights in tourist card when NOT merged in group header */}
+                          {!shouldMergeSurchargeNights && (
+                            <div>
+                              <span className="font-medium">Доплата:</span>{" "}
+                              <EditableCell
+                                value={tourist.surcharge}
+                                type="text"
+                                placeholder="Добавить"
+                                onSave={(value) => updateField(tourist.id, "surcharge", value)}
+                                className="inline-flex text-sm"
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

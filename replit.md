@@ -73,7 +73,21 @@ The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a moder
 - **i18next & react-i18next**: Internationalization.
 - **i18next-browser-languagedetector**: Language detection.
 
+## Documentation
+Comprehensive technical documentation available in `DOCUMENTATION.md` covering:
+- Bitrix24 data architecture and custom fields mapping
+- Data sources (automatic vs manual input)
+- Grouping system (auto/custom/ungrouped)
+- Synchronization logic
+- Export and sharing features
+- DEV mode for standalone testing
+- Internationalization (ru/en/zh)
+
 ## Recent Changes (October 31, 2025)
+- **Complete Internationalization**: All UI strings in Summary.tsx and DevTest.tsx now use i18n with full translations for Russian, English, and Chinese languages (ru.json, en.json, zh.json)
+- **Deal Titles Display**: Backend API extended to fetch deal titles via new `getEventDeals()` method; frontend now displays deal names (e.g., "Март 2025 - Группа А") instead of raw IDs in group headers using `getDealTitle()` helper
+- **Enhanced Smart Field Merging**: Extended logic to show "Доплата" and "Ночей" in group headers for custom groups with single tourist: `shouldMergeSurchargeNights = (isSingleDealGroup && tourists > 1) || (isCustomGroup && tourists === 1)`
+- **Backend Changes**: New `/api/event/:entityId` endpoint returns `{title, deals: [{id, title}][]}` using parallel API calls; `bitrix24.ts` now includes `getEventDeals()` method
 - **Compact Header - Variant 4 (Latest)**: Объединение всех элементов над таблицей в одну строку для экономии места в iframe Bitrix24:
   - **Формат заголовка**: "Туристы (N): [Название события]" - всё в одной строке вместо двух
   - **Dropdown меню "Группировка"**: заменили 3 отдельные кнопки на одно dropdown-меню с опциями:

@@ -66,6 +66,7 @@
     "time": "Время",
     "flightNumber": "№",
     "airport": "Аэропорт",
+    "station": "Вокзал",
     "transfer": "Трансфер",
     "hotelName": "Название отеля"
   },

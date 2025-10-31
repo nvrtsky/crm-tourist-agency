@@ -66,6 +66,7 @@
     "time": "Time",
     "flightNumber": "#",
     "airport": "Airport",
+    "station": "Station",
     "transfer": "Transfer",
     "hotelName": "Hotel name"
   },

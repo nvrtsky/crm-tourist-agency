@@ -1005,7 +1005,7 @@ export default function DevTest() {
                                         <EditableCell
                                           value={visit.airport}
                                           type="text"
-                                          placeholder={t("fields.airport")}
+                                          placeholder={visit.transportType === "train" ? t("fields.station") : t("fields.airport")}
                                           onSave={(value) => updateVisitField(tourist.id, visit.id, "airport", value)}
                                           className="inline-flex text-xs"
                                         />
@@ -1044,7 +1044,7 @@ export default function DevTest() {
                                         <EditableCell
                                           value={visit.departureAirport}
                                           type="text"
-                                          placeholder={t("fields.airport")}
+                                          placeholder={visit.departureTransportType === "train" ? t("fields.station") : t("fields.airport")}
                                           onSave={(value) => updateVisitField(tourist.id, visit.id, "departureAirport", value)}
                                           className="inline-flex text-xs"
                                         />

@@ -604,7 +604,7 @@ export default function Summary() {
         const arrivalParts = [
           visit.transportType === "plane" ? t("transport.plane") : t("transport.train"),
           visit.flightNumber ? `${t("fields.flight")}: ${visit.flightNumber}` : "",
-          visit.airport ? `${t("fields.airport")}: ${visit.airport}` : "",
+          visit.airport ? `${visit.transportType === "train" ? t("fields.station") : t("fields.airport")}: ${visit.airport}` : "",
           visit.transfer ? `${t("fields.transfer")}: ${visit.transfer}` : "",
         ].filter(Boolean);
         
@@ -612,7 +612,7 @@ export default function Summary() {
         if (visit.departureTransportType) {
           departureParts.push(visit.departureTransportType === "plane" ? t("transport.plane") : t("transport.train"));
           if (visit.departureFlightNumber) departureParts.push(`${t("fields.flight")}: ${visit.departureFlightNumber}`);
-          if (visit.departureAirport) departureParts.push(`${t("fields.airport")}: ${visit.departureAirport}`);
+          if (visit.departureAirport) departureParts.push(`${visit.departureTransportType === "train" ? t("fields.station") : t("fields.airport")}: ${visit.departureAirport}`);
           if (visit.departureTransfer) departureParts.push(`${t("fields.transfer")}: ${visit.departureTransfer}`);
         }
         
@@ -698,7 +698,7 @@ export default function Summary() {
           const arrivalParts = [
             visit.transportType === "plane" ? t("transport.plane") : t("transport.train"),
             visit.flightNumber ? `${t("fields.flight")}: ${visit.flightNumber}` : "",
-            visit.airport ? `${t("fields.airport")}: ${visit.airport}` : "",
+            visit.airport ? `${visit.transportType === "train" ? t("fields.station") : t("fields.airport")}: ${visit.airport}` : "",
             visit.transfer ? `${t("fields.transfer")}: ${visit.transfer}` : "",
           ].filter(Boolean);
           
@@ -706,7 +706,7 @@ export default function Summary() {
           if (visit.departureTransportType) {
             departureParts.push(visit.departureTransportType === "plane" ? t("transport.plane") : t("transport.train"));
             if (visit.departureFlightNumber) departureParts.push(`${t("fields.flight")}: ${visit.departureFlightNumber}`);
-            if (visit.departureAirport) departureParts.push(`${t("fields.airport")}: ${visit.departureAirport}`);
+            if (visit.departureAirport) departureParts.push(`${visit.departureTransportType === "train" ? t("fields.station") : t("fields.airport")}: ${visit.departureAirport}`);
             if (visit.departureTransfer) departureParts.push(`${t("fields.transfer")}: ${visit.departureTransfer}`);
           }
           
@@ -1179,7 +1179,7 @@ export default function Summary() {
                                     <EditableCell
                                       value={visit.airport}
                                       type="text"
-                                      placeholder={t("fields.airport")}
+                                      placeholder={visit.transportType === "train" ? t("fields.station") : t("fields.airport")}
                                       onSave={(value) => updateVisitField(tourist.id, visit.id, "airport", value)}
                                       className="inline-flex text-xs"
                                     />
@@ -1218,7 +1218,7 @@ export default function Summary() {
                                     <EditableCell
                                       value={visit.departureAirport}
                                       type="text"
-                                      placeholder={t("fields.airport")}
+                                      placeholder={visit.departureTransportType === "train" ? t("fields.station") : t("fields.airport")}
                                       onSave={(value) => updateVisitField(tourist.id, visit.id, "departureAirport", value)}
                                       className="inline-flex text-xs"
                                     />
@@ -1522,14 +1522,14 @@ export default function Summary() {
                                 {(visit.flightNumber || visit.airport || visit.transfer) && (
                                   <div className="text-xs text-muted-foreground space-y-0.5 mt-0.5">
                                     {visit.flightNumber && <div>{t("fields.flightNumber")}: {visit.flightNumber}</div>}
-                                    {visit.airport && <div>{t("fields.airport")}: {visit.airport}</div>}
+                                    {visit.airport && <div>{visit.transportType === "train" ? t("fields.station") : t("fields.airport")}: {visit.airport}</div>}
                                     {visit.transfer && <div>{t("fields.transfer")}: {visit.transfer}</div>}
                                   </div>
                                 )}
                                 {(visit.departureFlightNumber || visit.departureAirport || visit.departureTransfer) && (
                                   <div className="text-xs text-muted-foreground space-y-0.5 pt-0.5 mt-0.5">
                                     {visit.departureFlightNumber && <div>{t("fields.departureShort")} {t("fields.flightNumber")}: {visit.departureFlightNumber}</div>}
-                                    {visit.departureAirport && <div>{t("fields.departureShort")} {t("fields.airport")}: {visit.departureAirport}</div>}
+                                    {visit.departureAirport && <div>{t("fields.departureShort")} {visit.departureTransportType === "train" ? t("fields.station") : t("fields.airport")}: {visit.departureAirport}</div>}
                                     {visit.departureTransfer && <div>{t("fields.departureShort")} {t("fields.transfer")}: {visit.departureTransfer}</div>}
                                   </div>
                                 )}

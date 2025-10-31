@@ -66,6 +66,7 @@
     "time": "时间",
     "flightNumber": "航班号",
     "airport": "机场",
+    "station": "车站",
     "transfer": "接送",
     "hotelName": "酒店名称"
   },

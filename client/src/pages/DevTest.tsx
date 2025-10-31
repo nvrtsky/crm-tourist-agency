@@ -13,9 +13,17 @@ import {
 import { Users, MapPin, Calendar, Hotel, AlertCircle, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { CITIES, CITY_NAMES } from "@shared/schema";
+import { CITIES } from "@shared/schema";
 import type { City, TouristWithVisits } from "@shared/schema";
-import EditableCell from "@/components/EditableCell";
+import { EditableCell } from "@/components/EditableCell";
+
+const CITY_NAMES: Record<City, string> = {
+  Beijing: "Пекин",
+  Luoyang: "Лоян",
+  Xian: "Сиань",
+  Zhangjiajie: "Чжанцзяцзе",
+  Shanghai: "Шанхай",
+};
 import * as XLSX from "xlsx";
 
 export default function DevTest() {
@@ -26,7 +34,7 @@ export default function DevTest() {
   const { toast } = useToast();
 
   // Update field handler для inline editing
-  const updateField = (touristId: string, field: keyof TouristWithVisits, value: string) => {
+  const updateField = (touristId: string, field: keyof TouristWithVisits, value: string | null) => {
     setTourists(prev => prev.map(t => 
       t.id === touristId ? { ...t, [field]: value } : t
     ));

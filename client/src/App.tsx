@@ -11,17 +11,19 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Dashboard from "@/pages/Dashboard";
 import Tourists from "@/pages/Tourists";
 import Summary from "@/pages/Summary";
+import DevTest from "@/pages/DevTest";
 import NotFound from "@/pages/not-found";
 import { useBitrix24 } from "@/hooks/useBitrix24";
 import { EntityIdNotFound } from "@/components/EntityIdNotFound";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2, LayoutDashboard, Users, TableProperties, Settings, RefreshCw } from "lucide-react";
+import { AlertCircle, Loader2, LayoutDashboard, Users, TableProperties, Settings, RefreshCw, FlaskConical } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 
 function Router() {
   return (
     <Switch>
+      <Route path="/dev" component={DevTest} />
       <Route path="/" component={Summary} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/tourists" component={Tourists} />
@@ -65,6 +67,17 @@ function Navigation() {
       >
         <Users className="h-4 w-4 sm:mr-2" />
         <span className="hidden sm:inline">{t("nav.addTourist")}</span>
+      </Button>
+      <Button
+        variant={location === "/dev" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => setLocation("/dev")}
+        data-testid="nav-dev"
+        className="flex-1 sm:flex-none"
+        title="DEV тестовый режим"
+      >
+        <FlaskConical className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">DEV</span>
       </Button>
     </nav>
   );
@@ -227,6 +240,25 @@ function AdminMenu() {
 }
 
 export default function App() {
+  const [location] = useLocation();
+  const { t } = useTranslation();
+  
+  // Dev mode: render directly without Bitrix24 checks
+  if (location === "/dev") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Router />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  return <AppWithBitrix24 />;
+}
+
+function AppWithBitrix24() {
   const { entityId, entityTypeId, isReady, error, diagnosticInfo } = useBitrix24();
   const { t } = useTranslation();
   const [location] = useLocation();

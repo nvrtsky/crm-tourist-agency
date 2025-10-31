@@ -81,7 +81,7 @@ export default function DevTest() {
     });
   };
 
-  // Export to Excel
+  // Export to Excel with date validation
   const handleExportCity = (city: City) => {
     const touristsInCity = tourists.filter(t => 
       t.visits.some(v => v.city.toLowerCase() === city.toLowerCase())
@@ -89,12 +89,25 @@ export default function DevTest() {
 
     const data = touristsInCity.map((tourist, index) => {
       const visit = tourist.visits.find(v => v.city.toLowerCase() === city.toLowerCase());
+      
+      // Safely format dates with validation
+      const formatDate = (dateStr: string | null | undefined, time?: string | null) => {
+        if (!dateStr) return "";
+        try {
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) return "";
+          return `${format(date, "dd.MM.yyyy", { locale: ru })}${time ? ` ${time}` : ""}`;
+        } catch {
+          return "";
+        }
+      };
+
       return {
         "№": index + 1,
         "Турист": tourist.name,
         "Телефон": tourist.phone || "",
-        "Прибытие": visit ? `${format(new Date(visit.arrivalDate), "dd.MM.yyyy", { locale: ru })}${visit.arrivalTime ? ` ${visit.arrivalTime}` : ""}` : "",
-        "Убытие": visit?.departureDate ? `${format(new Date(visit.departureDate), "dd.MM.yyyy", { locale: ru })}${visit.departureTime ? ` ${visit.departureTime}` : ""}` : "",
+        "Прибытие": formatDate(visit?.arrivalDate, visit?.arrivalTime),
+        "Убытие": formatDate(visit?.departureDate, visit?.departureTime),
         "Отель": visit?.hotelName || "",
         "Тип номера": visit?.roomType === "twin" ? "Twin" : visit?.roomType === "double" ? "Double" : "",
         "Транспорт прибытия": visit?.transportType === "plane" ? "Самолет" : "Поезд",

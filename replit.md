@@ -28,6 +28,7 @@ The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a moder
 - **Dashboard**: Displays tourist statistics, city distribution, upcoming arrivals, and hotel usage.
 - **Summary Table**: Comprehensive overview of tourists, itineraries, and linked Bitrix24 entities. Features sticky headers, responsive design, grouping by Bitrix24 deals with hyperlinks to deal/contact details, and inline editing.
 - **Sharing & Export**: Copy link functionality and Excel export, including city-specific data export.
+- **DEV Mode** (`/dev`): Standalone testing page that works without Bitrix24 connection. Uses mock data with 6 test tourists, multiple deals, and full itineraries. Features all main functionality: summary table with grouping, dashboard statistics, tourists list, inline editing (local state only), and Excel export. Accessible via DEV navigation button. Perfect for rapid development and testing without requiring Bitrix24 portal access.
 - **Bitrix24 Integration**:
   - Embedded tab within "Event" Smart Process.
   - Advanced entity ID detection with multiple fallback methods (pathname, query params, placement.options, referrer) and a retry mechanism.
@@ -41,6 +42,10 @@ The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a moder
 - **Smart Process Integration**: Each Bitrix24 "Event" Smart Process item represents a group tour.
 - **API Endpoints**: REST API for tourist management.
 - **Environment Variables**: `BITRIX24_WEBHOOK_URL` for production and optional configuration.
+- **Development Workflow**: 
+  - Production mode (`/`): Requires Bitrix24 SDK, embedded in Smart Process tab
+  - DEV mode (`/dev`): Independent testing environment with mock data, no Bitrix24 required
+  - App.tsx conditionally bypasses Bitrix24 initialization when accessing `/dev` route
 
 ## External Dependencies
 - **Bitrix24**: CRM and Smart Process platform.

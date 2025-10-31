@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Dialog,
   DialogContent,
@@ -982,19 +983,29 @@ export default function DevTest() {
                                     <div className="flex flex-col gap-0.5 pt-0.5">
                                       {/* Arrival Transport */}
                                       <div className="flex items-center gap-0.5 flex-wrap text-xs leading-tight">
-                                        {visit.transportType === "plane" ? <Plane className="h-3 w-3 shrink-0" /> : <Train className="h-3 w-3 shrink-0" />}
                                         <span className="font-medium">{t("fields.arrivalShort")}:</span>
-                                        <EditableCell
-                                          value={visit.transportType}
-                                          type="select"
-                                          placeholder={t("placeholders.transportType")}
-                                          onSave={(value) => updateVisitField(tourist.id, visit.id, "transportType", value)}
-                                          selectOptions={[
-                                            { value: "plane", label: t("transport.plane") },
-                                            { value: "train", label: t("transport.train") },
-                                          ]}
-                                          className="inline-flex text-xs"
-                                        />
+                                        <ToggleGroup
+                                          type="single"
+                                          value={visit.transportType ?? undefined}
+                                          onValueChange={(value) => value && updateVisitField(tourist.id, visit.id, "transportType", value)}
+                                          size="sm"
+                                          className="gap-0.5"
+                                        >
+                                          <ToggleGroupItem 
+                                            value="plane" 
+                                            aria-label={t("transport.plane")}
+                                            data-testid={`tourist-${tourist.id}-city-${visit.city}-arrival-plane`}
+                                          >
+                                            <Plane className="h-3 w-3" />
+                                          </ToggleGroupItem>
+                                          <ToggleGroupItem 
+                                            value="train" 
+                                            aria-label={t("transport.train")}
+                                            data-testid={`tourist-${tourist.id}-city-${visit.city}-arrival-train`}
+                                          >
+                                            <Train className="h-3 w-3" />
+                                          </ToggleGroupItem>
+                                        </ToggleGroup>
                                         <EditableCell
                                           value={visit.flightNumber}
                                           type="text"
@@ -1021,19 +1032,29 @@ export default function DevTest() {
                                       
                                       {/* Departure Transport - always show */}
                                       <div className="flex items-center gap-0.5 flex-wrap text-xs leading-tight">
-                                        {visit.departureTransportType === "plane" ? <Plane className="h-3 w-3 shrink-0" /> : visit.departureTransportType === "train" ? <Train className="h-3 w-3 shrink-0" /> : <span className="w-3"></span>}
                                         <span className="font-medium">{t("fields.departureShort")}:</span>
-                                        <EditableCell
-                                          value={visit.departureTransportType}
-                                          type="select"
-                                          placeholder={t("placeholders.transportType")}
-                                          onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransportType", value)}
-                                          selectOptions={[
-                                            { value: "plane", label: t("transport.plane") },
-                                            { value: "train", label: t("transport.train") },
-                                          ]}
-                                          className="inline-flex text-xs"
-                                        />
+                                        <ToggleGroup
+                                          type="single"
+                                          value={visit.departureTransportType ?? undefined}
+                                          onValueChange={(value) => value && updateVisitField(tourist.id, visit.id, "departureTransportType", value)}
+                                          size="sm"
+                                          className="gap-0.5"
+                                        >
+                                          <ToggleGroupItem 
+                                            value="plane" 
+                                            aria-label={t("transport.plane")}
+                                            data-testid={`tourist-${tourist.id}-city-${visit.city}-departure-plane`}
+                                          >
+                                            <Plane className="h-3 w-3" />
+                                          </ToggleGroupItem>
+                                          <ToggleGroupItem 
+                                            value="train" 
+                                            aria-label={t("transport.train")}
+                                            data-testid={`tourist-${tourist.id}-city-${visit.city}-departure-train`}
+                                          >
+                                            <Train className="h-3 w-3" />
+                                          </ToggleGroupItem>
+                                        </ToggleGroup>
                                         <EditableCell
                                           value={visit.departureFlightNumber}
                                           type="text"

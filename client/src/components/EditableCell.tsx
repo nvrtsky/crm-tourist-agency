@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, Pencil } from "lucide-react";
 import { format } from "date-fns";
@@ -10,11 +11,12 @@ import { cn } from "@/lib/utils";
 
 interface EditableCellProps {
   value: string | null | undefined;
-  type?: "text" | "date" | "phone";
+  type?: "text" | "date" | "phone" | "time" | "select";
   placeholder?: string;
   onSave: (value: string) => void;
   className?: string;
   displayFormat?: (value: string) => string;
+  selectOptions?: { value: string; label: string }[];
 }
 
 export function EditableCell({
@@ -24,6 +26,7 @@ export function EditableCell({
   onSave,
   className,
   displayFormat,
+  selectOptions = [],
 }: EditableCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
@@ -33,11 +36,17 @@ export function EditableCell({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isEditing && inputRef.current && type === "text") {
+    if (isEditing && inputRef.current && (type === "text" || type === "phone" || type === "time")) {
       inputRef.current.focus();
       inputRef.current.select();
     }
   }, [isEditing, type]);
+
+  useEffect(() => {
+    if (type === "date") {
+      setDateValue(value ? new Date(value) : undefined);
+    }
+  }, [value, type]);
 
   const handleSave = () => {
     if (type === "date" && dateValue) {
@@ -63,8 +72,42 @@ export function EditableCell({
       ? displayFormat(value)
       : type === "date"
       ? format(new Date(value), "dd.MM.yyyy", { locale: ru })
+      : type === "select" && selectOptions.length > 0
+      ? selectOptions.find(opt => opt.value === value)?.label || value
       : value
     : "";
+
+  if (type === "select") {
+    return (
+      <div className="relative inline-flex items-center group">
+        <Select
+          value={value || ""}
+          onValueChange={(newValue) => {
+            onSave(newValue);
+          }}
+        >
+          <SelectTrigger 
+            className={cn(
+              "h-auto min-h-[28px] px-2 py-1 pr-7 border-0 hover-elevate data-[state=open]:bg-accent",
+              !value && "text-muted-foreground italic",
+              className
+            )}
+            data-testid="editable-select-trigger"
+          >
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent>
+            {selectOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value} data-testid={`select-option-${option.value}`}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 pointer-events-none" />
+      </div>
+    );
+  }
 
   if (type === "date") {
     return (
@@ -111,6 +154,7 @@ export function EditableCell({
     return (
       <Input
         ref={inputRef}
+        type={type === "time" ? "time" : "text"}
         value={editValue}
         onChange={(e) => setEditValue(e.target.value)}
         onBlur={handleSave}

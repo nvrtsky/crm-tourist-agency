@@ -332,6 +332,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update city visit
+  app.patch("/api/tourists/:touristId/visits/:visitId", async (req, res) => {
+    try {
+      const { touristId, visitId } = req.params;
+      const updates = req.body;
+
+      // Validate tourist exists
+      const tourist = await storage.getTourist(touristId);
+      if (!tourist) {
+        return res.status(404).json({ error: "Tourist not found" });
+      }
+
+      // Validate update data (partial schema)
+      const updateValidation = insertCityVisitSchema.omit({ touristId: true }).partial().safeParse(updates);
+      if (!updateValidation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: updateValidation.error.errors,
+        });
+      }
+
+      // Update visit in storage
+      const updated = await storage.updateCityVisit(visitId, updateValidation.data);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Visit not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating visit:", error);
+      res.status(500).json({ error: "Failed to update visit" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

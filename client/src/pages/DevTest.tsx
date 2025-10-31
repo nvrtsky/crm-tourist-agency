@@ -10,7 +10,7 @@ import {
   MOCK_EVENT_TITLE,
   MOCK_ENTITY_ID 
 } from "@/lib/mockData";
-import { Users, MapPin, Calendar, Hotel, AlertCircle, Share2 } from "lucide-react";
+import { Users, MapPin, Calendar, Hotel, AlertCircle, Share2, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { CITIES } from "@shared/schema";
@@ -31,6 +31,7 @@ export default function DevTest() {
   const [tourists, setTourists] = useState<TouristWithVisits[]>(getMockTouristsWithItineraries());
   const [selectedTourists, setSelectedTourists] = useState<Set<string>>(new Set());
   const [isGrouped, setIsGrouped] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   // Update field handler для inline editing
@@ -41,6 +42,36 @@ export default function DevTest() {
     toast({
       title: "Обновлено (DEV режим)",
       description: `Поле "${field}" обновлено. В реальном режиме данные синхронизируются с Bitrix24.`,
+    });
+  };
+
+  // Update visit field handler для inline editing
+  const updateVisitField = (touristId: string, visitId: string, field: string, value: string) => {
+    setTourists(prev => prev.map(t => {
+      if (t.id !== touristId) return t;
+      return {
+        ...t,
+        visits: t.visits.map(v => 
+          v.id === visitId ? { ...v, [field]: value || null } : v
+        )
+      };
+    }));
+    toast({
+      title: "Обновлено (DEV режим)",
+      description: `Поле "${field}" обновлено. В реальном режиме данные синхронизируются с API.`,
+    });
+  };
+
+  // Toggle group expansion
+  const toggleGroup = (dealId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dealId)) {
+        newSet.delete(dealId);
+      } else {
+        newSet.add(dealId);
+      }
+      return newSet;
     });
   };
 
@@ -144,6 +175,8 @@ export default function DevTest() {
         groupIndex: 0,
         groupSize: 1,
         dealId: tourist.bitrixDealId || "no-deal",
+        cityRowSpans: {} as Record<City, number>,
+        shouldRenderCityCell: {} as Record<City, boolean>,
       }));
     }
 
@@ -167,18 +200,48 @@ export default function DevTest() {
       groupIndex: number;
       groupSize: number;
       dealId: string;
+      cityRowSpans: Record<City, number>;
+      shouldRenderCityCell: Record<City, boolean>;
     }> = [];
 
+    let currentIndex = 0;
     sortedDealIds.forEach((dealId, groupIndex) => {
       const groupTourists = groups[dealId];
+      
+      // Calculate cityRowSpans and shouldRenderCityCell for this group
+      const cityRowSpans: Record<City, number> = {} as Record<City, number>;
+      const shouldRenderCityCell: Record<City, boolean[]> = {} as Record<City, boolean[]>;
+      
+      CITIES.forEach(city => {
+        cityRowSpans[city] = 0;
+        shouldRenderCityCell[city] = [];
+        let firstTouristWithCity = true;
+        
+        groupTourists.forEach((tourist) => {
+          const hasVisit = tourist.visits.some(v => v.city === city);
+          if (hasVisit) {
+            cityRowSpans[city]++;
+            shouldRenderCityCell[city].push(firstTouristWithCity);
+            firstTouristWithCity = false;
+          } else {
+            shouldRenderCityCell[city].push(false);
+          }
+        });
+      });
+
       groupTourists.forEach((tourist, indexInGroup) => {
         result.push({
           tourist,
-          originalIndex: tourists.indexOf(tourist),
+          originalIndex: currentIndex++,
           isFirstInGroup: indexInGroup === 0,
           groupIndex,
           groupSize: groupTourists.length,
           dealId,
+          cityRowSpans,
+          shouldRenderCityCell: CITIES.reduce((acc, city) => {
+            acc[city] = shouldRenderCityCell[city][indexInGroup];
+            return acc;
+          }, {} as Record<City, boolean>),
         });
       });
     });
@@ -298,7 +361,7 @@ export default function DevTest() {
                   </tr>
                 </thead>
                 <tbody>
-                  {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealId }) => {
+                  {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealId, cityRowSpans, shouldRenderCityCell }) => {
                     const visitsByCity = CITIES.reduce((acc, city) => {
                       acc[city] = tourist.visits.find(v => v.city.toLowerCase() === city.toLowerCase());
                       return acc;
@@ -310,6 +373,19 @@ export default function DevTest() {
                           <tr key={`group-header-${dealId}`} className="bg-primary/10 border-l-4 border-primary">
                             <td colSpan={3 + CITIES.length} className="px-4 py-2">
                               <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => toggleGroup(dealId)}
+                                  className="h-5 w-5 shrink-0"
+                                  data-testid={`button-toggle-group-${dealId}`}
+                                >
+                                  {expandedGroups.has(dealId) ? (
+                                    <ChevronUp className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4" />
+                                  )}
+                                </Button>
                                 <span>Сделка #{dealId}</span>
                                 <Badge variant="outline" className="text-xs">
                                   {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
@@ -396,34 +472,174 @@ export default function DevTest() {
                           </td>
                           {CITIES.map((city) => {
                             const visit = visitsByCity[city];
+                            const isGroupCollapsed = isGrouped && !expandedGroups.has(dealId);
+                            
+                            // If group is collapsed and we shouldn't render this cell, return null
+                            if (isGroupCollapsed && !shouldRenderCityCell[city]) {
+                              return null;
+                            }
+
+                            // Determine rowSpan
+                            const rowSpan = isGroupCollapsed && shouldRenderCityCell[city] ? cityRowSpans[city] : undefined;
+
                             return (
-                              <td key={city} className="px-4 py-3 text-sm align-top">
+                              <td 
+                                key={city} 
+                                className="px-4 py-3 text-sm align-top"
+                                rowSpan={rowSpan}
+                              >
                                 {visit ? (
                                   <div className="flex flex-col gap-1.5">
-                                    <Badge variant="secondary" className="text-xs whitespace-nowrap w-fit">
-                                      <span>
-                                        <span className="font-bold">
-                                          {format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}
-                                        </span>
-                                        {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}
-                                      </span>
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      <EditableCell
+                                        value={visit.arrivalDate}
+                                        type="date"
+                                        placeholder="Дата прибытия"
+                                        onSave={(value) => updateVisitField(tourist.id, visit.id, "arrivalDate", value)}
+                                      />
+                                      <EditableCell
+                                        value={visit.arrivalTime}
+                                        type="time"
+                                        placeholder="Время"
+                                        onSave={(value) => updateVisitField(tourist.id, visit.id, "arrivalTime", value)}
+                                      />
                                       {visit.departureDate && (
-                                        <span>
-                                          {" - "}
-                                          <span className="font-bold">
-                                            {format(new Date(visit.departureDate), "dd.MM", { locale: ru })}
-                                          </span>
-                                          {visit.departureTime && <span className="text-muted-foreground"> {visit.departureTime}</span>}
-                                        </span>
+                                        <>
+                                          <span className="text-muted-foreground">-</span>
+                                          <EditableCell
+                                            value={visit.departureDate}
+                                            type="date"
+                                            placeholder="Дата убытия"
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "departureDate", value)}
+                                          />
+                                          <EditableCell
+                                            value={visit.departureTime}
+                                            type="time"
+                                            placeholder="Время"
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTime", value)}
+                                          />
+                                        </>
                                       )}
-                                    </Badge>
-                                    <div className="text-xs text-muted-foreground">
-                                      <div className="truncate" title={visit.hotelName}>
-                                        Отель: {visit.hotelName}
+                                    </div>
+                                    <div className="text-xs space-y-1">
+                                      <div>
+                                        <span className="font-medium text-muted-foreground">Отель: </span>
+                                        <EditableCell
+                                          value={visit.hotelName}
+                                          type="text"
+                                          placeholder="Название отеля"
+                                          onSave={(value) => updateVisitField(tourist.id, visit.id, "hotelName", value)}
+                                          className="inline-flex"
+                                        />
                                       </div>
-                                      {visit.roomType && (
-                                        <div className="mt-0.5">
-                                          Тип: {visit.roomType === "twin" ? "Twin" : "Double"}
+                                      <div>
+                                        <span className="font-medium text-muted-foreground">Тип номера: </span>
+                                        <EditableCell
+                                          value={visit.roomType}
+                                          type="select"
+                                          placeholder="Выбрать"
+                                          selectOptions={[
+                                            { value: "twin", label: "Twin" },
+                                            { value: "double", label: "Double" }
+                                          ]}
+                                          onSave={(value) => updateVisitField(tourist.id, visit.id, "roomType", value)}
+                                          className="inline-flex"
+                                        />
+                                      </div>
+                                      <div className="pt-1 border-t">
+                                        <div className="font-medium text-muted-foreground mb-0.5">Прибытие:</div>
+                                        <div>
+                                          <span className="text-muted-foreground">Транспорт: </span>
+                                          <EditableCell
+                                            value={visit.transportType}
+                                            type="select"
+                                            placeholder="Выбрать"
+                                            selectOptions={[
+                                              { value: "plane", label: "Самолет" },
+                                              { value: "train", label: "Поезд" }
+                                            ]}
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "transportType", value)}
+                                            className="inline-flex"
+                                          />
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Рейс/Поезд: </span>
+                                          <EditableCell
+                                            value={visit.flightNumber}
+                                            type="text"
+                                            placeholder="Номер"
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "flightNumber", value)}
+                                            className="inline-flex"
+                                          />
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Аэропорт/Станция: </span>
+                                          <EditableCell
+                                            value={visit.airport}
+                                            type="text"
+                                            placeholder="Место"
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "airport", value)}
+                                            className="inline-flex"
+                                          />
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Трансфер: </span>
+                                          <EditableCell
+                                            value={visit.transfer}
+                                            type="text"
+                                            placeholder="Инфо"
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "transfer", value)}
+                                            className="inline-flex"
+                                          />
+                                        </div>
+                                      </div>
+                                      {visit.departureDate && (
+                                        <div className="pt-1 border-t">
+                                          <div className="font-medium text-muted-foreground mb-0.5">Убытие:</div>
+                                          <div>
+                                            <span className="text-muted-foreground">Транспорт: </span>
+                                            <EditableCell
+                                              value={visit.departureTransportType}
+                                              type="select"
+                                              placeholder="Выбрать"
+                                              selectOptions={[
+                                                { value: "plane", label: "Самолет" },
+                                                { value: "train", label: "Поезд" }
+                                              ]}
+                                              onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransportType", value)}
+                                              className="inline-flex"
+                                            />
+                                          </div>
+                                          <div>
+                                            <span className="text-muted-foreground">Рейс/Поезд: </span>
+                                            <EditableCell
+                                              value={visit.departureFlightNumber}
+                                              type="text"
+                                              placeholder="Номер"
+                                              onSave={(value) => updateVisitField(tourist.id, visit.id, "departureFlightNumber", value)}
+                                              className="inline-flex"
+                                            />
+                                          </div>
+                                          <div>
+                                            <span className="text-muted-foreground">Аэропорт/Станция: </span>
+                                            <EditableCell
+                                              value={visit.departureAirport}
+                                              type="text"
+                                              placeholder="Место"
+                                              onSave={(value) => updateVisitField(tourist.id, visit.id, "departureAirport", value)}
+                                              className="inline-flex"
+                                            />
+                                          </div>
+                                          <div>
+                                            <span className="text-muted-foreground">Трансфер: </span>
+                                            <EditableCell
+                                              value={visit.departureTransfer}
+                                              type="text"
+                                              placeholder="Инфо"
+                                              onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransfer", value)}
+                                              className="inline-flex"
+                                            />
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -446,15 +662,15 @@ export default function DevTest() {
           {/* Mobile Cards */}
           <div className="md:hidden space-y-3">
             {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, dealId }) => (
-              <>
+              <div key={tourist.id}>
                 {isGrouped && isFirstInGroup && (
-                  <div key={`group-header-mobile-${dealId}`} className="px-2 py-2 bg-primary/10 rounded-md border-l-4 border-primary">
+                  <div className="px-2 py-2 bg-primary/10 rounded-md border-l-4 border-primary mb-3">
                     <div className="flex items-center gap-2 text-sm font-medium text-primary">
                       <span>Сделка #{dealId}</span>
                     </div>
                   </div>
                 )}
-                <Card key={tourist.id} className={isGrouped && groupIndex % 2 === 1 ? "bg-muted/30" : ""}>
+                <Card className={isGrouped && groupIndex % 2 === 1 ? "bg-muted/30" : ""}>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start gap-3">
                       <Checkbox
@@ -493,7 +709,7 @@ export default function DevTest() {
                     </div>
                   </CardContent>
                 </Card>
-              </>
+              </div>
             ))}
           </div>
         </TabsContent>

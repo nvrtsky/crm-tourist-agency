@@ -73,8 +73,7 @@ export class MemStorage implements IStorage {
       phone: insertTourist.phone ?? null,
       passport: insertTourist.passport ?? null,
       birthDate: insertTourist.birthDate ?? null,
-      amount: insertTourist.amount ?? null,
-      currency: insertTourist.currency ?? null,
+      surcharge: insertTourist.surcharge ?? null,
       nights: insertTourist.nights ?? null,
     };
     this.tourists.set(id, tourist);
@@ -94,8 +93,7 @@ export class MemStorage implements IStorage {
       bitrixDealId: updates.bitrixDealId !== undefined ? updates.bitrixDealId ?? null : tourist.bitrixDealId,
       passport: updates.passport !== undefined ? updates.passport ?? null : tourist.passport,
       birthDate: updates.birthDate !== undefined ? updates.birthDate ?? null : tourist.birthDate,
-      amount: updates.amount !== undefined ? updates.amount ?? null : tourist.amount,
-      currency: updates.currency !== undefined ? updates.currency ?? null : tourist.currency,
+      surcharge: updates.surcharge !== undefined ? updates.surcharge ?? null : tourist.surcharge,
       nights: updates.nights !== undefined ? updates.nights ?? null : tourist.nights,
     };
     this.tourists.set(id, updated);

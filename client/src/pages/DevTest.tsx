@@ -656,7 +656,7 @@ export default function DevTest() {
         <TabsContent value="summary" className="space-y-4">
           <div className="flex items-center justify-between gap-2 px-1">
             <h2 className="text-base sm:text-lg font-semibold truncate min-w-0">
-              {t("summary.title", { count: tourists.length, eventTitle: MOCK_EVENT_TITLE })}
+              {MOCK_EVENT_TITLE}
             </h2>
             <div className="flex gap-2 shrink-0">
               <DropdownMenu>

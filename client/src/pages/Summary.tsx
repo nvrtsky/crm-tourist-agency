@@ -761,22 +761,18 @@ export default function Summary() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-base sm:text-lg font-semibold truncate min-w-0" data-testid="summary-title">
-          {eventData?.title 
-            ? t("summary.title", { count: touristCount, eventTitle: eventData.title })
-            : t("summary.titleShort", { count: touristCount })}
-          {eventData?.title && entityId && domain && (
-            <>
-              :{" "}
-              <a
-                href={`https://${domain}/crm/type/176/details/${entityId}/`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-                data-testid="link-event-title"
-              >
-                {eventData.title}
-              </a>
-            </>
+          {eventData?.title && entityId && domain ? (
+            <a
+              href={`https://${domain}/crm/type/176/details/${entityId}/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+              data-testid="link-event-title"
+            >
+              {eventData.title}
+            </a>
+          ) : (
+            t("summary.titleShort", { count: touristCount })
           )}
         </h1>
         <div className="flex gap-2 shrink-0">

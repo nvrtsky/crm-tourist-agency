@@ -109,7 +109,7 @@
     "selectedTouristsDeals": "所选游客的交易 ({count})",
     "linkCopied": "链接已复制",
     "linkCopiedToClipboard": "汇总表链接已复制到剪贴板",
-    "cityLinkCopied": "{city} 表格链接已复制到剪贴板",
+    "cityLinkCopied": "{{city}} 表格链接已复制到剪贴板",
     "failedToCopyLink": "复制链接失败",
     "noDataToExport": "无数据",
     "nothingToExport": "无内容可导出",
@@ -117,7 +117,7 @@
     "fileDownloaded": "文件 {fileName} 已下载",
     "creatingVisit": "创建访问中...",
     "visitCreated": "访问已创建",
-    "visitCreatedSuccess": "成功创建 {city} 的访问",
+    "visitCreatedSuccess": "成功创建 {{city}} 的访问",
     "failedToCreateVisit": "创建访问失败",
     "visitAlreadyExists": "该城市的访问已存在"
   },

@@ -109,7 +109,7 @@
     "selectedTouristsDeals": "Selected tourists deals ({count})",
     "linkCopied": "Link copied",
     "linkCopiedToClipboard": "Summary table link copied to clipboard",
-    "cityLinkCopied": "{city} table link copied to clipboard",
+    "cityLinkCopied": "{{city}} table link copied to clipboard",
     "failedToCopyLink": "Failed to copy link",
     "noDataToExport": "No data",
     "nothingToExport": "Nothing to export",
@@ -117,7 +117,7 @@
     "fileDownloaded": "File {fileName} downloaded",
     "creatingVisit": "Creating visit...",
     "visitCreated": "Visit created",
-    "visitCreatedSuccess": "Visit to {city} successfully created",
+    "visitCreatedSuccess": "Visit to {{city}} successfully created",
     "failedToCreateVisit": "Failed to create visit",
     "visitAlreadyExists": "Visit to this city already exists"
   },

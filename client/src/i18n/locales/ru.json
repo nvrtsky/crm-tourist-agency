@@ -109,7 +109,7 @@
     "selectedTouristsDeals": "Сделки выбранных туристов ({count})",
     "linkCopied": "Ссылка скопирована",
     "linkCopiedToClipboard": "Ссылка на сводную таблицу скопирована в буфер обмена",
-    "cityLinkCopied": "Ссылка на таблицу для {city} скопирована в буфер обмена",
+    "cityLinkCopied": "Ссылка на таблицу для {{city}} скопирована в буфер обмена",
     "failedToCopyLink": "Не удалось скопировать ссылку",
     "noDataToExport": "Нет данных",
     "nothingToExport": "Нечего экспортировать",
@@ -117,7 +117,7 @@
     "fileDownloaded": "Файл {fileName} загружен",
     "creatingVisit": "Создаем визит...",
     "visitCreated": "Визит создан",
-    "visitCreatedSuccess": "Визит в {city} успешно создан",
+    "visitCreatedSuccess": "Визит в {{city}} успешно создан",
     "failedToCreateVisit": "Не удалось создать визит",
     "visitAlreadyExists": "Визит в этот город уже существует"
   },

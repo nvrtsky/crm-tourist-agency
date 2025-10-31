@@ -32,6 +32,7 @@ import { ru } from "date-fns/locale";
 import { useState, useEffect } from "react";
 import { utils, writeFile } from "xlsx";
 import { useToast } from "@/hooks/use-toast";
+import { copyToClipboard } from "@/lib/clipboard";
 
 const CITY_NAMES: Record<City, string> = {
   Beijing: "Пекин",
@@ -446,13 +447,14 @@ export default function Summary() {
   const processedTourists = getProcessedTourists();
 
   const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
+    const success = await copyToClipboard(window.location.href);
+    
+    if (success) {
       toast({
         title: "Ссылка скопирована",
         description: "Ссылка на сводную таблицу скопирована в буфер обмена",
       });
-    } catch (error) {
+    } else {
       toast({
         title: "Ошибка",
         description: "Не удалось скопировать ссылку",
@@ -491,8 +493,9 @@ export default function Summary() {
 
   // Copy link for city or full table
   const handleCopyLinkInDialog = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
+    const success = await copyToClipboard(window.location.href);
+    
+    if (success) {
       toast({
         title: "Ссылка скопирована",
         description: shareDialogCity 
@@ -500,7 +503,7 @@ export default function Summary() {
           : "Ссылка на сводную таблицу скопирована в буфер обмена",
       });
       setShareDialogOpen(false);
-    } catch (error) {
+    } else {
       toast({
         title: "Ошибка",
         description: "Не удалось скопировать ссылку",

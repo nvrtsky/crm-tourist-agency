@@ -1,5 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useBitrix24 } from "@/hooks/useBitrix24";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { EditableCell } from "@/components/EditableCell";
 import { TouristWithVisits, CITIES, City } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +49,33 @@ export default function Summary() {
     queryKey: ["/api/event", entityId, "title"],
     enabled: !!entityId,
   });
+
+  const updateTouristMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<TouristWithVisits> }) => {
+      return apiRequest("PATCH", `/api/tourists/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
+      toast({
+        title: "Турист обновлен",
+        description: "Изменения сохранены успешно",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: `Не удалось обновить туриста: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateField = (touristId: string, field: string, value: string) => {
+    updateTouristMutation.mutate({
+      id: touristId,
+      data: { [field]: value || null },
+    });
+  };
 
   const toggleSelectAll = () => {
     if (!tourists) return;
@@ -524,28 +553,65 @@ export default function Summary() {
                                 {tourist.name}
                               </a>
                             ) : (
-                              <span>{tourist.name}</span>
+                              <EditableCell
+                                value={tourist.name}
+                                type="text"
+                                placeholder="Введите ФИО"
+                                onSave={(value) => updateField(tourist.id, "name", value)}
+                                className="font-medium"
+                              />
                             )}
                           </div>
-                          {tourist.phone && (
-                            <div className="text-xs text-muted-foreground">{tourist.phone}</div>
-                          )}
-                          {tourist.passport && (
-                            <div className="text-xs text-muted-foreground">Загранпаспорт: {tourist.passport}</div>
-                          )}
-                          {tourist.birthDate && (
-                            <div className="text-xs text-muted-foreground">
-                              ДР: {format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}
-                            </div>
-                          )}
-                          {tourist.surcharge && (
-                            <div className="text-xs text-muted-foreground">
-                              Доплата: {tourist.surcharge}
-                            </div>
-                          )}
-                          {tourist.nights && (
-                            <div className="text-xs text-muted-foreground">Ночей: {tourist.nights}</div>
-                          )}
+                          <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">Тел:</span>{" "}
+                            <EditableCell
+                              value={tourist.phone}
+                              type="phone"
+                              placeholder="Добавить телефон"
+                              onSave={(value) => updateField(tourist.id, "phone", value)}
+                              className="inline-flex"
+                            />
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">Паспорт:</span>{" "}
+                            <EditableCell
+                              value={tourist.passport}
+                              type="text"
+                              placeholder="Добавить паспорт"
+                              onSave={(value) => updateField(tourist.id, "passport", value)}
+                              className="inline-flex"
+                            />
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">ДР:</span>{" "}
+                            <EditableCell
+                              value={tourist.birthDate}
+                              type="date"
+                              placeholder="Добавить дату"
+                              onSave={(value) => updateField(tourist.id, "birthDate", value)}
+                              className="inline-flex"
+                            />
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">Доплата:</span>{" "}
+                            <EditableCell
+                              value={tourist.surcharge}
+                              type="text"
+                              placeholder="Добавить доплату"
+                              onSave={(value) => updateField(tourist.id, "surcharge", value)}
+                              className="inline-flex"
+                            />
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">Ночей:</span>{" "}
+                            <EditableCell
+                              value={tourist.nights}
+                              type="text"
+                              placeholder="Добавить кол-во"
+                              onSave={(value) => updateField(tourist.id, "nights", value)}
+                              className="inline-flex"
+                            />
+                          </div>
                         </div>
                       </td>
                       {CITIES.map((city) => {
@@ -735,15 +801,56 @@ export default function Summary() {
                         </h3>
                       </div>
                       <div className="space-y-0.5 text-sm text-muted-foreground">
-                        {tourist.phone && <div>{tourist.phone}</div>}
-                        {tourist.passport && <div>Загранпаспорт: {tourist.passport}</div>}
-                        {tourist.birthDate && (
-                          <div>ДР: {format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}</div>
-                        )}
-                        {tourist.surcharge && (
-                          <div>Доплата: {tourist.surcharge}</div>
-                        )}
-                        {tourist.nights && <div>Ночей: {tourist.nights}</div>}
+                        <div>
+                          <span className="font-medium">Тел:</span>{" "}
+                          <EditableCell
+                            value={tourist.phone}
+                            type="phone"
+                            placeholder="Добавить"
+                            onSave={(value) => updateField(tourist.id, "phone", value)}
+                            className="inline-flex text-sm"
+                          />
+                        </div>
+                        <div>
+                          <span className="font-medium">Паспорт:</span>{" "}
+                          <EditableCell
+                            value={tourist.passport}
+                            type="text"
+                            placeholder="Добавить"
+                            onSave={(value) => updateField(tourist.id, "passport", value)}
+                            className="inline-flex text-sm"
+                          />
+                        </div>
+                        <div>
+                          <span className="font-medium">ДР:</span>{" "}
+                          <EditableCell
+                            value={tourist.birthDate}
+                            type="date"
+                            placeholder="Добавить"
+                            onSave={(value) => updateField(tourist.id, "birthDate", value)}
+                            className="inline-flex text-sm"
+                          />
+                        </div>
+                        <div>
+                          <span className="font-medium">Доплата:</span>{" "}
+                          <EditableCell
+                            value={tourist.surcharge}
+                            type="text"
+                            placeholder="Добавить"
+                            onSave={(value) => updateField(tourist.id, "surcharge", value)}
+                            className="inline-flex text-sm"
+                          />
+                        </div>
+                        <div>
+                          <span className="font-medium">Ночей:</span>{" "}
+                          <EditableCell
+                            value={tourist.nights}
+                            type="text"
+                            placeholder="Добавить"
+                            onSave={(value) => updateField(tourist.id, "nights", value)}
+                            className="inline-flex text-sm"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

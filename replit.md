@@ -1,30 +1,7 @@
 # Веб-сервис для туристического агентства
 
 ## Overview
-This project is a web application designed to manage group tours across five cities in China: Beijing, Luoyang, Xi'an, Zhangjiajie, and Shanghai. Tourists can join or leave a tour at any stage of the itinerary. The application integrates with Bitrix24 as an embedded tab within a "Smart Process" (specifically, the "Event" smart process), where each smart process item represents a single group tour. It aims to streamline tour management, provide comprehensive tourist and itinerary tracking, and offer various reporting features.
-
-## Version History
-
-### v1.0.0 (October 30, 2025)
-**Integration Bitrix24 completed - version 1.0**
-
-**MVP Features Completed:**
-- ✅ Full Bitrix24 integration as embedded tab in Smart Process "Событие" (ENTITY_TYPE_ID = 176)
-- ✅ Advanced entity ID detection with 7 fallback methods (pathname, query params, placement.options, referrer)
-- ✅ Tourist management (create, edit, delete) with Bitrix24 contact synchronization
-- ✅ Itinerary management across 5 cities (Beijing, Luoyang, Xi'an, Zhangjiajie, Shanghai)
-- ✅ Dashboard with statistics (tourist count, city distribution, upcoming arrivals, hotel usage)
-- ✅ Summary table with sticky headers, responsive design, and comprehensive tour overview
-- ✅ Export to Excel with city-specific data export functionality
-- ✅ Multilingual support (Russian, English, Chinese) with i18next
-- ✅ Full mobile adaptation across all pages
-- ✅ Catch-all routing for seamless Bitrix24 iframe integration
-- ✅ Auto-rebind mechanism for placement configuration fixes
-
-**Technical Stack:**
-- Frontend: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS
-- Backend: Express.js, TypeScript, In-memory storage (MemStorage)
-- Integration: Bitrix24 JS SDK, REST API (`crm.item.*`, `crm.contact.*`)
+This project is a web application for managing group tours across five cities in China: Beijing, Luoyang, Xi'an, Zhangjiajie, and Shanghai. It allows tourists to join or leave a tour at any stage and integrates with Bitrix24 as an embedded tab within a "Smart Process" (specifically, the "Event" smart process), where each item represents a single group tour. The application aims to streamline tour management, track tourists and itineraries, and provide reporting features. Key capabilities include tourist and itinerary management, a dashboard with statistics, a comprehensive summary table, and Excel export.
 
 ## User Preferences
 I prefer detailed explanations.
@@ -36,119 +13,44 @@ Do not make changes to file `Y`.
 ## System Architecture
 
 ### UI/UX Decisions
-The frontend is built with React and TypeScript, utilizing Shadcn UI and Tailwind CSS for a modern and responsive design. The application features a dashboard for statistics, a wide summary table with sticky headers for comprehensive data overview, and full mobile adaptation across all pages, including compact navigation and responsive cards for smaller screens.
+The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a modern, responsive design. It features a statistical dashboard, a wide summary table with sticky headers for comprehensive data, and full mobile adaptation, including compact navigation and responsive cards.
 
 ### Technical Implementations
-- **Frontend**: React, TypeScript, Wouter (routing), TanStack Query (API state management), Shadcn UI, Tailwind CSS, Bitrix24 JS SDK, react-i18next (internationalization).
-- **Backend**: Express.js, TypeScript, In-memory storage (MemStorage for development), Bitrix24 REST API integration (`crm.item.*` methods for smart processes).
-- **Data Structure**: Shared TypeScript types and Zod schemas define the data models across frontend and backend.
-- **Supported Cities**: Beijing (北京/Пекин), Luoyang (洛阳/Лоян), Xi'an (西安/Сиань), Zhangjiajie (张家界/Чжанцзяцзе), Shanghai (上海/Шанхай)
-- **Internationalization**: i18next with react-i18next for multilingual support (Russian, English, Chinese). Language detection from browser/localStorage, language switcher in header.
-- **Project Structure**:
-    - `client/`: Frontend React application.
-    - `client/src/i18n/`: Internationalization configuration and translation files.
-    - `server/`: Backend Express server, including Bitrix24 API client and routes.
-    - `shared/`: Common types and Zod schemas.
-    - `attached_assets/`: City images.
+- **Frontend**: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS, Bitrix24 JS SDK, react-i18next.
+- **Backend**: Express.js, TypeScript, In-memory storage (for development), Bitrix24 REST API.
+- **Data Structure**: Shared TypeScript types and Zod schemas.
+- **Supported Cities**: Beijing, Luoyang, Xi'an, Zhangjiajie, Shanghai.
+- **Internationalization**: i18next for Russian, English, Chinese, with language detection and a switcher.
 
 ### Feature Specifications
-- **Tourist Management**: Create, edit, delete tourists; link tourists to Bitrix24 smart process items and CRM contacts.
-- **Itinerary Management**: Select cities, specify arrival/departure dates and times, choose transport types (flight/train), enter flight/train numbers, record hotel information. Includes validation for departure dates (must be after arrival).
-- **Dashboard**: Displays tourist statistics, city distribution, upcoming arrivals, and hotel usage. Fully translated for multilingual support.
-- **Summary Table**: Comprehensive table showing all tourists, date/time ranges for arrival/departure, flight numbers, hotel lists, and transport icons. Features sticky header, responsive design with horizontal scrolling, and a total tourist count. City information is consolidated within each city column (dates/times, hotel, transport, flight numbers) instead of separate columns. 
-  - **Grouping by Deals**: Enabled by default. Displays deal headers with tourist counts, alternating background colors for visual distinction, tourists sorted by deal ID with "no deal" tourists last. Works on both desktop and mobile views.
-  - **Selective Operations**: Checkboxes allow selecting individual tourists. "Показать сделки выбранных" button displays deal information for selected tourists via toast notification.
-  - **Bitrix24 Hyperlinks**: 
-    - Deal headers ("Сделка #123") link to Bitrix24 deal details (`/crm/deal/details/{id}/`)
-    - Tourist names link to Bitrix24 contact details (`/crm/contact/details/{id}/`)
-    - Links open in new tab with proper security attributes
-- **Sharing & Export**: Copy link functionality and export to Excel (including times and flight numbers). Each city column has a Share2 button that exports data only for that specific city, generating an Excel file with columns: №, Tourist, Phone, and the selected city's data.
-- **Multilingual Support**: Full i18n implementation with support for Russian (default), English, and Chinese. Language switcher in application header with persistent language selection via localStorage. Dashboard fully translated.
-- **Bitrix24 Integration**: 
-  - Operates as an embedded tab within Smart Process "Событие" (Event)
-  - Advanced entity ID detection: Primary method extracts from URL pathname, with 7 fallback methods (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, id, DEAL_ID, root level fields)
-  - Detailed error messages with troubleshooting instructions when entity ID cannot be retrieved
-  - **Data Synchronization Architecture**:
-    - Event (Smart Process #303) → `UF_CRM_9_1711887457` (deals array) → each deal has `UF_CRM_1702460537` (contacts array)
-    - Contact fields: `UF_CRM_1700666127661` (ФИО/Name), `UF_CRM_1700667203530` (Passport), standard PHONE/EMAIL fields
-    - Auto-loading: First GET request to `/api/tourists/:entityId` loads tourists from Bitrix24 deals/contacts structure
-    - **Contact Management Policy**:
-      - **Does NOT create** new Bitrix24 contacts (POST endpoint only creates tourists in local storage)
-      - **ONLY updates** existing Bitrix24 contacts when `bitrixContactId` is provided (POST and PATCH endpoints)
-      - DELETE operations only remove tourists from local storage, Bitrix24 contacts remain untouched
-    - Bi-directional sync: PATCH requests update both local storage and Bitrix24 contact custom fields (when bitrixContactId exists)
-    - Fallback: Application continues to function if `BITRIX24_WEBHOOK_URL` is not configured
-  - **Placement Registration**: One-time installation via static page
-    - **Installation file**: `/public/install.html` (separate static page, NOT bundled with main app)
-    - **Installation URL**: `https://travel-group-manager-ndt72.replit.app/install.html`
-    - **Rebind/Fix URL**: `https://travel-group-manager-ndt72.replit.app/rebind.html` (use if entityId not detected)
-    - Installation process:
-      1. Open install.html from Bitrix24 admin panel
-      2. Page registers `CRM_DYNAMIC_176_DETAIL_TAB` placement using BX24.callMethod('placement.bind')
-      3. Calls BX24.installFinish() after successful registration (required by Bitrix24 SDK)
-      4. Tab "Управление группой" will appear in all Smart Process "Событие" cards
-    - **CRITICAL**: placement.bind is NEVER called from the main application (`/`)
-    - Main application (`client/src/`) contains ZERO placement.bind code - only reads placement.info()
-    - File `client/src/pages/Install.tsx` was completely removed from project to prevent HTTP 400 errors
-    - The main app hook `useBitrix24.ts` only calls BX24.init() and reads placement context (entityId), never attempts to register placement
-  - **Auto-Rebind Mechanism** (GET `/install` endpoint):
-    - **Purpose**: Automatically fixes placement when HANDLER points to wrong URL (e.g., `/install` instead of `/`)
-    - **Technical Implementation**:
-      - Endpoint registered in `server/index.ts` BEFORE `setupVite()` call (critical for avoiding Vite middleware interception)
-      - Returns standalone HTML page with embedded Bitrix24 SDK and auto-rebind script
-      - No frontend routing involved - pure backend endpoint response
-    - **How it works**:
-      1. When user opens app and placement loads `/install`, endpoint serves HTML page with auto-rebind script
-      2. Script calls `BX24.placement.unbind` to remove old placement
-      3. Then calls `BX24.placement.bind` with correct HANDLER=`/` (main app)
-      4. Shows progress indicators and status messages in Russian
-      5. After success, prompts user to reload page
-    - **User Experience**:
-      - Loading spinner during each step (initialization, unbind, bind)
-      - Success message with "Перезагрузить" button
-      - Error handling with actionable troubleshooting steps
-    - **Benefits**: One-time self-service fix without manual intervention or support team assistance
-  - **EntityId Extraction Architecture**:
-    - **Multi-method approach with priority-based fallbacks**:
-      - **PRIORITY 0** (Most reliable): `window.location.pathname` - extracts first numeric segment (e.g., "/179/" → entityId = "179")
-      - **PRIORITY 1**: URL query parameters (`?ENTITY_ID=...`, `?ID=...`, etc.)
-      - **PRIORITY 2**: `BX24.placement.info().options` fields (ID, ITEM_ID, ELEMENT_ID, ENTITY_ID, etc.) - **with retry mechanism**
-      - **PRIORITY 4**: `document.referrer` pathname parsing via `extractIdFromReferrer()` helper function (fallback method)
-        - **PRIORITY 1**: Regex match for `/details/{id}/` pattern (e.g., `/crm/type/176/details/303/` → entityId = "303")
-        - **PRIORITY 2**: Fallback - scans pathname segments from end to start, returns first numeric ID found
-        - Safely parses referrer URLs like `https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y`
-        - Guards against empty/invalid referrer strings, returns null on parse errors
-        - Logs which extraction method succeeded for troubleshooting
-      - **NOTE**: `window.name` is logged for diagnostics only (contains Bitrix24 internal iframe ID, not entityId)
-      - **NOTE**: `window.parent.location.href` is NOT attempted (always blocked by browser CORS policy)
-    - **Retry mechanism**: Makes 3 attempts with 100ms delay if `placementInfo.options` is empty on first call (handles SDK initialization race condition)
-    - **Common issue**: If placement HANDLER points to `/install` or wrong URL, Bitrix24 won't provide `options.ID` → use `/rebind.html` to fix
-    - **Diagnostic logging**: Console shows `📋 CONTEXT TRY` with attempt number, entityId, entityTypeId, placement, options object, referrer URL, pathname, and window.name - materially improves troubleshooting
-    - **Error UX**: When entityId cannot be determined, shows `EntityIdNotFound` component with:
-      - Actionable troubleshooting steps
-      - Link to `/rebind.html` for placement re-registration
-      - Expandable diagnostic panel showing all extraction attempt data
-      - "Reload" and "Try Again" buttons for self-service recovery
-  - **Troubleshooting EntityId Issues**:
-    - **Symptom**: Error "ID элемента Smart Process не найден" and console shows `pathname: '/install'`
-    - **Cause**: Placement HANDLER configured with wrong URL (e.g., points to `/install` instead of `/`)
-    - **Solution**: Open `https://travel-group-manager-ndt72.replit.app/rebind.html` from Bitrix24 to rebind placement with correct URL
-    - **After rebind**: Placement will load main app (`/`) instead of installation page, enabling proper entityId extraction
+- **Tourist Management**: Create, edit, delete tourists; synchronize with Bitrix24 contacts. Updates to tourist fields in the summary table are synchronized bidirectionally with Bitrix24 Contact and Deal entities.
+- **Itinerary Management**: Define city visits, dates, transport details, and hotel information, with validation.
+- **Dashboard**: Displays tourist statistics, city distribution, upcoming arrivals, and hotel usage.
+- **Summary Table**: Comprehensive overview of tourists, itineraries, and linked Bitrix24 entities. Features sticky headers, responsive design, grouping by Bitrix24 deals with hyperlinks to deal/contact details, and inline editing.
+- **Sharing & Export**: Copy link functionality and Excel export, including city-specific data export.
+- **Bitrix24 Integration**:
+  - Embedded tab within "Event" Smart Process.
+  - Advanced entity ID detection with multiple fallback methods (pathname, query params, placement.options, referrer) and a retry mechanism.
+  - Data synchronization architecture: Event (Smart Process) → deals array → contacts array. Specific Bitrix24 custom fields are used for tourist data (Name, Passport, Birthdate, Phone, Surcharge, Nights).
+  - Contact Management Policy: Only updates existing Bitrix24 contacts; does not create new ones. DELETE operations only affect local storage.
+  - Placement Registration: One-time installation via `/public/install.html` to bind `CRM_DYNAMIC_176_DETAIL_TAB`. Main application (`/`) does not contain placement binding logic.
+  - Auto-Rebind Mechanism: `/rebind.html` endpoint automatically fixes incorrect placement configurations by unbinding and rebinding the placement with the correct application URL.
+  - Robust error handling for `entityId` detection with troubleshooting guidance.
 
 ### System Design Choices
-- **Smart Process Integration**: The system leverages Bitrix24's smart processes, with each "Event" smart process item representing a unique group tour.
-- **API Endpoints**: Dedicated REST API for managing tourists (GET, POST, PATCH, DELETE).
-- **Environment Variables**: Uses `BITRIX24_WEBHOOK_URL` for production and optional `UF_CRM_TOUR_ROUTE`, `SESSION_SECRET`.
+- **Smart Process Integration**: Each Bitrix24 "Event" Smart Process item represents a group tour.
+- **API Endpoints**: REST API for tourist management.
+- **Environment Variables**: `BITRIX24_WEBHOOK_URL` for production and optional configuration.
 
 ## External Dependencies
-- **Bitrix24**: CRM and Smart Process platform for tour management and data storage.
+- **Bitrix24**: CRM and Smart Process platform.
 - **React**: Frontend library.
-- **TypeScript**: Superset of JavaScript for type-safe development.
-- **Wouter**: Small routing library for React.
-- **TanStack Query**: Data fetching and state management library.
+- **TypeScript**: Language.
+- **Wouter**: Routing library.
+- **TanStack Query**: Data fetching.
 - **Shadcn UI**: UI component library.
-- **Tailwind CSS**: Utility-first CSS framework.
-- **Express.js**: Backend web application framework.
-- **xlsx**: Library for Excel export functionality.
-- **i18next & react-i18next**: Internationalization framework for multilingual support.
-- **i18next-browser-languagedetector**: Browser language detection for i18next.
+- **Tailwind CSS**: CSS framework.
+- **Express.js**: Backend framework.
+- **xlsx**: Excel export.
+- **i18next & react-i18next**: Internationalization.
+- **i18next-browser-languagedetector**: Language detection.

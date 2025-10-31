@@ -224,6 +224,14 @@ export class Bitrix24Service {
 
           console.log(`✅ Deal ${dealId} has ${contactIds.length} tourists:`, contactIds);
 
+          // Extract deal fields
+          const surcharge = (deal.ufCrm1715027519285 || deal.UF_CRM_1715027519285)
+            ? String(deal.ufCrm1715027519285 || deal.UF_CRM_1715027519285).trim()
+            : "";
+          const nights = (deal.ufCrm1695942299984 || deal.UF_CRM_1695942299984)
+            ? String(deal.ufCrm1695942299984 || deal.UF_CRM_1695942299984).trim()
+            : "";
+
           // 5. Get each contact and extract tourist data
           for (const contactId of contactIds) {
             try {
@@ -248,6 +256,9 @@ export class Bitrix24Service {
                 : "";
               const phone = contact.PHONE && contact.PHONE[0] ? contact.PHONE[0].VALUE : "";
               const email = contact.EMAIL && contact.EMAIL[0] ? contact.EMAIL[0].VALUE : "";
+              
+              // Extract birthDate from BIRTHDATE field (ISO date format)
+              const birthDate = contact.BIRTHDATE || contact.birthdate || "";
 
               tourists.push({
                 bitrixContactId: String(contactId),
@@ -256,9 +267,12 @@ export class Bitrix24Service {
                 passport,
                 phone,
                 email,
+                birthDate,
+                surcharge,
+                nights,
               });
 
-              console.log(`Loaded tourist: ${name} (contact ${contactId})`);
+              console.log(`Loaded tourist: ${name} (contact ${contactId}), surcharge: ${surcharge}, nights: ${nights}`);
             } catch (contactError) {
               console.error(`Error loading contact ${contactId}:`, contactError);
             }
@@ -295,6 +309,10 @@ export class Bitrix24Service {
       fields.PHONE = touristData.phone ? [{ VALUE: touristData.phone, VALUE_TYPE: "WORK" }] : [];
     }
 
+    if (touristData.birthDate !== undefined) {
+      fields.BIRTHDATE = touristData.birthDate || ""; // ISO date string
+    }
+
     // Update custom user fields
     if (touristData.name) {
       fields.UF_CRM_1700666127661 = touristData.name; // ФИО in custom field
@@ -306,6 +324,25 @@ export class Bitrix24Service {
 
     await this.call("crm.contact.update", { id: contactId, fields });
     console.log(`Updated contact ${contactId} in Bitrix24`);
+  }
+
+  // Save tourist deal fields to Bitrix24 - update deal with custom fields (surcharge, nights)
+  async saveTouristToDeal(dealId: string, dealData: any): Promise<void> {
+    const fields: Record<string, any> = {};
+
+    if (dealData.surcharge !== undefined) {
+      fields.UF_CRM_1715027519285 = dealData.surcharge || ""; // Доплата (surcharge)
+    }
+
+    if (dealData.nights !== undefined) {
+      fields.UF_CRM_1695942299984 = dealData.nights || ""; // Ночей (nights)
+    }
+
+    // Only call API if there are fields to update
+    if (Object.keys(fields).length > 0) {
+      await this.call("crm.deal.update", { id: dealId, fields });
+      console.log(`Updated deal ${dealId} in Bitrix24 with fields:`, fields);
+    }
   }
 }
 

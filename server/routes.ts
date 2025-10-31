@@ -50,10 +50,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               email: bitrixTourist.email || undefined,
               phone: bitrixTourist.phone || undefined,
               passport: bitrixTourist.passport || undefined,
+              birthDate: bitrixTourist.birthDate || undefined,
+              surcharge: bitrixTourist.surcharge || undefined,
+              nights: bitrixTourist.nights || undefined,
               bitrixContactId: bitrixTourist.bitrixContactId,
               bitrixDealId: bitrixTourist.bitrixDealId,
             });
-            console.log(`Imported tourist from Bitrix24: ${created.name} (${created.id})`);
+            console.log(`Imported tourist from Bitrix24: ${created.name} (${created.id}), surcharge: ${created.surcharge}, nights: ${created.nights}, birthDate: ${created.birthDate}`);
           }
           
           // Reload from storage to get the full data
@@ -128,10 +131,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: createdTourist.email,
             phone: createdTourist.phone,
             passport: createdTourist.passport,
+            birthDate: createdTourist.birthDate,
           });
           console.log(`Updated existing Bitrix24 contact ${createdTourist.bitrixContactId}`);
         } catch (bitrixError) {
           console.error("Failed to update Bitrix24 contact (non-critical):", bitrixError);
+          // Non-critical error - tourist is already created locally
+        }
+      }
+
+      // Update existing Bitrix24 deal if bitrixDealId was provided
+      if (bitrix24 && createdTourist.bitrixDealId) {
+        try {
+          await bitrix24.saveTouristToDeal(createdTourist.bitrixDealId, {
+            surcharge: createdTourist.surcharge,
+            nights: createdTourist.nights,
+          });
+          console.log(`Updated existing Bitrix24 deal ${createdTourist.bitrixDealId}`);
+        } catch (bitrixError) {
+          console.error("Failed to update Bitrix24 deal (non-critical):", bitrixError);
           // Non-critical error - tourist is already created locally
         }
       }
@@ -226,9 +244,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: updates.email !== undefined ? updates.email : tourist.email,
             phone: updates.phone !== undefined ? updates.phone : tourist.phone,
             passport: updates.passport !== undefined ? updates.passport : tourist.passport,
+            birthDate: updates.birthDate !== undefined ? updates.birthDate : tourist.birthDate,
           });
         } catch (bitrixError) {
-          console.error("Failed to sync tourist update to Bitrix24:", bitrixError);
+          console.error("Failed to sync tourist contact update to Bitrix24:", bitrixError);
+          // Continue - not critical, data is saved locally
+        }
+      }
+
+      // Update deal in Bitrix24 if exists and service is available
+      if (bitrix24 && tourist.bitrixDealId) {
+        try {
+          await bitrix24.saveTouristToDeal(tourist.bitrixDealId, {
+            surcharge: updates.surcharge !== undefined ? updates.surcharge : tourist.surcharge,
+            nights: updates.nights !== undefined ? updates.nights : tourist.nights,
+          });
+        } catch (bitrixError) {
+          console.error("Failed to sync tourist deal update to Bitrix24:", bitrixError);
           // Continue - not critical, data is saved locally
         }
       }

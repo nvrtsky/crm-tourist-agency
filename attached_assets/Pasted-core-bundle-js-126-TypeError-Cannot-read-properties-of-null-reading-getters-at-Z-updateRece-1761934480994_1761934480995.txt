@@ -1,0 +1,109 @@
+core.bundle.js:126 TypeError: Cannot read properties of null (reading 'getters')
+    at Z.updateRecentCallsList (call-manager.bundle.js:330:80)
+    at y.K (init.bundle.js:114:45)
+    at new y (init.bundle.js:64:70)
+    at y.getInstance (init.bundle.js:25:218)
+    at y.init (init.bundle.js:29:18)
+    at Proxy.created (quick-access.bundle.js:14:33)
+    at nr (vue.bundle.js:20:1)
+    at ni (vue.bundle.js:20:1)
+    at ii (vue.bundle.js:20:1)
+    at vue.bundle.js:20:1 Proxy(Object) 'https://vuejs.org/error-reference/#runtime-c'
+r.config.errorHandler @ core.bundle.js:126
+ui.toolbar.bundle.js:383 BX.UI.Toolbar: the button "uibtn-asy32pyz" wasn't initialized.
+(anonymous) @ ui.toolbar.bundle.js:383
+index-C2zoIQop.js:292 🔍 [Попытка 1] PRIORITY 0 - pathname: /install segments: ['install']
+index-C2zoIQop.js:292 ✅ [Попытка 1] entityId найден в placementInfo.options.ID
+index-C2zoIQop.js:292 📋 [Попытка 1] window.name (только диагностика): mitclick.bitrix24.ru|1|c857a5a4cc202e41a2857ba2c7161f67
+index-C2zoIQop.js:292 📋 CONTEXT TRY (ИТОГОВЫЙ РЕЗУЛЬТАТ): {attempt: 1, entityId: '303', entityTypeId: '176', extractionMethod: 'placementInfo.options.ID', placement: 'CRM_DYNAMIC_176_DETAIL_TAB', …}
+index-C2zoIQop.js:292 🔍 [Попытка 1] PRIORITY 0 - pathname: /install segments: ['install']
+index-C2zoIQop.js:292 ✅ [Попытка 1] entityId найден в placementInfo.options.ID
+index-C2zoIQop.js:292 📋 [Попытка 1] window.name (только диагностика): mitclick.bitrix24.ru|1|c857a5a4cc202e41a2857ba2c7161f67
+index-C2zoIQop.js:292 📋 CONTEXT TRY (ИТОГОВЫЙ РЕЗУЛЬТАТ): {attempt: 1, entityId: '303', entityTypeId: '176', extractionMethod: 'placementInfo.options.ID', placement: 'CRM_DYNAMIC_176_DETAIL_TAB', …}
+index-C2zoIQop.js:40 RangeError: Invalid time value
+    at Yt (index-C2zoIQop.js:292:184193)
+    at index-C2zoIQop.js:392:18031
+    at Array.map (<anonymous>)
+    at index-C2zoIQop.js:392:17341
+    at Array.map (<anonymous>)
+    at wS (index-C2zoIQop.js:392:13155)
+    at Dx (index-C2zoIQop.js:38:17018)
+    at Mg (index-C2zoIQop.js:40:3139)
+    at S4 (index-C2zoIQop.js:40:44833)
+    at y4 (index-C2zoIQop.js:40:39790)
+Ig @ index-C2zoIQop.js:40
+r.callback @ index-C2zoIQop.js:40
+yw @ index-C2zoIQop.js:38
+Iw @ index-C2zoIQop.js:40
+m4 @ index-C2zoIQop.js:40
+uL @ index-C2zoIQop.js:40
+mL @ index-C2zoIQop.js:40
+Ha @ index-C2zoIQop.js:40
+Lw @ index-C2zoIQop.js:40
+Ia @ index-C2zoIQop.js:38
+(anonymous) @ index-C2zoIQop.js:40
+setTimeout
+s @ index-C2zoIQop.js:48
+a @ index-C2zoIQop.js:48
+batch @ index-C2zoIQop.js:48
+ai @ index-C2zoIQop.js:48
+setData @ index-C2zoIQop.js:48
+onSuccess @ index-C2zoIQop.js:48
+f @ index-C2zoIQop.js:48
+Promise.then
+v @ index-C2zoIQop.js:48
+start @ index-C2zoIQop.js:48
+fetch @ index-C2zoIQop.js:48
+ru @ index-C2zoIQop.js:48
+setOptions @ index-C2zoIQop.js:48
+(anonymous) @ index-C2zoIQop.js:48
+H0 @ index-C2zoIQop.js:40
+bl @ index-C2zoIQop.js:40
+(anonymous) @ index-C2zoIQop.js:40
+C @ index-C2zoIQop.js:25
+W @ index-C2zoIQop.js:25
+index-C2zoIQop.js:292 Uncaught RangeError: Invalid time value
+    at Yt (index-C2zoIQop.js:292:184193)
+    at index-C2zoIQop.js:392:18031
+    at Array.map (<anonymous>)
+    at index-C2zoIQop.js:392:17341
+    at Array.map (<anonymous>)
+    at wS (index-C2zoIQop.js:392:13155)
+    at Dx (index-C2zoIQop.js:38:17018)
+    at Mg (index-C2zoIQop.js:40:3139)
+    at S4 (index-C2zoIQop.js:40:44833)
+    at y4 (index-C2zoIQop.js:40:39790)
+Yt @ index-C2zoIQop.js:292
+(anonymous) @ index-C2zoIQop.js:392
+(anonymous) @ index-C2zoIQop.js:392
+wS @ index-C2zoIQop.js:392
+Dx @ index-C2zoIQop.js:38
+Mg @ index-C2zoIQop.js:40
+S4 @ index-C2zoIQop.js:40
+y4 @ index-C2zoIQop.js:40
+hL @ index-C2zoIQop.js:40
+Mh @ index-C2zoIQop.js:40
+Kg @ index-C2zoIQop.js:40
+Lw @ index-C2zoIQop.js:40
+Ia @ index-C2zoIQop.js:38
+(anonymous) @ index-C2zoIQop.js:40
+setTimeout
+s @ index-C2zoIQop.js:48
+a @ index-C2zoIQop.js:48
+batch @ index-C2zoIQop.js:48
+ai @ index-C2zoIQop.js:48
+setData @ index-C2zoIQop.js:48
+onSuccess @ index-C2zoIQop.js:48
+f @ index-C2zoIQop.js:48
+Promise.then
+v @ index-C2zoIQop.js:48
+start @ index-C2zoIQop.js:48
+fetch @ index-C2zoIQop.js:48
+ru @ index-C2zoIQop.js:48
+setOptions @ index-C2zoIQop.js:48
+(anonymous) @ index-C2zoIQop.js:48
+H0 @ index-C2zoIQop.js:40
+bl @ index-C2zoIQop.js:40
+(anonymous) @ index-C2zoIQop.js:40
+C @ index-C2zoIQop.js:25
+W @ index-C2zoIQop.js:25

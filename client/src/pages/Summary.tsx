@@ -22,7 +22,7 @@ import {
 import { Loader2, Plane, Train, List, Grid, Share2, Link as LinkIcon, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { utils, writeFile } from "xlsx";
 import { useToast } from "@/hooks/use-toast";
 
@@ -39,7 +39,46 @@ export default function Summary() {
   const [isGrouped, setIsGrouped] = useState(true);
   const [selectedTourists, setSelectedTourists] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [customGroupings, setCustomGroupings] = useState<Map<string, string[]>>(new Map());
+  const [ungroupedTourists, setUngroupedTourists] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  // Load custom groupings from localStorage
+  useEffect(() => {
+    try {
+      const savedGroupings = localStorage.getItem('tourGroupings');
+      const savedUngrouped = localStorage.getItem('tourUngrouped');
+      
+      if (savedGroupings) {
+        const parsed = JSON.parse(savedGroupings);
+        setCustomGroupings(new Map(Object.entries(parsed)));
+      }
+      
+      if (savedUngrouped) {
+        setUngroupedTourists(new Set(JSON.parse(savedUngrouped)));
+      }
+    } catch (error) {
+      console.error('Failed to load custom groupings from localStorage:', error);
+    }
+  }, []);
+
+  // Save custom groupings to localStorage whenever they change
+  useEffect(() => {
+    try {
+      const groupingsObj = Object.fromEntries(customGroupings);
+      localStorage.setItem('tourGroupings', JSON.stringify(groupingsObj));
+    } catch (error) {
+      console.error('Failed to save custom groupings to localStorage:', error);
+    }
+  }, [customGroupings]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tourUngrouped', JSON.stringify(Array.from(ungroupedTourists)));
+    } catch (error) {
+      console.error('Failed to save ungrouped tourists to localStorage:', error);
+    }
+  }, [ungroupedTourists]);
 
   const { data: tourists, isLoading } = useQuery<TouristWithVisits[]>({
     queryKey: ["/api/tourists", entityId],
@@ -125,6 +164,87 @@ export default function Summary() {
     setSelectedTourists(newSelected);
   };
 
+  const handleGroup = () => {
+    if (selectedTourists.size < 2) {
+      toast({
+        title: "Выберите туристов",
+        description: "Для группировки выберите минимум 2 туристов",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Generate unique group ID
+    const groupId = Date.now().toString();
+    const touristIds = Array.from(selectedTourists);
+
+    // Remove selected tourists from ungrouped set
+    const newUngrouped = new Set(ungroupedTourists);
+    touristIds.forEach(id => newUngrouped.delete(id));
+    setUngroupedTourists(newUngrouped);
+
+    // Remove selected tourists from other custom groups
+    const newGroupings = new Map(customGroupings);
+    newGroupings.forEach((ids, gid) => {
+      const filteredIds = ids.filter(id => !touristIds.includes(id));
+      if (filteredIds.length === 0) {
+        newGroupings.delete(gid);
+      } else if (filteredIds.length !== ids.length) {
+        newGroupings.set(gid, filteredIds);
+      }
+    });
+
+    // Add new custom group
+    newGroupings.set(groupId, touristIds);
+    setCustomGroupings(newGroupings);
+
+    // Clear selection
+    setSelectedTourists(new Set());
+
+    toast({
+      title: "Группа создана",
+      description: `Сгруппировано ${touristIds.length} туристов`,
+    });
+  };
+
+  const handleUngroup = () => {
+    if (selectedTourists.size === 0) {
+      toast({
+        title: "Выберите туристов",
+        description: "Отметьте туристов для разгруппировки",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const touristIds = Array.from(selectedTourists);
+
+    // Add to ungrouped set
+    const newUngrouped = new Set(ungroupedTourists);
+    touristIds.forEach(id => newUngrouped.add(id));
+    setUngroupedTourists(newUngrouped);
+
+    // Remove from custom groups
+    const newGroupings = new Map(customGroupings);
+    newGroupings.forEach((ids, gid) => {
+      const filteredIds = ids.filter(id => !touristIds.includes(id));
+      if (filteredIds.length === 0) {
+        newGroupings.delete(gid);
+      } else if (filteredIds.length !== ids.length) {
+        newGroupings.set(gid, filteredIds);
+      }
+    });
+    setCustomGroupings(newGroupings);
+
+    // Clear selection
+    setSelectedTourists(new Set());
+
+    toast({
+      title: "Туристы разгруппированы",
+      description: `Разгруппировано ${touristIds.length} туристов`,
+    });
+  };
+
   const handleShowSelectedDeals = () => {
     if (selectedTourists.size === 0) {
       toast({
@@ -175,13 +295,53 @@ export default function Summary() {
         groupIndex: 0,
         groupSize: 0,
         dealId: tourist.bitrixDealId,
+        dealIds: tourist.bitrixDealId ? [tourist.bitrixDealId] : [],
         cityRowSpans: {} as Record<City, number>,
         shouldRenderCityCell: {} as Record<City, boolean>,
       }));
     }
 
-    // Group by dealId
-    const grouped = tourists.reduce((acc, tourist) => {
+    // Create a set of tourists that are accounted for (in custom groups or ungrouped)
+    const accountedTourists = new Set<string>();
+    const groupedArray: { dealIds: string[]; tourists: TouristWithVisits[]; groupId: string }[] = [];
+
+    // 1. Add custom groups
+    customGroupings.forEach((touristIds, groupId) => {
+      const groupTourists = tourists.filter(t => touristIds.includes(t.id));
+      if (groupTourists.length > 0) {
+        // Collect all unique dealIds from tourists in this group
+        const dealIds = Array.from(new Set(
+          groupTourists
+            .map(t => t.bitrixDealId)
+            .filter(Boolean) as string[]
+        ));
+        
+        groupedArray.push({
+          dealIds,
+          tourists: groupTourists,
+          groupId: `custom-${groupId}`,
+        });
+        
+        groupTourists.forEach(t => accountedTourists.add(t.id));
+      }
+    });
+
+    // 2. Add ungrouped tourists as individual groups
+    ungroupedTourists.forEach(touristId => {
+      const tourist = tourists.find(t => t.id === touristId);
+      if (tourist) {
+        groupedArray.push({
+          dealIds: tourist.bitrixDealId ? [tourist.bitrixDealId] : [],
+          tourists: [tourist],
+          groupId: `ungrouped-${touristId}`,
+        });
+        accountedTourists.add(touristId);
+      }
+    });
+
+    // 3. Group remaining tourists by dealId (automatic grouping)
+    const remainingTourists = tourists.filter(t => !accountedTourists.has(t.id));
+    const autogrouped = remainingTourists.reduce((acc, tourist) => {
       const dealId = tourist.bitrixDealId || 'no-deal';
       if (!acc[dealId]) {
         acc[dealId] = [];
@@ -190,17 +350,27 @@ export default function Summary() {
       return acc;
     }, {} as Record<string, TouristWithVisits[]>);
 
-    // Convert to array and sort groups
-    const groupedArray = Object.entries(grouped).map(([dealId, tourists]) => ({
-      dealId,
-      tourists,
-    }));
+    // Add auto-grouped to groupedArray
+    Object.entries(autogrouped).forEach(([dealId, tourists]) => {
+      groupedArray.push({
+        dealIds: dealId === 'no-deal' ? [] : [dealId],
+        tourists,
+        groupId: `auto-${dealId}`,
+      });
+    });
 
-    // Sort groups by dealId (nulls last)
+    // Sort groups (custom groups first, then by dealId)
     groupedArray.sort((a, b) => {
-      if (a.dealId === 'no-deal') return 1;
-      if (b.dealId === 'no-deal') return -1;
-      return a.dealId.localeCompare(b.dealId);
+      // Custom groups first
+      const aIsCustom = a.groupId.startsWith('custom-');
+      const bIsCustom = b.groupId.startsWith('custom-');
+      if (aIsCustom && !bIsCustom) return -1;
+      if (!aIsCustom && bIsCustom) return 1;
+      
+      // Then by first dealId
+      const aFirstDeal = a.dealIds[0] || 'zzz';
+      const bFirstDeal = b.dealIds[0] || 'zzz';
+      return aFirstDeal.localeCompare(bFirstDeal);
     });
 
     // Flatten with group metadata and calculate city row spans
@@ -233,7 +403,8 @@ export default function Summary() {
         isFirstInGroup: indexInGroup === 0,
         groupIndex,
         groupSize: group.tourists.length,
-        dealId: group.dealId,
+        dealId: group.dealIds[0] || 'no-deal', // backward compatibility
+        dealIds: group.dealIds,
         cityRowSpans,
         shouldRenderCityCell: CITIES.reduce((acc, city) => {
           acc[city] = shouldRenderCityCell[city][indexInGroup];
@@ -457,7 +628,27 @@ export default function Summary() {
             data-testid="button-toggle-group"
           >
             {isGrouped ? <List className="h-4 w-4 sm:mr-2" /> : <Grid className="h-4 w-4 sm:mr-2" />}
-            <span className="hidden sm:inline">{isGrouped ? "Разгруппировать" : "Сгруппировать"}</span>
+            <span className="hidden sm:inline">{isGrouped ? "Скрыть группировку" : "Показать группировку"}</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleGroup}
+            disabled={selectedTourists.size < 2}
+            data-testid="button-group"
+          >
+            <Grid className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Сгруппировать</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleUngroup}
+            disabled={selectedTourists.size === 0}
+            data-testid="button-ungroup"
+          >
+            <List className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Разгруппировать</span>
           </Button>
           <Button
             variant="outline"
@@ -541,8 +732,8 @@ export default function Summary() {
                 </tr>
               ) : (
                 processedTourists.map((item) => {
-                  const { tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealId: dealIdRaw } = item;
-                  const dealId = dealIdRaw || 'no-deal';
+                  const { tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds } = item;
+                  const groupKey = `group-${groupIndex}`;
                   const visitsByCity = CITIES.reduce((acc, city) => {
                     acc[city] = tourist.visits.find(v => v.city === city);
                     return acc;
@@ -555,44 +746,54 @@ export default function Summary() {
                     <>
                       {/* Group header - only show for first tourist in group when grouped */}
                       {isGrouped && isFirstInGroup && (
-                        <tr key={`group-header-${dealId}`} className={`border-t-2 border-primary ${groupBgClass}`}>
+                        <tr key={`group-header-${groupKey}`} className={`border-t-2 border-primary ${groupBgClass}`}>
                           <td colSpan={8} className="px-4 py-2">
-                            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                            <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => {
                                   const newExpanded = new Set(expandedGroups);
-                                  if (newExpanded.has(dealId)) {
-                                    newExpanded.delete(dealId);
+                                  if (newExpanded.has(groupKey)) {
+                                    newExpanded.delete(groupKey);
                                   } else {
-                                    newExpanded.add(dealId);
+                                    newExpanded.add(groupKey);
                                   }
                                   setExpandedGroups(newExpanded);
                                 }}
                                 className="h-5 w-5 shrink-0"
-                                data-testid={`button-toggle-group-${dealId}`}
+                                data-testid={`button-toggle-group-${groupKey}`}
                               >
-                                {expandedGroups.has(dealId) ? (
+                                {expandedGroups.has(groupKey) ? (
                                   <ChevronUp className="h-4 w-4" />
                                 ) : (
                                   <ChevronDown className="h-4 w-4" />
                                 )}
                               </Button>
-                              {dealId === 'no-deal' ? (
+                              {!dealIds || dealIds.length === 0 ? (
                                 <span>Сделка #Без сделки</span>
-                              ) : getBitrixDealUrl(dealId) ? (
-                                <a 
-                                  href={getBitrixDealUrl(dealId)!} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="hover:underline"
-                                  data-testid={`link-deal-${dealId}`}
-                                >
-                                  Сделка #{dealId}
-                                </a>
                               ) : (
-                                <span>Сделка #{dealId}</span>
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <span>Сделка:</span>
+                                  {dealIds.map((dealId, idx) => (
+                                    <span key={dealId} className="flex items-center gap-1">
+                                      {getBitrixDealUrl(dealId) ? (
+                                        <a 
+                                          href={getBitrixDealUrl(dealId)!} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="hover:underline"
+                                          data-testid={`link-deal-${dealId}`}
+                                        >
+                                          #{dealId}
+                                        </a>
+                                      ) : (
+                                        <span>#{dealId}</span>
+                                      )}
+                                      {idx < dealIds.length - 1 && <span>,</span>}
+                                    </span>
+                                  ))}
+                                </div>
                               )}
                               <Badge variant="outline" className="text-xs">
                                 {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
@@ -695,7 +896,7 @@ export default function Summary() {
                       </td>
                       {CITIES.map((city) => {
                         const visit = visitsByCity[city];
-                        const isGroupCollapsed = isGrouped && !expandedGroups.has(dealId);
+                        const isGroupCollapsed = isGrouped && !expandedGroups.has(groupKey);
                         const { shouldRenderCityCell, cityRowSpans } = item;
                         
                         // If group is collapsed and this is not the first cell for this city, skip rendering
@@ -914,7 +1115,8 @@ export default function Summary() {
           </Card>
         ) : (
           processedTourists.map((item) => {
-            const { tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealId } = item;
+            const { tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds } = item;
+            const groupKey = `group-${groupIndex}`;
             const visitsByCity = CITIES.reduce((acc, city) => {
               acc[city] = tourist.visits.find(v => v.city === city);
               return acc;
@@ -924,22 +1126,32 @@ export default function Summary() {
               <>
                 {/* Group header mobile */}
                 {isGrouped && isFirstInGroup && (
-                  <div key={`group-header-mobile-${dealId}`} className="px-2 py-2 bg-primary/10 rounded-md border-l-4 border-primary">
-                    <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                      {dealId === 'no-deal' ? (
+                  <div key={`group-header-mobile-${groupKey}`} className="px-2 py-2 bg-primary/10 rounded-md border-l-4 border-primary">
+                    <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
+                      {!dealIds || dealIds.length === 0 ? (
                         <span>Сделка #Без сделки</span>
-                      ) : getBitrixDealUrl(dealId) ? (
-                        <a 
-                          href={getBitrixDealUrl(dealId)!} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="hover:underline"
-                          data-testid={`link-deal-mobile-${dealId}`}
-                        >
-                          Сделка #{dealId}
-                        </a>
                       ) : (
-                        <span>Сделка #{dealId}</span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span>Сделка:</span>
+                          {dealIds.map((dealId, idx) => (
+                            <span key={dealId} className="flex items-center gap-1">
+                              {getBitrixDealUrl(dealId) ? (
+                                <a 
+                                  href={getBitrixDealUrl(dealId)!} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                  data-testid={`link-deal-mobile-${dealId}`}
+                                >
+                                  #{dealId}
+                                </a>
+                              ) : (
+                                <span>#{dealId}</span>
+                              )}
+                              {idx < dealIds.length - 1 && <span>,</span>}
+                            </span>
+                          ))}
+                        </div>
                       )}
                       <Badge variant="outline" className="text-xs">
                         {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}

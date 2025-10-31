@@ -27,6 +27,14 @@ The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a moder
 - **Itinerary Management**: Define city visits, dates, transport details, and hotel information, with validation.
 - **Dashboard**: Displays tourist statistics, city distribution, upcoming arrivals, and hotel usage.
 - **Summary Table**: Comprehensive overview of tourists, itineraries, and linked Bitrix24 entities. Features sticky headers, responsive design, grouping by Bitrix24 deals with hyperlinks to deal/contact details, and inline editing.
+- **Custom Grouping System**: 
+  - Manual group/ungroup functionality via checkboxes and dedicated buttons ("Сгруппировать"/"Разгруппировать")
+  - Custom groupings persist in localStorage (survives page reload, independent of Bitrix24)
+  - Three-tier grouping priority: manual ungrouped → custom groups → auto-group by dealId
+  - When grouping tourists from different deals, all dealIds displayed in group header as clickable links
+  - Ungrouped tourists shown individually, not auto-regrouped when dealId changes
+  - Group expand/collapse controls with visual city cell merging when collapsed
+  - Implemented in both production Summary.tsx and dev DevTest.tsx pages
 - **Sharing & Export**: Copy link functionality and Excel export, including city-specific data export.
 - **DEV Mode** (`/dev`): Standalone testing page that works without Bitrix24 connection. Uses mock data with 6 test tourists, multiple deals, and full itineraries. Features all main functionality: summary table with grouping, dashboard statistics, tourists list, inline editing (local state only), and Excel export. Accessible via DEV navigation button. Perfect for rapid development and testing without requiring Bitrix24 portal access.
 - **Bitrix24 Integration**:

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,46 @@ export default function DevTest() {
   const [selectedTourists, setSelectedTourists] = useState<Set<string>>(new Set());
   const [isGrouped, setIsGrouped] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [customGroupings, setCustomGroupings] = useState<Map<string, string[]>>(new Map());
+  const [ungroupedTourists, setUngroupedTourists] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  // Load custom groupings from localStorage
+  useEffect(() => {
+    try {
+      const savedGroupings = localStorage.getItem('devTourGroupings');
+      const savedUngrouped = localStorage.getItem('devTourUngrouped');
+      
+      if (savedGroupings) {
+        const parsed = JSON.parse(savedGroupings);
+        setCustomGroupings(new Map(Object.entries(parsed)));
+      }
+      
+      if (savedUngrouped) {
+        setUngroupedTourists(new Set(JSON.parse(savedUngrouped)));
+      }
+    } catch (error) {
+      console.error('Failed to load custom groupings from localStorage:', error);
+    }
+  }, []);
+
+  // Save custom groupings to localStorage whenever they change
+  useEffect(() => {
+    try {
+      const groupingsObj = Object.fromEntries(customGroupings);
+      localStorage.setItem('devTourGroupings', JSON.stringify(groupingsObj));
+    } catch (error) {
+      console.error('Failed to save custom groupings to localStorage:', error);
+    }
+  }, [customGroupings]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('devTourUngrouped', JSON.stringify(Array.from(ungroupedTourists)));
+    } catch (error) {
+      console.error('Failed to save ungrouped tourists to localStorage:', error);
+    }
+  }, [ungroupedTourists]);
 
   // Update field handler для inline editing
   const updateField = (touristId: string, field: keyof TouristWithVisits, value: string | null) => {
@@ -63,13 +102,13 @@ export default function DevTest() {
   };
 
   // Toggle group expansion
-  const toggleGroup = (dealId: string) => {
+  const toggleGroup = (groupKey: string) => {
     setExpandedGroups(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(dealId)) {
-        newSet.delete(dealId);
+      if (newSet.has(groupKey)) {
+        newSet.delete(groupKey);
       } else {
-        newSet.add(dealId);
+        newSet.add(groupKey);
       }
       return newSet;
     });
@@ -109,6 +148,88 @@ export default function DevTest() {
       description: deals.size > 0 
         ? `Сделки: ${Array.from(deals).join(", ")}`
         : "Нет сделок для выбранных туристов",
+    });
+  };
+
+  // Group selected tourists
+  const handleGroup = () => {
+    if (selectedTourists.size < 2) {
+      toast({
+        title: "Выберите туристов",
+        description: "Для группировки выберите минимум 2 туристов",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const groupId = Date.now().toString();
+    const touristIds = Array.from(selectedTourists);
+
+    // Remove selected tourists from ungrouped set
+    const newUngrouped = new Set(ungroupedTourists);
+    touristIds.forEach(id => newUngrouped.delete(id));
+    setUngroupedTourists(newUngrouped);
+
+    // Remove selected tourists from other custom groups
+    const newGroupings = new Map(customGroupings);
+    newGroupings.forEach((ids, gid) => {
+      const filteredIds = ids.filter(id => !touristIds.includes(id));
+      if (filteredIds.length === 0) {
+        newGroupings.delete(gid);
+      } else if (filteredIds.length !== ids.length) {
+        newGroupings.set(gid, filteredIds);
+      }
+    });
+
+    // Add new custom group
+    newGroupings.set(groupId, touristIds);
+    setCustomGroupings(newGroupings);
+
+    // Clear selection
+    setSelectedTourists(new Set());
+
+    toast({
+      title: "Группа создана (DEV режим)",
+      description: `Сгруппировано ${touristIds.length} туристов. В реальном режиме группировка сохраняется в localStorage.`,
+    });
+  };
+
+  // Ungroup selected tourists
+  const handleUngroup = () => {
+    if (selectedTourists.size === 0) {
+      toast({
+        title: "Выберите туристов",
+        description: "Отметьте туристов для разгруппировки",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const touristIds = Array.from(selectedTourists);
+
+    // Add to ungrouped set
+    const newUngrouped = new Set(ungroupedTourists);
+    touristIds.forEach(id => newUngrouped.add(id));
+    setUngroupedTourists(newUngrouped);
+
+    // Remove from custom groups
+    const newGroupings = new Map(customGroupings);
+    newGroupings.forEach((ids, gid) => {
+      const filteredIds = ids.filter(id => !touristIds.includes(id));
+      if (filteredIds.length === 0) {
+        newGroupings.delete(gid);
+      } else if (filteredIds.length !== ids.length) {
+        newGroupings.set(gid, filteredIds);
+      }
+    });
+    setCustomGroupings(newGroupings);
+
+    // Clear selection
+    setSelectedTourists(new Set());
+
+    toast({
+      title: "Туристы разгруппированы (DEV режим)",
+      description: `Разгруппировано ${touristIds.length} туристов. В реальном режиме разгруппировка сохраняется в localStorage.`,
     });
   };
 
@@ -175,22 +296,82 @@ export default function DevTest() {
         groupIndex: 0,
         groupSize: 1,
         dealId: tourist.bitrixDealId || "no-deal",
+        dealIds: tourist.bitrixDealId ? [tourist.bitrixDealId] : [],
         cityRowSpans: {} as Record<City, number>,
         shouldRenderCityCell: {} as Record<City, boolean>,
       }));
     }
 
-    const groups: Record<string, TouristWithVisits[]> = {};
-    tourists.forEach(tourist => {
-      const dealId = tourist.bitrixDealId || "no-deal";
-      if (!groups[dealId]) groups[dealId] = [];
-      groups[dealId].push(tourist);
+    // Create a set of tourists that are accounted for (in custom groups or ungrouped)
+    const accountedTourists = new Set<string>();
+    const groupedArray: { dealIds: string[]; tourists: TouristWithVisits[]; groupId: string }[] = [];
+
+    // 1. Add custom groups
+    customGroupings.forEach((touristIds, groupId) => {
+      const groupTourists = tourists.filter(t => touristIds.includes(t.id));
+      if (groupTourists.length > 0) {
+        // Collect all unique dealIds from tourists in this group
+        const dealIds = Array.from(new Set(
+          groupTourists
+            .map(t => t.bitrixDealId)
+            .filter(Boolean) as string[]
+        ));
+        
+        groupedArray.push({
+          dealIds,
+          tourists: groupTourists,
+          groupId: `custom-${groupId}`,
+        });
+        
+        groupTourists.forEach(t => accountedTourists.add(t.id));
+      }
     });
 
-    const sortedDealIds = Object.keys(groups).sort((a, b) => {
-      if (a === "no-deal") return 1;
-      if (b === "no-deal") return -1;
-      return a.localeCompare(b);
+    // 2. Add ungrouped tourists as individual groups
+    ungroupedTourists.forEach(touristId => {
+      const tourist = tourists.find(t => t.id === touristId);
+      if (tourist) {
+        groupedArray.push({
+          dealIds: tourist.bitrixDealId ? [tourist.bitrixDealId] : [],
+          tourists: [tourist],
+          groupId: `ungrouped-${touristId}`,
+        });
+        accountedTourists.add(touristId);
+      }
+    });
+
+    // 3. Group remaining tourists by dealId (automatic grouping)
+    const remainingTourists = tourists.filter(t => !accountedTourists.has(t.id));
+    const autogrouped = remainingTourists.reduce((acc, tourist) => {
+      const dealId = tourist.bitrixDealId || 'no-deal';
+      if (!acc[dealId]) {
+        acc[dealId] = [];
+      }
+      acc[dealId].push(tourist);
+      return acc;
+    }, {} as Record<string, TouristWithVisits[]>);
+
+    // Add auto-grouped to groupedArray
+    Object.entries(autogrouped).forEach(([dealId, tourists]) => {
+      groupedArray.push({
+        dealIds: dealId === 'no-deal' ? [] : [dealId],
+        tourists,
+        groupId: `auto-${dealId}`,
+      });
+    });
+
+    // Sort groups (custom groups first, then by dealId)
+    groupedArray.sort((a, b) => {
+      // Custom groups first
+      const aIsCustom = a.groupId.startsWith('custom-');
+      const bIsCustom = b.groupId.startsWith('custom-');
+      if (aIsCustom && !bIsCustom) return -1;
+      if (!aIsCustom && bIsCustom) return 1;
+      
+      // Then by first dealId
+      const aFirstDeal = a.dealIds[0] || 'zzz';
+      const bFirstDeal = b.dealIds[0] || 'zzz';
+      return aFirstDeal.localeCompare(bFirstDeal);
     });
 
     const result: Array<{
@@ -200,14 +381,13 @@ export default function DevTest() {
       groupIndex: number;
       groupSize: number;
       dealId: string;
+      dealIds: string[];
       cityRowSpans: Record<City, number>;
       shouldRenderCityCell: Record<City, boolean>;
     }> = [];
 
     let currentIndex = 0;
-    sortedDealIds.forEach((dealId, groupIndex) => {
-      const groupTourists = groups[dealId];
-      
+    groupedArray.forEach((group, groupIndex) => {
       // Calculate cityRowSpans and shouldRenderCityCell for this group
       const cityRowSpans: Record<City, number> = {} as Record<City, number>;
       const shouldRenderCityCell: Record<City, boolean[]> = {} as Record<City, boolean[]>;
@@ -217,7 +397,7 @@ export default function DevTest() {
         shouldRenderCityCell[city] = [];
         let firstTouristWithCity = true;
         
-        groupTourists.forEach((tourist) => {
+        group.tourists.forEach((tourist) => {
           const hasVisit = tourist.visits.some(v => v.city === city);
           if (hasVisit) {
             cityRowSpans[city]++;
@@ -229,14 +409,15 @@ export default function DevTest() {
         });
       });
 
-      groupTourists.forEach((tourist, indexInGroup) => {
+      group.tourists.forEach((tourist, indexInGroup) => {
         result.push({
           tourist,
           originalIndex: currentIndex++,
           isFirstInGroup: indexInGroup === 0,
           groupIndex,
-          groupSize: groupTourists.length,
-          dealId,
+          groupSize: group.tourists.length,
+          dealId: group.dealIds[0] || 'no-deal', // backward compatibility
+          dealIds: group.dealIds,
           cityRowSpans,
           shouldRenderCityCell: CITIES.reduce((acc, city) => {
             acc[city] = shouldRenderCityCell[city][indexInGroup];
@@ -247,7 +428,7 @@ export default function DevTest() {
     });
 
     return result;
-  }, [tourists, isGrouped]);
+  }, [tourists, isGrouped, customGroupings, ungroupedTourists]);
 
   return (
     <div className="container mx-auto p-4 max-w-7xl">
@@ -302,7 +483,7 @@ export default function DevTest() {
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <CardTitle>{MOCK_EVENT_TITLE}</CardTitle>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Button
                     variant="outline"
                     size="sm"
@@ -310,6 +491,24 @@ export default function DevTest() {
                     data-testid="button-toggle-grouping"
                   >
                     {isGrouped ? "Скрыть группировку" : "Показать группировку"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGroup}
+                    disabled={selectedTourists.size < 2}
+                    data-testid="button-group"
+                  >
+                    Сгруппировать
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleUngroup}
+                    disabled={selectedTourists.size === 0}
+                    data-testid="button-ungroup"
+                  >
+                    Разгруппировать
                   </Button>
                   {selectedTourists.size > 0 && (
                     <Button
@@ -361,7 +560,8 @@ export default function DevTest() {
                   </tr>
                 </thead>
                 <tbody>
-                  {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealId, cityRowSpans, shouldRenderCityCell }) => {
+                  {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds, cityRowSpans, shouldRenderCityCell }) => {
+                    const groupKey = `group-${groupIndex}`;
                     const visitsByCity = CITIES.reduce((acc, city) => {
                       acc[city] = tourist.visits.find(v => v.city.toLowerCase() === city.toLowerCase());
                       return acc;
@@ -370,23 +570,35 @@ export default function DevTest() {
                     return (
                       <>
                         {isGrouped && isFirstInGroup && (
-                          <tr key={`group-header-${dealId}`} className="bg-primary/10 border-l-4 border-primary">
+                          <tr key={`group-header-${groupKey}`} className="bg-primary/10 border-l-4 border-primary">
                             <td colSpan={3 + CITIES.length} className="px-4 py-2">
-                              <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                              <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => toggleGroup(dealId)}
+                                  onClick={() => toggleGroup(groupKey)}
                                   className="h-5 w-5 shrink-0"
-                                  data-testid={`button-toggle-group-${dealId}`}
+                                  data-testid={`button-toggle-group-${groupKey}`}
                                 >
-                                  {expandedGroups.has(dealId) ? (
+                                  {expandedGroups.has(groupKey) ? (
                                     <ChevronUp className="h-4 w-4" />
                                   ) : (
                                     <ChevronDown className="h-4 w-4" />
                                   )}
                                 </Button>
-                                <span>Сделка #{dealId}</span>
+                                {!dealIds || dealIds.length === 0 ? (
+                                  <span>Сделка #Без сделки</span>
+                                ) : (
+                                  <div className="flex items-center gap-1 flex-wrap">
+                                    <span>Сделка:</span>
+                                    {dealIds.map((dealId, idx) => (
+                                      <span key={dealId} className="flex items-center gap-1">
+                                        <span>#{dealId}</span>
+                                        {idx < dealIds.length - 1 && <span>,</span>}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                                 <Badge variant="outline" className="text-xs">
                                   {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
                                 </Badge>
@@ -472,7 +684,7 @@ export default function DevTest() {
                           </td>
                           {CITIES.map((city) => {
                             const visit = visitsByCity[city];
-                            const isGroupCollapsed = isGrouped && !expandedGroups.has(dealId);
+                            const isGroupCollapsed = isGrouped && !expandedGroups.has(groupKey);
                             
                             // If group is collapsed and we shouldn't render this cell, return null
                             if (isGroupCollapsed && !shouldRenderCityCell[city]) {
@@ -661,12 +873,26 @@ export default function DevTest() {
 
           {/* Mobile Cards */}
           <div className="md:hidden space-y-3">
-            {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, dealId }) => (
+            {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, dealIds }) => {
+              const groupKey = `group-${groupIndex}`;
+              return (
               <div key={tourist.id}>
                 {isGrouped && isFirstInGroup && (
                   <div className="px-2 py-2 bg-primary/10 rounded-md border-l-4 border-primary mb-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                      <span>Сделка #{dealId}</span>
+                    <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
+                      {!dealIds || dealIds.length === 0 ? (
+                        <span>Сделка #Без сделки</span>
+                      ) : (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span>Сделка:</span>
+                          {dealIds.map((dealId, idx) => (
+                            <span key={dealId} className="flex items-center gap-1">
+                              <span>#{dealId}</span>
+                              {idx < dealIds.length - 1 && <span>,</span>}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -710,7 +936,8 @@ export default function DevTest() {
                   </CardContent>
                 </Card>
               </div>
-            ))}
+            );
+            })}
           </div>
         </TabsContent>
 

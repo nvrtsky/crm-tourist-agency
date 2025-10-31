@@ -34,8 +34,13 @@ The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a moder
   - When grouping tourists from different deals, all dealIds displayed in group header as clickable links
   - Ungrouped tourists shown individually, not auto-regrouped when dealId changes
   - Group expand/collapse controls with visual city cell merging when collapsed
+  - **Smart Field Merging**: When a group contains tourists from a single dealId, "Доплата" (surcharge) and "Ночей" (nights) fields display once in group header instead of individual cards, reducing redundancy
   - Implemented in both production Summary.tsx and dev DevTest.tsx pages
-- **Sharing & Export**: Copy link functionality and Excel export, including city-specific data export.
+- **Sharing & Export**: 
+  - Share dialog with choice between "Copy link" and "Download Excel" for full table export
+  - City-specific share buttons in each column header (Link icon) with dialog selection
+  - Excel export includes tourist data, itineraries, and Bitrix24 entity IDs
+  - Smart Process title in table header links directly to Bitrix24 Event entity
 - **DEV Mode** (`/dev`): Standalone testing page that works without Bitrix24 connection. Uses mock data with 6 test tourists, multiple deals, and full itineraries. Features all main functionality: summary table with grouping, dashboard statistics, tourists list, inline editing (local state only), and Excel export. Accessible via DEV navigation button. Perfect for rapid development and testing without requiring Bitrix24 portal access.
 - **Bitrix24 Integration**:
   - Embedded tab within "Event" Smart Process.

@@ -39,9 +39,9 @@
   },
   "sharing": {
     "share": "Share",
-    "shareCity": "Share {city}",
+    "shareCity": "Share {{city}}",
     "shareFullTable": "Share full table",
-    "shareCityTable": "Share {city} table",
+    "shareCityTable": "Share {{city}} table",
     "selectFormat": "Select format for data export",
     "copyLink": "Copy link",
     "exportExcel": "Export to Excel"

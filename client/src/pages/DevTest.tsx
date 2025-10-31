@@ -357,7 +357,12 @@ export default function DevTest() {
 
   // Copy link for city or full table
   const handleCopyLinkInDialog = async () => {
-    const success = await copyToClipboard(window.location.href);
+    const urlToCopy = window.location.href;
+    console.log('[Copy Link] URL to copy:', urlToCopy);
+    console.log('[Copy Link] Share dialog city:', shareDialogCity);
+    
+    const success = await copyToClipboard(urlToCopy);
+    console.log('[Copy Link] Copy result:', success);
     
     if (success) {
       toast({
@@ -1223,14 +1228,18 @@ export default function DevTest() {
 
       {/* Share Dialog */}
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md" data-testid="dialog-share">
           <DialogHeader>
-            <DialogTitle>{t("sharing.title")}</DialogTitle>
+            <DialogTitle>
+              {shareDialogCity 
+                ? t("sharing.shareCity", { city: getCityName(shareDialogCity) })
+                : t("sharing.shareFullTable")}
+            </DialogTitle>
             <DialogDescription>
-              {t("sharing.description")}
+              {t("sharing.selectFormat")}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3 py-4">
             <Button
               onClick={handleCopyLinkInDialog}
               className="w-full justify-start"
@@ -1244,10 +1253,10 @@ export default function DevTest() {
               onClick={handleExportInDialog}
               className="w-full justify-start"
               variant="outline"
-              data-testid="dialog-button-download-excel"
+              data-testid="dialog-button-export-excel"
             >
               <Download className="h-4 w-4 mr-2" />
-              {t("sharing.downloadExcel")}
+              {t("sharing.exportExcel")}
             </Button>
           </div>
         </DialogContent>

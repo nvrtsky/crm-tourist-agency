@@ -550,7 +550,12 @@ export default function Summary() {
 
   // Copy link for city or full table
   const handleCopyLinkInDialog = async () => {
-    const success = await copyToClipboard(window.location.href);
+    const urlToCopy = window.location.href;
+    console.log('[Copy Link] URL to copy:', urlToCopy);
+    console.log('[Copy Link] Share dialog city:', shareDialogCity);
+    
+    const success = await copyToClipboard(urlToCopy);
+    console.log('[Copy Link] Copy result:', success);
     
     if (success) {
       toast({

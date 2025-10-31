@@ -39,9 +39,9 @@
   },
   "sharing": {
     "share": "分享",
-    "shareCity": "分享 {city}",
+    "shareCity": "分享 {{city}}",
     "shareFullTable": "分享完整表格",
-    "shareCityTable": "分享 {city} 表格",
+    "shareCityTable": "分享 {{city}} 表格",
     "selectFormat": "选择数据导出格式",
     "copyLink": "复制链接",
     "exportExcel": "导出Excel"

@@ -39,9 +39,9 @@
   },
   "sharing": {
     "share": "Поделиться",
-    "shareCity": "Поделиться {city}",
+    "shareCity": "Поделиться {{city}}",
     "shareFullTable": "Поделиться полной таблицей",
-    "shareCityTable": "Поделиться таблицей {city}",
+    "shareCityTable": "Поделиться таблицей {{city}}",
     "selectFormat": "Выберите формат для экспорта данных",
     "copyLink": "Скопировать ссылку",
     "exportExcel": "Экспорт в Excel"

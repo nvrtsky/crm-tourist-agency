@@ -1441,7 +1441,7 @@ export default function Summary() {
                           {/* Dates */}
                           <div className="text-xs">
                             <span className="font-medium">{t("fields.arrival")}: </span>
-                            {visit ? (
+                            {visit && visit.arrivalDate ? (
                               <span>
                                 <span className="font-bold">{format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}</span>
                                 {visit.arrivalTime && <span className="text-muted-foreground"> {visit.arrivalTime}</span>}

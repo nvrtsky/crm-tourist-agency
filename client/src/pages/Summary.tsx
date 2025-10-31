@@ -19,6 +19,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Loader2, Plane, Train, List, Grid, Share2, Link as LinkIcon, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -41,6 +48,8 @@ export default function Summary() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [customGroupings, setCustomGroupings] = useState<Map<string, string[]>>(new Map());
   const [ungroupedTourists, setUngroupedTourists] = useState<Set<string>>(new Set());
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareDialogCity, setShareDialogCity] = useState<City | null>(null);
   const { toast } = useToast();
 
   // Load custom groupings from localStorage
@@ -284,7 +293,19 @@ export default function Summary() {
   };
 
   // Group tourists by dealId when isGrouped is true
-  const getProcessedTourists = () => {
+  const getProcessedTourists = (): Array<{
+    tourist: TouristWithVisits;
+    originalIndex: number;
+    isFirstInGroup: boolean;
+    groupIndex: number;
+    groupSize: number;
+    dealId: string | null;
+    dealIds: string[];
+    cityRowSpans: Record<City, number>;
+    shouldRenderCityCell: Record<City, boolean>;
+    shouldMergeSurchargeNights: boolean;
+    shouldRenderSurchargeNights: boolean;
+  }> => {
     if (!tourists || tourists.length === 0) return [];
 
     if (!isGrouped) {
@@ -298,6 +319,8 @@ export default function Summary() {
         dealIds: tourist.bitrixDealId ? [tourist.bitrixDealId] : [],
         cityRowSpans: {} as Record<City, number>,
         shouldRenderCityCell: {} as Record<City, boolean>,
+        shouldMergeSurchargeNights: false,
+        shouldRenderSurchargeNights: true,
       }));
     }
 
@@ -397,6 +420,10 @@ export default function Summary() {
         });
       });
 
+      // Check if group is from single deal (for surcharge/nights merging)
+      const isSingleDealGroup = group.dealIds.length === 1 && group.dealIds[0] !== '';
+      const shouldMergeSurchargeNights = isSingleDealGroup && group.tourists.length > 1;
+
       return group.tourists.map((tourist, indexInGroup) => ({
         tourist,
         originalIndex: currentIndex++,
@@ -410,6 +437,8 @@ export default function Summary() {
           acc[city] = shouldRenderCityCell[city][indexInGroup];
           return acc;
         }, {} as Record<City, boolean>),
+        shouldMergeSurchargeNights,
+        shouldRenderSurchargeNights: indexInGroup === 0,
       }));
     });
   };
@@ -432,13 +461,57 @@ export default function Summary() {
     }
   };
 
-  const handleExportCity = (city: City) => {
+  // Open share dialog for specific city
+  const handleShareCity = (city: City) => {
     if (!tourists || tourists.length === 0) {
       toast({
         title: "Нет данных",
         description: "Нечего экспортировать",
         variant: "destructive",
       });
+      return;
+    }
+    setShareDialogCity(city);
+    setShareDialogOpen(true);
+  };
+
+  // Open share dialog for full table
+  const handleShareFull = () => {
+    if (!tourists || tourists.length === 0) {
+      toast({
+        title: "Нет данных",
+        description: "Нечего экспортировать",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShareDialogCity(null);
+    setShareDialogOpen(true);
+  };
+
+  // Copy link for city or full table
+  const handleCopyLinkInDialog = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Ссылка скопирована",
+        description: shareDialogCity 
+          ? `Ссылка на таблицу для ${CITY_NAMES[shareDialogCity]} скопирована в буфер обмена` 
+          : "Ссылка на сводную таблицу скопирована в буфер обмена",
+      });
+      setShareDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось скопировать ссылку",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Export Excel for city
+  const handleExportCityExcel = (city: City) => {
+    if (!tourists || tourists.length === 0) {
       return;
     }
 
@@ -512,6 +585,17 @@ export default function Summary() {
       title: "Экспорт завершен",
       description: `Файл ${fileName} загружен`,
     });
+    setShareDialogOpen(false);
+  };
+
+  // Handler for dialog export button
+  const handleExportInDialog = () => {
+    if (shareDialogCity) {
+      handleExportCityExcel(shareDialogCity);
+    } else {
+      handleExportToExcel();
+      setShareDialogOpen(false);
+    }
   };
 
   const handleExportToExcel = () => {
@@ -614,7 +698,21 @@ export default function Summary() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-semibold truncate" data-testid="summary-title">
-            Сводная таблица туристов{eventData?.title ? `: ${eventData.title}` : ""}
+            Сводная таблица туристов
+            {eventData?.title && entityId && domain && (
+              <>
+                :{" "}
+                <a
+                  href={`https://${domain}/crm/type/176/details/${entityId}/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                  data-testid="link-event-title"
+                >
+                  {eventData.title}
+                </a>
+              </>
+            )}
           </h1>
           <p className="text-sm text-muted-foreground">
             Всего туристов: {touristCount}
@@ -660,24 +758,14 @@ export default function Summary() {
             <List className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Показать сделки</span>
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" data-testid="button-share">
-                <Share2 className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Поделиться</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleCopyLink} data-testid="menu-copy-link">
-                <LinkIcon className="h-4 w-4 mr-2" />
-                Копировать ссылку
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportToExcel} data-testid="menu-export-excel">
-                <Download className="h-4 w-4 mr-2" />
-                Экспорт в Excel
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            size="sm"
+            onClick={handleShareFull}
+            data-testid="button-share"
+          >
+            <Share2 className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Поделиться</span>
+          </Button>
         </div>
       </div>
 
@@ -706,17 +794,17 @@ export default function Summary() {
                     className="px-4 py-3 text-left text-sm font-medium border-b min-w-[220px]"
                     data-testid={`header-city-${city.toLowerCase()}`}
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
                       <span>{CITY_NAMES[city]}</span>
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => handleExportCity(city)}
-                        className="h-6 w-6 shrink-0"
-                        data-testid={`button-export-city-${city.toLowerCase()}`}
-                        title={`Экспорт ${CITY_NAMES[city]}`}
+                        onClick={() => handleShareCity(city)}
+                        className="h-5 w-5 shrink-0"
+                        data-testid={`button-share-city-${city.toLowerCase()}`}
+                        title={`Поделиться ${CITY_NAMES[city]}`}
                       >
-                        <Share2 className="h-3 w-3" />
+                        <LinkIcon className="h-3 w-3" />
                       </Button>
                     </div>
                   </th>
@@ -732,7 +820,7 @@ export default function Summary() {
                 </tr>
               ) : (
                 processedTourists.map((item) => {
-                  const { tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds } = item;
+                  const { tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds, shouldMergeSurchargeNights, shouldRenderSurchargeNights } = item;
                   const groupKey = `group-${groupIndex}`;
                   const visitsByCity = CITIES.reduce((acc, city) => {
                     acc[city] = tourist.visits.find(v => v.city === city);
@@ -872,26 +960,31 @@ export default function Summary() {
                               className="inline-flex"
                             />
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">Доплата:</span>{" "}
-                            <EditableCell
-                              value={tourist.surcharge}
-                              type="text"
-                              placeholder="Добавить доплату"
-                              onSave={(value) => updateField(tourist.id, "surcharge", value)}
-                              className="inline-flex"
-                            />
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">Ночей:</span>{" "}
-                            <EditableCell
-                              value={tourist.nights}
-                              type="text"
-                              placeholder="Добавить кол-во"
-                              onSave={(value) => updateField(tourist.id, "nights", value)}
-                              className="inline-flex"
-                            />
-                          </div>
+                          {/* Only render surcharge/nights for first tourist in group when merging, or always when not merging */}
+                          {(!shouldMergeSurchargeNights || shouldRenderSurchargeNights) && (
+                            <>
+                              <div className="text-xs text-muted-foreground">
+                                <span className="font-medium">Доплата:</span>{" "}
+                                <EditableCell
+                                  value={tourist.surcharge}
+                                  type="text"
+                                  placeholder="Добавить доплату"
+                                  onSave={(value) => updateField(tourist.id, "surcharge", value)}
+                                  className="inline-flex"
+                                />
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                <span className="font-medium">Ночей:</span>{" "}
+                                <EditableCell
+                                  value={tourist.nights}
+                                  type="text"
+                                  placeholder="Добавить кол-во"
+                                  onSave={(value) => updateField(tourist.id, "nights", value)}
+                                  className="inline-flex"
+                                />
+                              </div>
+                            </>
+                          )}
                         </div>
                       </td>
                       {CITIES.map((city) => {
@@ -1115,7 +1208,7 @@ export default function Summary() {
           </Card>
         ) : (
           processedTourists.map((item) => {
-            const { tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds } = item;
+            const { tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds, shouldMergeSurchargeNights, shouldRenderSurchargeNights } = item;
             const groupKey = `group-${groupIndex}`;
             const visitsByCity = CITIES.reduce((acc, city) => {
               acc[city] = tourist.visits.find(v => v.city === city);
@@ -1219,26 +1312,31 @@ export default function Summary() {
                             className="inline-flex text-sm"
                           />
                         </div>
-                        <div>
-                          <span className="font-medium">Доплата:</span>{" "}
-                          <EditableCell
-                            value={tourist.surcharge}
-                            type="text"
-                            placeholder="Добавить"
-                            onSave={(value) => updateField(tourist.id, "surcharge", value)}
-                            className="inline-flex text-sm"
-                          />
-                        </div>
-                        <div>
-                          <span className="font-medium">Ночей:</span>{" "}
-                          <EditableCell
-                            value={tourist.nights}
-                            type="text"
-                            placeholder="Добавить"
-                            onSave={(value) => updateField(tourist.id, "nights", value)}
-                            className="inline-flex text-sm"
-                          />
-                        </div>
+                        {/* Only render surcharge/nights for first tourist in group when merging, or always when not merging */}
+                        {(!shouldMergeSurchargeNights || shouldRenderSurchargeNights) && (
+                          <>
+                            <div>
+                              <span className="font-medium">Доплата:</span>{" "}
+                              <EditableCell
+                                value={tourist.surcharge}
+                                type="text"
+                                placeholder="Добавить"
+                                onSave={(value) => updateField(tourist.id, "surcharge", value)}
+                                className="inline-flex text-sm"
+                              />
+                            </div>
+                            <div>
+                              <span className="font-medium">Ночей:</span>{" "}
+                              <EditableCell
+                                value={tourist.nights}
+                                type="text"
+                                placeholder="Добавить"
+                                onSave={(value) => updateField(tourist.id, "nights", value)}
+                                className="inline-flex text-sm"
+                              />
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1248,17 +1346,17 @@ export default function Summary() {
                       const visit = visitsByCity[city];
                       return visit ? (
                         <div key={city} className="space-y-1.5 border-l-2 border-primary/20 pl-3">
-                          <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
                             <div className="text-xs font-medium text-primary">{CITY_NAMES[city]}</div>
                             <Button
                               size="icon"
                               variant="ghost"
-                              onClick={() => handleExportCity(city)}
+                              onClick={() => handleShareCity(city)}
                               className="h-5 w-5 shrink-0"
-                              data-testid={`button-export-city-mobile-${city.toLowerCase()}`}
-                              title={`Экспорт ${CITY_NAMES[city]}`}
+                              data-testid={`button-share-city-mobile-${city.toLowerCase()}`}
+                              title={`Поделиться ${CITY_NAMES[city]}`}
                             >
-                              <Share2 className="h-3 w-3" />
+                              <LinkIcon className="h-3 w-3" />
                             </Button>
                           </div>
                           <Badge variant="secondary" className="text-xs whitespace-nowrap w-fit">
@@ -1356,6 +1454,42 @@ export default function Summary() {
           </CardContent>
         </Card>
       )}
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="sm:max-w-md" data-testid="dialog-share">
+          <DialogHeader>
+            <DialogTitle>
+              {shareDialogCity 
+                ? `Поделиться: ${CITY_NAMES[shareDialogCity]}`
+                : "Поделиться: Полная таблица"}
+            </DialogTitle>
+            <DialogDescription>
+              Выберите формат для экспорта данных
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-4">
+            <Button
+              onClick={handleCopyLinkInDialog}
+              className="w-full justify-start"
+              variant="outline"
+              data-testid="dialog-button-copy-link"
+            >
+              <LinkIcon className="h-4 w-4 mr-2" />
+              Копировать ссылку
+            </Button>
+            <Button
+              onClick={handleExportInDialog}
+              className="w-full justify-start"
+              variant="outline"
+              data-testid="dialog-button-export-excel"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Скачать Excel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

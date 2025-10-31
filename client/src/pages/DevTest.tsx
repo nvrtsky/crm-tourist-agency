@@ -976,15 +976,15 @@ export default function DevTest() {
           </Card>
 
           {/* Mobile Cards */}
-          <div className="md:hidden space-y-3">
+          <div className="md:hidden space-y-2">
             {processedTourists.map(({ tourist, originalIndex, isFirstInGroup, groupIndex, groupSize, dealIds, shouldMergeSurchargeNights }) => {
               const groupKey = `group-${groupIndex}`;
               return (
               <div key={tourist.id}>
                 {isGrouped && isFirstInGroup && (
-                  <div className="px-3 py-2 bg-primary/10 rounded-md border-l-4 border-primary mb-3">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
+                  <div className="px-3 py-1.5 bg-primary/10 rounded-md border-l-4 border-primary mb-2">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2 text-xs font-medium text-primary flex-wrap leading-tight">
                         {!dealIds || dealIds.length === 0 ? (
                           <span>Сделка #Без сделки</span>
                         ) : (
@@ -1023,19 +1023,19 @@ export default function DevTest() {
                   </div>
                 )}
                 <Card className={isGrouped && groupIndex % 2 === 1 ? "bg-muted/30" : ""}>
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-start gap-3">
+                  <CardContent className="p-3 space-y-2">
+                    <div className="flex items-start gap-2">
                       <Checkbox
                         checked={selectedTourists.has(tourist.id)}
                         onCheckedChange={() => toggleTourist(tourist.id)}
-                        className="mt-1"
+                        className="mt-0.5"
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className="shrink-0">{originalIndex + 1}</Badge>
-                          <h3 className="font-semibold text-sm">{tourist.name}</h3>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <Badge variant="outline" className="shrink-0 text-xs">{originalIndex + 1}</Badge>
+                          <h3 className="font-semibold text-xs leading-tight">{tourist.name}</h3>
                         </div>
-                        <div className="space-y-0.5 text-sm text-muted-foreground">
+                        <div className="space-y-0.5 text-xs text-muted-foreground leading-tight">
                           <div>
                             <span className="font-medium">Тел:</span>{" "}
                             <EditableCell
@@ -1043,7 +1043,7 @@ export default function DevTest() {
                               type="phone"
                               placeholder="Добавить"
                               onSave={(value) => updateField(tourist.id, "phone", value)}
-                              className="inline-flex text-sm"
+                              className="inline-flex text-xs"
                             />
                           </div>
                           {/* Only show surcharge/nights in tourist card when NOT merged in group header */}
@@ -1055,7 +1055,7 @@ export default function DevTest() {
                                 type="text"
                                 placeholder="Добавить"
                                 onSave={(value) => updateField(tourist.id, "surcharge", value)}
-                                className="inline-flex text-sm"
+                                className="inline-flex text-xs"
                               />
                             </div>
                           )}

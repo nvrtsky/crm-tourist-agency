@@ -1230,7 +1230,7 @@ export default function Summary() {
       </Card>
 
       {/* Mobile: Card view */}
-      <div className="md:hidden space-y-3">
+      <div className="md:hidden space-y-2">
         {!tourists || tourists.length === 0 ? (
           <Card className="p-8">
             <p className="text-center text-muted-foreground" data-testid="empty-message-mobile">
@@ -1250,9 +1250,9 @@ export default function Summary() {
               <>
                 {/* Group header mobile */}
                 {isGrouped && isFirstInGroup && (
-                  <div key={`group-header-mobile-${groupKey}`} className="px-3 py-2 bg-primary/10 rounded-md border-l-4 border-primary">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-primary flex-wrap">
+                  <div key={`group-header-mobile-${groupKey}`} className="px-3 py-1.5 bg-primary/10 rounded-md border-l-4 border-primary">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2 text-xs font-medium text-primary flex-wrap leading-tight">
                         {!dealIds || dealIds.length === 0 ? (
                           <span>Сделка #Без сделки</span>
                         ) : (
@@ -1304,18 +1304,18 @@ export default function Summary() {
                 )}
                 
                 <Card key={tourist.id} data-testid={`tourist-card-mobile-${originalIndex}`} className={isGrouped && groupIndex % 2 === 1 ? "bg-muted/30" : ""}>
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start gap-3">
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-start gap-2">
                     <Checkbox
                       checked={selectedTourists.has(tourist.id)}
                       onCheckedChange={() => toggleTourist(tourist.id)}
                       data-testid={`checkbox-tourist-mobile-${originalIndex}`}
-                      className="mt-1"
+                      className="mt-0.5"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className="shrink-0">{originalIndex + 1}</Badge>
-                        <h3 className="font-semibold truncate" data-testid={`tourist-card-name-${originalIndex}`}>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <Badge variant="outline" className="shrink-0 text-xs">{originalIndex + 1}</Badge>
+                        <h3 className="font-semibold truncate text-xs leading-tight" data-testid={`tourist-card-name-${originalIndex}`}>
                           {getBitrixContactUrl(tourist.bitrixContactId) ? (
                             <a 
                               href={getBitrixContactUrl(tourist.bitrixContactId)!} 
@@ -1331,7 +1331,7 @@ export default function Summary() {
                           )}
                         </h3>
                       </div>
-                      <div className="space-y-0.5 text-sm text-muted-foreground">
+                      <div className="space-y-0.5 text-xs text-muted-foreground leading-tight">
                         <div>
                           <span className="font-medium">Тел:</span>{" "}
                           <EditableCell
@@ -1339,7 +1339,7 @@ export default function Summary() {
                             type="phone"
                             placeholder="Добавить"
                             onSave={(value) => updateField(tourist.id, "phone", value)}
-                            className="inline-flex text-sm"
+                            className="inline-flex text-xs"
                           />
                         </div>
                         <div>
@@ -1349,7 +1349,7 @@ export default function Summary() {
                             type="text"
                             placeholder="Добавить"
                             onSave={(value) => updateField(tourist.id, "passport", value)}
-                            className="inline-flex text-sm"
+                            className="inline-flex text-xs"
                           />
                         </div>
                         <div>
@@ -1359,7 +1359,7 @@ export default function Summary() {
                             type="date"
                             placeholder="Добавить"
                             onSave={(value) => updateField(tourist.id, "birthDate", value)}
-                            className="inline-flex text-sm"
+                            className="inline-flex text-xs"
                           />
                         </div>
                         {/* Only show surcharge/nights in tourist card when NOT merged in group header */}
@@ -1372,7 +1372,7 @@ export default function Summary() {
                                 type="text"
                                 placeholder="Добавить"
                                 onSave={(value) => updateField(tourist.id, "surcharge", value)}
-                                className="inline-flex text-sm"
+                                className="inline-flex text-xs"
                               />
                             </div>
                             <div>
@@ -1382,7 +1382,7 @@ export default function Summary() {
                                 type="text"
                                 placeholder="Добавить"
                                 onSave={(value) => updateField(tourist.id, "nights", value)}
-                                className="inline-flex text-sm"
+                                className="inline-flex text-xs"
                               />
                             </div>
                           </>
@@ -1391,13 +1391,13 @@ export default function Summary() {
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {CITIES.map((city) => {
                       const visit = visitsByCity[city];
                       return (
-                        <div key={city} className="space-y-1.5 border-l-2 border-primary/20 pl-3">
-                          <div className="flex items-center gap-1.5">
-                            <div className="text-xs font-medium text-primary">{CITY_NAMES[city]}</div>
+                        <div key={city} className="space-y-1 border-l-2 border-primary/20 pl-2">
+                          <div className="flex items-center gap-1">
+                            <div className="text-xs font-medium text-primary leading-tight">{CITY_NAMES[city]}</div>
                             <Button
                               size="icon"
                               variant="ghost"
@@ -1435,7 +1435,7 @@ export default function Summary() {
                           </div>
                           
                           {/* Hotel */}
-                          <div className="text-xs text-muted-foreground space-y-0.5 border-t pt-1">
+                          <div className="text-xs text-muted-foreground space-y-0.5 pt-0.5">
                             <div>
                               <span className="font-medium">Отель: </span>
                               {visit?.hotelName || "—"}
@@ -1446,9 +1446,9 @@ export default function Summary() {
                             </div>
                           </div>
                           
-                          {/* Transport */}
-                          <div className="text-xs border-t pt-1">
-                            <div className="font-medium mb-1">Транспорт:</div>
+                          {/* Transport - Compact */}
+                          <div className="text-xs pt-0.5">
+                            <div className="font-medium mb-0.5">Транспорт:</div>
                             {visit ? (
                               <>
                                 <div className="flex items-center gap-1">
@@ -1491,14 +1491,14 @@ export default function Summary() {
                                   )}
                                 </div>
                                 {(visit.flightNumber || visit.airport || visit.transfer) && (
-                                  <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
+                                  <div className="text-xs text-muted-foreground space-y-0.5 mt-0.5">
                                     {visit.flightNumber && <div>Рейс: {visit.flightNumber}</div>}
                                     {visit.airport && <div>Аэропорт: {visit.airport}</div>}
                                     {visit.transfer && <div>Трансфер: {visit.transfer}</div>}
                                   </div>
                                 )}
                                 {(visit.departureFlightNumber || visit.departureAirport || visit.departureTransfer) && (
-                                  <div className="text-xs text-muted-foreground space-y-0.5 border-t pt-1 mt-1">
+                                  <div className="text-xs text-muted-foreground space-y-0.5 pt-0.5 mt-0.5">
                                     {visit.departureFlightNumber && <div>Убытие рейс: {visit.departureFlightNumber}</div>}
                                     {visit.departureAirport && <div>Убытие аэропорт: {visit.departureAirport}</div>}
                                     {visit.departureTransfer && <div>Убытие трансфер: {visit.departureTransfer}</div>}

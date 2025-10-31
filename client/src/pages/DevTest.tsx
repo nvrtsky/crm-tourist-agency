@@ -11,13 +11,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { 
   getMockTouristsWithItineraries, 
   MOCK_EVENT_TITLE,
   MOCK_ENTITY_ID 
 } from "@/lib/mockData";
-import { Users, MapPin, Calendar, Hotel, AlertCircle, Share2, Link as LinkIcon, Download, ChevronDown, ChevronUp, Plane, Train } from "lucide-react";
+import { Users, MapPin, Calendar, Hotel, AlertCircle, Share2, Link as LinkIcon, Download, ChevronDown, ChevronUp, Plane, Train, Grid, List } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { CITIES } from "@shared/schema";
@@ -276,6 +282,20 @@ export default function DevTest() {
         variant: "destructive",
       });
     }
+  };
+
+  // Open share dialog for full table
+  const handleShareFull = () => {
+    if (!tourists || tourists.length === 0) {
+      toast({
+        title: "Нет данных",
+        description: "Нечего экспортировать",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShareDialogCity(null);
+    setShareDialogOpen(true);
   };
 
   // Export Excel from dialog
@@ -542,52 +562,58 @@ export default function DevTest() {
 
         {/* Summary Tab */}
         <TabsContent value="summary" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <CardTitle>{MOCK_EVENT_TITLE}</CardTitle>
-                <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center justify-between gap-2 px-1">
+            <h2 className="text-base sm:text-lg font-semibold truncate min-w-0">
+              Туристы ({tourists.length}): {MOCK_EVENT_TITLE}
+            </h2>
+            <div className="flex gap-2 shrink-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsGrouped(!isGrouped)}
-                    data-testid="button-toggle-grouping"
+                    data-testid="button-grouping-menu"
                   >
-                    {isGrouped ? "Скрыть группировку" : "Показать группировку"}
+                    <Grid className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Группировка</span>
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setIsGrouped(!isGrouped)}
+                    data-testid="menu-toggle-grouping"
+                  >
+                    {isGrouped ? <List className="h-4 w-4 mr-2" /> : <Grid className="h-4 w-4 mr-2" />}
+                    {isGrouped ? "Скрыть группировку" : "Показать группировку"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                     onClick={handleGroup}
                     disabled={selectedTourists.size < 2}
-                    data-testid="button-group"
+                    data-testid="menu-group"
                   >
+                    <Grid className="h-4 w-4 mr-2" />
                     Сгруппировать
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                     onClick={handleUngroup}
                     disabled={selectedTourists.size === 0}
-                    data-testid="button-ungroup"
+                    data-testid="menu-ungroup"
                   >
+                    <List className="h-4 w-4 mr-2" />
                     Разгруппировать
-                  </Button>
-                  {/* Hidden per user request */}
-                  {/* {selectedTourists.size > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={showSelectedDeals}
-                      data-testid="button-show-deals"
-                    >
-                      Показать сделки выбранных ({selectedTourists.size})
-                    </Button>
-                  )} */}
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                size="sm"
+                onClick={handleShareFull}
+                data-testid="button-share"
+              >
+                <Share2 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Поделиться</span>
+              </Button>
+            </div>
+          </div>
 
           {/* Desktop Table */}
           <Card className="hidden md:block overflow-x-auto">

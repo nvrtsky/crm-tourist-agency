@@ -698,70 +698,62 @@ export default function Summary() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-semibold truncate" data-testid="summary-title">
-            Сводная таблица туристов
-            {eventData?.title && entityId && domain && (
-              <>
-                :{" "}
-                <a
-                  href={`https://${domain}/crm/type/176/details/${entityId}/`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                  data-testid="link-event-title"
-                >
-                  {eventData.title}
-                </a>
-              </>
-            )}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Всего туристов: {touristCount}
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant={isGrouped ? "default" : "outline"}
-            size="sm"
-            onClick={() => setIsGrouped(!isGrouped)}
-            data-testid="button-toggle-group"
-          >
-            {isGrouped ? <List className="h-4 w-4 sm:mr-2" /> : <Grid className="h-4 w-4 sm:mr-2" />}
-            <span className="hidden sm:inline">{isGrouped ? "Скрыть группировку" : "Показать группировку"}</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleGroup}
-            disabled={selectedTourists.size < 2}
-            data-testid="button-group"
-          >
-            <Grid className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Сгруппировать</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleUngroup}
-            disabled={selectedTourists.size === 0}
-            data-testid="button-ungroup"
-          >
-            <List className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Разгруппировать</span>
-          </Button>
-          {/* Hidden per user request */}
-          {/* <Button
-            variant="outline"
-            size="sm"
-            onClick={handleShowSelectedDeals}
-            disabled={selectedTourists.size === 0}
-            data-testid="button-show-selected-deals"
-          >
-            <List className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Показать сделки</span>
-          </Button> */}
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-base sm:text-lg font-semibold truncate min-w-0" data-testid="summary-title">
+          Туристы ({touristCount})
+          {eventData?.title && entityId && domain && (
+            <>
+              :{" "}
+              <a
+                href={`https://${domain}/crm/type/176/details/${entityId}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+                data-testid="link-event-title"
+              >
+                {eventData.title}
+              </a>
+            </>
+          )}
+        </h1>
+        <div className="flex gap-2 shrink-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid="button-grouping-menu"
+              >
+                <Grid className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Группировка</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => setIsGrouped(!isGrouped)}
+                data-testid="menu-toggle-grouping"
+              >
+                {isGrouped ? <List className="h-4 w-4 mr-2" /> : <Grid className="h-4 w-4 mr-2" />}
+                {isGrouped ? "Скрыть группировку" : "Показать группировку"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleGroup}
+                disabled={selectedTourists.size < 2}
+                data-testid="menu-group"
+              >
+                <Grid className="h-4 w-4 mr-2" />
+                Сгруппировать
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleUngroup}
+                disabled={selectedTourists.size === 0}
+                data-testid="menu-ungroup"
+              >
+                <List className="h-4 w-4 mr-2" />
+                Разгруппировать
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             size="sm"
             onClick={handleShareFull}

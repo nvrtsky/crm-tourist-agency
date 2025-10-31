@@ -26,7 +26,7 @@ The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a moder
 - **Tourist Management**: Create, edit, delete tourists; synchronize with Bitrix24 contacts. Updates to tourist fields in the summary table are synchronized bidirectionally with Bitrix24 Contact and Deal entities.
 - **Itinerary Management**: Define city visits, dates, transport details, and hotel information, with validation.
 - **Dashboard**: Displays tourist statistics, city distribution, upcoming arrivals, and hotel usage.
-- **Summary Table**: Comprehensive overview of tourists, itineraries, and linked Bitrix24 entities. Features sticky headers, responsive design, grouping by Bitrix24 deals with hyperlinks to deal/contact details, and inline editing.
+- **Summary Table**: Comprehensive overview of tourists, itineraries, and linked Bitrix24 entities. Features sticky headers, responsive design, grouping by Bitrix24 deals with hyperlinks to deal/contact details, and inline editing. City columns always display field labels (Прибытие, Отъезд, Отель, Тип, Транспорт) with "—" shown for empty values.
 - **Custom Grouping System**: 
   - Manual group/ungroup functionality via checkboxes and dedicated buttons ("Сгруппировать"/"Разгруппировать")
   - Custom groupings persist in localStorage (survives page reload, independent of Bitrix24)
@@ -72,3 +72,8 @@ The frontend uses React with TypeScript, Shadcn UI, and Tailwind CSS for a moder
 - **xlsx**: Excel export.
 - **i18next & react-i18next**: Internationalization.
 - **i18next-browser-languagedetector**: Language detection.
+
+## Recent Changes (October 31, 2025)
+- **UI Cleanup**: Hidden "Показать сделки" buttons from Summary.tsx and DevTest.tsx (commented out for potential future restoration)
+- **Admin Menu**: Hidden "Административные функции" admin menu from App.tsx navigation (commented out)
+- **City Column Display**: Updated field rendering logic in both Summary.tsx and DevTest.tsx to always show field labels (Прибытие, Отъезд, Отель, Тип, Транспорт) in city columns. Empty values now display "—" placeholder instead of hiding the entire field structure. This improves UI consistency across desktop and mobile views.

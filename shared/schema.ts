@@ -15,10 +15,6 @@ export type TransportType = typeof TRANSPORT_TYPES[number];
 export const ROOM_TYPES = ["twin", "double"] as const;
 export type RoomType = typeof ROOM_TYPES[number];
 
-// Currency types
-export const CURRENCIES = ["RUB", "CNY"] as const;
-export type Currency = typeof CURRENCIES[number];
-
 // Tourist table - now includes Bitrix24 integration fields
 export const tourists = pgTable("tourists", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -31,9 +27,8 @@ export const tourists = pgTable("tourists", {
   phone: text("phone"),
   passport: text("passport"), // Passport number
   birthDate: text("birth_date"), // ISO date string
-  amount: text("amount"), // Amount as string to preserve precision
-  currency: text("currency"), // 'RUB' or 'CNY'
-  nights: text("nights"), // Number of nights as string
+  surcharge: text("surcharge"), // Surcharge/additional payment from Deal UF_CRM_1715027519285
+  nights: text("nights"), // Number of nights as string from Deal UF_CRM_1695942299984
 });
 
 // City visit table - stores each city visit for a tourist

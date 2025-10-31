@@ -32,7 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Plane, Train, Plus, X } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { CITIES, CURRENCIES, ROOM_TYPES, type City, type TransportType, type Currency, type RoomType } from "@shared/schema";
+import { CITIES, ROOM_TYPES, type City, type TransportType, type RoomType } from "@shared/schema";
 
 const cityNames: Record<City, { en: string; cn: string }> = {
   Beijing: { en: "Beijing", cn: "北京" },
@@ -51,8 +51,7 @@ const formSchema = z.object({
     .optional()
     .or(z.literal("")),
   birthDate: z.string().optional(),
-  amount: z.string().optional(),
-  currency: z.string().optional(),
+  surcharge: z.string().optional(),
   nights: z.string().optional(),
 });
 
@@ -82,8 +81,7 @@ interface TouristFormProps {
     phone?: string;
     passport?: string;
     birthDate?: string;
-    amount?: string;
-    currency?: string;
+    surcharge?: string;
     nights?: string;
     visits: Array<{
       city: City;
@@ -149,8 +147,7 @@ export default function TouristForm({ initialTourist, onSubmit, onCancel }: Tour
       phone: initialTourist?.phone || "",
       passport: initialTourist?.passport || "",
       birthDate: initialTourist?.birthDate || "",
-      amount: initialTourist?.amount || "",
-      currency: initialTourist?.currency || "RUB",
+      surcharge: initialTourist?.surcharge || "",
       nights: initialTourist?.nights || "",
     },
   });
@@ -228,8 +225,7 @@ export default function TouristForm({ initialTourist, onSubmit, onCancel }: Tour
       phone: values.phone || undefined,
       passport: values.passport || undefined,
       birthDate: values.birthDate || undefined,
-      amount: values.amount || undefined,
-      currency: values.currency || undefined,
+      surcharge: values.surcharge || undefined,
       nights: values.nights || undefined,
       visits,
     });
@@ -335,50 +331,24 @@ export default function TouristForm({ initialTourist, onSubmit, onCancel }: Tour
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Сумма</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="50000"
-                        data-testid="input-tourist-amount"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="currency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Валюта</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-tourist-currency">
-                          <SelectValue placeholder="Выберите валюту" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {CURRENCIES.map((currency) => (
-                          <SelectItem key={currency} value={currency}>
-                            {currency === "RUB" ? "Рубль (₽)" : "Юань (¥)"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="surcharge"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Доплата</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="5000"
+                      data-testid="input-tourist-surcharge"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="nights"

@@ -228,7 +228,7 @@ export default function Summary() {
         tourist.phone || "",
         tourist.passport ? `Загранпаспорт: ${tourist.passport}` : "",
         tourist.birthDate ? `ДР: ${format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}` : "",
-        tourist.amount ? `Сумма: ${tourist.amount} ${tourist.currency === "CNY" ? "¥" : "₽"}` : "",
+        tourist.surcharge ? `Доплата: ${tourist.surcharge}` : "",
         tourist.nights ? `Ночей: ${tourist.nights}` : "",
       ].filter(Boolean).join("\n");
 
@@ -313,7 +313,7 @@ export default function Summary() {
         tourist.phone || "",
         tourist.passport ? `Загранпаспорт: ${tourist.passport}` : "",
         tourist.birthDate ? `ДР: ${format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}` : "",
-        tourist.amount ? `Сумма: ${tourist.amount} ${tourist.currency === "CNY" ? "¥" : "₽"}` : "",
+        tourist.surcharge ? `Доплата: ${tourist.surcharge}` : "",
         tourist.nights ? `Ночей: ${tourist.nights}` : "",
       ].filter(Boolean).join("\n");
 
@@ -533,9 +533,9 @@ export default function Summary() {
                               ДР: {format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}
                             </div>
                           )}
-                          {tourist.amount && (
+                          {tourist.surcharge && (
                             <div className="text-xs text-muted-foreground">
-                              Сумма: {tourist.amount} {tourist.currency === "CNY" ? "¥" : "₽"}
+                              Доплата: {tourist.surcharge}
                             </div>
                           )}
                           {tourist.nights && (
@@ -735,8 +735,8 @@ export default function Summary() {
                         {tourist.birthDate && (
                           <div>ДР: {format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}</div>
                         )}
-                        {tourist.amount && (
-                          <div>Сумма: {tourist.amount} {tourist.currency === "CNY" ? "¥" : "₽"}</div>
+                        {tourist.surcharge && (
+                          <div>Доплата: {tourist.surcharge}</div>
                         )}
                         {tourist.nights && <div>Ночей: {tourist.nights}</div>}
                       </div>

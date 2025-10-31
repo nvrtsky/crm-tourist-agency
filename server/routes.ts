@@ -8,21 +8,25 @@ import { insertTouristSchema, insertCityVisitSchema } from "@shared/schema";
 export async function registerRoutes(app: Express): Promise<Server> {
   const bitrix24 = getBitrix24Service();
 
-  // Get event title
-  app.get("/api/event/:entityId/title", async (req, res) => {
+  // Get event data (title and deals)
+  app.get("/api/event/:entityId", async (req, res) => {
     try {
       const { entityId } = req.params;
       const entityTypeId = req.query.entityTypeId as string || "176"; // Default to Event entity type
       
       if (!bitrix24) {
-        return res.json({ title: null });
+        return res.json({ title: null, deals: [] });
       }
 
-      const title = await bitrix24.getEventTitle(entityId, entityTypeId);
-      res.json({ title });
+      const [title, deals] = await Promise.all([
+        bitrix24.getEventTitle(entityId, entityTypeId),
+        bitrix24.getEventDeals(entityId, entityTypeId),
+      ]);
+      
+      res.json({ title, deals });
     } catch (error) {
-      console.error("Error fetching event title:", error);
-      res.status(500).json({ error: "Failed to fetch event title" });
+      console.error("Error fetching event data:", error);
+      res.status(500).json({ error: "Failed to fetch event data" });
     }
   });
 

@@ -180,6 +180,58 @@ export class Bitrix24Service {
     }
   }
 
+  // Get event deals with titles
+  async getEventDeals(entityId: string, entityTypeId: string): Promise<Array<{ id: string; title: string }>> {
+    try {
+      console.log(`\n📥 Loading deals for event ${entityId}...`);
+      
+      // 1. Get event (smart process element)
+      const event = await this.getEntity(entityId, entityTypeId);
+      if (!event) {
+        console.log("❌ Event not found");
+        return [];
+      }
+
+      console.log("✅ Event loaded:", event.title || event.TITLE || `ID ${event.id}`);
+
+      // 2. Extract deal IDs from ufCrm9_1711887457 (camelCase in REST API)
+      const dealIds = event.ufCrm9_1711887457;
+      if (!dealIds || !Array.isArray(dealIds) || dealIds.length === 0) {
+        console.log("⚠️ No deals found in ufCrm9_1711887457");
+        return [];
+      }
+
+      console.log(`✅ Found ${dealIds.length} deals:`, dealIds);
+
+      // 3. Get each deal and collect id + title
+      const deals: Array<{ id: string; title: string }> = [];
+      for (const dealId of dealIds) {
+        try {
+          const deal = await this.getDeal(String(dealId));
+          if (!deal) {
+            console.log(`❌ Deal ${dealId} not found`);
+            continue;
+          }
+
+          deals.push({
+            id: String(dealId),
+            title: deal.TITLE || deal.title || `Deal ${dealId}`,
+          });
+
+          console.log(`✅ Loaded deal ${dealId}: ${deal.TITLE || deal.title}`);
+        } catch (dealError) {
+          console.error(`Error loading deal ${dealId}:`, dealError);
+        }
+      }
+
+      console.log(`Loaded ${deals.length} deals with titles`);
+      return deals;
+    } catch (error) {
+      console.error("Error loading deals from event:", error);
+      return [];
+    }
+  }
+
   // Load tourists from Bitrix24 event structure:
   // Event -> UF_CRM_9_1711887457 (deals) -> UF_CRM_1702460537 (contacts) -> UF fields (name, passport)
   async loadTouristsFromEvent(entityId: string, entityTypeId: string): Promise<any[]> {

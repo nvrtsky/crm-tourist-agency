@@ -33,16 +33,10 @@ import { useState, useEffect } from "react";
 import { utils, writeFile } from "xlsx";
 import { useToast } from "@/hooks/use-toast";
 import { copyToClipboard } from "@/lib/clipboard";
-
-const CITY_NAMES: Record<City, string> = {
-  Beijing: "Пекин",
-  Luoyang: "Лоян",
-  Xian: "Сиань",
-  Zhangjiajie: "Чжанцзяцзе",
-  Shanghai: "Шанхай",
-};
+import { useTranslation } from "react-i18next";
 
 export default function Summary() {
+  const { t } = useTranslation();
   const { entityId, domain } = useBitrix24();
   const [isGrouped, setIsGrouped] = useState(true);
   const [selectedTourists, setSelectedTourists] = useState<Set<string>>(new Set());
@@ -52,6 +46,8 @@ export default function Summary() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareDialogCity, setShareDialogCity] = useState<City | null>(null);
   const { toast } = useToast();
+  
+  const getCityName = (city: City) => t(`cities.${city}`);
 
   // Load custom groupings from localStorage
   useEffect(() => {
@@ -95,10 +91,16 @@ export default function Summary() {
     refetchOnMount: true,
   });
 
-  const { data: eventData } = useQuery<{ title: string | null }>({
-    queryKey: ["/api/event", entityId, "title"],
+  const { data: eventData } = useQuery<{ title: string | null; deals: Array<{ id: string; title: string }> }>({
+    queryKey: ["/api/event", entityId],
     enabled: !!entityId,
   });
+
+  // Helper function to get deal title by ID
+  const getDealTitle = (dealId: string): string => {
+    const deal = eventData?.deals?.find(d => d.id === dealId);
+    return deal?.title || `#${dealId}`;
+  };
 
   const updateTouristMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<TouristWithVisits> }) => {
@@ -107,14 +109,14 @@ export default function Summary() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
       toast({
-        title: "Турист обновлен",
-        description: "Изменения сохранены успешно",
+        title: t("toasts.touristUpdated"),
+        description: t("toasts.changesSaved"),
       });
     },
     onError: (error) => {
       toast({
-        title: "Ошибка",
-        description: `Не удалось обновить туриста: ${error.message}`,
+        title: t("toasts.error"),
+        description: t("toasts.failedToUpdate", { message: error.message }),
         variant: "destructive",
       });
     },
@@ -134,14 +136,14 @@ export default function Summary() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tourists", entityId] });
       toast({
-        title: "Обновлено",
-        description: "Изменения сохранены",
+        title: t("toasts.updated"),
+        description: t("toasts.changesSavedShort"),
       });
     },
     onError: (error) => {
       toast({
-        title: "Ошибка",
-        description: `Не удалось обновить визит: ${error.message}`,
+        title: t("toasts.error"),
+        description: t("toasts.failedToUpdateVisit", { message: error.message }),
         variant: "destructive",
       });
     },
@@ -177,8 +179,8 @@ export default function Summary() {
   const handleGroup = () => {
     if (selectedTourists.size < 2) {
       toast({
-        title: "Выберите туристов",
-        description: "Для группировки выберите минимум 2 туристов",
+        title: t("toasts.selectTourists"),
+        description: t("toasts.selectMinTwoForGrouping"),
         variant: "destructive",
       });
       return;
@@ -212,16 +214,16 @@ export default function Summary() {
     setSelectedTourists(new Set());
 
     toast({
-      title: "Группа создана",
-      description: `Сгруппировано ${touristIds.length} туристов`,
+      title: t("toasts.groupCreated"),
+      description: t("toasts.touristsGrouped", { count: touristIds.length }),
     });
   };
 
   const handleUngroup = () => {
     if (selectedTourists.size === 0) {
       toast({
-        title: "Выберите туристов",
-        description: "Отметьте туристов для разгруппировки",
+        title: t("toasts.selectTourists"),
+        description: t("toasts.selectForUngroup"),
         variant: "destructive",
       });
       return;
@@ -250,16 +252,16 @@ export default function Summary() {
     setSelectedTourists(new Set());
 
     toast({
-      title: "Туристы разгруппированы",
-      description: `Разгруппировано ${touristIds.length} туристов`,
+      title: t("toasts.touristsUngrouped"),
+      description: t("toasts.touristsUngroupedCount", { count: touristIds.length }),
     });
   };
 
   const handleShowSelectedDeals = () => {
     if (selectedTourists.size === 0) {
       toast({
-        title: "Выберите туристов",
-        description: "Отметьте туристов для просмотра их сделок",
+        title: t("toasts.selectTourists"),
+        description: t("toasts.selectForDeals"),
         variant: "destructive",
       });
       return;
@@ -269,13 +271,13 @@ export default function Summary() {
     
     const dealInfo = selectedTouristsList
       .map(t => {
-        const dealId = t.bitrixDealId || 'Без сделки';
-        return `${t.name}: Сделка #${dealId}`;
+        const dealId = t.bitrixDealId || t("summary.noDeal");
+        return `${t.name}: ${t("summary.deal")} #${dealId}`;
       })
       .join('\n');
 
     toast({
-      title: `Сделки выбранных туристов (${selectedTourists.size})`,
+      title: t("toasts.selectedTouristsDeals", { count: selectedTourists.size }),
       description: dealInfo,
       duration: 10000,
     });
@@ -421,9 +423,10 @@ export default function Summary() {
         });
       });
 
-      // Check if group is from single deal (for surcharge/nights merging)
+      // Check if group is from single deal or custom group with one tourist (for surcharge/nights merging)
       const isSingleDealGroup = group.dealIds.length === 1 && group.dealIds[0] !== '';
-      const shouldMergeSurchargeNights = isSingleDealGroup && group.tourists.length > 1;
+      const isCustomGroup = group.groupId.startsWith('custom-');
+      const shouldMergeSurchargeNights = (isSingleDealGroup && group.tourists.length > 1) || (isCustomGroup && group.tourists.length === 1);
 
       return group.tourists.map((tourist, indexInGroup) => ({
         tourist,
@@ -451,13 +454,13 @@ export default function Summary() {
     
     if (success) {
       toast({
-        title: "Ссылка скопирована",
-        description: "Ссылка на сводную таблицу скопирована в буфер обмена",
+        title: t("toasts.linkCopied"),
+        description: t("toasts.linkCopiedToClipboard"),
       });
     } else {
       toast({
-        title: "Ошибка",
-        description: "Не удалось скопировать ссылку",
+        title: t("toasts.error"),
+        description: t("toasts.failedToCopyLink"),
         variant: "destructive",
       });
     }
@@ -467,8 +470,8 @@ export default function Summary() {
   const handleShareCity = (city: City) => {
     if (!tourists || tourists.length === 0) {
       toast({
-        title: "Нет данных",
-        description: "Нечего экспортировать",
+        title: t("toasts.noDataToExport"),
+        description: t("toasts.nothingToExport"),
         variant: "destructive",
       });
       return;
@@ -481,8 +484,8 @@ export default function Summary() {
   const handleShareFull = () => {
     if (!tourists || tourists.length === 0) {
       toast({
-        title: "Нет данных",
-        description: "Нечего экспортировать",
+        title: t("toasts.noDataToExport"),
+        description: t("toasts.nothingToExport"),
         variant: "destructive",
       });
       return;
@@ -497,16 +500,16 @@ export default function Summary() {
     
     if (success) {
       toast({
-        title: "Ссылка скопирована",
+        title: t("toasts.linkCopied"),
         description: shareDialogCity 
-          ? `Ссылка на таблицу для ${CITY_NAMES[shareDialogCity]} скопирована в буфер обмена` 
-          : "Ссылка на сводную таблицу скопирована в буфер обмена",
+          ? t("toasts.cityLinkCopied", { city: getCityName(shareDialogCity) })
+          : t("toasts.linkCopiedToClipboard"),
       });
       setShareDialogOpen(false);
     } else {
       toast({
-        title: "Ошибка",
-        description: "Не удалось скопировать ссылку",
+        title: t("toasts.error"),
+        description: t("toasts.failedToCopyLink"),
         variant: "destructive",
       });
     }
@@ -534,27 +537,27 @@ export default function Summary() {
           ? `${arrivalDate}${arrivalTime} - ${departureDate}${departureTime}` 
           : `${arrivalDate}${arrivalTime}`;
         
-        const hotel = `Отель: ${visit.hotelName}`;
-        const roomType = visit.roomType ? `Тип: ${visit.roomType === "twin" ? "Twin" : "Double"}` : "";
+        const hotel = `${t("fields.hotel")}: ${visit.hotelName}`;
+        const roomType = visit.roomType ? `${t("fields.type")}: ${visit.roomType === "twin" ? t("roomTypes.twin") : t("roomTypes.double")}` : "";
         
         const arrivalParts = [
-          visit.transportType === "plane" ? "Самолет" : "Поезд",
-          visit.flightNumber ? `Рейс: ${visit.flightNumber}` : "",
-          visit.airport ? `Аэропорт: ${visit.airport}` : "",
-          visit.transfer ? `Трансфер: ${visit.transfer}` : "",
+          visit.transportType === "plane" ? t("transport.plane") : t("transport.train"),
+          visit.flightNumber ? `${t("fields.flight")}: ${visit.flightNumber}` : "",
+          visit.airport ? `${t("fields.airport")}: ${visit.airport}` : "",
+          visit.transfer ? `${t("fields.transfer")}: ${visit.transfer}` : "",
         ].filter(Boolean);
         
         const departureParts = [];
         if (visit.departureTransportType) {
-          departureParts.push(visit.departureTransportType === "plane" ? "Самолет" : "Поезд");
-          if (visit.departureFlightNumber) departureParts.push(`Рейс: ${visit.departureFlightNumber}`);
-          if (visit.departureAirport) departureParts.push(`Аэропорт: ${visit.departureAirport}`);
-          if (visit.departureTransfer) departureParts.push(`Трансфер: ${visit.departureTransfer}`);
+          departureParts.push(visit.departureTransportType === "plane" ? t("transport.plane") : t("transport.train"));
+          if (visit.departureFlightNumber) departureParts.push(`${t("fields.flight")}: ${visit.departureFlightNumber}`);
+          if (visit.departureAirport) departureParts.push(`${t("fields.airport")}: ${visit.departureAirport}`);
+          if (visit.departureTransfer) departureParts.push(`${t("fields.transfer")}: ${visit.departureTransfer}`);
         }
         
         const transport = departureParts.length > 0
-          ? `Прибытие: ${arrivalParts.join(", ")}\nУбытие: ${departureParts.join(", ")}`
-          : `Прибытие: ${arrivalParts.join(", ")}`;
+          ? `${t("fields.arrival")}: ${arrivalParts.join(", ")}\n${t("fields.departureShort")}: ${departureParts.join(", ")}`
+          : `${t("fields.arrival")}: ${arrivalParts.join(", ")}`;
         
         cityData = [dateRange, hotel, roomType, transport]
           .filter(Boolean)
@@ -564,29 +567,29 @@ export default function Summary() {
       const touristInfo = [
         tourist.name,
         tourist.phone || "",
-        tourist.passport ? `Загранпаспорт: ${tourist.passport}` : "",
-        tourist.birthDate ? `ДР: ${format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}` : "",
-        tourist.surcharge ? `Доплата: ${tourist.surcharge}` : "",
-        tourist.nights ? `Ночей: ${tourist.nights}` : "",
+        tourist.passport ? `${t("fields.passport")}: ${tourist.passport}` : "",
+        tourist.birthDate ? `${t("fields.birthDate")}: ${format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}` : "",
+        tourist.surcharge ? `${t("fields.surcharge")}: ${tourist.surcharge}` : "",
+        tourist.nights ? `${t("fields.nights")}: ${tourist.nights}` : "",
       ].filter(Boolean).join("\n");
 
       return {
         "№": index + 1,
-        "Турист": touristInfo,
-        [CITY_NAMES[city]]: cityData,
+        [t("fields.tourist")]: touristInfo,
+        [getCityName(city)]: cityData,
       };
     });
 
     const worksheet = utils.json_to_sheet(data);
     const workbook = utils.book_new();
-    utils.book_append_sheet(workbook, worksheet, CITY_NAMES[city]);
+    utils.book_append_sheet(workbook, worksheet, getCityName(city));
 
     const fileName = `tourists_${city.toLowerCase()}_${format(new Date(), "dd-MM-yyyy")}.xlsx`;
     writeFile(workbook, fileName);
 
     toast({
-      title: "Экспорт завершен",
-      description: `Файл ${fileName} загружен`,
+      title: t("toasts.exportCompleted"),
+      description: t("toasts.fileDownloaded", { fileName }),
     });
     setShareDialogOpen(false);
   };
@@ -604,8 +607,8 @@ export default function Summary() {
   const handleExportToExcel = () => {
     if (!tourists || tourists.length === 0) {
       toast({
-        title: "Нет данных",
-        description: "Нечего экспортировать",
+        title: t("toasts.noDataToExport"),
+        description: t("toasts.nothingToExport"),
         variant: "destructive",
       });
       return;
@@ -626,33 +629,33 @@ export default function Summary() {
             ? `${arrivalDate}${arrivalTime} - ${departureDate}${departureTime}` 
             : `${arrivalDate}${arrivalTime}`;
           
-          const hotel = `Отель: ${visit.hotelName}`;
-          const roomType = visit.roomType ? `Тип: ${visit.roomType === "twin" ? "Twin" : "Double"}` : "";
+          const hotel = `${t("fields.hotel")}: ${visit.hotelName}`;
+          const roomType = visit.roomType ? `${t("fields.type")}: ${visit.roomType === "twin" ? t("roomTypes.twin") : t("roomTypes.double")}` : "";
           
           const arrivalParts = [
-            visit.transportType === "plane" ? "Самолет" : "Поезд",
-            visit.flightNumber ? `Рейс: ${visit.flightNumber}` : "",
-            visit.airport ? `Аэропорт: ${visit.airport}` : "",
-            visit.transfer ? `Трансфер: ${visit.transfer}` : "",
+            visit.transportType === "plane" ? t("transport.plane") : t("transport.train"),
+            visit.flightNumber ? `${t("fields.flight")}: ${visit.flightNumber}` : "",
+            visit.airport ? `${t("fields.airport")}: ${visit.airport}` : "",
+            visit.transfer ? `${t("fields.transfer")}: ${visit.transfer}` : "",
           ].filter(Boolean);
           
           const departureParts = [];
           if (visit.departureTransportType) {
-            departureParts.push(visit.departureTransportType === "plane" ? "Самолет" : "Поезд");
-            if (visit.departureFlightNumber) departureParts.push(`Рейс: ${visit.departureFlightNumber}`);
-            if (visit.departureAirport) departureParts.push(`Аэропорт: ${visit.departureAirport}`);
-            if (visit.departureTransfer) departureParts.push(`Трансфер: ${visit.departureTransfer}`);
+            departureParts.push(visit.departureTransportType === "plane" ? t("transport.plane") : t("transport.train"));
+            if (visit.departureFlightNumber) departureParts.push(`${t("fields.flight")}: ${visit.departureFlightNumber}`);
+            if (visit.departureAirport) departureParts.push(`${t("fields.airport")}: ${visit.departureAirport}`);
+            if (visit.departureTransfer) departureParts.push(`${t("fields.transfer")}: ${visit.departureTransfer}`);
           }
           
           const transport = departureParts.length > 0
-            ? `Прибытие: ${arrivalParts.join(", ")}\nУбытие: ${departureParts.join(", ")}`
-            : `Прибытие: ${arrivalParts.join(", ")}`;
+            ? `${t("fields.arrival")}: ${arrivalParts.join(", ")}\n${t("fields.departureShort")}: ${departureParts.join(", ")}`
+            : `${t("fields.arrival")}: ${arrivalParts.join(", ")}`;
           
-          acc[CITY_NAMES[city]] = [dateRange, hotel, roomType, transport]
+          acc[getCityName(city)] = [dateRange, hotel, roomType, transport]
             .filter(Boolean)
             .join("\n");
         } else {
-          acc[CITY_NAMES[city]] = "—";
+          acc[getCityName(city)] = "—";
         }
         return acc;
       }, {} as Record<string, string>);
@@ -660,29 +663,29 @@ export default function Summary() {
       const touristInfo = [
         tourist.name,
         tourist.phone || "",
-        tourist.passport ? `Загранпаспорт: ${tourist.passport}` : "",
-        tourist.birthDate ? `ДР: ${format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}` : "",
-        tourist.surcharge ? `Доплата: ${tourist.surcharge}` : "",
-        tourist.nights ? `Ночей: ${tourist.nights}` : "",
+        tourist.passport ? `${t("fields.passport")}: ${tourist.passport}` : "",
+        tourist.birthDate ? `${t("fields.birthDate")}: ${format(new Date(tourist.birthDate), "dd.MM.yyyy", { locale: ru })}` : "",
+        tourist.surcharge ? `${t("fields.surcharge")}: ${tourist.surcharge}` : "",
+        tourist.nights ? `${t("fields.nights")}: ${tourist.nights}` : "",
       ].filter(Boolean).join("\n");
 
       return {
         "№": index + 1,
-        "Турист": touristInfo,
+        [t("fields.tourist")]: touristInfo,
         ...visitsByCity,
       };
     });
 
     const worksheet = utils.json_to_sheet(data);
     const workbook = utils.book_new();
-    utils.book_append_sheet(workbook, worksheet, "Туристы");
+    utils.book_append_sheet(workbook, worksheet, t("summary.tourists"));
 
     const fileName = `tourists_summary_${format(new Date(), "dd-MM-yyyy")}.xlsx`;
     writeFile(workbook, fileName);
 
     toast({
-      title: "Экспорт завершен",
-      description: `Файл ${fileName} загружен`,
+      title: t("toasts.exportCompleted"),
+      description: t("toasts.fileDownloaded", { fileName }),
     });
   };
 
@@ -700,7 +703,9 @@ export default function Summary() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-base sm:text-lg font-semibold truncate min-w-0" data-testid="summary-title">
-          Туристы ({touristCount})
+          {eventData?.title 
+            ? t("summary.title", { count: touristCount, eventTitle: eventData.title })
+            : t("summary.titleShort", { count: touristCount })}
           {eventData?.title && entityId && domain && (
             <>
               :{" "}
@@ -725,7 +730,7 @@ export default function Summary() {
                 data-testid="button-grouping-menu"
               >
                 <Grid className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Группировка</span>
+                <span className="hidden sm:inline">{t("grouping.grouping")}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -734,7 +739,7 @@ export default function Summary() {
                 data-testid="menu-toggle-grouping"
               >
                 {isGrouped ? <List className="h-4 w-4 mr-2" /> : <Grid className="h-4 w-4 mr-2" />}
-                {isGrouped ? "Скрыть группировку" : "Показать группировку"}
+                {isGrouped ? t("grouping.hideGrouping") : t("grouping.showGrouping")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleGroup}
@@ -742,7 +747,7 @@ export default function Summary() {
                 data-testid="menu-group"
               >
                 <Grid className="h-4 w-4 mr-2" />
-                Сгруппировать
+                {t("grouping.group")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleUngroup}
@@ -750,7 +755,7 @@ export default function Summary() {
                 data-testid="menu-ungroup"
               >
                 <List className="h-4 w-4 mr-2" />
-                Разгруппировать
+                {t("grouping.ungroup")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -760,7 +765,7 @@ export default function Summary() {
             data-testid="button-share"
           >
             <Share2 className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Поделиться</span>
+            <span className="hidden sm:inline">{t("sharing.share")}</span>
           </Button>
         </div>
       </div>
@@ -779,10 +784,10 @@ export default function Summary() {
                   />
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium border-b" data-testid="header-number">
-                  #
+                  {t("summary.headerNumber")}
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium border-b min-w-[280px]" data-testid="header-tourist">
-                  Турист
+                  {t("summary.headerTourist")}
                 </th>
                 {CITIES.map((city) => (
                   <th
@@ -791,14 +796,14 @@ export default function Summary() {
                     data-testid={`header-city-${city.toLowerCase()}`}
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>{CITY_NAMES[city]}</span>
+                      <span>{getCityName(city)}</span>
                       <Button
                         size="icon"
                         variant="ghost"
                         onClick={() => handleShareCity(city)}
                         className="h-5 w-5 shrink-0"
                         data-testid={`button-share-city-${city.toLowerCase()}`}
-                        title={`Поделиться ${CITY_NAMES[city]}`}
+                        title={t("sharing.shareCity", { city: getCityName(city) })}
                       >
                         <LinkIcon className="h-3 w-3" />
                       </Button>
@@ -811,7 +816,7 @@ export default function Summary() {
               {!tourists || tourists.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground" data-testid="empty-message">
-                    Туристы не добавлены
+                    {t("summary.noTouristsAdded")}
                   </td>
                 </tr>
               ) : (
@@ -855,10 +860,10 @@ export default function Summary() {
                                 )}
                               </Button>
                               {!dealIds || dealIds.length === 0 ? (
-                                <span>Сделка #Без сделки</span>
+                                <span>{t("summary.deal")} #{t("summary.noDeal")}</span>
                               ) : (
                                 <div className="flex items-center gap-1 flex-wrap">
-                                  <span>Сделка:</span>
+                                  <span>{t("summary.deal")}:</span>
                                   {dealIds.map((dealId, idx) => (
                                     <span key={dealId} className="flex items-center gap-1">
                                       {getBitrixDealUrl(dealId) ? (
@@ -869,10 +874,10 @@ export default function Summary() {
                                           className="hover:underline"
                                           data-testid={`link-deal-${dealId}`}
                                         >
-                                          #{dealId}
+                                          {getDealTitle(dealId)}
                                         </a>
                                       ) : (
-                                        <span>#{dealId}</span>
+                                        <span>{getDealTitle(dealId)}</span>
                                       )}
                                       {idx < dealIds.length - 1 && <span>,</span>}
                                     </span>
@@ -880,20 +885,20 @@ export default function Summary() {
                                 </div>
                               )}
                               <Badge variant="outline" className="text-xs">
-                                {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
+                                {groupSize} {groupSize === 1 ? t("summary.tourist_one") : groupSize < 5 ? t("summary.tourist_few") : t("summary.tourist_many")}
                               </Badge>
                               {/* Show surcharge/nights in group header when single deal */}
                               {shouldMergeSurchargeNights && (
                                 <>
                                   {tourist.surcharge && (
                                     <div className="flex items-center gap-1 text-xs text-muted-foreground font-normal">
-                                      <span className="font-medium text-primary">Доплата:</span>
+                                      <span className="font-medium text-primary">{t("fields.surcharge")}:</span>
                                       <span>{tourist.surcharge}</span>
                                     </div>
                                   )}
                                   {tourist.nights && (
                                     <div className="flex items-center gap-1 text-xs text-muted-foreground font-normal">
-                                      <span className="font-medium text-primary">Ночей:</span>
+                                      <span className="font-medium text-primary">{t("fields.nights")}:</span>
                                       <span>{tourist.nights}</span>
                                     </div>
                                   )}
@@ -937,38 +942,38 @@ export default function Summary() {
                               <EditableCell
                                 value={tourist.name}
                                 type="text"
-                                placeholder="Введите ФИО"
+                                placeholder={t("placeholders.enterName")}
                                 onSave={(value) => updateField(tourist.id, "name", value)}
                                 className="font-medium"
                               />
                             )}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">Тел:</span>{" "}
+                            <span className="font-medium">{t("fields.phoneShort")}:</span>{" "}
                             <EditableCell
                               value={tourist.phone}
                               type="phone"
-                              placeholder="Добавить телефон"
+                              placeholder={t("placeholders.addPhone")}
                               onSave={(value) => updateField(tourist.id, "phone", value)}
                               className="inline-flex"
                             />
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">Паспорт:</span>{" "}
+                            <span className="font-medium">{t("fields.passport")}:</span>{" "}
                             <EditableCell
                               value={tourist.passport}
                               type="text"
-                              placeholder="Добавить паспорт"
+                              placeholder={t("placeholders.addPassport")}
                               onSave={(value) => updateField(tourist.id, "passport", value)}
                               className="inline-flex"
                             />
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">ДР:</span>{" "}
+                            <span className="font-medium">{t("fields.birthDate")}:</span>{" "}
                             <EditableCell
                               value={tourist.birthDate}
                               type="date"
-                              placeholder="Добавить дату"
+                              placeholder={t("placeholders.addDate")}
                               onSave={(value) => updateField(tourist.id, "birthDate", value)}
                               className="inline-flex"
                             />
@@ -977,21 +982,21 @@ export default function Summary() {
                           {!shouldMergeSurchargeNights && (
                             <>
                               <div className="text-xs text-muted-foreground">
-                                <span className="font-medium">Доплата:</span>{" "}
+                                <span className="font-medium">{t("fields.surcharge")}:</span>{" "}
                                 <EditableCell
                                   value={tourist.surcharge}
                                   type="text"
-                                  placeholder="Добавить доплату"
+                                  placeholder={t("placeholders.addSurcharge")}
                                   onSave={(value) => updateField(tourist.id, "surcharge", value)}
                                   className="inline-flex"
                                 />
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                <span className="font-medium">Ночей:</span>{" "}
+                                <span className="font-medium">{t("fields.nights")}:</span>{" "}
                                 <EditableCell
                                   value={tourist.nights}
                                   type="text"
-                                  placeholder="Добавить кол-во"
+                                  placeholder={t("placeholders.addCount")}
                                   onSave={(value) => updateField(tourist.id, "nights", value)}
                                   className="inline-flex"
                                 />
@@ -1024,20 +1029,20 @@ export default function Summary() {
                               {/* Dates and Times */}
                               <div className="flex flex-col gap-0.5">
                                 <div className="flex items-center gap-1">
-                                  <span className="text-xs font-medium">Прибытие:</span>
+                                  <span className="text-xs font-medium">{t("fields.arrival")}:</span>
                                   {visit ? (
                                     <>
                                       <EditableCell
                                         value={visit.arrivalDate}
                                         type="date"
-                                        placeholder="Дата"
+                                        placeholder={t("fields.date")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "arrivalDate", value)}
                                         className="inline-flex text-xs"
                                       />
                                       <EditableCell
                                         value={visit.arrivalTime}
                                         type="time"
-                                        placeholder="Время"
+                                        placeholder={t("fields.time")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "arrivalTime", value)}
                                         className="inline-flex text-xs"
                                       />
@@ -1047,20 +1052,20 @@ export default function Summary() {
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <span className="text-xs font-medium">Отъезд:</span>
+                                  <span className="text-xs font-medium">{t("fields.departure")}:</span>
                                   {visit ? (
                                     <>
                                       <EditableCell
                                         value={visit.departureDate}
                                         type="date"
-                                        placeholder="Дата"
+                                        placeholder={t("fields.date")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "departureDate", value)}
                                         className="inline-flex text-xs"
                                       />
                                       <EditableCell
                                         value={visit.departureTime}
                                         type="time"
-                                        placeholder="Время"
+                                        placeholder={t("fields.time")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTime", value)}
                                         className="inline-flex text-xs"
                                       />
@@ -1074,12 +1079,12 @@ export default function Summary() {
                               {/* Hotel */}
                               <div className="flex flex-col gap-0.5 pt-0.5">
                                 <div className="flex items-center gap-1">
-                                  <span className="text-xs font-medium">Отель:</span>
+                                  <span className="text-xs font-medium">{t("fields.hotel")}:</span>
                                   {visit ? (
                                     <EditableCell
                                       value={visit.hotelName}
                                       type="text"
-                                      placeholder="Название отеля"
+                                      placeholder={t("placeholders.hotelName")}
                                       onSave={(value) => updateVisitField(tourist.id, visit.id, "hotelName", value)}
                                       className="inline-flex text-xs"
                                     />
@@ -1088,16 +1093,16 @@ export default function Summary() {
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <span className="text-xs font-medium">Тип:</span>
+                                  <span className="text-xs font-medium">{t("fields.type")}:</span>
                                   {visit ? (
                                     <EditableCell
                                       value={visit.roomType}
                                       type="select"
-                                      placeholder="Тип комнаты"
+                                      placeholder={t("placeholders.selectType")}
                                       onSave={(value) => updateVisitField(tourist.id, visit.id, "roomType", value)}
                                       selectOptions={[
-                                        { value: "twin", label: "Twin" },
-                                        { value: "double", label: "Double" },
+                                        { value: "twin", label: t("roomTypes.twin") },
+                                        { value: "double", label: t("roomTypes.double") },
                                       ]}
                                       className="inline-flex text-xs"
                                     />
@@ -1114,29 +1119,29 @@ export default function Summary() {
                                     {/* Arrival Transport */}
                                     <div className="flex items-center gap-0.5 flex-wrap text-xs leading-tight">
                                       {visit.transportType === "plane" ? <Plane className="h-3 w-3 shrink-0" /> : <Train className="h-3 w-3 shrink-0" />}
-                                      <span className="font-medium">Приб:</span>
+                                      <span className="font-medium">{t("fields.arrivalShort")}:</span>
                                       <EditableCell
                                         value={visit.transportType}
                                         type="select"
-                                        placeholder="Вид"
+                                        placeholder={t("placeholders.transportType")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "transportType", value)}
                                         selectOptions={[
-                                          { value: "plane", label: "Самолет" },
-                                          { value: "train", label: "Поезд" },
+                                          { value: "plane", label: t("transport.plane") },
+                                          { value: "train", label: t("transport.train") },
                                         ]}
                                         className="inline-flex text-xs"
                                       />
                                       <EditableCell
                                         value={visit.flightNumber}
                                         type="text"
-                                        placeholder="№"
+                                        placeholder={t("fields.flightNumber")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "flightNumber", value)}
                                         className="inline-flex text-xs"
                                       />
                                       <EditableCell
                                         value={visit.airport}
                                         type="text"
-                                        placeholder="Аэропорт"
+                                        placeholder={t("fields.airport")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "airport", value)}
                                         className="inline-flex text-xs"
                                       />
@@ -1144,7 +1149,7 @@ export default function Summary() {
                                       <EditableCell
                                         value={visit.transfer}
                                         type="text"
-                                        placeholder="Трансфер"
+                                        placeholder={t("fields.transfer")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "transfer", value)}
                                         className="inline-flex text-xs"
                                       />
@@ -1153,29 +1158,29 @@ export default function Summary() {
                                     {/* Departure Transport - always show */}
                                     <div className="flex items-center gap-0.5 flex-wrap text-xs leading-tight">
                                       {visit.departureTransportType === "plane" ? <Plane className="h-3 w-3 shrink-0" /> : visit.departureTransportType === "train" ? <Train className="h-3 w-3 shrink-0" /> : <span className="w-3"></span>}
-                                      <span className="font-medium">Убыт:</span>
+                                      <span className="font-medium">{t("fields.departureShort")}:</span>
                                       <EditableCell
                                         value={visit.departureTransportType}
                                         type="select"
-                                        placeholder="Вид"
+                                        placeholder={t("placeholders.transportType")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransportType", value)}
                                         selectOptions={[
-                                          { value: "plane", label: "Самолет" },
-                                          { value: "train", label: "Поезд" },
+                                          { value: "plane", label: t("transport.plane") },
+                                          { value: "train", label: t("transport.train") },
                                         ]}
                                         className="inline-flex text-xs"
                                       />
                                       <EditableCell
                                         value={visit.departureFlightNumber}
                                         type="text"
-                                        placeholder="№"
+                                        placeholder={t("fields.flightNumber")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "departureFlightNumber", value)}
                                         className="inline-flex text-xs"
                                       />
                                       <EditableCell
                                         value={visit.departureAirport}
                                         type="text"
-                                        placeholder="Аэропорт"
+                                        placeholder={t("fields.airport")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "departureAirport", value)}
                                         className="inline-flex text-xs"
                                       />
@@ -1183,7 +1188,7 @@ export default function Summary() {
                                       <EditableCell
                                         value={visit.departureTransfer}
                                         type="text"
-                                        placeholder="Трансфер"
+                                        placeholder={t("fields.transfer")}
                                         onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransfer", value)}
                                         className="inline-flex text-xs"
                                       />
@@ -1191,7 +1196,7 @@ export default function Summary() {
                                   </>
                                 ) : (
                                   <div className="flex items-center gap-1 text-xs">
-                                    <span className="font-medium">Транспорт:</span>
+                                    <span className="font-medium">{t("fields.transport")}:</span>
                                     <span className="text-muted-foreground">—</span>
                                   </div>
                                 )}
@@ -1210,7 +1215,7 @@ export default function Summary() {
               <tfoot className="bg-muted/50 border-t-2">
                 <tr>
                   <td colSpan={3} className="px-4 py-3 text-sm font-semibold" data-testid="footer-total-label">
-                    Итого: {touristCount} туристов
+                    {t("common.total")}: {touristCount} {touristCount === 1 ? t("summary.tourist_one") : touristCount < 5 ? t("summary.tourist_few") : t("summary.tourist_many")}
                   </td>
                   <td colSpan={4} className="px-4 py-3 text-sm text-muted-foreground">
                   </td>
@@ -1226,7 +1231,7 @@ export default function Summary() {
         {!tourists || tourists.length === 0 ? (
           <Card className="p-8">
             <p className="text-center text-muted-foreground" data-testid="empty-message-mobile">
-              Туристы не добавлены
+              {t("summary.noTouristsAdded")}
             </p>
           </Card>
         ) : (
@@ -1246,10 +1251,10 @@ export default function Summary() {
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2 text-xs font-medium text-primary flex-wrap leading-tight">
                         {!dealIds || dealIds.length === 0 ? (
-                          <span>Сделка #Без сделки</span>
+                          <span>{t("summary.deal")} #{t("summary.noDeal")}</span>
                         ) : (
                           <div className="flex items-center gap-1 flex-wrap">
-                            <span>Сделка:</span>
+                            <span>{t("summary.deal")}:</span>
                             {dealIds.map((dealId, idx) => (
                               <span key={dealId} className="flex items-center gap-1">
                                 {getBitrixDealUrl(dealId) ? (
@@ -1260,10 +1265,10 @@ export default function Summary() {
                                     className="hover:underline"
                                     data-testid={`link-deal-mobile-${dealId}`}
                                   >
-                                    #{dealId}
+                                    {getDealTitle(dealId)}
                                   </a>
                                 ) : (
-                                  <span>#{dealId}</span>
+                                  <span>{getDealTitle(dealId)}</span>
                                 )}
                                 {idx < dealIds.length - 1 && <span>,</span>}
                               </span>
@@ -1271,7 +1276,7 @@ export default function Summary() {
                           </div>
                         )}
                         <Badge variant="outline" className="text-xs">
-                          {groupSize} {groupSize === 1 ? 'турист' : groupSize < 5 ? 'туриста' : 'туристов'}
+                          {groupSize} {groupSize === 1 ? t("summary.tourist_one") : groupSize < 5 ? t("summary.tourist_few") : t("summary.tourist_many")}
                         </Badge>
                       </div>
                       {/* Show surcharge/nights in group header when single deal */}
@@ -1279,13 +1284,13 @@ export default function Summary() {
                         <div className="flex items-center gap-3 flex-wrap text-xs">
                           {tourist.surcharge && (
                             <div className="flex items-center gap-1">
-                              <span className="font-medium text-primary">Доплата:</span>
+                              <span className="font-medium text-primary">{t("fields.surcharge")}:</span>
                               <span className="text-muted-foreground">{tourist.surcharge}</span>
                             </div>
                           )}
                           {tourist.nights && (
                             <div className="flex items-center gap-1">
-                              <span className="font-medium text-primary">Ночей:</span>
+                              <span className="font-medium text-primary">{t("fields.nights")}:</span>
                               <span className="text-muted-foreground">{tourist.nights}</span>
                             </div>
                           )}
@@ -1325,31 +1330,31 @@ export default function Summary() {
                       </div>
                       <div className="space-y-0.5 text-xs text-muted-foreground leading-tight">
                         <div>
-                          <span className="font-medium">Тел:</span>{" "}
+                          <span className="font-medium">{t("fields.phoneShort")}:</span>{" "}
                           <EditableCell
                             value={tourist.phone}
                             type="phone"
-                            placeholder="Добавить"
+                            placeholder={t("placeholders.addPhone")}
                             onSave={(value) => updateField(tourist.id, "phone", value)}
                             className="inline-flex text-xs"
                           />
                         </div>
                         <div>
-                          <span className="font-medium">Паспорт:</span>{" "}
+                          <span className="font-medium">{t("fields.passport")}:</span>{" "}
                           <EditableCell
                             value={tourist.passport}
                             type="text"
-                            placeholder="Добавить"
+                            placeholder={t("placeholders.addPassport")}
                             onSave={(value) => updateField(tourist.id, "passport", value)}
                             className="inline-flex text-xs"
                           />
                         </div>
                         <div>
-                          <span className="font-medium">ДР:</span>{" "}
+                          <span className="font-medium">{t("fields.birthDate")}:</span>{" "}
                           <EditableCell
                             value={tourist.birthDate}
                             type="date"
-                            placeholder="Добавить"
+                            placeholder={t("placeholders.addDate")}
                             onSave={(value) => updateField(tourist.id, "birthDate", value)}
                             className="inline-flex text-xs"
                           />
@@ -1358,21 +1363,21 @@ export default function Summary() {
                         {!shouldMergeSurchargeNights && (
                           <>
                             <div>
-                              <span className="font-medium">Доплата:</span>{" "}
+                              <span className="font-medium">{t("fields.surcharge")}:</span>{" "}
                               <EditableCell
                                 value={tourist.surcharge}
                                 type="text"
-                                placeholder="Добавить"
+                                placeholder={t("placeholders.addSurcharge")}
                                 onSave={(value) => updateField(tourist.id, "surcharge", value)}
                                 className="inline-flex text-xs"
                               />
                             </div>
                             <div>
-                              <span className="font-medium">Ночей:</span>{" "}
+                              <span className="font-medium">{t("fields.nights")}:</span>{" "}
                               <EditableCell
                                 value={tourist.nights}
                                 type="text"
-                                placeholder="Добавить"
+                                placeholder={t("placeholders.addCount")}
                                 onSave={(value) => updateField(tourist.id, "nights", value)}
                                 className="inline-flex text-xs"
                               />
@@ -1389,14 +1394,14 @@ export default function Summary() {
                       return (
                         <div key={city} className="space-y-1 border-l-2 border-primary/20 pl-2">
                           <div className="flex items-center gap-1">
-                            <div className="text-xs font-medium text-primary leading-tight">{CITY_NAMES[city]}</div>
+                            <div className="text-xs font-medium text-primary leading-tight">{getCityName(city)}</div>
                             <Button
                               size="icon"
                               variant="ghost"
                               onClick={() => handleShareCity(city)}
                               className="h-5 w-5 shrink-0"
                               data-testid={`button-share-city-mobile-${city.toLowerCase()}`}
-                              title={`Поделиться ${CITY_NAMES[city]}`}
+                              title={t("sharing.shareCity", { city: getCityName(city) })}
                             >
                               <LinkIcon className="h-3 w-3" />
                             </Button>
@@ -1404,7 +1409,7 @@ export default function Summary() {
                           
                           {/* Dates */}
                           <div className="text-xs">
-                            <span className="font-medium">Прибытие: </span>
+                            <span className="font-medium">{t("fields.arrival")}: </span>
                             {visit ? (
                               <span>
                                 <span className="font-bold">{format(new Date(visit.arrivalDate), "dd.MM", { locale: ru })}</span>
@@ -1415,7 +1420,7 @@ export default function Summary() {
                             )}
                           </div>
                           <div className="text-xs">
-                            <span className="font-medium">Отъезд: </span>
+                            <span className="font-medium">{t("fields.departure")}: </span>
                             {visit?.departureDate ? (
                               <span>
                                 <span className="font-bold">{format(new Date(visit.departureDate), "dd.MM", { locale: ru })}</span>
@@ -1429,18 +1434,18 @@ export default function Summary() {
                           {/* Hotel */}
                           <div className="text-xs text-muted-foreground space-y-0.5 pt-0.5">
                             <div>
-                              <span className="font-medium">Отель: </span>
+                              <span className="font-medium">{t("fields.hotel")}: </span>
                               {visit?.hotelName || "—"}
                             </div>
                             <div>
-                              <span className="font-medium">Тип: </span>
-                              {visit?.roomType ? (visit.roomType === "twin" ? "Twin" : "Double") : "—"}
+                              <span className="font-medium">{t("fields.type")}: </span>
+                              {visit?.roomType ? (visit.roomType === "twin" ? t("roomTypes.twin") : t("roomTypes.double")) : "—"}
                             </div>
                           </div>
                           
                           {/* Transport - Compact */}
                           <div className="text-xs pt-0.5">
-                            <div className="font-medium mb-0.5">Транспорт:</div>
+                            <div className="font-medium mb-0.5">{t("fields.transport")}:</div>
                             {visit ? (
                               <>
                                 <div className="flex items-center gap-1">
@@ -1456,7 +1461,7 @@ export default function Summary() {
                                         </Badge>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        Прибытие {visit.transportType === "plane" ? "самолетом" : "поездом"}
+                                        {t("fields.arrival")} {visit.transportType === "plane" ? t("transport.plane").toLowerCase() : t("transport.train").toLowerCase()}
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
@@ -1475,7 +1480,7 @@ export default function Summary() {
                                             </Badge>
                                           </TooltipTrigger>
                                           <TooltipContent>
-                                            Убытие {visit.departureTransportType === "plane" ? "самолетом" : "поездом"}
+                                            {t("fields.departure")} {visit.departureTransportType === "plane" ? t("transport.plane").toLowerCase() : t("transport.train").toLowerCase()}
                                           </TooltipContent>
                                         </Tooltip>
                                       </TooltipProvider>
@@ -1484,16 +1489,16 @@ export default function Summary() {
                                 </div>
                                 {(visit.flightNumber || visit.airport || visit.transfer) && (
                                   <div className="text-xs text-muted-foreground space-y-0.5 mt-0.5">
-                                    {visit.flightNumber && <div>Рейс: {visit.flightNumber}</div>}
-                                    {visit.airport && <div>Аэропорт: {visit.airport}</div>}
-                                    {visit.transfer && <div>Трансфер: {visit.transfer}</div>}
+                                    {visit.flightNumber && <div>{t("fields.flightNumber")}: {visit.flightNumber}</div>}
+                                    {visit.airport && <div>{t("fields.airport")}: {visit.airport}</div>}
+                                    {visit.transfer && <div>{t("fields.transfer")}: {visit.transfer}</div>}
                                   </div>
                                 )}
                                 {(visit.departureFlightNumber || visit.departureAirport || visit.departureTransfer) && (
                                   <div className="text-xs text-muted-foreground space-y-0.5 pt-0.5 mt-0.5">
-                                    {visit.departureFlightNumber && <div>Убытие рейс: {visit.departureFlightNumber}</div>}
-                                    {visit.departureAirport && <div>Убытие аэропорт: {visit.departureAirport}</div>}
-                                    {visit.departureTransfer && <div>Убытие трансфер: {visit.departureTransfer}</div>}
+                                    {visit.departureFlightNumber && <div>{t("fields.departureShort")} {t("fields.flightNumber")}: {visit.departureFlightNumber}</div>}
+                                    {visit.departureAirport && <div>{t("fields.departureShort")} {t("fields.airport")}: {visit.departureAirport}</div>}
+                                    {visit.departureTransfer && <div>{t("fields.departureShort")} {t("fields.transfer")}: {visit.departureTransfer}</div>}
                                   </div>
                                 )}
                               </>
@@ -1518,8 +1523,8 @@ export default function Summary() {
         <Card className="md:hidden">
           <CardContent className="p-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-semibold">Итого:</span>
-              <span className="text-sm font-medium">{touristCount} туристов</span>
+              <span className="text-sm font-semibold">{t("common.total")}:</span>
+              <span className="text-sm font-medium">{touristCount} {touristCount === 1 ? t("summary.tourist_one") : touristCount < 5 ? t("summary.tourist_few") : t("summary.tourist_many")}</span>
             </div>
           </CardContent>
         </Card>
@@ -1531,11 +1536,11 @@ export default function Summary() {
           <DialogHeader>
             <DialogTitle>
               {shareDialogCity 
-                ? `Поделиться: ${CITY_NAMES[shareDialogCity]}`
-                : "Поделиться: Полная таблица"}
+                ? t("sharing.shareCity", { city: getCityName(shareDialogCity) })
+                : t("sharing.shareFullTable")}
             </DialogTitle>
             <DialogDescription>
-              Выберите формат для экспорта данных
+              {t("sharing.selectFormat")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 py-4">
@@ -1546,7 +1551,7 @@ export default function Summary() {
               data-testid="dialog-button-copy-link"
             >
               <LinkIcon className="h-4 w-4 mr-2" />
-              Копировать ссылку
+              {t("sharing.copyLink")}
             </Button>
             <Button
               onClick={handleExportInDialog}
@@ -1555,7 +1560,7 @@ export default function Summary() {
               data-testid="dialog-button-export-excel"
             >
               <Download className="h-4 w-4 mr-2" />
-              Скачать Excel
+              {t("sharing.exportExcel")}
             </Button>
           </div>
         </DialogContent>

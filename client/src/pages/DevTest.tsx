@@ -17,7 +17,7 @@ import {
   MOCK_EVENT_TITLE,
   MOCK_ENTITY_ID 
 } from "@/lib/mockData";
-import { Users, MapPin, Calendar, Hotel, AlertCircle, Share2, Link as LinkIcon, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, MapPin, Calendar, Hotel, AlertCircle, Share2, Link as LinkIcon, Download, ChevronDown, ChevronUp, Plane, Train } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { CITIES } from "@shared/schema";
@@ -692,17 +692,17 @@ export default function DevTest() {
                           className={isGrouped && groupIndex % 2 === 1 ? "bg-muted/30" : ""}
                           data-testid={`row-tourist-${originalIndex}`}
                         >
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-2">
                             <Checkbox
                               checked={selectedTourists.has(tourist.id)}
                               onCheckedChange={() => toggleTourist(tourist.id)}
                               data-testid={`checkbox-tourist-${originalIndex}`}
                             />
                           </td>
-                          <td className="px-4 py-3 text-sm">{originalIndex + 1}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-col gap-1">
-                              <div className="font-medium text-sm">
+                          <td className="px-4 py-2 text-xs">{originalIndex + 1}</td>
+                          <td className="px-4 py-2">
+                            <div className="flex flex-col gap-0.5">
+                              <div className="font-medium text-xs leading-tight">
                                 <EditableCell
                                   value={tourist.name}
                                   type="text"
@@ -783,10 +783,10 @@ export default function DevTest() {
                             return (
                               <td 
                                 key={city} 
-                                className="px-4 py-3 text-sm align-top"
+                                className="px-4 py-2 text-xs align-top"
                                 rowSpan={rowSpan}
                               >
-                                <div className="flex flex-col gap-1.5">
+                                <div className="flex flex-col gap-0.5">
                                   {/* Dates */}
                                   <div className="flex flex-col gap-0.5">
                                     <div className="flex items-center gap-1">
@@ -838,7 +838,7 @@ export default function DevTest() {
                                   </div>
                                   
                                   {/* Hotel */}
-                                  <div className="text-xs space-y-0.5 border-t pt-1">
+                                  <div className="text-xs space-y-0.5 pt-0.5">
                                     <div>
                                       <span className="font-medium text-muted-foreground">Отель: </span>
                                       {visit ? (
@@ -854,7 +854,7 @@ export default function DevTest() {
                                       )}
                                     </div>
                                     <div>
-                                      <span className="font-medium text-muted-foreground">Тип номера: </span>
+                                      <span className="font-medium text-muted-foreground">Тип: </span>
                                       {visit ? (
                                         <EditableCell
                                           value={visit.roomType}
@@ -873,107 +873,93 @@ export default function DevTest() {
                                     </div>
                                   </div>
                                   
-                                  {/* Transport */}
-                                  <div className="text-xs space-y-0.5 border-t pt-1">
-                                    <div className="font-medium text-muted-foreground mb-0.5">Транспорт:</div>
+                                  {/* Transport - Compact */}
+                                  <div className="flex flex-col gap-0.5 pt-0.5">
                                     {visit ? (
                                       <>
-                                        <div>
-                                          <span className="text-muted-foreground">Прибытие: </span>
+                                        {/* Arrival Transport */}
+                                        <div className="flex items-center gap-0.5 flex-wrap text-xs leading-tight">
+                                          {visit.transportType === "plane" ? <Plane className="h-3 w-3 shrink-0" /> : <Train className="h-3 w-3 shrink-0" />}
+                                          <span className="font-medium">Приб:</span>
                                           <EditableCell
                                             value={visit.transportType}
                                             type="select"
-                                            placeholder="Выбрать"
+                                            placeholder="Вид"
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "transportType", value)}
                                             selectOptions={[
                                               { value: "plane", label: "Самолет" },
-                                              { value: "train", label: "Поезд" }
+                                              { value: "train", label: "Поезд" },
                                             ]}
-                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "transportType", value)}
-                                            className="inline-flex"
+                                            className="inline-flex text-xs"
                                           />
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground">Рейс/Поезд: </span>
                                           <EditableCell
                                             value={visit.flightNumber}
                                             type="text"
-                                            placeholder="Номер"
+                                            placeholder="№"
                                             onSave={(value) => updateVisitField(tourist.id, visit.id, "flightNumber", value)}
-                                            className="inline-flex"
+                                            className="inline-flex text-xs"
                                           />
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground">Аэропорт/Станция: </span>
                                           <EditableCell
                                             value={visit.airport}
                                             type="text"
-                                            placeholder="Место"
+                                            placeholder="Аэропорт"
                                             onSave={(value) => updateVisitField(tourist.id, visit.id, "airport", value)}
-                                            className="inline-flex"
+                                            className="inline-flex text-xs"
                                           />
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground">Трансфер: </span>
+                                          <span className="text-muted-foreground">•</span>
                                           <EditableCell
                                             value={visit.transfer}
                                             type="text"
-                                            placeholder="Инфо"
+                                            placeholder="Трансфер"
                                             onSave={(value) => updateVisitField(tourist.id, visit.id, "transfer", value)}
-                                            className="inline-flex"
+                                            className="inline-flex text-xs"
                                           />
                                         </div>
-                                        {(visit.departureTransportType || visit.departureFlightNumber || visit.departureAirport || visit.departureTransfer) && (
-                                          <div className="pt-1 border-t mt-1">
-                                            <div className="font-medium text-muted-foreground mb-0.5">Убытие:</div>
-                                            <div>
-                                              <span className="text-muted-foreground">Транспорт: </span>
-                                              <EditableCell
-                                                value={visit.departureTransportType}
-                                                type="select"
-                                                placeholder="Выбрать"
-                                                selectOptions={[
-                                                  { value: "plane", label: "Самолет" },
-                                                  { value: "train", label: "Поезд" }
-                                                ]}
-                                                onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransportType", value)}
-                                                className="inline-flex"
-                                              />
-                                            </div>
-                                            <div>
-                                              <span className="text-muted-foreground">Рейс/Поезд: </span>
-                                              <EditableCell
-                                                value={visit.departureFlightNumber}
-                                                type="text"
-                                                placeholder="Номер"
-                                                onSave={(value) => updateVisitField(tourist.id, visit.id, "departureFlightNumber", value)}
-                                                className="inline-flex"
-                                              />
-                                            </div>
-                                            <div>
-                                              <span className="text-muted-foreground">Аэропорт/Станция: </span>
-                                              <EditableCell
-                                                value={visit.departureAirport}
-                                                type="text"
-                                                placeholder="Место"
-                                                onSave={(value) => updateVisitField(tourist.id, visit.id, "departureAirport", value)}
-                                                className="inline-flex"
-                                              />
-                                            </div>
-                                            <div>
-                                              <span className="text-muted-foreground">Трансфер: </span>
-                                              <EditableCell
-                                                value={visit.departureTransfer}
-                                                type="text"
-                                                placeholder="Инфо"
-                                                onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransfer", value)}
-                                                className="inline-flex"
-                                              />
-                                            </div>
-                                          </div>
-                                        )}
+                                        
+                                        {/* Departure Transport - always show */}
+                                        <div className="flex items-center gap-0.5 flex-wrap text-xs leading-tight">
+                                          {visit.departureTransportType === "plane" ? <Plane className="h-3 w-3 shrink-0" /> : visit.departureTransportType === "train" ? <Train className="h-3 w-3 shrink-0" /> : <span className="w-3"></span>}
+                                          <span className="font-medium">Убыт:</span>
+                                          <EditableCell
+                                            value={visit.departureTransportType}
+                                            type="select"
+                                            placeholder="Вид"
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransportType", value)}
+                                            selectOptions={[
+                                              { value: "plane", label: "Самолет" },
+                                              { value: "train", label: "Поезд" },
+                                            ]}
+                                            className="inline-flex text-xs"
+                                          />
+                                          <EditableCell
+                                            value={visit.departureFlightNumber}
+                                            type="text"
+                                            placeholder="№"
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "departureFlightNumber", value)}
+                                            className="inline-flex text-xs"
+                                          />
+                                          <EditableCell
+                                            value={visit.departureAirport}
+                                            type="text"
+                                            placeholder="Аэропорт"
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "departureAirport", value)}
+                                            className="inline-flex text-xs"
+                                          />
+                                          <span className="text-muted-foreground">•</span>
+                                          <EditableCell
+                                            value={visit.departureTransfer}
+                                            type="text"
+                                            placeholder="Трансфер"
+                                            onSave={(value) => updateVisitField(tourist.id, visit.id, "departureTransfer", value)}
+                                            className="inline-flex text-xs"
+                                          />
+                                        </div>
                                       </>
                                     ) : (
-                                      <span className="text-muted-foreground">—</span>
+                                      <div className="flex items-center gap-1 text-xs">
+                                        <span className="font-medium">Транспорт:</span>
+                                        <span className="text-muted-foreground">—</span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>

@@ -84,6 +84,13 @@ Comprehensive technical documentation available in `DOCUMENTATION.md` covering:
 - Internationalization (ru/en/zh)
 
 ## Recent Changes (October 31, 2025)
+- **City Visit Creation Feature**: Implemented one-click visit creation for empty city cells in summary table:
+  - **Backend**: POST /api/tourists/:touristId/visits endpoint creates visits with default empty fields and "plane" as default transport type
+  - **Frontend (Production)**: Summary.tsx uses createVisitMutation with TanStack Query, proper cache invalidation, and toast notifications
+  - **Frontend (DEV)**: DevTest.tsx handles visit creation in local state with duplicate prevention
+  - **UX**: Empty city cells display clickable "Нажмите чтобы добавить визит" (localized) with hover effects; after creation, cells immediately show EditableCell components for dates, hotel, and transport
+  - **i18n**: Complete translations for placeholders.clickToAddVisit, toasts.visitCreated, toasts.visitCreatedSuccess in ru/en/zh
+  - **JSX Structure**: Fixed DevTest.tsx JSX structure with proper div nesting and ternary operator closure matching Summary.tsx pattern
 - **Complete Internationalization**: All UI strings in Summary.tsx and DevTest.tsx now use i18n with full translations for Russian, English, and Chinese languages (ru.json, en.json, zh.json)
 - **Deal Titles Display**: Backend API extended to fetch deal titles via new `getEventDeals()` method; frontend now displays deal names (e.g., "Март 2025 - Группа А") instead of raw IDs in group headers using `getDealTitle()` helper
 - **Enhanced Smart Field Merging**: Extended logic to show "Доплата" and "Ночей" in group headers for custom groups with single tourist: `shouldMergeSurchargeNights = (isSingleDealGroup && tourists > 1) || (isCustomGroup && tourists === 1)`

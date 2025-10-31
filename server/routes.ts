@@ -8,6 +8,24 @@ import { insertTouristSchema, insertCityVisitSchema } from "@shared/schema";
 export async function registerRoutes(app: Express): Promise<Server> {
   const bitrix24 = getBitrix24Service();
 
+  // Get event title
+  app.get("/api/event/:entityId/title", async (req, res) => {
+    try {
+      const { entityId } = req.params;
+      const entityTypeId = req.query.entityTypeId as string || "176"; // Default to Event entity type
+      
+      if (!bitrix24) {
+        return res.json({ title: null });
+      }
+
+      const title = await bitrix24.getEventTitle(entityId, entityTypeId);
+      res.json({ title });
+    } catch (error) {
+      console.error("Error fetching event title:", error);
+      res.status(500).json({ error: "Failed to fetch event title" });
+    }
+  });
+
   // Get tourists for a specific entity (smart process element)
   app.get("/api/tourists/:entityId", async (req, res) => {
     try {
@@ -68,7 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { entityId, entityTypeId, name, email, phone, passport, birthDate, amount, currency, nights, visits } = touristValidation.data;
+      const { entityId, entityTypeId, name, email, phone, passport, birthDate, surcharge, nights, visits } = touristValidation.data;
 
       // Pre-validate all visits before creating anything
       if (visits && Array.isArray(visits) && visits.length > 0) {
@@ -91,8 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: phone || undefined,
         passport: passport || undefined,
         birthDate: birthDate || undefined,
-        amount: amount || undefined,
-        currency: currency || undefined,
+        surcharge: surcharge || undefined,
         nights: nights || undefined,
       };
 

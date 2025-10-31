@@ -169,6 +169,17 @@ export class Bitrix24Service {
     return result?.item || result;
   }
 
+  // Get event title
+  async getEventTitle(entityId: string, entityTypeId: string): Promise<string | null> {
+    try {
+      const entity = await this.getEntity(entityId, entityTypeId);
+      return entity?.title || entity?.TITLE || null;
+    } catch (error) {
+      console.error("Error getting event title:", error);
+      return null;
+    }
+  }
+
   // Load tourists from Bitrix24 event structure:
   // Event -> UF_CRM_9_1711887457 (deals) -> UF_CRM_1702460537 (contacts) -> UF fields (name, passport)
   async loadTouristsFromEvent(entityId: string, entityTypeId: string): Promise<any[]> {

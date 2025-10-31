@@ -43,6 +43,11 @@ export default function Summary() {
     refetchOnMount: true,
   });
 
+  const { data: eventData } = useQuery<{ title: string | null }>({
+    queryKey: ["/api/event", entityId, "title"],
+    enabled: !!entityId,
+  });
+
   const toggleSelectAll = () => {
     if (!tourists) return;
     if (selectedTourists.size === tourists.length) {
@@ -352,7 +357,7 @@ export default function Summary() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-semibold truncate" data-testid="summary-title">
-            Сводная таблица туристов
+            Сводная таблица туристов{eventData?.title ? `: ${eventData.title}` : ""}
           </h1>
           <p className="text-sm text-muted-foreground">
             Всего туристов: {touristCount}

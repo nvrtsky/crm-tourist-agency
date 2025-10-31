@@ -131,3 +131,13 @@ Comprehensive technical documentation available in `DOCUMENTATION.md` covering:
   - Updated Summary.tsx copy link functions to use new helper
   - Added share dialog to DevTest.tsx (previously missing) with same "Copy link / Download Excel" options
   - All copy link operations now work reliably in both standalone and Bitrix24 iframe contexts
+- **i18n Interpolation Fix**: Fixed city name interpolation in share dialog titles:
+  - Corrected i18n syntax from single braces `{city}` to double braces `{{city}}` in all locale files (ru.json, en.json, zh.json)
+  - Fixed keys: `sharing.shareCity` and `sharing.shareCityTable` now properly interpolate city names
+  - Dialog titles now display "Поделиться Пекин" instead of literal "Поделиться {city}"
+- **DevTest Share Dialog Fix**: Fixed share dialog in DevTest.tsx showing raw i18n keys instead of localized text:
+  - Replaced incorrect keys: `sharing.title` → `sharing.shareCity` with conditional city interpolation
+  - Fixed description: `sharing.description` → `sharing.selectFormat`
+  - Fixed button: `sharing.downloadExcel` → `sharing.exportExcel`
+  - DevTest share dialog now mirrors Summary.tsx structure and localization
+  - Added diagnostic logging to `handleCopyLinkInDialog` in both pages for troubleshooting (console logs: URL, city value, copy success)

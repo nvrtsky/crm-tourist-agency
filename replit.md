@@ -50,6 +50,11 @@ The system follows a standard CRM flow optimized for tourist agencies:
   - Purpose: Lead management and qualification
 
 #### Supporting Tables  
+- **cityVisits**: Itinerary details for each city in tour route
+  - Fields: id, dealId, city, arrivalDate, arrivalTime, transportType, flightNumber, hotelName, roomType, departureDate, departureTime, departureTransportType, departureFlightNumber
+  - Purpose: Track detailed travel itinerary per participant per city
+  - Auto-created: When deal is created, cityVisits records are automatically generated for all cities in the event route
+
 - **leadStatusHistory**: Audit trail for lead status changes
   - Fields: leadId, fromStatus, toStatus, reason
   - Purpose: Complete audit history
@@ -78,10 +83,17 @@ The system follows a standard CRM flow optimized for tourist agencies:
 - **Statistics**: Total events, upcoming events, nearly-full groups
 
 #### 2. EventSummary Module (`/events/:id/summary`)
-- **Participant Table**: Display contacts and deals for the event
+- **Dynamic City Columns**: Table automatically generates columns for each city in the tour route (e.g., Beijing, Luoyang, Xi'an, Zhangjiajie, Shanghai)
+- **Inline Editing**: All city data cells are editable - click to edit, save on blur/Enter
+  - Editable fields per city: Arrival (date/time), Transport (type/flight#), Hotel (name/room type), Departure (date/time)
+  - Uses EditableCell component with support for text, date, time, and select inputs
+  - Auto-creates cityVisit record if it doesn't exist when editing empty cells
+  - Auto-updates existing cityVisit records when editing filled cells
+- **Participant Table**: Display contacts, deals, and complete itinerary for all participants
 - **Statistics Dashboard**: Total participants, confirmed bookings, pending approvals, revenue
-- **Excel Export**: Download participant list with all contact information
+- **Excel Export**: Download participant list with all contact information AND city-specific data (arrival, transport, hotel, departure details for each city)
 - **Status Tracking**: Visual status badges for deal states
+- **API Integration**: Real-time updates via TanStack Query with optimistic cache invalidation
 
 #### 3. Leads Module (`/leads`)
 - **Lead List**: Display all leads with status, source, and timestamps
@@ -122,7 +134,7 @@ Automated notifications triggered by:
 Events:
   GET    /api/events              - List all events with stats
   GET    /api/events/:id          - Get single event details
-  GET    /api/events/:id/participants - Get event deals + contacts
+  GET    /api/events/:id/participants - Get event deals + contacts + cityVisits
   POST   /api/events              - Create new event
   PATCH  /api/events/:id          - Update event
   DELETE /api/events/:id          - Delete event
@@ -158,6 +170,12 @@ Forms:
   GET    /api/forms               - List all forms
   POST   /api/forms               - Create form
   POST   /api/forms/:id/submit    - Submit form (auto-creates lead)
+
+CityVisits:
+  GET    /api/deals/:dealId/visits - Get all city visits for a deal
+  POST   /api/deals/:dealId/visits - Create city visit
+  PATCH  /api/visits/:id           - Update city visit
+  DELETE /api/visits/:id           - Delete city visit
 ```
 
 **Data Validation**: Zod schemas from drizzle-zod for type-safe request/response validation
@@ -204,35 +222,56 @@ Forms:
 
 **Demo Mode**: `/demo/*` routes provide full functionality without authentication
 
-## Migration from Bitrix24
+## Standalone CRM (No Bitrix24)
 
-This application was migrated from a Bitrix24-integrated system to a standalone CRM:
+This application is a **fully standalone CRM system** with NO Bitrix24 integration:
 
-**Changes**:
-- ❌ Removed: Bitrix24 SDK, entity ID detection, Smart Process integration
-- ❌ Removed: `tourists` and `cityVisits` tables (replaced by contacts/deals)
-- ❌ Removed: All Bitrix24 API calls and synchronization logic
-- ✅ Added: Complete standalone CRM with events, contacts, deals
-- ✅ Added: Lead management system
-- ✅ Added: Notification system
-- ✅ Added: Independent event management
+**Removed from Project** (Nov 2025):
+- ❌ Bitrix24 SDK script removed from index.html
+- ❌ useBitrix24 hook removed (no longer used)
+- ❌ EntityIdNotFound component removed
+- ❌ AppWithBitrix24 wrapper removed - app runs in standalone mode by default
+- ❌ All entity ID detection and Smart Process integration removed
+- ❌ All Bitrix24 API calls and synchronization logic removed
+
+**Current Implementation**:
+- ✅ Complete standalone CRM with events, contacts, deals, cityVisits
+- ✅ Lead management system with full history tracking
+- ✅ Notification system for automated alerts
+- ✅ Independent event management with dynamic city itineraries
+- ✅ Inline editing of participant travel details
+- ✅ Excel export with complete itinerary data
 
 **Architecture Benefits**:
-- No external dependencies (except database)
+- No external dependencies (except PostgreSQL database)
 - Full control over data model and workflows
 - Simpler deployment and maintenance
 - Better performance (no external API calls)
+- Direct browser access at `/events`, `/leads`, etc. (no Bitrix24 iframe)
+
+## Recent Updates (November 2025)
+
+**✅ Completed**:
+1. **EventSummary with Dynamic City Columns**: Full implementation with inline editing
+   - Automatically generates columns for each city in tour route
+   - Inline editing for all travel details (arrival, transport, hotel, departure)
+   - Auto-creation of cityVisits when deal is created
+   - Excel export includes complete itinerary data per city
+2. **Bitrix24 Integration Removed**: Application now fully standalone
+   - Removed SDK script, hooks, and Bitrix24-specific components
+   - Direct browser access without iframe restrictions
+   - No entity ID detection required
 
 ## Future Enhancements
 
 **Planned Features** (not yet implemented):
-1. **Full EventSummary**: Dynamic city columns, grouping, inline editing (currently basic version)
-2. **Lead Conversion UI**: Visual dialog for Lead → Contact + Deal workflow
-3. **Email Notifications**: SMTP integration for automated emails
-4. **Role-Based Access**: Admin/Manager/Viewer permissions
-5. **Advanced Filtering**: Date ranges, multi-select filters
-6. **Dashboard Analytics**: Revenue charts, conversion funnels
-7. **Internationalization**: Multi-language support (ru/en/zh)
+1. **Lead Conversion UI**: Visual dialog for Lead → Contact + Deal workflow
+2. **Email Notifications**: SMTP integration for automated emails
+3. **Role-Based Access**: Admin/Manager/Viewer permissions
+4. **Advanced Filtering**: Date ranges, multi-select filters for events/leads
+5. **Dashboard Analytics**: Revenue charts, conversion funnels, booking trends
+6. **Internationalization**: Complete multi-language support (ru/en/zh)
+7. **Mobile App**: React Native companion app for on-the-go management
 
 ## External Dependencies
 - **React** & **TypeScript**: Frontend framework and language

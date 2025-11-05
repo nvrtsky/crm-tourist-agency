@@ -20,13 +20,6 @@ import {
   type FormSubmission,
   type InsertFormSubmission,
   type LeadStatus,
-  type Contact,
-  type InsertContact,
-  type UpdateContact,
-  type Deal,
-  type InsertDeal,
-  type UpdateDeal,
-  type DealStatus,
   tourists,
   cityVisits,
   users,
@@ -35,8 +28,6 @@ import {
   leads,
   leadStatusHistory,
   formSubmissions,
-  contacts,
-  deals,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -92,23 +83,6 @@ export interface IStorage {
   getSubmission(id: string): Promise<FormSubmission | undefined>;
   getSubmissionsByForm(formId: string): Promise<FormSubmission[]>;
   createSubmission(submission: InsertFormSubmission): Promise<FormSubmission>;
-
-  // Contact operations
-  getContact(id: string): Promise<Contact | undefined>;
-  getAllContacts(): Promise<Contact[]>;
-  createContact(contact: InsertContact): Promise<Contact>;
-  updateContact(id: string, contact: Partial<UpdateContact>): Promise<Contact | undefined>;
-  deleteContact(id: string): Promise<boolean>;
-
-  // Deal operations
-  getDeal(id: string): Promise<Deal | undefined>;
-  getAllDeals(): Promise<Deal[]>;
-  getDealsByContact(contactId: string): Promise<Deal[]>;
-  getDealsByStatus(status: DealStatus): Promise<Deal[]>;
-  createDeal(deal: InsertDeal): Promise<Deal>;
-  updateDeal(id: string, deal: Partial<UpdateDeal>): Promise<Deal | undefined>;
-  deleteDeal(id: string): Promise<boolean>;
-  convertLeadToDeal(leadId: string, convertedByUserId: string): Promise<{ contact: Contact; deal: Deal }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -406,143 +380,6 @@ export class DatabaseStorage implements IStorage {
   async createSubmission(submission: InsertFormSubmission): Promise<FormSubmission> {
     const [result] = await db.insert(formSubmissions).values(submission).returning();
     return result;
-  }
-
-  // ==================== CONTACT OPERATIONS ====================
-
-  async getContact(id: string): Promise<Contact | undefined> {
-    const result = await db.select().from(contacts).where(eq(contacts.id, id));
-    return result[0];
-  }
-
-  async getAllContacts(): Promise<Contact[]> {
-    return await db.select().from(contacts);
-  }
-
-  async createContact(contact: InsertContact): Promise<Contact> {
-    const [result] = await db.insert(contacts).values(contact).returning();
-    return result;
-  }
-
-  async updateContact(id: string, updates: Partial<UpdateContact>): Promise<Contact | undefined> {
-    const result = await db
-      .update(contacts)
-      .set({
-        ...updates,
-        updatedAt: new Date(),
-      })
-      .where(eq(contacts.id, id))
-      .returning();
-
-    return result[0];
-  }
-
-  async deleteContact(id: string): Promise<boolean> {
-    const result = await db.delete(contacts).where(eq(contacts.id, id)).returning();
-    return result.length > 0;
-  }
-
-  // ==================== DEAL OPERATIONS ====================
-
-  async getDeal(id: string): Promise<Deal | undefined> {
-    const result = await db.select().from(deals).where(eq(deals.id, id));
-    return result[0];
-  }
-
-  async getAllDeals(): Promise<Deal[]> {
-    return await db.select().from(deals);
-  }
-
-  async getDealsByContact(contactId: string): Promise<Deal[]> {
-    return await db.select().from(deals).where(eq(deals.contactId, contactId));
-  }
-
-  async getDealsByStatus(status: DealStatus): Promise<Deal[]> {
-    return await db.select().from(deals).where(eq(deals.status, status));
-  }
-
-  async createDeal(deal: InsertDeal): Promise<Deal> {
-    const [result] = await db.insert(deals).values(deal).returning();
-    return result;
-  }
-
-  async updateDeal(id: string, updates: Partial<UpdateDeal>): Promise<Deal | undefined> {
-    const currentDeal = await this.getDeal(id);
-    if (!currentDeal) return undefined;
-
-    const result = await db
-      .update(deals)
-      .set({
-        ...updates,
-        updatedAt: new Date(),
-      })
-      .where(eq(deals.id, id))
-      .returning();
-
-    // Auto-sync to Tourist when status becomes 'confirmed'
-    if (updates.status === 'confirmed' && currentDeal.status !== 'confirmed' && !currentDeal.syncedToTouristId) {
-      // TODO: Implement Tourist sync logic when needed
-      console.log(`Deal ${id} confirmed - should sync to Tourist`);
-    }
-
-    return result[0];
-  }
-
-  async deleteDeal(id: string): Promise<boolean> {
-    const result = await db.delete(deals).where(eq(deals.id, id)).returning();
-    return result.length > 0;
-  }
-
-  async convertLeadToDeal(leadId: string, convertedByUserId: string): Promise<{ contact: Contact; deal: Deal }> {
-    return await db.transaction(async (tx) => {
-      // Get the lead
-      const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId));
-      if (!lead) {
-        throw new Error("Lead not found");
-      }
-
-      if (lead.status === 'won') {
-        throw new Error("Lead already converted");
-      }
-
-      // Create contact from lead
-      const [contact] = await tx.insert(contacts).values({
-        name: lead.name,
-        email: lead.email || undefined,
-        phone: lead.phone || undefined,
-        notes: lead.notes || undefined,
-        createdFromLeadId: leadId,
-      }).returning();
-
-      // Create deal
-      const [deal] = await tx.insert(deals).values({
-        contactId: contact.id,
-        title: `Deal for ${lead.name}`,
-        amount: 0,
-        status: 'new',
-        assignedUserId: lead.assignedUserId || (convertedByUserId !== "system-user" ? convertedByUserId : undefined),
-        createdByUserId: convertedByUserId !== "system-user" ? convertedByUserId : undefined,
-      }).returning();
-
-      // Update lead status to 'won'
-      await tx.update(leads)
-        .set({
-          status: 'won',
-          updatedAt: new Date(),
-        })
-        .where(eq(leads.id, leadId));
-
-      // Add history entry
-      await tx.insert(leadStatusHistory).values({
-        leadId: leadId,
-        oldStatus: lead.status,
-        newStatus: 'won',
-        changedByUserId: convertedByUserId !== "system-user" ? convertedByUserId : undefined,
-        note: `Converted to Contact #${contact.id} and Deal #${deal.id}`,
-      });
-
-      return { contact, deal };
-    });
   }
 }
 

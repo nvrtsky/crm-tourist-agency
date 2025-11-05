@@ -30,20 +30,14 @@ function Router() {
   return (
     <Switch>
       <Route path="/dev" component={DevTest} />
-      <Route path="/demo">
-        {() => {
-          setLocation("/demo/dashboard");
-          return null;
-        }}
-      </Route>
       <Route path="/demo/dashboard" component={Dashboard} />
       <Route path="/demo/tours" component={Tours} />
       <Route path="/demo/crm" component={CRM} />
       <Route path="/demo/forms" component={Forms} />
       <Route path="/demo/settings" component={Settings} />
-      <Route path="/">
+      <Route path="/demo">
         {() => {
-          setLocation("/dashboard");
+          setLocation("/demo/dashboard");
           return null;
         }}
       </Route>
@@ -52,6 +46,12 @@ function Router() {
       <Route path="/crm" component={CRM} />
       <Route path="/forms" component={Forms} />
       <Route path="/settings" component={Settings} />
+      <Route path="/">
+        {() => {
+          setLocation("/dashboard");
+          return null;
+        }}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

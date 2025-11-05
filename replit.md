@@ -102,7 +102,7 @@ Automated notifications triggered by:
 
 **Navigation Structure** (Shadcn Sidebar):
 1. **Лиды (Leads)**: Lead management and qualification
-2. **События (Events)**: Event list and availability tracking  
+2. **Туры (Events)**: Event list and availability tracking  
 3. **Forms**: Form builder for lead generation
 4. **Settings**: Application configuration
 

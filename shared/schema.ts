@@ -100,13 +100,13 @@ export const contacts = pgTable("contacts", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Deals table - связь контакт + событие
+// Deals table - связь контакт + тур
 export const deals = pgTable("deals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: 'cascade' }),
   eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
   status: text("status").notNull().default("pending"), // 'pending', 'confirmed', 'cancelled', 'completed'
-  amount: numeric("amount", { precision: 10, scale: 2 }), // Deal amount (может отличаться от базовой цены события)
+  amount: numeric("amount", { precision: 10, scale: 2 }), // Deal amount (может отличаться от базовой цены тура)
   surcharge: text("surcharge"), // Additional charges/notes
   nights: text("nights"), // Number of nights
   createdAt: timestamp("created_at").notNull().defaultNow(),

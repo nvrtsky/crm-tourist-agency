@@ -92,10 +92,10 @@ export default function EventSummary() {
       <div className="p-6">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-lg font-semibold mb-2">Событие не найдено</p>
+            <p className="text-lg font-semibold mb-2">Тур не найден</p>
             <Button onClick={() => setLocation("/events")} data-testid="button-back-to-events">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Вернуться к событиям
+              Вернуться к турам
             </Button>
           </CardContent>
         </Card>

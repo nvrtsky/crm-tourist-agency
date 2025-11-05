@@ -69,21 +69,21 @@ export default function Events() {
     <div className="p-6 space-y-6" data-testid="page-events">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold">События и туры</h1>
+          <h1 className="text-3xl font-bold">Туры</h1>
           <p className="text-muted-foreground mt-2">
-            Управление туристическими событиями и группами
+            Управление туристическими турами и группами
           </p>
         </div>
         <Button data-testid="button-create-event">
           <Plus className="h-4 w-4 mr-2" />
-          Создать событие
+          Создать тур
         </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card data-testid="stat-total-events">
           <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Всего событий</CardTitle>
+            <CardTitle className="text-sm font-medium">Всего туров</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -118,7 +118,7 @@ export default function Events() {
       <Card data-testid="card-filters">
         <CardHeader>
           <CardTitle>Фильтры и поиск</CardTitle>
-          <CardDescription>Найдите нужное событие</CardDescription>
+          <CardDescription>Найдите нужный тур</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
@@ -208,9 +208,9 @@ export default function Events() {
         <Card data-testid="card-no-events">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Событий не найдено</h3>
+            <h3 className="text-lg font-semibold mb-2">Туров не найдено</h3>
             <p className="text-sm text-muted-foreground">
-              Попробуйте изменить фильтры или создайте новое событие
+              Попробуйте изменить фильтры или создайте новый тур
             </p>
           </CardContent>
         </Card>

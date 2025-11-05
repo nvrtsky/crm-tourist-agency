@@ -30,7 +30,7 @@ export function AppSidebar() {
       testId: "nav-leads",
     },
     {
-      title: "События",
+      title: "Туры",
       url: `${urlPrefix}/events`,
       icon: Calendar,
       testId: "nav-events",

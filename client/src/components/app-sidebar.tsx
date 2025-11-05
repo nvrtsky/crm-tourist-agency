@@ -18,34 +18,38 @@ export function AppSidebar() {
   const { t } = useTranslation();
   const [location, setLocation] = useLocation();
 
+  // Check if we're in demo mode
+  const isDemoMode = location.startsWith("/demo");
+  const urlPrefix = isDemoMode ? "/demo" : "";
+
   const menuItems = [
     {
       title: t("nav.dashboard"),
-      url: "/dashboard",
+      url: `${urlPrefix}/dashboard`,
       icon: Home,
       testId: "nav-dashboard",
     },
     {
       title: t("nav.tours"),
-      url: "/tours",
+      url: `${urlPrefix}/tours`,
       icon: Plane,
       testId: "nav-tours",
     },
     {
       title: t("nav.crm"),
-      url: "/crm",
+      url: `${urlPrefix}/crm`,
       icon: Users,
       testId: "nav-crm",
     },
     {
       title: t("nav.forms"),
-      url: "/forms",
+      url: `${urlPrefix}/forms`,
       icon: FileText,
       testId: "nav-forms",
     },
     {
       title: t("nav.settings"),
-      url: "/settings",
+      url: `${urlPrefix}/settings`,
       icon: Settings,
       testId: "nav-settings",
     },

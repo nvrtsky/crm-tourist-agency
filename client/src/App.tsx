@@ -30,6 +30,17 @@ function Router() {
   return (
     <Switch>
       <Route path="/dev" component={DevTest} />
+      <Route path="/demo">
+        {() => {
+          setLocation("/demo/dashboard");
+          return null;
+        }}
+      </Route>
+      <Route path="/demo/dashboard" component={Dashboard} />
+      <Route path="/demo/tours" component={Tours} />
+      <Route path="/demo/crm" component={CRM} />
+      <Route path="/demo/forms" component={Forms} />
+      <Route path="/demo/settings" component={Settings} />
       <Route path="/">
         {() => {
           setLocation("/dashboard");
@@ -203,9 +214,6 @@ function AdminMenu() {
 export default function App() {
   const [location] = useLocation();
   
-  // Check for demo mode via URL parameter
-  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === '1';
-  
   // Dev mode: render directly without Bitrix24 checks
   if (location === "/dev") {
     return (
@@ -219,7 +227,7 @@ export default function App() {
   }
 
   // Demo mode: render with sidebar but without Bitrix24 checks
-  if (isDemoMode) {
+  if (location.startsWith("/demo")) {
     return <AppInDemoMode />;
   }
 

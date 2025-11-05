@@ -3,7 +3,16 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getBitrix24Service } from "./bitrix24";
 import { z } from "zod";
-import { insertTouristSchema, insertCityVisitSchema } from "@shared/schema";
+import { 
+  insertTouristSchema, 
+  insertCityVisitSchema,
+  insertLeadSchema,
+  updateLeadSchema,
+  insertContactSchema,
+  updateContactSchema,
+  insertDealSchema,
+  updateDealSchema,
+} from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const bitrix24 = getBitrix24Service();
@@ -410,6 +419,302 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating visit:", error);
       res.status(500).json({ error: "Failed to update visit" });
+    }
+  });
+
+  // ==================== LEAD ROUTES ====================
+
+  // Get all leads
+  app.get("/api/leads", async (req, res) => {
+    try {
+      const leads = await storage.getAllLeads();
+      res.json(leads);
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+      res.status(500).json({ error: "Failed to fetch leads" });
+    }
+  });
+
+  // Get single lead
+  app.get("/api/leads/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const lead = await storage.getLead(id);
+      
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      const history = await storage.getHistoryByLead(id);
+      res.json({ ...lead, history });
+    } catch (error) {
+      console.error("Error fetching lead:", error);
+      res.status(500).json({ error: "Failed to fetch lead" });
+    }
+  });
+
+  // Create lead
+  app.post("/api/leads", async (req, res) => {
+    try {
+      const validation = insertLeadSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const lead = await storage.createLead(validation.data);
+      res.json(lead);
+    } catch (error) {
+      console.error("Error creating lead:", error);
+      res.status(500).json({ error: "Failed to create lead" });
+    }
+  });
+
+  // Update lead
+  app.patch("/api/leads/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const validation = updateLeadSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const updated = await storage.updateLead(id, validation.data);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating lead:", error);
+      res.status(500).json({ error: "Failed to update lead" });
+    }
+  });
+
+  // Delete lead
+  app.delete("/api/leads/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteLead(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting lead:", error);
+      res.status(500).json({ error: "Failed to delete lead" });
+    }
+  });
+
+  // Convert lead to contact + deal
+  app.post("/api/leads/:id/convert", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: "userId is required" });
+      }
+
+      const result = await storage.convertLeadToDeal(id, userId);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error converting lead:", error);
+      res.status(500).json({ error: error.message || "Failed to convert lead" });
+    }
+  });
+
+  // ==================== CONTACT ROUTES ====================
+
+  // Get all contacts
+  app.get("/api/contacts", async (req, res) => {
+    try {
+      const contacts = await storage.getAllContacts();
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ error: "Failed to fetch contacts" });
+    }
+  });
+
+  // Get single contact
+  app.get("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const contact = await storage.getContact(id);
+      
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      const deals = await storage.getDealsByContact(id);
+      res.json({ ...contact, deals });
+    } catch (error) {
+      console.error("Error fetching contact:", error);
+      res.status(500).json({ error: "Failed to fetch contact" });
+    }
+  });
+
+  // Create contact
+  app.post("/api/contacts", async (req, res) => {
+    try {
+      const validation = insertContactSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const contact = await storage.createContact(validation.data);
+      res.json(contact);
+    } catch (error) {
+      console.error("Error creating contact:", error);
+      res.status(500).json({ error: "Failed to create contact" });
+    }
+  });
+
+  // Update contact
+  app.patch("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const validation = updateContactSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const updated = await storage.updateContact(id, validation.data);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating contact:", error);
+      res.status(500).json({ error: "Failed to update contact" });
+    }
+  });
+
+  // Delete contact
+  app.delete("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteContact(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+      res.status(500).json({ error: "Failed to delete contact" });
+    }
+  });
+
+  // ==================== DEAL ROUTES ====================
+
+  // Get all deals
+  app.get("/api/deals", async (req, res) => {
+    try {
+      const deals = await storage.getAllDeals();
+      res.json(deals);
+    } catch (error) {
+      console.error("Error fetching deals:", error);
+      res.status(500).json({ error: "Failed to fetch deals" });
+    }
+  });
+
+  // Get single deal
+  app.get("/api/deals/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deal = await storage.getDeal(id);
+      
+      if (!deal) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+
+      res.json(deal);
+    } catch (error) {
+      console.error("Error fetching deal:", error);
+      res.status(500).json({ error: "Failed to fetch deal" });
+    }
+  });
+
+  // Create deal
+  app.post("/api/deals", async (req, res) => {
+    try {
+      const validation = insertDealSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const deal = await storage.createDeal(validation.data);
+      res.json(deal);
+    } catch (error) {
+      console.error("Error creating deal:", error);
+      res.status(500).json({ error: "Failed to create deal" });
+    }
+  });
+
+  // Update deal
+  app.patch("/api/deals/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const validation = updateDealSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const updated = await storage.updateDeal(id, validation.data);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating deal:", error);
+      res.status(500).json({ error: "Failed to update deal" });
+    }
+  });
+
+  // Delete deal
+  app.delete("/api/deals/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteDeal(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting deal:", error);
+      res.status(500).json({ error: "Failed to delete deal" });
     }
   });
 

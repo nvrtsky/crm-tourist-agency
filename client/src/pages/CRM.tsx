@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";
 import { KanbanColumn } from "@/components/KanbanColumn";
+import { LeadsTable } from "@/components/LeadsTable";
 import { Users, TrendingUp, Clock, CheckCircle, Plus } from "lucide-react";
 import {
   DndContext,
@@ -47,6 +48,15 @@ export default function CRM() {
   const updateLeadMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: LeadStatus }) => {
       return await apiRequest("PATCH", `/api/leads/${id}`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+    },
+  });
+
+  const deleteLeadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/leads/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
@@ -141,6 +151,12 @@ export default function CRM() {
     console.log("Lead clicked:", lead);
   };
 
+  const handleLeadDelete = (leadId: string) => {
+    if (confirm("Вы уверены, что хотите удалить этот лид?")) {
+      deleteLeadMutation.mutate(leadId);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-6" data-testid="page-crm">
@@ -213,14 +229,13 @@ export default function CRM() {
           </DragOverlay>
         </DndContext>
       ) : (
-        <Card data-testid="table-view">
-          <CardHeader>
-            <CardTitle>Табличный режим</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Табличный режим в разработке</p>
-          </CardContent>
-        </Card>
+        <div data-testid="table-view" className="flex-1 min-h-0 overflow-auto">
+          <LeadsTable
+            leads={leads}
+            onLeadClick={handleLeadClick}
+            onLeadDelete={handleLeadDelete}
+          />
+        </div>
       )}
     </div>
   );

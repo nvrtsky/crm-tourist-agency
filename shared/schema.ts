@@ -41,6 +41,10 @@ export const FORM_FIELD_TYPES = [
 ] as const;
 export type FormFieldType = typeof FORM_FIELD_TYPES[number];
 
+// Deal statuses
+export const DEAL_STATUSES = ["new", "negotiation", "payment", "confirmed", "cancelled"] as const;
+export type DealStatus = typeof DEAL_STATUSES[number];
+
 // Tourist table - now includes Bitrix24 integration fields
 export const tourists = pgTable("tourists", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -151,6 +155,64 @@ export const formSubmissions = pgTable("form_submissions", {
   userAgent: text("user_agent"),
 });
 
+// Contacts table - CRM clients/customers
+export const contacts = pgTable("contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  notes: text("notes"),
+  createdFromLeadId: varchar("created_from_lead_id").references(() => leads.id, { onDelete: 'set null' }), // FK to leads (nullable - if converted from lead)
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// CRM Events table - Tour catalog templates (e.g., "Beijing 11 days")
+export const crmEvents = pgTable("crm_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(), // e.g., "Китай классический - 11 дней"
+  description: text("description"),
+  cities: text("cities").array().notNull(), // Array of city names (Beijing, Luoyang, etc.)
+  durationDays: integer("duration_days").notNull(), // Total tour duration in days
+  basePrice: integer("base_price"), // Base price in currency units (optional)
+  imageUrl: text("image_url"), // Tour image URL (optional)
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Tour Events table - Specific tour departures (instances of CRM Events)
+export const tourEvents = pgTable("tour_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  crmEventId: varchar("crm_event_id").notNull().references(() => crmEvents.id, { onDelete: 'cascade' }), // FK to crmEvents
+  startDate: text("start_date").notNull(), // ISO date string (departure date)
+  endDate: text("end_date"), // ISO date string (return date, optional - can be calculated)
+  maxParticipants: integer("max_participants"), // Maximum participants for this specific departure
+  currentParticipants: integer("current_participants").notNull().default(0), // Current number of booked participants
+  status: text("status").notNull().default("active"), // 'active', 'full', 'cancelled', 'completed'
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Deals table - CRM deals/opportunities
+export const deals = pgTable("deals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: 'cascade' }), // FK to contacts
+  tourEventId: varchar("tour_event_id").references(() => tourEvents.id, { onDelete: 'set null' }), // FK to tourEvents (nullable - deal can exist without tour selection)
+  title: text("title").notNull(), // Deal title (e.g., "Иванов - Китай классический")
+  amount: integer("amount"), // Deal amount in currency units (optional)
+  status: text("status").notNull().default("new"), // 'new', 'negotiation', 'payment', 'confirmed', 'cancelled'
+  probability: integer("probability").default(50), // Success probability 0-100 (optional)
+  expectedCloseDate: text("expected_close_date"), // ISO date string (optional)
+  notes: text("notes"),
+  syncedToTouristId: varchar("synced_to_tourist_id").references(() => tourists.id, { onDelete: 'set null' }), // FK to tourists (nullable - if deal was converted to tourist)
+  assignedUserId: varchar("assigned_user_id").references(() => users.id, { onDelete: 'set null' }), // FK to users (nullable - who is working on this deal)
+  createdByUserId: varchar("created_by_user_id").references(() => users.id, { onDelete: 'set null' }), // FK to users (who created this deal)
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ================= ZOD SCHEMAS =================
 
 // Tourist schemas (existing)
@@ -191,6 +253,38 @@ export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).om
   submittedAt: true 
 });
 
+// Contact schemas (new)
+export const insertContactSchema = createInsertSchema(contacts).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const updateContactSchema = insertContactSchema.partial();
+
+// CRM Event schemas (new)
+export const insertCrmEventSchema = createInsertSchema(crmEvents).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const updateCrmEventSchema = insertCrmEventSchema.partial();
+
+// Tour Event schemas (new)
+export const insertTourEventSchema = createInsertSchema(tourEvents).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const updateTourEventSchema = insertTourEventSchema.partial();
+
+// Deal schemas (new)
+export const insertDealSchema = createInsertSchema(deals).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const updateDealSchema = insertDealSchema.partial();
+
 // ================= TYPES =================
 
 // Tourist types (existing)
@@ -224,6 +318,26 @@ export type InsertLeadStatusHistory = z.infer<typeof insertLeadStatusHistorySche
 export type FormSubmission = typeof formSubmissions.$inferSelect;
 export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
 
+// Contact types (new)
+export type Contact = typeof contacts.$inferSelect;
+export type InsertContact = z.infer<typeof insertContactSchema>;
+export type UpdateContact = z.infer<typeof updateContactSchema>;
+
+// CRM Event types (new)
+export type CrmEvent = typeof crmEvents.$inferSelect;
+export type InsertCrmEvent = z.infer<typeof insertCrmEventSchema>;
+export type UpdateCrmEvent = z.infer<typeof updateCrmEventSchema>;
+
+// Tour Event types (new)
+export type TourEvent = typeof tourEvents.$inferSelect;
+export type InsertTourEvent = z.infer<typeof insertTourEventSchema>;
+export type UpdateTourEvent = z.infer<typeof updateTourEventSchema>;
+
+// Deal types (new)
+export type Deal = typeof deals.$inferSelect;
+export type InsertDeal = z.infer<typeof insertDealSchema>;
+export type UpdateDeal = z.infer<typeof updateDealSchema>;
+
 // ================= DRIZZLE RELATIONS =================
 // Reference: blueprint:javascript_database
 
@@ -232,6 +346,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   createdLeads: many(leads, { relationName: "createdLeads" }),
   assignedLeads: many(leads, { relationName: "assignedLeads" }),
   statusChanges: many(leadStatusHistory),
+  createdDeals: many(deals, { relationName: "createdDeals" }),
+  assignedDeals: many(deals, { relationName: "assignedDeals" }),
 }));
 
 export const formsRelations = relations(forms, ({ one, many }) => ({
@@ -288,5 +404,50 @@ export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => 
   lead: one(leads, {
     fields: [formSubmissions.leadId],
     references: [leads.id],
+  }),
+}));
+
+export const contactsRelations = relations(contacts, ({ one, many }) => ({
+  createdFromLead: one(leads, {
+    fields: [contacts.createdFromLeadId],
+    references: [leads.id],
+  }),
+  deals: many(deals),
+}));
+
+export const crmEventsRelations = relations(crmEvents, ({ many }) => ({
+  tourEvents: many(tourEvents),
+}));
+
+export const tourEventsRelations = relations(tourEvents, ({ one, many }) => ({
+  crmEvent: one(crmEvents, {
+    fields: [tourEvents.crmEventId],
+    references: [crmEvents.id],
+  }),
+  deals: many(deals),
+}));
+
+export const dealsRelations = relations(deals, ({ one }) => ({
+  contact: one(contacts, {
+    fields: [deals.contactId],
+    references: [contacts.id],
+  }),
+  tourEvent: one(tourEvents, {
+    fields: [deals.tourEventId],
+    references: [tourEvents.id],
+  }),
+  assignedTo: one(users, {
+    fields: [deals.assignedUserId],
+    references: [users.id],
+    relationName: "assignedDeals",
+  }),
+  createdBy: one(users, {
+    fields: [deals.createdByUserId],
+    references: [users.id],
+    relationName: "createdDeals",
+  }),
+  syncedToTourist: one(tourists, {
+    fields: [deals.syncedToTouristId],
+    references: [tourists.id],
   }),
 }));

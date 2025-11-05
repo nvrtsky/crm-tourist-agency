@@ -40,6 +40,7 @@ interface LeadDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConvertToDeal?: (leadId: string) => void;
+  isConvertingToDeal?: boolean;
 }
 
 const leadFormSchema = z.object({
@@ -74,9 +75,9 @@ export function LeadDetailModal({
   isOpen,
   onClose,
   onConvertToDeal,
+  isConvertingToDeal = false,
 }: LeadDetailModalProps) {
   const { toast } = useToast();
-  const [isConverting, setIsConverting] = useState(false);
 
   const form = useForm<LeadFormData>({
     resolver: zodResolver(leadFormSchema),
@@ -90,7 +91,7 @@ export function LeadDetailModal({
     },
   });
 
-  // Reset form and converting state when lead changes
+  // Reset form when lead changes
   useEffect(() => {
     if (lead) {
       form.reset({
@@ -101,7 +102,6 @@ export function LeadDetailModal({
         status: lead.status as LeadStatus,
         notes: lead.notes || "",
       });
-      setIsConverting(false);
     }
   }, [lead, form]);
 
@@ -133,9 +133,8 @@ export function LeadDetailModal({
 
   const handleConvert = () => {
     if (!lead || !onConvertToDeal) return;
-    setIsConverting(true);
     onConvertToDeal(lead.id);
-    onClose();
+    // Modal will be closed in CRM.tsx onSuccess callback
   };
 
   if (!lead) return null;
@@ -311,11 +310,11 @@ export function LeadDetailModal({
                     type="button"
                     variant="default"
                     onClick={handleConvert}
-                    disabled={isConverting}
+                    disabled={isConvertingToDeal}
                     data-testid="button-convert-to-deal"
                   >
                     <ArrowRight className="h-4 w-4 mr-2" />
-                    Конвертировать в сделку
+                    {isConvertingToDeal ? "Конвертация..." : "Конвертировать в сделку"}
                   </Button>
                 )}
                 <div className="flex items-center gap-2 ml-auto">

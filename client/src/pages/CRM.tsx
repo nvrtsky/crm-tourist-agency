@@ -20,6 +20,7 @@ import {
 } from "@dnd-kit/core";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { LeadCard } from "@/components/LeadCard";
+import { useToast } from "@/hooks/use-toast";
 
 const LEAD_COLUMNS = [
   { status: "new" as LeadStatus, title: "Новые" },
@@ -31,6 +32,7 @@ const LEAD_COLUMNS = [
 
 export default function CRM() {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -63,6 +65,30 @@ export default function CRM() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+    },
+  });
+
+  const convertLeadToDealMutation = useMutation({
+    mutationFn: async (leadId: string) => {
+      return await apiRequest("POST", `/api/leads/${leadId}/convert-to-deal`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/deals"] });
+      toast({
+        title: "Успешно",
+        description: "Лид конвертирован в контакт и сделку",
+      });
+      setIsModalOpen(false);
+      setSelectedLead(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось конвертировать лид",
+        variant: "destructive",
+      });
     },
   });
 
@@ -162,8 +188,7 @@ export default function CRM() {
   };
 
   const handleConvertToDeal = (leadId: string) => {
-    console.log("Converting lead to deal:", leadId);
-    // TODO: Implement convertLeadToDeal mutation in next task
+    convertLeadToDealMutation.mutate(leadId);
   };
 
   const handleCloseModal = () => {
@@ -257,6 +282,7 @@ export default function CRM() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onConvertToDeal={handleConvertToDeal}
+        isConvertingToDeal={convertLeadToDealMutation.isPending}
       />
     </div>
   );

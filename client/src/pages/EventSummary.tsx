@@ -1,9 +1,10 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -12,6 +13,27 @@ import type { Event, Contact, Deal, CityVisit, Group } from "@shared/schema";
 import { EditableCell } from "@/components/EditableCell";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 interface EventWithStats extends Event {
   bookedCount: number;
@@ -25,11 +47,20 @@ interface Participant {
   group: Group | null;
 }
 
+const createMiniGroupSchema = z.object({
+  name: z.string().min(1, "Введите название группы"),
+  dealIds: z.array(z.string()).min(2, "Выберите минимум 2 участников"),
+  primaryDealId: z.string().min(1, "Выберите основного участника"),
+});
+
+type CreateMiniGroupFormData = z.infer<typeof createMiniGroupSchema>;
+
 export default function EventSummary() {
   const [, params] = useRoute("/events/:id/summary");
   const [, setLocation] = useLocation();
   const eventId = params?.id;
   const { toast } = useToast();
+  const [showCreateMiniGroupDialog, setShowCreateMiniGroupDialog] = useState(false);
 
   const { data: event, isLoading: eventLoading } = useQuery<EventWithStats>({
     queryKey: [`/api/events/${eventId}`],
@@ -100,6 +131,67 @@ export default function EventSummary() {
         description: "Не удалось создать посещение",
         variant: "destructive",
       });
+    },
+  });
+
+  const createMiniGroupMutation = useMutation({
+    mutationFn: async (data: CreateMiniGroupFormData) => {
+      if (!eventId) throw new Error("Event ID is required");
+      
+      let createdGroupId: string | null = null;
+      try {
+        const group = await apiRequest("POST", "/api/groups", {
+          name: data.name,
+          type: "mini_group",
+          eventId,
+        });
+        createdGroupId = group.id;
+
+        // Add all members
+        for (const dealId of data.dealIds) {
+          await apiRequest("POST", `/api/groups/${group.id}/members`, {
+            dealId,
+            isPrimary: dealId === data.primaryDealId,
+          });
+        }
+
+        return group;
+      } catch (error) {
+        // Rollback: delete the group if it was created but member addition failed
+        if (createdGroupId) {
+          try {
+            await apiRequest("DELETE", `/api/groups/${createdGroupId}`);
+          } catch (rollbackError) {
+            console.error("Failed to rollback group creation:", rollbackError);
+          }
+        }
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+      setShowCreateMiniGroupDialog(false);
+      miniGroupForm.reset();
+      toast({
+        title: "Успешно",
+        description: "Мини-группа создана",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось создать мини-группу",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const miniGroupForm = useForm<CreateMiniGroupFormData>({
+    resolver: zodResolver(createMiniGroupSchema),
+    defaultValues: {
+      name: "",
+      dealIds: [],
+      primaryDealId: "",
     },
   });
 
@@ -224,6 +316,15 @@ export default function EventSummary() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowCreateMiniGroupDialog(true)}
+            disabled={participants.filter(p => !p.deal.groupId).length < 2}
+            data-testid="button-create-mini-group"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Создать мини-группу
+          </Button>
           <Button
             variant="outline"
             onClick={handleExportExcel}
@@ -490,6 +591,132 @@ export default function EventSummary() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create Mini-Group Dialog */}
+      <Dialog open={showCreateMiniGroupDialog} onOpenChange={setShowCreateMiniGroupDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-create-mini-group">
+          <DialogHeader>
+            <DialogTitle>Создать мини-группу</DialogTitle>
+            <DialogDescription>
+              Выберите участников тура для объединения в мини-группу. Они будут делить общий номер отеля.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...miniGroupForm}>
+            <form onSubmit={miniGroupForm.handleSubmit((data) => createMiniGroupMutation.mutate(data))} className="space-y-4">
+              <FormField
+                control={miniGroupForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Название группы</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Например: Друзья из Москвы" {...field} data-testid="input-group-name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-3">
+                <FormLabel>Участники (выберите минимум 2)</FormLabel>
+                <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-3">
+                  {participants.filter(p => !p.deal.groupId).map((participant) => {
+                    const selectedDealIds = miniGroupForm.watch("dealIds") || [];
+                    const isSelected = selectedDealIds.includes(participant.deal.id);
+
+                    return (
+                      <div key={participant.deal.id} className="flex items-center space-x-2 p-2 rounded hover-elevate">
+                        <Checkbox
+                          id={`participant-${participant.deal.id}`}
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            const currentDealIds = miniGroupForm.getValues("dealIds") || [];
+                            if (checked) {
+                              miniGroupForm.setValue("dealIds", [...currentDealIds, participant.deal.id]);
+                              if (currentDealIds.length === 0) {
+                                miniGroupForm.setValue("primaryDealId", participant.deal.id);
+                              }
+                            } else {
+                              const newDealIds = currentDealIds.filter(id => id !== participant.deal.id);
+                              miniGroupForm.setValue("dealIds", newDealIds);
+                              if (miniGroupForm.getValues("primaryDealId") === participant.deal.id) {
+                                miniGroupForm.setValue("primaryDealId", newDealIds[0] || "");
+                              }
+                            }
+                          }}
+                          data-testid={`checkbox-participant-${participant.deal.id}`}
+                        />
+                        <label
+                          htmlFor={`participant-${participant.deal.id}`}
+                          className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          <div className="flex justify-between items-center">
+                            <span>{participant.contact?.name || "—"}</span>
+                            <span className="text-xs text-muted-foreground">{participant.contact?.passport || "—"}</span>
+                          </div>
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+                {miniGroupForm.formState.errors.dealIds && (
+                  <p className="text-sm text-destructive">{miniGroupForm.formState.errors.dealIds.message}</p>
+                )}
+              </div>
+
+              <FormField
+                control={miniGroupForm.control}
+                name="primaryDealId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Основной участник (главный в группе)</FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        data-testid="select-primary-participant"
+                      >
+                        <option value="">Выберите основного участника</option>
+                        {(miniGroupForm.watch("dealIds") || []).map((dealId) => {
+                          const participant = participants.find(p => p.deal.id === dealId);
+                          return (
+                            <option key={dealId} value={dealId}>
+                              {participant?.contact?.name || "—"}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreateMiniGroupDialog(false);
+                    miniGroupForm.reset();
+                  }}
+                  data-testid="button-cancel-mini-group"
+                >
+                  Отмена
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMiniGroupMutation.isPending}
+                  data-testid="button-submit-mini-group"
+                >
+                  {createMiniGroupMutation.isPending ? "Создание..." : "Создать группу"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

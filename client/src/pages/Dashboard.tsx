@@ -125,7 +125,7 @@ export default function Dashboard() {
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     let upcomingArrivals = 0;
 
-    // Financial metrics - separate by currency
+    // Financial metrics - separate by currency (TODO: add amount/currency fields to schema)
     let revenueByRUB = 0;
     let revenueByCNY = 0;
     let touristsCountRUB = 0;
@@ -135,15 +135,15 @@ export default function Dashboard() {
     const hotelRooms = new Map<string, { city: City; twin: number; double: number }>();
 
     tourists.forEach((tourist) => {
-      // Calculate revenue per currency
-      const amount = parseFloat(tourist.amount || "0");
-      if (tourist.currency === "RUB") {
-        revenueByRUB += amount;
-        touristsCountRUB++;
-      } else if (tourist.currency === "CNY") {
-        revenueByCNY += amount;
-        touristsCountCNY++;
-      }
+      // Calculate revenue per currency (currently disabled - fields not in schema)
+      // const amount = parseFloat(tourist.amount || "0");
+      // if (tourist.currency === "RUB") {
+      //   revenueByRUB += amount;
+      //   touristsCountRUB++;
+      // } else if (tourist.currency === "CNY") {
+      //   revenueByCNY += amount;
+      //   touristsCountCNY++;
+      // }
 
       tourist.visits.forEach((visit) => {
         const city = visit.city as City;

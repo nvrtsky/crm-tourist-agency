@@ -18,6 +18,8 @@ import {
   insertFormSchema,
   insertFormFieldSchema,
   insertFormSubmissionSchema,
+  insertGroupSchema,
+  updateGroupSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -734,6 +736,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error submitting form:", error);
       res.status(500).json({ error: "Failed to submit form" });
+    }
+  });
+
+  // ==================== GROUP ROUTES ====================
+
+  // Get all groups for an event
+  app.get("/api/groups/:eventId", async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const groups = await storage.getGroupsByEvent(eventId);
+      res.json(groups);
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      res.status(500).json({ error: "Failed to fetch groups" });
+    }
+  });
+
+  // Create a new group
+  app.post("/api/groups", async (req, res) => {
+    try {
+      const validation = insertGroupSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const group = await storage.createGroup(validation.data);
+      res.json(group);
+    } catch (error) {
+      console.error("Error creating group:", error);
+      res.status(500).json({ error: "Failed to create group" });
+    }
+  });
+
+  // Update group
+  app.patch("/api/groups/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = updateGroupSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const group = await storage.updateGroup(id, validation.data);
+      
+      if (!group) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+
+      res.json(group);
+    } catch (error) {
+      console.error("Error updating group:", error);
+      res.status(500).json({ error: "Failed to update group" });
+    }
+  });
+
+  // Delete group
+  app.delete("/api/groups/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteGroup(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      res.status(500).json({ error: "Failed to delete group" });
+    }
+  });
+
+  // Add deal to group
+  app.post("/api/groups/:id/members", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { dealId, isPrimary = false } = req.body;
+
+      if (!dealId) {
+        return res.status(400).json({ error: "dealId is required" });
+      }
+
+      const group = await storage.getGroup(id);
+      if (!group) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+
+      const deal = await storage.addDealToGroup(dealId, id, isPrimary);
+      
+      if (!deal) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+
+      res.json(deal);
+    } catch (error) {
+      console.error("Error adding deal to group:", error);
+      res.status(500).json({ error: "Failed to add deal to group" });
+    }
+  });
+
+  // Remove deal from group
+  app.delete("/api/groups/:groupId/members/:dealId", async (req, res) => {
+    try {
+      const { dealId } = req.params;
+
+      const deal = await storage.removeDealFromGroup(dealId);
+      
+      if (!deal) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+
+      res.json(deal);
+    } catch (error) {
+      console.error("Error removing deal from group:", error);
+      res.status(500).json({ error: "Failed to remove deal from group" });
     }
   });
 

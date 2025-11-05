@@ -32,6 +32,9 @@ import {
   type FormSubmission,
   type InsertFormSubmission,
   type LeadStatus,
+  type Group,
+  type InsertGroup,
+  type UpdateGroup,
   events,
   contacts,
   deals,
@@ -43,6 +46,7 @@ import {
   leads,
   leadStatusHistory,
   formSubmissions,
+  groups,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -129,6 +133,15 @@ export interface IStorage {
   getSubmissionsByForm(formId: string): Promise<FormSubmission[]>;
   createSubmission(submission: InsertFormSubmission): Promise<FormSubmission>;
   updateSubmission(id: string, submission: Partial<InsertFormSubmission>): Promise<FormSubmission | undefined>;
+
+  // Group operations
+  getGroup(id: string): Promise<Group | undefined>;
+  getGroupsByEvent(eventId: string): Promise<Group[]>;
+  createGroup(group: InsertGroup): Promise<Group>;
+  updateGroup(id: string, group: Partial<UpdateGroup>): Promise<Group | undefined>;
+  deleteGroup(id: string): Promise<boolean>;
+  addDealToGroup(dealId: string, groupId: string, isPrimary?: boolean): Promise<Deal | undefined>;
+  removeDealFromGroup(dealId: string): Promise<Deal | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -628,6 +641,66 @@ export class DatabaseStorage implements IStorage {
       .update(formSubmissions)
       .set(updates)
       .where(eq(formSubmissions.id, id))
+      .returning();
+
+    return result[0];
+  }
+
+  // ==================== GROUP OPERATIONS ====================
+
+  async getGroup(id: string): Promise<Group | undefined> {
+    const result = await db.select().from(groups).where(eq(groups.id, id));
+    return result[0];
+  }
+
+  async getGroupsByEvent(eventId: string): Promise<Group[]> {
+    return await db.select().from(groups).where(eq(groups.eventId, eventId));
+  }
+
+  async createGroup(group: InsertGroup): Promise<Group> {
+    const [result] = await db.insert(groups).values(group).returning();
+    return result;
+  }
+
+  async updateGroup(id: string, updates: Partial<UpdateGroup>): Promise<Group | undefined> {
+    const result = await db
+      .update(groups)
+      .set(updates)
+      .where(eq(groups.id, id))
+      .returning();
+
+    return result[0];
+  }
+
+  async deleteGroup(id: string): Promise<boolean> {
+    await db.update(deals).set({ groupId: null, isPrimaryInGroup: false }).where(eq(deals.groupId, id));
+    const result = await db.delete(groups).where(eq(groups.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async addDealToGroup(dealId: string, groupId: string, isPrimary: boolean = false): Promise<Deal | undefined> {
+    const result = await db
+      .update(deals)
+      .set({
+        groupId,
+        isPrimaryInGroup: isPrimary,
+        updatedAt: new Date(),
+      })
+      .where(eq(deals.id, dealId))
+      .returning();
+
+    return result[0];
+  }
+
+  async removeDealFromGroup(dealId: string): Promise<Deal | undefined> {
+    const result = await db
+      .update(deals)
+      .set({
+        groupId: null,
+        isPrimaryInGroup: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(deals.id, dealId))
       .returning();
 
     return result[0];

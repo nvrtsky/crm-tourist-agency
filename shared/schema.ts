@@ -100,6 +100,15 @@ export const contacts = pgTable("contacts", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Groups table - for families and mini-groups
+export const groups = pgTable("groups", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(), // Group name (e.g., "Семья Ивановых", "Мини-группа 1")
+  type: text("type").notNull(), // 'family' or 'mini-group'
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Deals table - связь контакт + тур
 export const deals = pgTable("deals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -109,6 +118,8 @@ export const deals = pgTable("deals", {
   amount: numeric("amount", { precision: 10, scale: 2 }), // Deal amount (может отличаться от базовой цены тура)
   surcharge: text("surcharge"), // Additional charges/notes
   nights: text("nights"), // Number of nights
+  groupId: varchar("group_id").references(() => groups.id, { onDelete: 'set null' }), // Group this deal belongs to (optional)
+  isPrimaryInGroup: boolean("is_primary_in_group").default(false), // Is this the primary/representative member of the group
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -178,6 +189,7 @@ export const leads = pgTable("leads", {
   source: text("source").notNull().default("manual"), // 'manual', 'form', 'import', 'other'
   formId: varchar("form_id").references(() => forms.id, { onDelete: 'set null' }),
   notes: text("notes"),
+  familyMembersCount: integer("family_members_count"), // Number of family members (optional, for family groups)
   assignedUserId: varchar("assigned_user_id").references(() => users.id, { onDelete: 'set null' }),
   createdByUserId: varchar("created_by_user_id").references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -257,6 +269,10 @@ export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).om
   submittedAt: true 
 });
 
+// Group schemas
+export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
+export const updateGroupSchema = insertGroupSchema.partial();
+
 // ================= TYPES =================
 
 // User types
@@ -290,6 +306,11 @@ export type UpdateNotification = z.infer<typeof updateNotificationSchema>;
 
 // Form types
 export type Form = typeof forms.$inferSelect;
+
+// Group types
+export type Group = typeof groups.$inferSelect;
+export type InsertGroup = z.infer<typeof insertGroupSchema>;
+export type UpdateGroup = z.infer<typeof updateGroupSchema>;
 export type InsertForm = z.infer<typeof insertFormSchema>;
 export type FormField = typeof formFields.$inferSelect;
 export type InsertFormField = z.infer<typeof insertFormFieldSchema>;
@@ -333,6 +354,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const eventsRelations = relations(events, ({ many }) => ({
   deals: many(deals),
   notifications: many(notifications),
+  groups: many(groups),
 }));
 
 export const contactsRelations = relations(contacts, ({ one, many }) => ({
@@ -352,6 +374,10 @@ export const dealsRelations = relations(deals, ({ one, many }) => ({
   event: one(events, {
     fields: [deals.eventId],
     references: [events.id],
+  }),
+  group: one(groups, {
+    fields: [deals.groupId],
+    references: [groups.id],
   }),
   cityVisits: many(cityVisits),
 }));
@@ -430,4 +456,12 @@ export const formSubmissionsRelations = relations(formSubmissions, ({ one }) => 
     fields: [formSubmissions.leadId],
     references: [leads.id],
   }),
+}));
+
+export const groupsRelations = relations(groups, ({ one, many }) => ({
+  event: one(events, {
+    fields: [groups.eventId],
+    references: [events.id],
+  }),
+  deals: many(deals),
 }));

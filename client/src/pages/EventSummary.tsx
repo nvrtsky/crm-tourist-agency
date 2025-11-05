@@ -3,12 +3,12 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import type { Event, Contact, Deal, CityVisit } from "@shared/schema";
+import type { Event, Contact, Deal, CityVisit, Group } from "@shared/schema";
 import { EditableCell } from "@/components/EditableCell";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,7 @@ interface Participant {
   deal: Deal;
   contact: Contact;
   visits: CityVisit[];
+  group: Group | null;
 }
 
 export default function EventSummary() {
@@ -35,9 +36,25 @@ export default function EventSummary() {
     enabled: !!eventId,
   });
 
-  const { data: participants = [], isLoading: participantsLoading } = useQuery<Participant[]>({
+  const { data: rawParticipants = [], isLoading: participantsLoading } = useQuery<Participant[]>({
     queryKey: [`/api/events/${eventId}/participants`],
     enabled: !!eventId,
+  });
+
+  // Sort participants so that groups are contiguous and primary members come first
+  const participants = rawParticipants.slice().sort((a, b) => {
+    // First, group by groupId (nulls last)
+    if (a.deal.groupId && !b.deal.groupId) return -1;
+    if (!a.deal.groupId && b.deal.groupId) return 1;
+    if (a.deal.groupId && b.deal.groupId) {
+      if (a.deal.groupId !== b.deal.groupId) {
+        return a.deal.groupId.localeCompare(b.deal.groupId);
+      }
+      // Within same group, primary members first
+      if (a.deal.isPrimaryInGroup && !b.deal.isPrimaryInGroup) return -1;
+      if (!a.deal.isPrimaryInGroup && b.deal.isPrimaryInGroup) return 1;
+    }
+    return 0;
   });
 
   const updateVisitMutation = useMutation({
@@ -291,8 +308,9 @@ export default function EventSummary() {
               <table className="w-full text-sm border-collapse" data-testid="table-participants">
                 <thead>
                   <tr className="border-b">
-                    <th className="sticky left-0 bg-background z-10 text-left p-2 font-medium border-r" rowSpan={2}>№</th>
-                    <th className="sticky left-10 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
+                    <th className="sticky left-0 bg-background z-10 text-center p-2 font-medium border-r w-12" rowSpan={2}>№</th>
+                    <th className="sticky left-12 bg-background z-10 text-center p-2 font-medium border-r w-16" rowSpan={2}>Группа</th>
+                    <th className="sticky left-28 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Паспорт</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Статус</th>
                     {event.cities.map((city) => (
@@ -313,113 +331,159 @@ export default function EventSummary() {
                   </tr>
                 </thead>
                 <tbody>
-                  {participants.map((participant, index) => (
-                    <tr
-                      key={participant.deal.id}
-                      className="border-b hover-elevate"
-                      data-testid={`row-participant-${participant.deal.id}`}
-                    >
-                      <td className="sticky left-0 bg-background z-10 p-2 border-r">{index + 1}</td>
-                      <td className="sticky left-10 bg-background z-10 p-2 font-medium border-r min-w-[150px]" data-testid={`text-name-${participant.deal.id}`}>
-                        {participant.contact?.name || "—"}
-                      </td>
-                      <td className="p-2 border-r text-muted-foreground">
-                        {participant.contact?.passport || "—"}
-                      </td>
-                      <td className="p-2 border-r">
-                        <Badge className={getStatusColor(participant.deal.status)} data-testid={`badge-status-${participant.deal.id}`}>
-                          {participant.deal.status}
-                        </Badge>
-                      </td>
-                      {event.cities.map((city) => {
-                        const visit = participant.visits?.find((v) => v.city === city);
-                        return (
-                          <>
-                            <td key={`${city}-arrival`} className="p-1 border-r">
-                              <div className="space-y-1">
-                                <EditableCell
-                                  type="date"
-                                  value={visit?.arrivalDate}
-                                  placeholder="Дата"
-                                  onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalDate", value)}
-                                  className="text-xs"
-                                />
-                                <EditableCell
-                                  type="time"
-                                  value={visit?.arrivalTime}
-                                  placeholder="Время"
-                                  onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalTime", value)}
-                                  className="text-xs"
-                                />
+                  {participants.map((participant, index) => {
+                    // Determine if this is the first row in a group
+                    const isFirstInGroup = participant.group && participant.deal.isPrimaryInGroup;
+                    const groupMembers = participant.group 
+                      ? participants.filter(p => p.group?.id === participant.group?.id)
+                      : [];
+                    const groupSize = groupMembers.length;
+                    
+                    // Determine group icon component
+                    const GroupIcon = participant.group?.type === "family" 
+                      ? Users
+                      : participant.group?.type === "mini_group" 
+                        ? UsersRound
+                        : null;
+
+                    return (
+                      <tr
+                        key={participant.deal.id}
+                        className={`border-b hover-elevate ${participant.group ? 'bg-muted/5' : ''}`}
+                        data-testid={`row-participant-${participant.deal.id}`}
+                      >
+                        {/* Number column - always present */}
+                        <td className="sticky left-0 bg-background z-10 p-2 border-r text-center">
+                          {index + 1}
+                        </td>
+                        
+                        {/* Group indicator column with rowSpan for grouped participants */}
+                        {isFirstInGroup ? (
+                          <td 
+                            className="sticky left-12 bg-background z-10 p-2 border-r text-center align-top"
+                            rowSpan={groupSize}
+                          >
+                            <div className="flex flex-col items-center gap-1">
+                              {GroupIcon && (
+                                <GroupIcon className="h-5 w-5 text-primary" />
+                              )}
+                              <div className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
+                                {participant.group?.name}
                               </div>
-                            </td>
-                            <td key={`${city}-transport`} className="p-1 border-r">
-                              <div className="space-y-1">
-                                <EditableCell
-                                  type="select"
-                                  value={visit?.transportType}
-                                  placeholder="Тип"
-                                  selectOptions={[
-                                    { value: "plane", label: "Самолет" },
-                                    { value: "train", label: "Поезд" },
-                                  ]}
-                                  onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transportType", value)}
-                                  className="text-xs"
-                                />
-                                <EditableCell
-                                  type="text"
-                                  value={visit?.flightNumber}
-                                  placeholder="№ рейса"
-                                  onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "flightNumber", value)}
-                                  className="text-xs"
-                                />
+                              <div className="text-[10px] text-muted-foreground">
+                                {groupSize} чел.
                               </div>
-                            </td>
-                            <td key={`${city}-hotel`} className="p-1 border-r min-w-[120px]">
-                              <div className="space-y-1">
-                                <EditableCell
-                                  type="text"
-                                  value={visit?.hotelName}
-                                  placeholder="Отель"
-                                  onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "hotelName", value)}
-                                  className="text-xs"
-                                />
-                                <EditableCell
-                                  type="select"
-                                  value={visit?.roomType}
-                                  placeholder="Тип номера"
-                                  selectOptions={[
-                                    { value: "twin", label: "Twin" },
-                                    { value: "double", label: "Double" },
-                                  ]}
-                                  onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "roomType", value)}
-                                  className="text-xs"
-                                />
-                              </div>
-                            </td>
-                            <td key={`${city}-departure`} className="p-1 border-r">
-                              <div className="space-y-1">
-                                <EditableCell
-                                  type="date"
-                                  value={visit?.departureDate}
-                                  placeholder="Дата"
-                                  onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureDate", value)}
-                                  className="text-xs"
-                                />
-                                <EditableCell
-                                  type="time"
-                                  value={visit?.departureTime}
-                                  placeholder="Время"
-                                  onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
-                                  className="text-xs"
-                                />
-                              </div>
-                            </td>
-                          </>
-                        );
-                      })}
-                    </tr>
-                  ))}
+                            </div>
+                          </td>
+                        ) : !participant.group && (
+                          <td className="sticky left-12 bg-background z-10 p-2 border-r text-center">
+                            —
+                          </td>
+                        )}
+                        
+                        <td className="sticky left-28 bg-background z-10 p-2 font-medium border-r min-w-[150px]" data-testid={`text-name-${participant.deal.id}`}>
+                          <div className="flex items-center gap-2">
+                            <span>{participant.contact?.name || "—"}</span>
+                          </div>
+                        </td>
+                        <td className="p-2 border-r text-muted-foreground">
+                          {participant.contact?.passport || "—"}
+                        </td>
+                        <td className="p-2 border-r">
+                          <Badge className={getStatusColor(participant.deal.status)} data-testid={`badge-status-${participant.deal.id}`}>
+                            {participant.deal.status}
+                          </Badge>
+                        </td>
+                        {event.cities.map((city) => {
+                          const visit = participant.visits?.find((v) => v.city === city);
+                          return (
+                            <>
+                              <td key={`${city}-arrival`} className="p-1 border-r">
+                                <div className="space-y-1">
+                                  <EditableCell
+                                    type="date"
+                                    value={visit?.arrivalDate}
+                                    placeholder="Дата"
+                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalDate", value)}
+                                    className="text-xs"
+                                  />
+                                  <EditableCell
+                                    type="time"
+                                    value={visit?.arrivalTime}
+                                    placeholder="Время"
+                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalTime", value)}
+                                    className="text-xs"
+                                  />
+                                </div>
+                              </td>
+                              <td key={`${city}-transport`} className="p-1 border-r">
+                                <div className="space-y-1">
+                                  <EditableCell
+                                    type="select"
+                                    value={visit?.transportType}
+                                    placeholder="Тип"
+                                    selectOptions={[
+                                      { value: "plane", label: "Самолет" },
+                                      { value: "train", label: "Поезд" },
+                                    ]}
+                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transportType", value)}
+                                    className="text-xs"
+                                  />
+                                  <EditableCell
+                                    type="text"
+                                    value={visit?.flightNumber}
+                                    placeholder="№ рейса"
+                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "flightNumber", value)}
+                                    className="text-xs"
+                                  />
+                                </div>
+                              </td>
+                              <td key={`${city}-hotel`} className="p-1 border-r min-w-[120px]">
+                                <div className="space-y-1">
+                                  <EditableCell
+                                    type="text"
+                                    value={visit?.hotelName}
+                                    placeholder="Отель"
+                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "hotelName", value)}
+                                    className="text-xs"
+                                  />
+                                  <EditableCell
+                                    type="select"
+                                    value={visit?.roomType}
+                                    placeholder="Тип номера"
+                                    selectOptions={[
+                                      { value: "twin", label: "Twin" },
+                                      { value: "double", label: "Double" },
+                                    ]}
+                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "roomType", value)}
+                                    className="text-xs"
+                                  />
+                                </div>
+                              </td>
+                              <td key={`${city}-departure`} className="p-1 border-r">
+                                <div className="space-y-1">
+                                  <EditableCell
+                                    type="date"
+                                    value={visit?.departureDate}
+                                    placeholder="Дата"
+                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureDate", value)}
+                                    className="text-xs"
+                                  />
+                                  <EditableCell
+                                    type="time"
+                                    value={visit?.departureTime}
+                                    placeholder="Время"
+                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
+                                    className="text-xs"
+                                  />
+                                </div>
+                              </td>
+                            </>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

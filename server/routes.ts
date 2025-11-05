@@ -59,27 +59,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const deals = await storage.getDealsByEvent(id);
       
-      // Fetch contact and visits for each deal - only include deals with valid contacts
-      const participants = await Promise.all(
-        deals.map(async (deal) => {
-          const contact = await storage.getContact(deal.contactId);
+      // Batch fetch all related data to avoid N+1 queries
+      const contactIds = [...new Set(deals.map(d => d.contactId))];
+      const dealIds = deals.map(d => d.id);
+      const groupIds = [...new Set(deals.map(d => d.groupId).filter(Boolean))];
+      
+      // Fetch all contacts, visits, and groups in parallel
+      const [allContacts, allVisits, allGroups] = await Promise.all([
+        Promise.all(contactIds.map(cId => storage.getContact(cId))),
+        Promise.all(dealIds.map(dId => storage.getCityVisitsByDeal(dId))),
+        groupIds.length > 0 ? Promise.all(groupIds.map(gId => storage.getGroup(gId))) : Promise.resolve([])
+      ]);
+      
+      // Create lookup maps
+      const contactMap = new Map(allContacts.filter(Boolean).map(c => [c!.id, c!]));
+      const visitsMap = new Map(dealIds.map((dId, idx) => [dId, allVisits[idx]]));
+      const groupMap = new Map(allGroups.filter(Boolean).map(g => [g!.id, g!]));
+      
+      // Assemble participants using lookups
+      const participants = deals
+        .map((deal) => {
+          const contact = contactMap.get(deal.contactId);
           if (!contact) {
             console.warn(`Contact ${deal.contactId} not found for deal ${deal.id}`);
             return null;
           }
-          const visits = await storage.getCityVisitsByDeal(deal.id);
+          
           return {
             deal,
             contact,
-            visits,
+            visits: visitsMap.get(deal.id) || [],
+            group: deal.groupId ? (groupMap.get(deal.groupId) || null) : null,
           };
         })
-      );
+        .filter((p) => p !== null);
       
-      // Filter out null entries (deals with missing contacts)
-      const validParticipants = participants.filter((p) => p !== null);
-      
-      res.json(validParticipants);
+      res.json(participants);
     } catch (error) {
       console.error("Error fetching event participants:", error);
       res.status(500).json({ error: "Failed to fetch participants" });

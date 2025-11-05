@@ -1,85 +1,48 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Dashboard from "@/pages/Dashboard";
-import Tourists from "@/pages/Tourists";
-import Summary from "@/pages/Summary";
+import Tours from "@/pages/Tours";
+import CRM from "@/pages/CRM";
+import Forms from "@/pages/Forms";
+import Settings from "@/pages/Settings";
 import DevTest from "@/pages/DevTest";
 import NotFound from "@/pages/not-found";
 import { useBitrix24 } from "@/hooks/useBitrix24";
 import { EntityIdNotFound } from "@/components/EntityIdNotFound";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Loader2, LayoutDashboard, Users, TableProperties, Settings, RefreshCw, FlaskConical } from "lucide-react";
+import { AlertCircle, Loader2, Settings as SettingsIcon, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 
 function Router() {
+  const [, setLocation] = useLocation();
+  
   return (
     <Switch>
       <Route path="/dev" component={DevTest} />
-      <Route path="/" component={Summary} />
+      <Route path="/">
+        {() => {
+          setLocation("/dashboard");
+          return null;
+        }}
+      </Route>
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/tourists" component={Tourists} />
-      <Route path="/:rest*" component={Summary} />
+      <Route path="/tours" component={Tours} />
+      <Route path="/crm" component={CRM} />
+      <Route path="/forms" component={Forms} />
+      <Route path="/settings" component={Settings} />
+      <Route component={NotFound} />
     </Switch>
-  );
-}
-
-function Navigation() {
-  const [location, setLocation] = useLocation();
-  const { t } = useTranslation();
-
-  return (
-    <nav className="flex gap-1">
-      <Button
-        variant={location === "/" ? "default" : "ghost"}
-        size="sm"
-        onClick={() => setLocation("/")}
-        data-testid="nav-summary"
-        className="flex-1 sm:flex-none"
-      >
-        <TableProperties className="h-4 w-4 sm:mr-2" />
-        <span className="hidden sm:inline">{t("nav.table")}</span>
-      </Button>
-      <Button
-        variant={location === "/dashboard" ? "default" : "ghost"}
-        size="sm"
-        onClick={() => setLocation("/dashboard")}
-        data-testid="nav-dashboard"
-        className="flex-1 sm:flex-none"
-      >
-        <LayoutDashboard className="h-4 w-4 sm:mr-2" />
-        <span className="hidden sm:inline">{t("nav.dashboard")}</span>
-      </Button>
-      <Button
-        variant={location === "/tourists" ? "default" : "ghost"}
-        size="sm"
-        onClick={() => setLocation("/tourists")}
-        data-testid="nav-tourists"
-        className="flex-1 sm:flex-none"
-      >
-        <Users className="h-4 w-4 sm:mr-2" />
-        <span className="hidden sm:inline">{t("nav.addTourist")}</span>
-      </Button>
-      <Button
-        variant={location === "/dev" ? "default" : "ghost"}
-        size="sm"
-        onClick={() => setLocation("/dev")}
-        data-testid="nav-dev"
-        className="flex-1 sm:flex-none"
-        title="DEV тестовый режим"
-      >
-        <FlaskConical className="h-4 w-4 sm:mr-2" />
-        <span className="hidden sm:inline">DEV</span>
-      </Button>
-    </nav>
   );
 }
 
@@ -107,7 +70,6 @@ function AdminMenu() {
     setRebindLog([]);
     addLog("🔄 Начинаем переустановку placement...");
 
-    // Step 1: Unbind OLD handler
     const OLD_HANDLER = 'https://travel-group-manager-ndt72.replit.app/install';
     addLog(`📤 Отвязываем старый placement (handler: ${OLD_HANDLER})...`);
     window.BX24!.callMethod(
@@ -123,7 +85,6 @@ function AdminMenu() {
           addLog("✅ Старый placement отвязан");
         }
 
-        // Step 2: Bind NEW handler
         const NEW_HANDLER = 'https://travel-group-manager-ndt72.replit.app/';
         addLog(`📥 Привязываем placement к новому URL: ${NEW_HANDLER}`);
         window.BX24!.callMethod(
@@ -170,7 +131,7 @@ function AdminMenu() {
           data-testid="button-admin"
           title="Админ"
         >
-          <Settings className="h-4 w-4" />
+          <SettingsIcon className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -241,7 +202,6 @@ function AdminMenu() {
 
 export default function App() {
   const [location] = useLocation();
-  const { t } = useTranslation();
   
   // Dev mode: render directly without Bitrix24 checks
   if (location === "/dev") {
@@ -261,7 +221,11 @@ export default function App() {
 function AppWithBitrix24() {
   const { entityId, entityTypeId, isReady, error, diagnosticInfo } = useBitrix24();
   const { t } = useTranslation();
-  const [location] = useLocation();
+
+  const sidebarStyle = {
+    "--sidebar-width": "16rem",
+    "--sidebar-width-icon": "3rem",
+  };
 
   if (!isReady) {
     return (
@@ -274,7 +238,6 @@ function AppWithBitrix24() {
     );
   }
 
-  // If no entityId found after all attempts, show friendly error screen
   if (!entityId && error) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -293,44 +256,42 @@ function AppWithBitrix24() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="flex flex-col h-screen w-full overflow-hidden">
-          <header className="flex flex-col gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 border-b bg-background shrink-0">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <h1 className="text-base sm:text-lg font-semibold truncate">
-                  <span className="hidden sm:inline">Групповой тур по Китаю</span>
-                  <span className="sm:hidden">Тур Китай</span>
-                </h1>
-                {entityId && (
-                  <span className="hidden md:inline text-xs text-muted-foreground font-mono">
-                    ID: {entityId}
-                  </span>
+        <SidebarProvider style={sidebarStyle as React.CSSProperties}>
+          <div className="flex h-screen w-full">
+            <AppSidebar />
+            <div className="flex flex-col flex-1 overflow-hidden">
+              <header className="flex items-center justify-between px-4 py-3 border-b shrink-0">
+                <div className="flex items-center gap-2">
+                  <SidebarTrigger data-testid="button-sidebar-toggle" />
+                  <h1 className="text-lg font-semibold truncate">
+                    {t("app.title")}
+                  </h1>
+                  {entityId && (
+                    <span className="hidden md:inline text-xs text-muted-foreground font-mono">
+                      ID: {entityId}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <LanguageSwitcher />
+                  <ThemeToggle />
+                </div>
+              </header>
+              <main className="flex-1 overflow-auto">
+                {error && entityId && (
+                  <Alert variant="default" className="m-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>DEMO-режим</AlertTitle>
+                    <AlertDescription className="text-sm whitespace-pre-wrap">
+                      {error}
+                    </AlertDescription>
+                  </Alert>
                 )}
-              </div>
-              <div className="flex items-center gap-1">
-                {/* Hidden per user request */}
-                {/* <AdminMenu /> */}
-                <LanguageSwitcher />
-                <ThemeToggle />
-              </div>
+                <Router />
+              </main>
             </div>
-            <Navigation />
-          </header>
-          <main className="flex-1 overflow-auto">
-            <div className="p-4 md:p-6">
-              {error && entityId && (
-                <Alert variant="default" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>DEMO-режим</AlertTitle>
-                  <AlertDescription className="text-sm whitespace-pre-wrap">
-                    {error}
-                  </AlertDescription>
-                </Alert>
-              )}
-              <Router />
-            </div>
-          </main>
-        </div>
+          </div>
+        </SidebarProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

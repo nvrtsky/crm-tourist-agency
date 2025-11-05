@@ -13,8 +13,17 @@
     "noData": "No data",
     "total": "Total"
   },
+  "app": {
+    "title": "Tourist Agency",
+    "version": "Version {{version}}"
+  },
   "nav": {
+    "main": "Navigation",
     "dashboard": "Dashboard",
+    "tours": "Tours",
+    "crm": "CRM",
+    "forms": "Forms",
+    "settings": "Settings",
     "table": "Summary Table",
     "addTourist": "Add Tourist"
   },

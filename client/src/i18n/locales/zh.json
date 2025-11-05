@@ -13,8 +13,17 @@
     "noData": "无数据",
     "total": "总计"
   },
+  "app": {
+    "title": "旅行社",
+    "version": "版本 {{version}}"
+  },
   "nav": {
+    "main": "导航",
     "dashboard": "控制面板",
+    "tours": "旅游团",
+    "crm": "CRM",
+    "forms": "表单",
+    "settings": "设置",
     "table": "汇总表",
     "addTourist": "添加游客"
   },

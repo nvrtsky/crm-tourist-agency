@@ -1,4 +1,4 @@
-import { Home, Plane, Users, FileText, Settings } from "lucide-react";
+import { UserPlus, Calendar, FileText, Settings } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
@@ -24,22 +24,16 @@ export function AppSidebar() {
 
   const menuItems = [
     {
-      title: t("nav.dashboard"),
-      url: `${urlPrefix}/dashboard`,
-      icon: Home,
-      testId: "nav-dashboard",
+      title: "Лиды",
+      url: `${urlPrefix}/leads`,
+      icon: UserPlus,
+      testId: "nav-leads",
     },
     {
-      title: t("nav.tours"),
-      url: `${urlPrefix}/tours`,
-      icon: Plane,
-      testId: "nav-tours",
-    },
-    {
-      title: t("nav.crm"),
-      url: `${urlPrefix}/crm`,
-      icon: Users,
-      testId: "nav-crm",
+      title: "События",
+      url: `${urlPrefix}/events`,
+      icon: Calendar,
+      testId: "nav-events",
     },
     {
       title: t("nav.forms"),

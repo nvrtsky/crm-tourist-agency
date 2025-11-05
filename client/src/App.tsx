@@ -13,6 +13,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import Dashboard from "@/pages/Dashboard";
 import Tours from "@/pages/Tours";
 import CRM from "@/pages/CRM";
+import Events from "@/pages/Events";
 import Forms from "@/pages/Forms";
 import Settings from "@/pages/Settings";
 import DevTest from "@/pages/DevTest";
@@ -30,25 +31,23 @@ function Router() {
   return (
     <Switch>
       <Route path="/dev" component={DevTest} />
-      <Route path="/demo/dashboard" component={Dashboard} />
-      <Route path="/demo/tours" component={Tours} />
-      <Route path="/demo/crm" component={CRM} />
+      <Route path="/demo/leads" component={CRM} />
+      <Route path="/demo/events" component={Events} />
       <Route path="/demo/forms" component={Forms} />
       <Route path="/demo/settings" component={Settings} />
       <Route path="/demo">
         {() => {
-          setLocation("/demo/dashboard");
+          setLocation("/demo/leads");
           return null;
         }}
       </Route>
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/tours" component={Tours} />
-      <Route path="/crm" component={CRM} />
+      <Route path="/leads" component={CRM} />
+      <Route path="/events" component={Events} />
       <Route path="/forms" component={Forms} />
       <Route path="/settings" component={Settings} />
       <Route path="/">
         {() => {
-          setLocation("/dashboard");
+          setLocation("/leads");
           return null;
         }}
       </Route>

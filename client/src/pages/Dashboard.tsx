@@ -224,12 +224,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold" data-testid="text-page-title">
+    <div className="space-y-6 sm:space-y-8 p-6">
+      <div className="border-l-4 border-l-primary pl-6">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight" data-testid="text-page-title">
           {t("dashboard.title")}
         </h1>
-        <p className="text-sm sm:text-base text-muted-foreground mt-1">
+        <p className="text-base sm:text-lg text-muted-foreground mt-2 font-medium">
           {t("dashboard.subtitle")}
         </p>
       </div>
@@ -265,70 +265,78 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-t-4 border-t-primary shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide">
               {t("dashboard.totalTourists")}
             </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-total-tourists">
+            <div className="text-4xl font-bold text-primary" data-testid="stat-total-tourists">
               {stats.totalTourists}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-2 font-medium">
               {t("dashboard.registeredInTour")}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+        <Card className="border-t-4 border-t-primary shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide">
               {t("dashboard.cityRoute")}
             </CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <MapPin className="h-6 w-6 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-active-cities">
+            <div className="text-4xl font-bold text-primary" data-testid="stat-active-cities">
               {stats.activeCities} / 5
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-2 font-medium">
               {t("dashboard.citiesWithTourists")}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+        <Card className="border-t-4 border-t-primary shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide">
               {t("dashboard.upcomingArrivals")}
             </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Calendar className="h-6 w-6 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-upcoming-arrivals">
+            <div className="text-4xl font-bold text-primary" data-testid="stat-upcoming-arrivals">
               {stats.upcomingArrivals}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-2 font-medium">
               {t("dashboard.nextSevenDays")}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+        <Card className="border-t-4 border-t-primary shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide">
               {t("dashboard.hotels")}
             </CardTitle>
-            <Hotel className="h-4 w-4 text-muted-foreground" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Hotel className="h-6 w-6 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-total-hotels">
+            <div className="text-4xl font-bold text-primary" data-testid="stat-total-hotels">
               {stats.totalHotels}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-2 font-medium">
               {t("dashboard.usedHotels")}
             </p>
           </CardContent>

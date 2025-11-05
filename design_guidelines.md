@@ -1,253 +1,227 @@
-# Design Guidelines: Tourist Agency Group Tour Management System
+# Design Guidelines: Premium Chinese Tour Management System
 
 ## Design Approach
 
-**Selected Approach:** Design System with Custom Adaptation
-- **System Foundation:** Material Design principles combined with Linear's clean data presentation
-- **Justification:** Data-heavy productivity application requiring clarity, efficiency, and professional polish while maintaining visual appeal for tourism context
-- **Key References:** Linear (data tables), Notion (flexible forms), Airbnb (travel aesthetic touches)
+**Selected Approach:** Reference-Based with Luxury Travel Focus
+- **Primary Inspiration:** Chinaunique.ru's premium aesthetic + Airbnb's sophisticated layouts
+- **Secondary References:** Booking.com (trust elements), Notion (CRM/data views)
+- **Justification:** Customer-facing platform requiring emotional engagement, trust-building, and visual appeal for luxury travel market while maintaining operational efficiency
 
-## Core Design Principles
+**Design Principles:**
+1. **Premium First Impression:** Sophisticated visual language conveying luxury travel expertise
+2. **Cultural Bridge:** Blend Russian elegance with Chinese cultural imagery
+3. **Trust Through Polish:** Refined details, generous spacing, professional imagery
+4. **Efficient Luxury:** Beautiful interfaces that don't sacrifice usability
 
-1. **Data Clarity First:** Information hierarchy optimized for tour operators to quickly scan tourist rosters, itineraries, and logistics
-2. **Spatial Organization:** Clear visual separation between overview dashboards and detailed tourist management
-3. **Progressive Disclosure:** Surface critical information immediately, detailed data on demand
-4. **Operational Efficiency:** Minimize clicks for common tasks (adding tourists, updating itineraries)
+## Color System
+
+**Primary Palette:**
+- Gold Accent: #F4A725 (CTAs, highlights, active states)
+- Warm Complement: #D4871F (hover states, secondary actions)
+- Background: #FFFFFF (clean base)
+- Neutral Gray: #F8F9FA (subtle backgrounds)
+- Text Primary: #1A1A1A
+- Text Secondary: #666666
+
+**Semantic Colors:**
+- Success: #10B981
+- Warning: #F59E0B
+- Error: #EF4444
+- Info: #3B82F6
 
 ## Typography System
 
 **Font Selection:**
-- Primary: Inter via Google Fonts CDN (400, 500, 600, 700)
-- Secondary: Noto Sans SC for Chinese text support
-- Monospace: JetBrains Mono for dates, flight/train numbers
+- Primary: Montserrat (400, 500, 600, 700) - premium, geometric elegance
+- Body: Open Sans (400, 600) - excellent Cyrillic support
+- Accent: Playfair Display (for luxury headlines)
 
 **Hierarchy:**
-- Page Titles: text-4xl font-bold (36px)
-- Section Headers: text-2xl font-semibold (24px)
-- Card Titles: text-lg font-medium (18px)
-- Body Text: text-base font-normal (16px)
-- Labels/Meta: text-sm font-medium (14px)
-- Captions: text-xs (12px)
+- Hero Headlines: text-5xl/text-6xl font-bold (Playfair Display)
+- Page Titles: text-3xl font-semibold (Montserrat)
+- Section Headers: text-2xl font-semibold
+- Card Titles: text-xl font-medium
+- Body: text-base (Open Sans)
+- Labels: text-sm font-medium
+- Captions: text-xs
 
 ## Layout System
 
-**Spacing Primitives:** Use Tailwind units of 2, 4, 6, 8, 12, 16, 20
-- Tight spacing: gap-2, p-2 (element-level)
-- Standard spacing: gap-4, p-4, m-4 (component-level)
-- Generous spacing: gap-8, p-8, m-8 (section-level)
-- Major divisions: py-12, py-16, py-20 (page sections)
+**Spacing Primitives:** Tailwind units 3, 4, 6, 8, 12, 16, 24
+- Compact: gap-3, p-3
+- Standard: gap-6, p-6
+- Generous: gap-8, p-8
+- Luxury spacing: py-16, py-24 (major sections)
 
-**Container Structure:**
-- Max content width: max-w-7xl mx-auto
-- Dashboard grid: 12-column system
-- Sidebar navigation: Fixed 256px width (w-64)
-- Content area: flex-1 with px-6 lg:px-8
-
-**Responsive Breakpoints:**
-- Mobile: base (single column)
-- Tablet: md: (2-column grids)
-- Desktop: lg: (3-4 column grids, full layouts)
+**Structure:**
+- Sidebar: Fixed 280px (w-70) with luxury styling
+- Content: max-w-7xl with px-8 lg:px-12
+- Cards: Elevated with shadow-lg, rounded-xl
 
 ## Component Library
 
-### Navigation & Shell
+### Navigation Shell
 
-**Top Navigation Bar:**
-- Fixed header with shadow-sm
-- Height: h-16
-- Logo left, user profile/settings right
-- Language toggle (RU/CN)
-- Breadcrumb trail for context
+**Sidebar (Left, Fixed):**
+- Premium treatment: subtle gradient background (white to warm gray)
+- Gold accent bar on active items
+- Section dividers with decorative lines
+- Icons: Heroicons (24px) with gold tint on active
+- Sections: Dashboard, Tours, CRM, Forms, Settings
+- Company logo top with tagline
+- User profile card at bottom
 
-**Sidebar Navigation (Desktop):**
-- Dashboard overview
-- Tourist roster
-- City-by-city breakdown
-- Reports/Analytics
-- Settings
+**Top Bar:**
+- Height: h-20 (generous)
+- Language switcher (RU/CN) with flag icons
+- Notifications bell
+- Search with gold focus ring
+- User avatar with dropdown
 
 ### Dashboard Components
 
-**Overview Cards (4-column grid on desktop):**
-- Total tourists enrolled
-- Active cities count
-- Upcoming arrivals (next 7 days)
-- Hotel occupancy summary
-- Each card: rounded-lg border with p-6
+**Hero Banner:**
+- Full-width panoramic Chinese landmark imagery (Great Wall/Forbidden City)
+- Height: 50vh on desktop, 40vh mobile
+- Dark gradient overlay (bottom to top)
+- Headline + subheadline in white (Playfair + Open Sans)
+- Primary CTA buttons with backdrop-blur-md background, gold borders
+- Subtle parallax on scroll
 
-**City Timeline Visualization:**
-- Horizontal timeline showing Beijing → Luoyang → Xi'an → Zhangjiajie
-- Visual indicators for tourist count at each city
-- Interactive segments to drill into city details
+**Stats Cards (4-column grid):**
+- White cards with shadow-lg
+- Gold accent border-t-4
+- Large numbers (text-4xl font-bold)
+- Icon in gold circle background
+- Metrics: Active Tours, Total Clients, Cities, Revenue
 
-**Quick Stats Table:**
-- Compact table showing tourist distribution per city
-- Columns: City | Tourists | Hotels | Arrivals This Week
-- Hover states for row highlighting
+**Featured Tours Section:**
+- 3-column grid of tour cards
+- Each card: Image (16:9), gradient overlay, tour name, duration badge, price in gold, quick view button
+- Hover: subtle lift with increased shadow
 
-### Tourist Management
+**Activity Feed:**
+- Timeline design with gold connector line
+- Recent bookings, client updates, tour changes
+- Avatar + action description + timestamp
 
-**Tourist List Table:**
-- Sortable columns: Name | Full Itinerary | Arrival Dates | Status
-- Action buttons: Edit, Delete, View Details
-- Quick filter chips above table (by city, by arrival date)
-- Add Tourist button (primary CTA, top-right)
-- Pagination at bottom
+### Tours Management
 
-**Tourist Detail View/Form:**
-- Two-column layout on desktop
-- Left: Personal information (name, contact, passport)
-- Right: Itinerary builder
+**Tours List:**
+- Masonry grid layout (3 columns desktop, 2 tablet, 1 mobile)
+- Large tour cards with hero images
+- Card elements: Image, city badges, dates, capacity bar, edit/delete actions
+- Filter sidebar: By city, date range, status
+- Add Tour button: prominent, gold background
 
-**Itinerary Builder Component:**
-- Card-based interface for each city
-- Expandable sections per city:
-  - Checkbox: Visiting this city
-  - Date picker: Arrival date
-  - Radio buttons: Transport (Train/Plane with icons)
-  - Dropdown/Autocomplete: Hotel selection
-- Visual connection lines between selected cities
-- Summary panel showing complete route
+**Tour Detail View:**
+- Hero image with breadcrumb overlay
+- Two-column layout: Itinerary timeline (left) + Logistics (right)
+- City stops as connected timeline with images
+- Hotel assignments with property photos
+- Participant list with avatars
+- Document attachments section
+
+### CRM Components
+
+**Client Cards:**
+- Profile photo, name, contact, booking history
+- Status tags (Active, Completed, Pending)
+- Quick actions dropdown
+- Notes preview
+
+**Client Detail:**
+- Header with large profile section
+- Tabbed interface: Overview, Tours, Documents, Communication
+- Booking history timeline
+- Payment status indicators
 
 ### Form Elements
 
-**Input Fields:**
-- Label positioning: top-aligned with mb-2
-- Input height: h-12
-- Border: border rounded-md
-- Focus states with ring
-- Helper text: text-sm mt-1
+**Inputs:**
+- Height: h-14 (luxury sizing)
+- Gold focus rings
+- Floating labels
+- Icon prefixes where relevant
 
 **Date Pickers:**
-- Calendar dropdown interface
-- Format: DD.MM.YYYY
-- Quick select options (today, tomorrow, next week)
-
-**Dropdowns/Select:**
-- Hotel autocomplete with search
-- Recent selections shown first
-- Add new hotel option inline
+- Calendar with gold accents for selected dates
+- Quick ranges (This Month, Next Quarter)
 
 **Buttons:**
-- Primary CTA: px-6 py-3 rounded-lg font-medium
-- Secondary: outlined variant
-- Icon buttons for actions: w-10 h-10 rounded-lg
-- Delete actions: outlined with warning treatment
+- Primary: Gold background, white text, px-8 py-4, rounded-lg
+- Secondary: White background, gold border/text
+- Ghost: Transparent with gold text
+- Icon buttons: rounded-full with hover gold background
+
+**File Uploads:**
+- Drag-drop zones with dashed gold borders
+- Preview thumbnails
+- Progress bars in gold
 
 ### Data Display
 
-**City Cards:**
-- Grid of 4 cards (one per city)
-- Card structure:
-  - City name with Chinese characters
-  - Tourist count badge
-  - Hotels list (max 5 shown, +N more)
-  - Arrival calendar preview
-- Clickable to expand full details
+**Tables:**
+- Alternating row backgrounds (white/neutral)
+- Gold header underline
+- Hover row highlight
+- Sortable columns with gold indicators
 
-**Hotel Assignment Table:**
-- Grouped by hotel within each city
-- Columns: Hotel Name | Tourists | Check-in Dates | Actions
-- Collapsible groups
+**City Showcase Cards:**
+- Large imagery (Beijing, Xi'an, Luoyang, Zhangjiajie)
+- Overlay with city name in Cyrillic + Chinese
+- Stats overlay: tours, hotels, capacity
+- Click to filter tours by city
 
-**Timeline View:**
-- Calendar-style grid showing all arrivals
-- Color-coded by transport method
-- Quick-add functionality
+## Images Strategy
 
-### Overlays & Modals
+**Hero Sections:**
+- Dashboard: Panoramic Great Wall at sunset (1920x1080)
+- Tours page: Terracotta Warriors wide shot
+- CRM: Elegant Chinese garden/architecture
+- Use high-quality, professionally shot imagery
 
-**Add/Edit Tourist Modal:**
-- Large modal (max-w-4xl)
-- Tabbed interface: Personal Info | Itinerary | Documents
-- Sticky footer with Cancel/Save buttons
-
-**Confirmation Dialogs:**
-- Centered, max-w-md
-- Clear action description
-- Destructive actions require explicit confirmation
-
-**Notifications/Toasts:**
-- Top-right positioning
-- Auto-dismiss after 5s
-- Success/error/info variants
-
-## Icons
-
-**Icon Library:** Heroicons via CDN
-- Navigation: outlined 24px icons
-- Actions: outlined 20px icons
-- Status indicators: solid 16px icons
-- Transport icons: ✈️ plane, 🚂 train (emoji or custom)
-
-## Images
-
-**Strategic Image Use:**
-
-**Hero Section (Dashboard):**
-- Subtle panoramic image of Chinese landmarks as background
-- Semi-transparent overlay for text legibility
-- Height: 40vh on desktop, 30vh on mobile
-- Welcome message and quick action buttons overlaid
-
-**City Cards:**
-- Small thumbnail images for each city (120x80px)
-- Beijing: Forbidden City
-- Luoyang: Longmen Grottoes
-- Xi'an: Terracotta Warriors
-- Zhangjiajie: Avatar Mountains
-- Lazy-loaded for performance
+**Tour Cards:**
+- City landmarks (16:9 ratio, 600x400 minimum)
+- Hotel exteriors/interiors for accommodations
+- Cultural highlights (temples, markets, landscapes)
 
 **Empty States:**
-- Illustrations when no tourists added yet
-- Friendly prompt to add first tourist
+- Custom illustrations with Chinese motifs
+- Warm color palette matching brand
+
+**Profile Images:**
+- Circular avatars (80px default)
+- Placeholder with initials on gold gradient
 
 ## Animations
 
-**Minimal Motion:**
-- Table row hover: subtle background transition (150ms)
-- Modal enter/exit: fade + scale (200ms)
-- Notifications: slide-in from right (300ms)
-- No scroll-triggered animations
-- No complex transitions
+**Subtle Luxury Motion:**
+- Card hover: translateY(-4px) + shadow increase (200ms)
+- Button hover: subtle scale(1.02)
+- Modal: fade + scale from center (250ms)
+- Page transitions: smooth fade (150ms)
+- NO aggressive or distracting animations
 
 ## Accessibility
 
-**Consistent Patterns:**
-- All form inputs include visible labels
-- Error states with descriptive messages
-- Keyboard navigation throughout
-- Focus indicators on interactive elements
-- ARIA labels for icon-only buttons
-- Skip-to-content link
-- Semantic HTML structure
+- High contrast ratios (4.5:1 minimum)
+- Keyboard navigation with visible gold focus rings
+- Screen reader labels in Russian
+- Form validation with clear error messages
+- ARIA landmarks throughout
+- Semantic HTML5 structure
 
-## Page Structure
+## Page Layouts
 
-**Dashboard Page:**
-1. Hero banner with greeting
-2. Quick stats cards (4-column grid)
-3. City timeline visualization
-4. Recent activity feed
-5. Quick actions panel
+**Dashboard:** Hero + Stats + Featured Tours + Recent Activity + Quick Actions
 
-**Tourist Roster Page:**
-1. Search and filter bar
-2. Action toolbar (Add Tourist, Export)
-3. Data table with sorting
-4. Pagination controls
+**Tours:** Filter sidebar + Masonry tour grid + Pagination
 
-**City Detail Page:**
-1. City header with image
-2. Tourist list for this city
-3. Hotel breakdown
-4. Arrival schedule calendar
-5. Transport statistics
+**CRM:** Client search + Filterable card grid + Quick add client
 
-**Tourist Detail Page:**
-1. Profile header
-2. Two-column layout: Info | Itinerary
-3. Itinerary builder with city cards
-4. Action buttons footer
+**Forms:** Wizard-style multi-step forms with progress indicator
 
-This design creates a professional, efficient tour management system with clear information architecture, balanced visual hierarchy, and purposeful use of space to support complex data operations.
+**Settings:** Tabbed sections for account, preferences, integrations
+
+This design creates a premium, trustworthy platform balancing luxury aesthetics with operational efficiency for Russian clients booking Chinese tours.

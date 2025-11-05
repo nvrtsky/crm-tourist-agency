@@ -10,8 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import Dashboard from "@/pages/Dashboard";
-import Tours from "@/pages/Tours";
 import CRM from "@/pages/CRM";
 import Events from "@/pages/Events";
 import EventSummary from "@/pages/EventSummary";

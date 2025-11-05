@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,26 +16,133 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, Plus, Search, Filter } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar, Plus, Search, Filter, X } from "lucide-react";
 import { EventCard } from "@/components/EventCard";
-import type { Event } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Event, InsertEvent } from "@shared/schema";
 
 interface EventWithStats extends Event {
   bookedCount: number;
   availableSpots: number;
 }
 
+const createEventFormSchema = z.object({
+  name: z.string().min(3, "Название должно содержать минимум 3 символа"),
+  description: z.string().optional(),
+  country: z.string().min(2, "Укажите страну"),
+  cities: z.string().min(1, "Укажите города через запятую"),
+  tourType: z.string().min(1, "Выберите тип тура"),
+  startDate: z.string().min(1, "Укажите дату начала"),
+  endDate: z.string().min(1, "Укажите дату окончания"),
+  participantLimit: z.string()
+    .min(1, "Укажите лимит участников")
+    .transform(val => {
+      const num = parseInt(val, 10);
+      if (!Number.isFinite(num) || num <= 0) {
+        throw new Error("Лимит участников должен быть положительным числом");
+      }
+      return num;
+    }),
+  price: z.string()
+    .min(1, "Укажите цену")
+    .transform(val => {
+      const num = parseFloat(val);
+      if (!Number.isFinite(num) || num <= 0) {
+        throw new Error("Цена должна быть положительным числом");
+      }
+      return num.toFixed(2);
+    }),
+});
+
+type CreateEventForm = z.infer<typeof createEventFormSchema>;
+
 export default function Events() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [countryFilter, setCountryFilter] = useState<string>("all");
   const [tourTypeFilter, setTourTypeFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("startDate");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const { data: events = [], isLoading } = useQuery<EventWithStats[]>({
     queryKey: ["/api/events"],
   });
+
+  const form = useForm({
+    resolver: zodResolver(createEventFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      country: "",
+      cities: "",
+      tourType: "",
+      startDate: "",
+      endDate: "",
+      participantLimit: "" as any,
+      price: "" as any,
+    },
+  });
+
+  const createEventMutation = useMutation({
+    mutationFn: async (data: CreateEventForm) => {
+      const eventData: InsertEvent = {
+        name: data.name,
+        description: data.description || "",
+        country: data.country,
+        cities: data.cities.split(",").map(c => c.trim()).filter(Boolean),
+        tourType: data.tourType,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        participantLimit: data.participantLimit,
+        price: data.price,
+      };
+      const response = await apiRequest("POST", "/api/events", eventData);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Не удалось создать тур");
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({
+        title: "Тур создан",
+        description: "Новый тур успешно добавлен в систему",
+      });
+      setIsCreateDialogOpen(false);
+      form.reset();
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось создать тур",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: CreateEventForm) => {
+    createEventMutation.mutate(data);
+  };
 
   const filteredEvents = events
     .filter(event => {
@@ -74,7 +184,10 @@ export default function Events() {
             Управление туристическими турами и группами
           </p>
         </div>
-        <Button data-testid="button-create-event">
+        <Button 
+          data-testid="button-create-event"
+          onClick={() => setIsCreateDialogOpen(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Создать тур
         </Button>
@@ -225,6 +338,192 @@ export default function Events() {
           ))}
         </div>
       )}
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Создать новый тур</DialogTitle>
+            <DialogDescription>
+              Заполните информацию о туре. Города вводите через запятую.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Название тура</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Например: Золотое кольцо Китая" {...field} data-testid="input-event-name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Описание</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Краткое описание тура..." 
+                        {...field} 
+                        data-testid="input-event-description"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Страна</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Например: Китай" {...field} data-testid="input-event-country" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="tourType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Тип тура</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Например: Групповой" {...field} data-testid="input-event-tour-type" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="cities"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Города (через запятую)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Пекин, Лоян, Сиань, Чжанцзяцзе, Шанхай" 
+                        {...field} 
+                        data-testid="input-event-cities"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Дата начала</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} data-testid="input-event-start-date" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Дата окончания</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} data-testid="input-event-end-date" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="participantLimit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Лимит участников</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="20" 
+                          {...field} 
+                          data-testid="input-event-limit"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Цена</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="15000" 
+                          {...field} 
+                          data-testid="input-event-price"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreateDialogOpen(false);
+                    form.reset();
+                  }}
+                  data-testid="button-cancel-event"
+                >
+                  Отмена
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createEventMutation.isPending}
+                  data-testid="button-submit-event"
+                >
+                  {createEventMutation.isPending ? "Создание..." : "Создать тур"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

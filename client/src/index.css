@@ -68,6 +68,18 @@
 
   --destructive-foreground: 0 10% 98%;
 
+  --success: 142 76% 29%;
+
+  --success-foreground: 0 0% 98%;
+
+  --warning: 38 92% 28%;
+
+  --warning-foreground: 0 0% 98%;
+
+  --info: 199 89% 33%;
+
+  --info-foreground: 0 0% 98%;
+
   --input: 30 10% 75%;
   --ring: 38 90% 55%;
   --chart-1: 38 90% 55%;
@@ -120,6 +132,18 @@
   /* Fallback for older browsers */
   --destructive-border: hsl(var(--destructive));
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --success-border: hsl(var(--success));
+  --success-border: hsl(from hsl(var(--success)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --warning-border: hsl(var(--warning));
+  --warning-border: hsl(from hsl(var(--warning)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --info-border: hsl(var(--info));
+  --info-border: hsl(from hsl(var(--info)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
 .dark {
@@ -186,6 +210,18 @@
 
   --destructive-foreground: 0 10% 98%;
 
+  --success: 142 60% 85%;
+
+  --success-foreground: 0 0% 15%;
+
+  --warning: 38 80% 85%;
+
+  --warning-foreground: 0 0% 15%;
+
+  --info: 199 80% 85%;
+
+  --info-foreground: 0 0% 15%;
+
   --input: 30 10% 35%;
   --ring: 38 85% 60%;
   --chart-1: 38 85% 65%;
@@ -230,6 +266,18 @@
   /* Fallback for older browsers */
   --destructive-border: hsl(var(--destructive));
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --success-border: hsl(var(--success));
+  --success-border: hsl(from hsl(var(--success)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --warning-border: hsl(var(--warning));
+  --warning-border: hsl(from hsl(var(--warning)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Fallback for older browsers */
+  --info-border: hsl(var(--info));
+  --info-border: hsl(from hsl(var(--info)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
 @layer base {

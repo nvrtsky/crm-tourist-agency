@@ -51,6 +51,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get event participants (deals with contacts)
+  app.get("/api/events/:id/participants", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deals = await storage.getDealsByEvent(id);
+      
+      // Fetch contact for each deal - only include deals with valid contacts
+      const participants = await Promise.all(
+        deals.map(async (deal) => {
+          const contact = await storage.getContact(deal.contactId);
+          if (!contact) {
+            console.warn(`Contact ${deal.contactId} not found for deal ${deal.id}`);
+            return null;
+          }
+          return {
+            deal,
+            contact,
+          };
+        })
+      );
+      
+      // Filter out null entries (deals with missing contacts)
+      const validParticipants = participants.filter((p): p is { deal: typeof deals[0]; contact: NonNullable<typeof p> } => p !== null && p.contact !== null);
+      
+      res.json(validParticipants);
+    } catch (error) {
+      console.error("Error fetching event participants:", error);
+      res.status(500).json({ error: "Failed to fetch participants" });
+    }
+  });
+
   // Create event
   app.post("/api/events", async (req, res) => {
     try {

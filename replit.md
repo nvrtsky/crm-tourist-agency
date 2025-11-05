@@ -1,83 +1,248 @@
-# Веб-сервис для туристического агентства
+# Standalone CRM System for Tourist Agency
 
 ## Overview
-This project is a full-featured web service for a tourist agency with multiple integrated modules:
+This project is a full-featured standalone CRM web application for a tourist agency with integrated modules for lead management, event management, and customer relationship tracking.
 
-1. **Bitrix24 Integration Module**: Embedded tab within "Event" Smart Process items for managing group tours across five Chinese cities (Beijing, Luoyang, Xi'an, Zhangjiajie, Shanghai). Provides tour management, tourist tracking, itinerary planning, statistical dashboard, and Excel export.
+**Key Features:**
+1. **CRM Lead Management**: Complete lead tracking with status management, source attribution, and audit history
+2. **Event Management**: Create and manage tourist events with participant tracking, availability monitoring, and revenue analytics
+3. **Contact & Deal System**: Convert leads to contacts and create deals linked to specific events
+4. **Notification System**: Automated notifications for bookings, group capacity alerts, upcoming events, and participant birthdays
+5. **Form Builder**: Visual form creator for website lead capture with automatic CRM integration
 
-2. **CRM System**: Lead management with status tracking, source attribution, and complete audit history.
-
-3. **Form Builder**: Visual form creator that generates embeddable website forms, capturing submissions and automatically creating CRM leads.
-
-4. **Authentication & Authorization**: Role-based access control system with three levels (admin, manager, viewer) protecting all modules.
-
-The application provides a centralized platform for tourist agency operations, combining client acquisition (forms → leads) with tour execution (Bitrix24 integration).
+The application provides a centralized platform for tourist agency operations with a complete CRM workflow: **Lead → Contact + Deal → Event → Summary Table**.
 
 ## User Preferences
 I prefer detailed explanations.
 I want iterative development.
 Ask before making major changes.
-Do not make changes to folder `Z`.
-Do not make changes to file `Y`.
 
 ## System Architecture
 
-### UI/UX Decisions
-The frontend is built with React, TypeScript, Shadcn UI, and Tailwind CSS, ensuring a modern and responsive user experience. The application uses a **modular sidebar navigation architecture** (Shadcn Sidebar primitives) organizing functionality into five main sections:
+### CRM Workflow
+The system follows a standard CRM flow optimized for tourist agencies:
 
-1. **Dashboard**: Overview statistics and quick access to key metrics
-2. **Tours** (Bitrix24): Tour management module with tabs for Dashboard (city statistics), Summary Table (comprehensive itinerary view), and Add Tourist (CRUD operations)
-3. **CRM**: Lead management and sales funnel (placeholder - architecture only)
-4. **Forms**: Visual form builder for lead generation (placeholder - architecture only)
-5. **Settings**: User authentication, roles, and preferences (placeholder - architecture only)
+1. **Lead Capture**: Leads enter the system via web forms or manual entry
+2. **Lead Qualification**: Review and qualify leads, track status changes
+3. **Conversion**: Convert qualified leads to Contacts with an associated Deal
+4. **Event Assignment**: Link deals to specific tourist events
+5. **Event Management**: Track participants, availability, payments via EventSummary page
 
-The UI features a collapsible sidebar with internationalized navigation (ru/en/zh), responsive design optimized for iframe constraints, sticky headers for data tables, and full mobile adaptation. The Tours section preserves all existing Bitrix24 integration functionality through a tabbed interface.
+### Database Schema
 
-### Technical Implementations
-- **Frontend**: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS, Bitrix24 JS SDK, react-i18next.
-- **Backend**: Express.js, TypeScript, PostgreSQL via Drizzle ORM, Bitrix24 REST API.
-- **Database**: PostgreSQL (Neon-backed) with 8 normalized tables:
-  - `users`: Authentication and role-based access control (admin/manager/viewer)
-  - `forms`: Form builder definitions for lead generation
-  - `formFields`: Dynamic form field configurations
-  - `leads`: CRM lead management with status tracking
-  - `leadStatusHistory`: Audit trail for lead status changes
-  - `formSubmissions`: Captured form submission data
-  - `tourists`: Tourist records synchronized with Bitrix24 contacts
-  - `cityVisits`: Itinerary details for each city visit
-- **Data Integrity**: All foreign key constraints enforced at database level with proper cascade/set null behaviors for referential integrity
-- **Data Structure**: Shared TypeScript types and Zod schemas for data validation, consistent varchar UUID primary keys across all tables
-- **Supported Cities**: Beijing, Luoyang, Xi'an, Zhangjiajie, Shanghai.
-- **Internationalization**: i18next provides support for Russian, English, and Chinese, with automatic language detection and a user-facing switcher.
+**PostgreSQL database with 8 normalized tables:**
 
-### Feature Specifications
-- **Tourist Management**: CRUD operations for tourists, synchronized with Bitrix24 contacts. Updates to tourist fields in the summary table are bidirectionally synchronized with Bitrix24 Contact and Deal entities.
-- **Itinerary Management**: Allows defining city visits, dates, transport, and hotel details with validation. All city visits auto-populate on page load.
-- **Dashboard**: Provides statistics on tourists, city distribution, upcoming arrivals, and hotel usage.
-- **Summary Table**: Offers a comprehensive view of tourists and itineraries, featuring sticky headers, responsive design, grouping by Bitrix24 deals with hyperlinks, and inline editing. It includes a custom grouping system (manual, custom, auto-group by dealId) with persistency, expand/collapse functionality, and smart field merging for "Surcharge" and "Nights" fields. City columns always display field labels with "—" for empty values. Transport-based field labels (e.g., "Airport" vs. "Station") are dynamically adjusted.
-- **Transport Selection**: Uses Shadcn ToggleGroup component for single-click transport type selection (plane ✈️ / train 🚂). Both options are visible side-by-side with clear visual indication of selected state, reducing interaction from 2 clicks (dropdown open + select) to 1 click. Properly handles empty states via `value ?? undefined` pattern.
-- **Sharing & Export**: Enables sharing via "Copy link" and "Download Excel" options for the full table or city-specific data. Excel exports include tourist data, itineraries, and Bitrix24 entity IDs. The Smart Process title links to the Bitrix24 Event entity.
-- **DEV Mode (`/dev`)**: A standalone testing page with mock data, enabling rapid development and testing without a Bitrix24 connection. It mirrors all main functionalities of the production application.
-- **Bitrix24 Integration**: The application functions as an embedded tab within the "Event" Smart Process. It includes robust entity ID detection, data synchronization (Event → deals → contacts), and only updates existing Bitrix24 contacts. A rebind mechanism (`/rebind.html`) addresses incorrect placement configurations.
+#### Core CRM Tables
+- **events**: Tourist events/tours with dynamic city lists
+  - Fields: name, description, country, cities (array), tourType, startDate, endDate, participantLimit, price
+  - Purpose: Manages tour offerings with flexible geography
+  
+- **contacts**: Customer/tourist records (converted from leads)
+  - Fields: name, email, phone, passport, birthDate, leadId (source lead), notes
+  - Purpose: Stores participant information
+  
+- **deals**: Contact-Event relationships with transaction details
+  - Fields: contactId, eventId, status (pending/confirmed/cancelled), amount
+  - Purpose: Tracks bookings and payments
+  
+- **leads**: Initial customer inquiries
+  - Fields: name, email, phone, status (new/contacted/qualified/converted/lost), source (form/referral/direct), formId
+  - Purpose: Lead management and qualification
 
-### System Design Choices
-- **Modular Architecture**: Four independent but integrated modules (Bitrix24, CRM, Forms, Auth) sharing common database
-- **Smart Process Integration**: Each "Event" Smart Process item in Bitrix24 corresponds to a single group tour
-- **Database-First Design**: PostgreSQL with Drizzle ORM, all relationships enforced via FK constraints with appropriate cascade behaviors
-- **API Endpoints**: RESTful API handles CRUD operations for all entities (tourists, leads, forms, users) with Zod validation
-- **Environment Variables**: `BITRIX24_WEBHOOK_URL`, `DATABASE_URL`, `SESSION_SECRET` for production configuration
-- **Development Workflow**: Supports both production mode (requires Bitrix24 SDK) and `/dev` mode (independent testing with mock data)
-- **Migration Strategy**: Schema changes via `npm run db:push --force` (Drizzle Kit), no manual SQL migrations
+#### Supporting Tables  
+- **leadStatusHistory**: Audit trail for lead status changes
+  - Fields: leadId, fromStatus, toStatus, reason
+  - Purpose: Complete audit history
+
+- **notifications**: In-app notification system
+  - Fields: type (booking/group_filled/upcoming_event/birthday), message, eventId, contactId, isRead
+  - Purpose: Automated alerts for key events
+
+- **forms**: Form builder for lead generation
+  - Fields: name, description, fields (JSONB)
+  - Purpose: Website integration for lead capture
+
+- **formSubmissions**: Form submission data
+  - Fields: formId, leadId, data (JSONB), ipAddress, userAgent
+  - Purpose: Capture and track form submissions
+
+### Key Features
+
+#### 1. Events Module (`/events`)
+- **Event List**: Grid of event cards with filtering (country, tour type) and sorting (date, price, availability)
+- **Color-Coded Status**: Traffic-light system based on availability
+  - 🟢 Green: >30% spots available (secondary)
+  - 🟡 Yellow: 10-30% spots available (default)
+  - 🔴 Red: <10% spots available or full (destructive)
+- **Event Details**: Click-through to Summary table for participant management
+- **Statistics**: Total events, upcoming events, nearly-full groups
+
+#### 2. EventSummary Module (`/events/:id/summary`)
+- **Participant Table**: Display contacts and deals for the event
+- **Statistics Dashboard**: Total participants, confirmed bookings, pending approvals, revenue
+- **Excel Export**: Download participant list with all contact information
+- **Status Tracking**: Visual status badges for deal states
+
+#### 3. Leads Module (`/leads`)
+- **Lead List**: Display all leads with status, source, and timestamps
+- **Lead Details**: View complete lead information and history
+- **Lead Conversion**: Convert qualified leads to contacts with deal creation
+- **Status Management**: Track lead progression through the funnel
+
+#### 4. Notification System
+Automated notifications triggered by:
+- New deal created for an event
+- Event group 90%+ full (participantLimit threshold)
+- Event starting within 7 days
+- Participant birthdays in current month (highlights related events)
+
+### UI/UX Design
+
+**Frontend Stack**: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS
+
+**Navigation Structure** (Shadcn Sidebar):
+1. **Лиды (Leads)**: Lead management and qualification
+2. **События (Events)**: Event list and availability tracking  
+3. **Forms**: Form builder for lead generation
+4. **Settings**: Application configuration
+
+**Design Principles**:
+- Consistent Shadcn component usage (Card, Badge, Button, Table)
+- Color-coded status indicators with dark mode support
+- Responsive grid layouts for cards and tables
+- Loading skeletons and empty states
+- Data-testid attributes for all interactive elements
+
+### Backend Architecture
+
+**Stack**: Express.js, TypeScript, PostgreSQL, Drizzle ORM
+
+**API Endpoints**:
+```
+Events:
+  GET    /api/events              - List all events with stats
+  GET    /api/events/:id          - Get single event details
+  GET    /api/events/:id/participants - Get event deals + contacts
+  POST   /api/events              - Create new event
+  PATCH  /api/events/:id          - Update event
+  DELETE /api/events/:id          - Delete event
+
+Contacts:
+  GET    /api/contacts            - List all contacts
+  GET    /api/contacts/:id        - Get contact details
+  POST   /api/contacts            - Create contact
+  PATCH  /api/contacts/:id        - Update contact
+  DELETE /api/contacts/:id        - Delete contact
+
+Deals:
+  GET    /api/deals               - List all deals
+  GET    /api/deals/event/:id     - Get deals for event
+  POST   /api/deals               - Create deal
+  PATCH  /api/deals/:id           - Update deal status/amount
+  DELETE /api/deals/:id           - Delete deal
+
+Leads:
+  GET    /api/leads               - List all leads
+  GET    /api/leads/:id           - Get lead details
+  POST   /api/leads               - Create lead
+  PATCH  /api/leads/:id           - Update lead
+  DELETE /api/leads/:id           - Delete lead
+  GET    /api/leads/:id/history   - Get status history
+
+Notifications:
+  GET    /api/notifications       - Get all notifications
+  PATCH  /api/notifications/:id/read - Mark as read
+  POST   /api/notifications       - Create notification
+
+Forms:
+  GET    /api/forms               - List all forms
+  POST   /api/forms               - Create form
+  POST   /api/forms/:id/submit    - Submit form (auto-creates lead)
+```
+
+**Data Validation**: Zod schemas from drizzle-zod for type-safe request/response validation
+
+**Storage Layer**: IStorage interface with DatabaseStorage implementation
+- All database operations abstracted through storage layer
+- Proper error handling and logging
+- Foreign key constraints enforced at DB level
+- Cascading deletes for referential integrity
+
+### Technical Decisions
+
+#### Geography Design
+- **Dynamic Cities**: Events store cities as arrays (text[])  in PostgreSQL
+- **Expandable**: Easy to add new countries and cities without schema changes
+- **Current Focus**: 5 Chinese cities (Beijing, Luoyang, Xi'an, Zhangjiajie, Shanghai)
+
+#### CRM Flow
+- **Lead-First**: All contacts originate from leads (leadId foreign key)
+- **Deal-Centric**: Relationships tracked via deals table
+- **Event-Based**: All activities organized around tourist events
+
+#### Notification Strategy
+- **Backend Automation**: Notifications auto-created on deal creation, status changes
+- **90% Threshold**: Group capacity alerts when ≤10% spots remain
+- **In-App Only (MVP)**: Email notifications prepared for future enhancement
+
+#### Status Management
+- **Lead Status**: new → contacted → qualified → converted/lost
+- **Deal Status**: pending → confirmed/cancelled
+- **Event Availability**: Calculated from participantLimit - bookedCount
+
+### Development Workflow
+
+**Environment Setup**:
+- PostgreSQL database (Neon-backed) via `create_postgresql_database_tool`
+- Environment variables: `DATABASE_URL`, `NODE_ENV`
+- Schema migration: `npm run db:push` (Drizzle Kit)
+
+**Development Server**: `npm run dev`
+- Frontend: Vite dev server
+- Backend: Express.js with tsx
+- Hot reload enabled for both
+
+**Demo Mode**: `/demo/*` routes provide full functionality without authentication
+
+## Migration from Bitrix24
+
+This application was migrated from a Bitrix24-integrated system to a standalone CRM:
+
+**Changes**:
+- ❌ Removed: Bitrix24 SDK, entity ID detection, Smart Process integration
+- ❌ Removed: `tourists` and `cityVisits` tables (replaced by contacts/deals)
+- ❌ Removed: All Bitrix24 API calls and synchronization logic
+- ✅ Added: Complete standalone CRM with events, contacts, deals
+- ✅ Added: Lead management system
+- ✅ Added: Notification system
+- ✅ Added: Independent event management
+
+**Architecture Benefits**:
+- No external dependencies (except database)
+- Full control over data model and workflows
+- Simpler deployment and maintenance
+- Better performance (no external API calls)
+
+## Future Enhancements
+
+**Planned Features** (not yet implemented):
+1. **Full EventSummary**: Dynamic city columns, grouping, inline editing (currently basic version)
+2. **Lead Conversion UI**: Visual dialog for Lead → Contact + Deal workflow
+3. **Email Notifications**: SMTP integration for automated emails
+4. **Role-Based Access**: Admin/Manager/Viewer permissions
+5. **Advanced Filtering**: Date ranges, multi-select filters
+6. **Dashboard Analytics**: Revenue charts, conversion funnels
+7. **Internationalization**: Multi-language support (ru/en/zh)
 
 ## External Dependencies
-- **Bitrix24**: CRM and Smart Process platform.
-- **React**: Frontend library.
-- **TypeScript**: Programming language.
-- **Wouter**: Client-side routing.
-- **TanStack Query**: Data fetching and caching.
-- **Shadcn UI**: UI component library.
-- **Tailwind CSS**: Utility-first CSS framework.
-- **Express.js**: Backend web application framework.
-- **xlsx**: Library for reading and writing Excel files.
-- **i18next & react-i18next**: Internationalization framework for React.
-- **i18next-browser-languagedetector**: Language detection for i18next.
+- **React** & **TypeScript**: Frontend framework and language
+- **Wouter**: Lightweight client-side routing
+- **TanStack Query**: Data fetching, caching, and synchronization
+- **Shadcn UI**: Component library built on Radix UI
+- **Tailwind CSS**: Utility-first CSS framework
+- **Express.js**: Backend web framework
+- **Drizzle ORM**: TypeScript ORM for PostgreSQL
+- **PostgreSQL**: Relational database (Neon-hosted)
+- **xlsx**: Excel file generation
+- **date-fns**: Date manipulation and formatting
+- **zod**: Schema validation

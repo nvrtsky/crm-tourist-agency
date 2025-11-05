@@ -14,6 +14,7 @@ import Dashboard from "@/pages/Dashboard";
 import Tours from "@/pages/Tours";
 import CRM from "@/pages/CRM";
 import Events from "@/pages/Events";
+import EventSummary from "@/pages/EventSummary";
 import Forms from "@/pages/Forms";
 import Settings from "@/pages/Settings";
 import DevTest from "@/pages/DevTest";
@@ -32,6 +33,7 @@ function Router() {
     <Switch>
       <Route path="/dev" component={DevTest} />
       <Route path="/demo/leads" component={CRM} />
+      <Route path="/demo/events/:id/summary" component={EventSummary} />
       <Route path="/demo/events" component={Events} />
       <Route path="/demo/forms" component={Forms} />
       <Route path="/demo/settings" component={Settings} />
@@ -42,6 +44,7 @@ function Router() {
         }}
       </Route>
       <Route path="/leads" component={CRM} />
+      <Route path="/events/:id/summary" component={EventSummary} />
       <Route path="/events" component={Events} />
       <Route path="/forms" component={Forms} />
       <Route path="/settings" component={Settings} />

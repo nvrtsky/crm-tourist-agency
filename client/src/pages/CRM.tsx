@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { LeadsTable } from "@/components/LeadsTable";
+import { LeadDetailModal } from "@/components/LeadDetailModal";
 import { Users, TrendingUp, Clock, CheckCircle, Plus } from "lucide-react";
 import {
   DndContext,
@@ -32,6 +33,8 @@ export default function CRM() {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -148,13 +151,24 @@ export default function CRM() {
   };
 
   const handleLeadClick = (lead: Lead) => {
-    console.log("Lead clicked:", lead);
+    setSelectedLead(lead);
+    setIsModalOpen(true);
   };
 
   const handleLeadDelete = (leadId: string) => {
     if (confirm("Вы уверены, что хотите удалить этот лид?")) {
       deleteLeadMutation.mutate(leadId);
     }
+  };
+
+  const handleConvertToDeal = (leadId: string) => {
+    console.log("Converting lead to deal:", leadId);
+    // TODO: Implement convertLeadToDeal mutation in next task
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedLead(null);
   };
 
   if (isLoading) {
@@ -237,6 +251,13 @@ export default function CRM() {
           />
         </div>
       )}
+
+      <LeadDetailModal
+        lead={selectedLead}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onConvertToDeal={handleConvertToDeal}
+      />
     </div>
   );
 }

@@ -23,7 +23,15 @@ Do not make changes to file `Y`.
 ## System Architecture
 
 ### UI/UX Decisions
-The frontend is built with React, TypeScript, Shadcn UI, and Tailwind CSS, ensuring a modern and responsive user experience. It features a statistical dashboard, a wide summary table with sticky headers for efficient data overview, and full mobile adaptation including compact navigation and responsive cards.
+The frontend is built with React, TypeScript, Shadcn UI, and Tailwind CSS, ensuring a modern and responsive user experience. The application uses a **modular sidebar navigation architecture** (Shadcn Sidebar primitives) organizing functionality into five main sections:
+
+1. **Dashboard**: Overview statistics and quick access to key metrics
+2. **Tours** (Bitrix24): Tour management module with tabs for Dashboard (city statistics), Summary Table (comprehensive itinerary view), and Add Tourist (CRUD operations)
+3. **CRM**: Lead management and sales funnel (placeholder - architecture only)
+4. **Forms**: Visual form builder for lead generation (placeholder - architecture only)
+5. **Settings**: User authentication, roles, and preferences (placeholder - architecture only)
+
+The UI features a collapsible sidebar with internationalized navigation (ru/en/zh), responsive design optimized for iframe constraints, sticky headers for data tables, and full mobile adaptation. The Tours section preserves all existing Bitrix24 integration functionality through a tabbed interface.
 
 ### Technical Implementations
 - **Frontend**: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS, Bitrix24 JS SDK, react-i18next.

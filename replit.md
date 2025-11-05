@@ -24,7 +24,13 @@ A PostgreSQL database with 9 normalized tables:
 
 ### Key Features
 -   **Events Module**: Manages tourist events with filtering, sorting, color-coded availability, and detailed participant tracking. Includes a dynamic `EventSummary` page with inline editable city-specific itinerary details and Excel export.
--   **Leads Module**: Comprehensive lead management, including creation, conversion (with special handling for families), and status tracking.
+-   **Leads Module**: Comprehensive lead management, including creation, conversion (with special handling for families via `familyMembersCount` field), and status tracking.
+-   **Group Management**: 
+    - Two group types: **Families** (shared hotel/transport/invoice, separate passports) and **Mini-groups** (shared hotel only, individual transport/invoices)
+    - Family creation: automatic during lead-to-contact conversion when `familyMembersCount > 1`
+    - Mini-group creation: manual via dialog in EventSummary for existing ungrouped participants
+    - Visual representation: merged cells in participant table with lucide-react icons (Users for families, UsersRound for mini-groups)
+    - Rollback mechanism: ensures data consistency during group creation
 -   **Notification System**: Automated in-app notifications for bookings, group capacity, upcoming events, and participant birthdays.
 -   **Form Builder**: Visual tool for creating web forms to capture leads directly into the CRM.
 

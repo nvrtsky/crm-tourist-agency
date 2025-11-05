@@ -7,7 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import CRM from "@/pages/CRM";
+import Leads from "@/pages/Leads";
 import Events from "@/pages/Events";
 import EventSummary from "@/pages/EventSummary";
 import Forms from "@/pages/Forms";
@@ -22,7 +22,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/dev" component={DevTest} />
-      <Route path="/demo/leads" component={CRM} />
+      <Route path="/demo/leads" component={Leads} />
       <Route path="/demo/events/:id/summary" component={EventSummary} />
       <Route path="/demo/events" component={Events} />
       <Route path="/demo/forms" component={Forms} />
@@ -33,7 +33,7 @@ function Router() {
           return null;
         }}
       </Route>
-      <Route path="/leads" component={CRM} />
+      <Route path="/leads" component={Leads} />
       <Route path="/events/:id/summary" component={EventSummary} />
       <Route path="/events" component={Events} />
       <Route path="/forms" component={Forms} />

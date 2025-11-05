@@ -77,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Filter out null entries (deals with missing contacts)
-      const validParticipants = participants.filter((p): p is { deal: typeof deals[0]; contact: NonNullable<typeof p> } => p !== null && p.contact !== null);
+      const validParticipants = participants.filter((p) => p !== null);
       
       res.json(validParticipants);
     } catch (error) {

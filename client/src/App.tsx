@@ -214,8 +214,13 @@ function AdminMenu() {
 export default function App() {
   const [location] = useLocation();
   
+  // Check window.location.pathname for initial load
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : location;
+  
+  console.log('[App] Location:', location, 'Pathname:', pathname);
+  
   // Dev mode: render directly without Bitrix24 checks
-  if (location === "/dev") {
+  if (location === "/dev" || pathname === "/dev") {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -227,10 +232,12 @@ export default function App() {
   }
 
   // Demo mode: render with sidebar but without Bitrix24 checks
-  if (location.startsWith("/demo")) {
+  if (location.startsWith("/demo") || pathname.startsWith("/demo")) {
+    console.log('[App] Rendering AppInDemoMode');
     return <AppInDemoMode />;
   }
 
+  console.log('[App] Rendering AppWithBitrix24');
   return <AppWithBitrix24 />;
 }
 

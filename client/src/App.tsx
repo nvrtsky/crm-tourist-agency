@@ -16,6 +16,7 @@ import CRM from "@/pages/CRM";
 import Forms from "@/pages/Forms";
 import Settings from "@/pages/Settings";
 import DevTest from "@/pages/DevTest";
+import StatusDemo from "@/pages/StatusDemo";
 import NotFound from "@/pages/not-found";
 import { useBitrix24 } from "@/hooks/useBitrix24";
 import { EntityIdNotFound } from "@/components/EntityIdNotFound";
@@ -30,6 +31,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/dev" component={DevTest} />
+      <Route path="/status-demo" component={StatusDemo} />
+      <Route path="/demo/status-demo" component={StatusDemo} />
       <Route path="/demo/dashboard" component={Dashboard} />
       <Route path="/demo/tours" component={Tours} />
       <Route path="/demo/crm" component={CRM} />

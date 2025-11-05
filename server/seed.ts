@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { events, contacts, deals, leads, notifications } from "../shared/schema";
+import { events, contacts, deals, leads, notifications, cityVisits } from "../shared/schema";
 import { sql } from "drizzle-orm";
 
 async function seed() {
@@ -8,6 +8,7 @@ async function seed() {
   // Clear existing data
   console.log("🗑️  Clearing existing data...");
   await db.delete(notifications);
+  await db.delete(cityVisits);
   await db.delete(deals);
   await db.delete(contacts);
   await db.delete(events);
@@ -370,6 +371,42 @@ async function seed() {
 
   console.log(`✅ Created ${testDeals.length} test deals`);
 
+  // Create city visits for China tour participants
+  console.log("🗺️ Creating city visits for China tour...");
+  const chinaCities = ["Beijing", "Luoyang", "Xi'an", "Zhangjiajie", "Shanghai"];
+  
+  const cityVisitsList = [];
+  
+  // Create visits for first 5 participants of China tour
+  for (let i = 0; i < Math.min(5, testDeals.length); i++) {
+    const deal = testDeals[i];
+    
+    for (let j = 0; j < chinaCities.length; j++) {
+      const city = chinaCities[j];
+      const isFirstCity = j === 0;
+      const isLastCity = j === chinaCities.length - 1;
+      
+      cityVisitsList.push({
+        dealId: deal.id,
+        city,
+        arrivalDate: isFirstCity ? "2025-06-01" : `2025-06-0${j + 1}`,
+        arrivalTime: isFirstCity ? "14:30" : "10:00",
+        departureDate: isLastCity ? "2025-06-10" : `2025-06-0${j + 2}`,
+        departureTime: isLastCity ? "18:00" : "15:00",
+        transportType: isFirstCity ? "plane" : (j % 2 === 0 ? "plane" : "train"),
+        departureTransportType: isLastCity ? "plane" : (j % 2 === 0 ? "train" : "plane"),
+        flightNumber: isFirstCity ? "SU221" : (j % 2 === 0 ? `CA${100 + j}` : `G${200 + j}`),
+        airport: isFirstCity ? "Sheremetyevo" : undefined,
+        departureFlightNumber: isLastCity ? "SU222" : (j % 2 === 0 ? `G${300 + j}` : `CA${400 + j}`),
+        hotelName: `Hotel ${city} ${i + 1}`,
+        roomType: i % 2 === 0 ? "twin" : "double",
+      });
+    }
+  }
+  
+  const testCityVisits = await db.insert(cityVisits).values(cityVisitsList).returning();
+  console.log(`✅ Created ${testCityVisits.length} city visits`);
+
   // Create test notifications
   console.log("🔔 Creating test notifications...");
   const testNotifications = await db.insert(notifications).values([
@@ -408,6 +445,7 @@ async function seed() {
   console.log(`   - ${testEvents.length} events (tours)`);
   console.log(`   - ${testContacts.length} contacts`);
   console.log(`   - ${testDeals.length} deals`);
+  console.log(`   - ${testCityVisits.length} city visits`);
   console.log(`   - ${testNotifications.length} notifications`);
 }
 

@@ -57,7 +57,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const deals = await storage.getDealsByEvent(id);
       
-      // Fetch contact for each deal - only include deals with valid contacts
+      // Fetch contact and visits for each deal - only include deals with valid contacts
       const participants = await Promise.all(
         deals.map(async (deal) => {
           const contact = await storage.getContact(deal.contactId);
@@ -65,9 +65,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.warn(`Contact ${deal.contactId} not found for deal ${deal.id}`);
             return null;
           }
+          const visits = await storage.getCityVisitsByDeal(deal.id);
           return {
             deal,
             contact,
+            visits,
           };
         })
       );
@@ -279,6 +281,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const deal = await storage.createDeal(validation.data);
+      
+      // Auto-create city visits for all cities in the event route
+      const event = await storage.getEvent(deal.eventId);
+      if (event && event.cities && event.cities.length > 0) {
+        for (const city of event.cities) {
+          await storage.createCityVisit({
+            dealId: deal.id,
+            city,
+            arrivalDate: event.startDate,
+            transportType: "plane",
+            hotelName: `Hotel ${city}`,
+          });
+        }
+      }
+      
       res.json(deal);
     } catch (error) {
       console.error("Error creating deal:", error);
@@ -608,6 +625,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'pending',
         amount: event.price,
       });
+
+      // Auto-create city visits for all cities in the event route
+      if (event.cities && event.cities.length > 0) {
+        for (const city of event.cities) {
+          await storage.createCityVisit({
+            dealId: deal.id,
+            city,
+            arrivalDate: event.startDate,
+            transportType: "plane",
+            hotelName: `Hotel ${city}`,
+          });
+        }
+      }
 
       // Update lead status to 'won'
       await storage.updateLead(id, { status: 'won' });

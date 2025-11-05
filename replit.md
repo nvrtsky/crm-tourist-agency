@@ -1,7 +1,17 @@
 # Веб-сервис для туристического агентства
 
 ## Overview
-This project is a web application designed to manage group tours across five Chinese cities (Beijing, Luoyang, Xi'an, Zhangjiajie, Shanghai). It integrates with Bitrix24 as an embedded tab within "Smart Process" items (specifically, "Event" smart processes), where each item represents a single group tour. The application aims to streamline tour management, track tourists and itineraries, provide a statistical dashboard, a comprehensive summary table, and enable Excel export. The core purpose is to simplify the operational aspects of a tourist agency by offering a centralized platform for tour data.
+This project is a full-featured web service for a tourist agency with multiple integrated modules:
+
+1. **Bitrix24 Integration Module**: Embedded tab within "Event" Smart Process items for managing group tours across five Chinese cities (Beijing, Luoyang, Xi'an, Zhangjiajie, Shanghai). Provides tour management, tourist tracking, itinerary planning, statistical dashboard, and Excel export.
+
+2. **CRM System**: Lead management with status tracking, source attribution, and complete audit history.
+
+3. **Form Builder**: Visual form creator that generates embeddable website forms, capturing submissions and automatically creating CRM leads.
+
+4. **Authentication & Authorization**: Role-based access control system with three levels (admin, manager, viewer) protecting all modules.
+
+The application provides a centralized platform for tourist agency operations, combining client acquisition (forms → leads) with tour execution (Bitrix24 integration).
 
 ## User Preferences
 I prefer detailed explanations.
@@ -17,8 +27,18 @@ The frontend is built with React, TypeScript, Shadcn UI, and Tailwind CSS, ensur
 
 ### Technical Implementations
 - **Frontend**: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS, Bitrix24 JS SDK, react-i18next.
-- **Backend**: Express.js, TypeScript, In-memory storage (for development), Bitrix24 REST API.
-- **Data Structure**: Shared TypeScript types and Zod schemas for data validation.
+- **Backend**: Express.js, TypeScript, PostgreSQL via Drizzle ORM, Bitrix24 REST API.
+- **Database**: PostgreSQL (Neon-backed) with 8 normalized tables:
+  - `users`: Authentication and role-based access control (admin/manager/viewer)
+  - `forms`: Form builder definitions for lead generation
+  - `formFields`: Dynamic form field configurations
+  - `leads`: CRM lead management with status tracking
+  - `leadStatusHistory`: Audit trail for lead status changes
+  - `formSubmissions`: Captured form submission data
+  - `tourists`: Tourist records synchronized with Bitrix24 contacts
+  - `cityVisits`: Itinerary details for each city visit
+- **Data Integrity**: All foreign key constraints enforced at database level with proper cascade/set null behaviors for referential integrity
+- **Data Structure**: Shared TypeScript types and Zod schemas for data validation, consistent varchar UUID primary keys across all tables
 - **Supported Cities**: Beijing, Luoyang, Xi'an, Zhangjiajie, Shanghai.
 - **Internationalization**: i18next provides support for Russian, English, and Chinese, with automatic language detection and a user-facing switcher.
 
@@ -33,10 +53,13 @@ The frontend is built with React, TypeScript, Shadcn UI, and Tailwind CSS, ensur
 - **Bitrix24 Integration**: The application functions as an embedded tab within the "Event" Smart Process. It includes robust entity ID detection, data synchronization (Event → deals → contacts), and only updates existing Bitrix24 contacts. A rebind mechanism (`/rebind.html`) addresses incorrect placement configurations.
 
 ### System Design Choices
-- **Smart Process Integration**: Each "Event" Smart Process item in Bitrix24 corresponds to a single group tour.
-- **API Endpoints**: A REST API handles tourist management and data retrieval.
-- **Environment Variables**: Utilizes `BITRIX24_WEBHOOK_URL` for production and configuration.
-- **Development Workflow**: Supports both a production mode requiring Bitrix24 SDK and a `/dev` mode for independent testing with mock data.
+- **Modular Architecture**: Four independent but integrated modules (Bitrix24, CRM, Forms, Auth) sharing common database
+- **Smart Process Integration**: Each "Event" Smart Process item in Bitrix24 corresponds to a single group tour
+- **Database-First Design**: PostgreSQL with Drizzle ORM, all relationships enforced via FK constraints with appropriate cascade behaviors
+- **API Endpoints**: RESTful API handles CRUD operations for all entities (tourists, leads, forms, users) with Zod validation
+- **Environment Variables**: `BITRIX24_WEBHOOK_URL`, `DATABASE_URL`, `SESSION_SECRET` for production configuration
+- **Development Workflow**: Supports both production mode (requires Bitrix24 SDK) and `/dev` mode (independent testing with mock data)
+- **Migration Strategy**: Schema changes via `npm run db:push --force` (Drizzle Kit), no manual SQL migrations
 
 ## External Dependencies
 - **Bitrix24**: CRM and Smart Process platform.

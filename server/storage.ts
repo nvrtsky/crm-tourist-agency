@@ -44,7 +44,6 @@ export interface IStorage {
   createCityVisit(visit: InsertCityVisit): Promise<CityVisit>;
   updateCityVisit(id: string, visit: Partial<InsertCityVisit>): Promise<CityVisit | undefined>;
   deleteCityVisit(id: string): Promise<boolean>;
-  deleteCityVisitsByTourist(touristId: string): Promise<void>;
 
   // User operations
   getUser(id: string): Promise<User | undefined>;
@@ -184,10 +183,6 @@ export class DatabaseStorage implements IStorage {
   async deleteCityVisit(id: string): Promise<boolean> {
     const result = await db.delete(cityVisits).where(eq(cityVisits.id, id)).returning();
     return result.length > 0;
-  }
-
-  async deleteCityVisitsByTourist(touristId: string): Promise<void> {
-    await db.delete(cityVisits).where(eq(cityVisits.touristId, touristId));
   }
 
   // ==================== USER OPERATIONS ====================

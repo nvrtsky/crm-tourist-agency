@@ -203,6 +203,9 @@ function AdminMenu() {
 export default function App() {
   const [location] = useLocation();
   
+  // Check for demo mode via URL parameter
+  const isDemoMode = new URLSearchParams(window.location.search).get('demo') === '1';
+  
   // Dev mode: render directly without Bitrix24 checks
   if (location === "/dev") {
     return (
@@ -215,7 +218,51 @@ export default function App() {
     );
   }
 
+  // Demo mode: render with sidebar but without Bitrix24 checks
+  if (isDemoMode) {
+    return <AppInDemoMode />;
+  }
+
   return <AppWithBitrix24 />;
+}
+
+function AppInDemoMode() {
+  const { t } = useTranslation();
+
+  const sidebarStyle = {
+    "--sidebar-width": "16rem",
+    "--sidebar-width-icon": "3rem",
+  };
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <SidebarProvider style={sidebarStyle as React.CSSProperties}>
+          <div className="flex h-screen w-full">
+            <AppSidebar />
+            <div className="flex flex-col flex-1 overflow-hidden">
+              <header className="flex items-center justify-between px-4 py-3 border-b shrink-0">
+                <div className="flex items-center gap-2">
+                  <SidebarTrigger data-testid="button-sidebar-toggle" />
+                  <h1 className="font-semibold text-sm">
+                    {t("app.title")} <span className="text-xs text-muted-foreground">(DEMO)</span>
+                  </h1>
+                </div>
+                <div className="flex items-center gap-2">
+                  <LanguageSwitcher />
+                  <ThemeToggle />
+                </div>
+              </header>
+              <main className="flex-1 overflow-auto">
+                <Router />
+              </main>
+            </div>
+          </div>
+        </SidebarProvider>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
 }
 
 function AppWithBitrix24() {

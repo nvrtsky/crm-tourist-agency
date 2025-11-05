@@ -76,7 +76,6 @@ function extractIdFromReferrer(ref: string): string | null {
     // This is the most reliable pattern for Bitrix24 Smart Process URLs
     const detailsMatch = pathname.match(/\/details\/(\d+)/);
     if (detailsMatch && detailsMatch[1]) {
-      console.log(`🎯 extractIdFromReferrer: найден ID в /details/ паттерне: ${detailsMatch[1]}`);
       return detailsMatch[1]; // e.g., "303"
     }
     
@@ -84,14 +83,12 @@ function extractIdFromReferrer(ref: string): string | null {
     const parts = pathname.split('/').filter(Boolean);
     for (let i = parts.length - 1; i >= 0; i--) {
       if (/^\d+$/.test(parts[i])) {
-        console.log(`🎯 extractIdFromReferrer: найден ID в pathname части: ${parts[i]}`);
         return parts[i]; // e.g., "127", "303"
       }
     }
     
     return null;
   } catch (e) {
-    console.warn("extractIdFromReferrer: не смог распарсить referrer", ref, e);
     return null;
   }
 }
@@ -101,30 +98,23 @@ function loadBitrix24Script(): Promise<void> {
     // BX24 should already be loaded from <script> tag in index.html
     // Just wait for it to be available
     if (window.BX24) {
-      console.log('✅ Bitrix24 SDK уже загружен');
       resolve();
       return;
     }
 
     // Wait for SDK to load (it's in HTML <script> tag)
     let attempts = 0;
-    const maxAttempts = 100; // 10 seconds total (increased from 5s)
+    const maxAttempts = 100; // 10 seconds total
     
     const checkInterval = setInterval(() => {
       attempts++;
       
       if (window.BX24) {
         clearInterval(checkInterval);
-        console.log('✅ Bitrix24 SDK обнаружен после', attempts * 100, 'ms');
         resolve();
       } else if (attempts >= maxAttempts) {
         clearInterval(checkInterval);
-        console.error('❌ Bitrix24 SDK не загрузился после', attempts * 100, 'ms');
-        console.error('Проверьте: 1) Приложение открыто из Bitrix24, 2) Нет блокировки скриптов, 3) Есть интернет');
         reject(new Error('Bitrix24 SDK не загрузился. Откройте приложение из Bitrix24.'));
-      } else if (attempts % 10 === 0) {
-        // Лог каждую секунду
-        console.log(`⏳ Ожидание загрузки BX24... (${attempts * 100}ms)`);
       }
     }, 100);
   });
@@ -143,6 +133,24 @@ export function useBitrix24(): Bitrix24Context {
   });
 
   useEffect(() => {
+    // Check if we're in demo mode - don't try to load Bitrix24 SDK
+    const isDemoMode = typeof window !== 'undefined' && window.location.pathname.startsWith('/demo');
+    
+    if (isDemoMode) {
+      // In demo mode, return mock context immediately
+      setContext({
+        entityId: "DEMO-001",
+        entityTypeId: "176",
+        domain: "demo.bitrix24.ru",
+        memberId: "demo-member",
+        accessToken: null,
+        expiresIn: null,
+        isReady: true,
+        error: null,
+      });
+      return;
+    }
+    
     // Try to load Bitrix24 SDK if not present
     const initializeBitrix = async () => {
       try {
@@ -179,14 +187,12 @@ export function useBitrix24(): Bitrix24Context {
       // This is THE MOST RELIABLE method for side-slider mode
       const pathname = window.location.pathname;
       const pathSegments = pathname.split('/').filter(Boolean);
-      console.log(`🔍 [Попытка ${attempt}] PRIORITY 0 - pathname:`, pathname, 'segments:', pathSegments);
       
       // Look for first numeric segment
       for (const segment of pathSegments) {
         if (/^\d+$/.test(segment)) {
           entityId = segment;
           extractionMethod = `window.location.pathname (сегмент "${segment}")`;
-          console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
           break;
         }
       }
@@ -201,7 +207,6 @@ export function useBitrix24(): Bitrix24Context {
           if (value && /^\d+$/.test(value)) {
             entityId = value;
             extractionMethod = `URL параметр "?${param}=${value}"`;
-            console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
             break;
           }
         }
@@ -219,7 +224,6 @@ export function useBitrix24(): Bitrix24Context {
             if (options[field]) {
               entityId = String(options[field]);
               extractionMethod = `placementInfo.options.${field}`;
-              console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
               break;
             }
           }
@@ -229,41 +233,18 @@ export function useBitrix24(): Bitrix24Context {
         if (!entityId && placementInfo?.entityId) {
           entityId = String(placementInfo.entityId);
           extractionMethod = 'placementInfo.entityId';
-          console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
         }
       }
 
-      // NOTE: window.name is NOT used for entityId extraction
-      // It contains Bitrix24 internal iframe ID (e.g., "24"), not the Smart Process element ID
-      // We only log it for diagnostic purposes
-      if (window.name) {
-        console.log(`📋 [Попытка ${attempt}] window.name (только диагностика):`, window.name);
-      }
-
-      // PRIORITY 4: Fallback to document.referrer
+      // PRIORITY 3: Fallback to document.referrer
       // Используется как fallback если placement.info() не предоставил entityId
       // Bitrix24 URL format: https://portal.bitrix24.ru/crm/type/176/details/303/?IFRAME=Y...
       if (!entityId) {
-        console.log(`🔍 [Попытка ${attempt}] PRIORITY 4 - document.referrer:`, document.referrer);
         const refGuess = extractIdFromReferrer(document.referrer);
-        console.log(`🔍 [Попытка ${attempt}] PRIORITY 4 - extractIdFromReferrer result:`, refGuess);
         if (refGuess) {
           entityId = refGuess;
-          extractionMethod = `document.referrer (${refGuess} из ${document.referrer})`;
-          console.log(`✅ [Попытка ${attempt}] entityId найден в ${extractionMethod}`);
-        } else {
-          console.warn(`⚠️ [Попытка ${attempt}] PRIORITY 4 не смог извлечь ID из referrer:`, document.referrer);
+          extractionMethod = `document.referrer`;
         }
-      }
-
-      // PRIORITY 5 (window.parent.location.href) больше не используется.
-      // Браузер блокирует доступ к родительскому URL из iframe другого домена (CORS).
-      // Bitrix24 открыт на *.bitrix24.ru, наше приложение на *.replit.app,
-      // поэтому читать window.parent.location.href технически нельзя.
-      // Мы НЕ пытаемся это делать, чтобы не шуметь в консоли у пользователей.
-
-      if (!entityId && attempt === 1) {
-        console.warn(`⚠️ [Попытка ${attempt}] entityId не найден во всех приоритетах. Будет повтор...`);
       }
 
       return { entityId, extractionMethod };
@@ -302,23 +283,8 @@ export function useBitrix24(): Bitrix24Context {
           const entityId = extractionResult.entityId;
           const finalExtractionMethod = extractionResult.extractionMethod || 'не определён';
 
-          // Log final result with comprehensive context information
-          console.log('📋 CONTEXT TRY (ИТОГОВЫЙ РЕЗУЛЬТАТ):', {
-            attempt,
-            entityId: entityId || '❌ НЕ НАЙДЕН',
-            entityTypeId: entityTypeId || '❌ НЕ НАЙДЕН',
-            extractionMethod: finalExtractionMethod,
-            placement: placementInfo?.placement || '❌',
-            options: placementInfo?.options || {},
-            referrer: document.referrer || '(пусто)',
-            pathname: window.location.pathname,
-            search: window.location.search || '(нет параметров)',
-            windowName: window.name || '(пусто)' // Only for diagnostics
-          });
-
           // If no entityId found and we haven't tried 3 times yet, retry
           if (!entityId && attempt < 3) {
-            console.log(`⏳ Повтор через 100ms (попытка ${attempt + 1}/3)...`);
             setTimeout(() => {
               initializeBX24WithRetry(attempt + 1);
             }, 100);

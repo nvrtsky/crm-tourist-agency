@@ -23,7 +23,7 @@ const leadStatusMap: Record<string, { label: string; variant: "default" | "secon
   new: { label: "Новый", variant: "default" },
   contacted: { label: "Связались", variant: "secondary" },
   qualified: { label: "Квалифицирован", variant: "outline" },
-  converted: { label: "Конвертирован", variant: "default" },
+  won: { label: "Конвертирован", variant: "default" },
   lost: { label: "Потерян", variant: "destructive" },
 };
 
@@ -40,6 +40,7 @@ export default function Leads() {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [convertingLead, setConvertingLead] = useState<Lead | null>(null);
 
   const { data: leads = [], isLoading } = useQuery<Lead[]>({
     queryKey: ["/api/leads"],
@@ -49,7 +50,7 @@ export default function Leads() {
     total: leads.length,
     new: leads.filter((l) => l.status === "new").length,
     inProgress: leads.filter((l) => ["contacted", "qualified"].includes(l.status)).length,
-    completed: leads.filter((l) => l.status === "converted").length,
+    completed: leads.filter((l) => l.status === "won").length,
   };
 
   const createMutation = useMutation({
@@ -259,12 +260,7 @@ export default function Leads() {
                           <Button
                             variant="default"
                             size="sm"
-                            onClick={() => {
-                              toast({
-                                title: "Функция в разработке",
-                                description: "Конвертация лида будет реализована в следующей задаче",
-                              });
-                            }}
+                            onClick={() => setConvertingLead(lead)}
                             data-testid={`button-convert-${lead.id}`}
                           >
                             <UserPlus className="h-4 w-4 mr-1" />
@@ -292,6 +288,13 @@ export default function Leads() {
           )}
         </DialogContent>
       </Dialog>
+
+      {convertingLead && (
+        <ConvertLeadDialog
+          lead={convertingLead}
+          onClose={() => setConvertingLead(null)}
+        />
+      )}
     </div>
   );
 }
@@ -486,5 +489,239 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
         </form>
       </Form>
     </>
+  );
+}
+
+interface ConvertLeadDialogProps {
+  lead: Lead;
+  onClose: () => void;
+}
+
+function ConvertLeadDialog({ lead, onClose }: ConvertLeadDialogProps) {
+  const { toast } = useToast();
+  const [eventId, setEventId] = useState("");
+  const [groupName, setGroupName] = useState(`Семья ${lead.name}`);
+  const [members, setMembers] = useState<Array<{
+    name: string;
+    email: string;
+    phone: string;
+    passport: string;
+    birthDate: string;
+    notes: string;
+  }>>([]);
+
+  const { data: events = [] } = useQuery<any[]>({
+    queryKey: ["/api/events"],
+  });
+
+  const convertMutation = useMutation({
+    mutationFn: async (data: { eventId: string; groupName: string; members: any[] }) => {
+      return await apiRequest(`/api/leads/${lead.id}/convert-family`, "POST", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({
+        title: "Успешно",
+        description: `Лид конвертирован. Создано ${members.length} участников.`,
+      });
+      onClose();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Initialize members array based on familyMembersCount
+  useState(() => {
+    const count = lead.familyMembersCount || 1;
+    const initialMembers = [];
+    for (let i = 0; i < count; i++) {
+      initialMembers.push({
+        name: i === 0 ? lead.name : "",
+        email: i === 0 ? (lead.email || "") : "",
+        phone: i === 0 ? (lead.phone || "") : "",
+        passport: "",
+        birthDate: "",
+        notes: "",
+      });
+    }
+    setMembers(initialMembers);
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!eventId) {
+      toast({
+        title: "Ошибка",
+        description: "Выберите тур",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate that all members have names
+    const hasEmptyNames = members.some(m => !m.name.trim());
+    if (hasEmptyNames) {
+      toast({
+        title: "Ошибка",
+        description: "Все члены семьи должны иметь имя",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    convertMutation.mutate({
+      eventId,
+      groupName,
+      members: members.map(m => ({
+        ...m,
+        email: m.email || null,
+        phone: m.phone || null,
+        passport: m.passport || null,
+        birthDate: m.birthDate || null,
+        notes: m.notes || null,
+      })),
+    });
+  };
+
+  const updateMember = (index: number, field: string, value: string) => {
+    const updated = [...members];
+    updated[index] = { ...updated[index], [field]: value };
+    setMembers(updated);
+  };
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Конвертировать лид: {lead.name}</DialogTitle>
+          <DialogDescription>
+            {lead.familyMembersCount && lead.familyMembersCount > 1
+              ? `Введите данные ${lead.familyMembersCount} членов семьи`
+              : "Введите данные для создания контакта и сделки"}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Выберите тур *</label>
+              <Select value={eventId} onValueChange={setEventId}>
+                <SelectTrigger data-testid="select-event">
+                  <SelectValue placeholder="Выберите тур" />
+                </SelectTrigger>
+                <SelectContent>
+                  {events.map((event: any) => (
+                    <SelectItem key={event.id} value={event.id}>
+                      {event.name} ({event.startDate} - {event.endDate})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {lead.familyMembersCount && lead.familyMembersCount > 1 && (
+              <div>
+                <label className="text-sm font-medium">Название группы</label>
+                <Input
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  placeholder="Название семьи"
+                  data-testid="input-group-name"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <h3 className="font-semibold text-lg">Участники</h3>
+            {members.map((member, index) => (
+              <Card key={index} data-testid={`member-card-${index}`}>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Участник {index + 1} {index === 0 && <Badge variant="outline" className="ml-2">Основной</Badge>}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Имя *</label>
+                      <Input
+                        value={member.name}
+                        onChange={(e) => updateMember(index, "name", e.target.value)}
+                        placeholder="Имя и фамилия"
+                        data-testid={`input-member-name-${index}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Email</label>
+                      <Input
+                        type="email"
+                        value={member.email}
+                        onChange={(e) => updateMember(index, "email", e.target.value)}
+                        placeholder="email@example.com"
+                        data-testid={`input-member-email-${index}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Телефон</label>
+                      <Input
+                        type="tel"
+                        value={member.phone}
+                        onChange={(e) => updateMember(index, "phone", e.target.value)}
+                        placeholder="+7 (999) 123-45-67"
+                        data-testid={`input-member-phone-${index}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Паспорт</label>
+                      <Input
+                        value={member.passport}
+                        onChange={(e) => updateMember(index, "passport", e.target.value)}
+                        placeholder="Номер паспорта"
+                        data-testid={`input-member-passport-${index}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Дата рождения</label>
+                      <Input
+                        type="date"
+                        value={member.birthDate}
+                        onChange={(e) => updateMember(index, "birthDate", e.target.value)}
+                        data-testid={`input-member-birthdate-${index}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Заметки</label>
+                      <Input
+                        value={member.notes}
+                        onChange={(e) => updateMember(index, "notes", e.target.value)}
+                        placeholder="Дополнительная информация"
+                        data-testid={`input-member-notes-${index}`}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} data-testid="button-cancel">
+              Отмена
+            </Button>
+            <Button type="submit" disabled={convertMutation.isPending} data-testid="button-submit-convert">
+              {convertMutation.isPending ? "Создание..." : "Конвертировать"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

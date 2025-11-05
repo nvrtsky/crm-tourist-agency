@@ -651,6 +651,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Convert lead to family group
+  app.post("/api/leads/:id/convert-family", async (req, res) => {
+    // Define validation schema for family members
+    const familyMemberSchema = z.object({
+      name: z.string().min(1, "Name is required"),
+      email: z.string().email().optional().nullable(),
+      phone: z.string().optional().nullable(),
+      passport: z.string().optional().nullable(),
+      birthDate: z.string().optional().nullable(),
+      notes: z.string().optional().nullable(),
+    });
+
+    const convertFamilySchema = z.object({
+      eventId: z.string().min(1, "Event ID is required"),
+      groupName: z.string().optional(),
+      members: z.array(familyMemberSchema).min(1, "At least one member is required"),
+    });
+
+    try {
+      const { id } = req.params;
+
+      // Validate request body upfront
+      const validation = convertFamilySchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const { eventId, groupName, members } = validation.data;
+
+      // Verify lead exists
+      const lead = await storage.getLead(id);
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      // Verify event exists
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      // Track created resources for rollback in case of failure
+      let group: any = null;
+      const createdContactIds: string[] = [];
+      const createdDealIds: string[] = [];
+
+      try {
+        // Create group
+        group = await storage.createGroup({
+          eventId,
+          name: groupName || `Семья ${lead.name}`,
+          type: "family",
+        });
+
+        // Create contacts and deals for each family member
+        const createdDeals = [];
+        for (let i = 0; i < members.length; i++) {
+          const memberData = members[i];
+
+          // Create contact
+          const contact = await storage.createContact({
+            name: memberData.name,
+            email: memberData.email || null,
+            phone: memberData.phone || null,
+            passport: memberData.passport || null,
+            birthDate: memberData.birthDate || null,
+            leadId: id,
+            notes: memberData.notes || null,
+          });
+          createdContactIds.push(contact.id);
+
+          // Create deal
+          const deal = await storage.createDeal({
+            contactId: contact.id,
+            eventId: eventId,
+            status: 'pending',
+            amount: event.price,
+            groupId: group.id,
+            isPrimaryInGroup: i === 0, // First member is primary
+          });
+          createdDealIds.push(deal.id);
+
+          // Auto-create city visits for all cities in the event route
+          if (event.cities && event.cities.length > 0) {
+            for (const city of event.cities) {
+              await storage.createCityVisit({
+                dealId: deal.id,
+                city,
+                arrivalDate: event.startDate,
+                transportType: "plane",
+                hotelName: `Hotel ${city}`,
+              });
+            }
+          }
+
+          createdDeals.push(deal);
+        }
+
+        // Update lead status to 'won' only after all members are created successfully
+        await storage.updateLead(id, { status: 'won' });
+
+        res.json({ 
+          group,
+          deals: createdDeals,
+          message: `Successfully created family group with ${createdDeals.length} members`
+        });
+      } catch (creationError) {
+        // Rollback: Delete created resources in reverse order
+        console.error("Error during family creation, rolling back:", creationError);
+
+        // Delete city visits (cascades via deal deletion)
+        for (const dealId of createdDealIds) {
+          try {
+            await storage.deleteDeal(dealId);
+          } catch (e) {
+            console.error(`Failed to rollback deal ${dealId}:`, e);
+          }
+        }
+
+        // Delete contacts
+        for (const contactId of createdContactIds) {
+          try {
+            await storage.deleteContact(contactId);
+          } catch (e) {
+            console.error(`Failed to rollback contact ${contactId}:`, e);
+          }
+        }
+
+        // Delete group
+        if (group) {
+          try {
+            await storage.deleteGroup(group.id);
+          } catch (e) {
+            console.error(`Failed to rollback group ${group.id}:`, e);
+          }
+        }
+
+        throw creationError; // Re-throw to be caught by outer catch
+      }
+    } catch (error) {
+      console.error("Error converting lead to family:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to convert lead to family";
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
   // ==================== FORM ROUTES ====================
 
   // Get all forms

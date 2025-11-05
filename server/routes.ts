@@ -516,16 +516,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Convert lead to contact + deal
-  app.post("/api/leads/:id/convert", async (req, res) => {
+  app.post("/api/leads/:id/convert-to-deal", async (req, res) => {
     try {
       const { id } = req.params;
       const { userId } = req.body;
 
-      if (!userId) {
-        return res.status(400).json({ error: "userId is required" });
-      }
+      // Use placeholder user ID if not provided (for standalone mode)
+      const convertedByUserId = userId || "system-user";
 
-      const result = await storage.convertLeadToDeal(id, userId);
+      const result = await storage.convertLeadToDeal(id, convertedByUserId);
       res.json(result);
     } catch (error: any) {
       console.error("Error converting lead:", error);

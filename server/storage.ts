@@ -520,8 +520,8 @@ export class DatabaseStorage implements IStorage {
         title: `Deal for ${lead.name}`,
         amount: 0,
         status: 'new',
-        assignedUserId: lead.assignedUserId || convertedByUserId,
-        createdByUserId: convertedByUserId,
+        assignedUserId: lead.assignedUserId || (convertedByUserId !== "system-user" ? convertedByUserId : undefined),
+        createdByUserId: convertedByUserId !== "system-user" ? convertedByUserId : undefined,
       }).returning();
 
       // Update lead status to 'won'
@@ -537,7 +537,7 @@ export class DatabaseStorage implements IStorage {
         leadId: leadId,
         oldStatus: lead.status,
         newStatus: 'won',
-        changedByUserId: convertedByUserId,
+        changedByUserId: convertedByUserId !== "system-user" ? convertedByUserId : undefined,
         note: `Converted to Contact #${contact.id} and Deal #${deal.id}`,
       });
 

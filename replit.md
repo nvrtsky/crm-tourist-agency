@@ -27,7 +27,7 @@ The frontend is built with React, TypeScript, Shadcn UI, and Tailwind CSS, ensur
 
 1. **Dashboard**: Overview statistics and quick access to key metrics
 2. **Tours** (Bitrix24): Tour management module with tabs for Dashboard (city statistics), Summary Table (comprehensive itinerary view), and Add Tourist (CRUD operations)
-3. **CRM**: Lead management and sales funnel (placeholder - architecture only)
+3. **CRM**: Full-featured lead management system with dual-view (Kanban/Table), status tracking, lead-to-deal conversion, and complete audit history. Works in both Bitrix24 iframe mode and standalone demo mode (`/demo/crm`)
 4. **Forms**: Visual form builder for lead generation (placeholder - architecture only)
 5. **Settings**: User authentication, roles, and preferences (placeholder - architecture only)
 
@@ -36,13 +36,17 @@ The UI features a collapsible sidebar with internationalized navigation (ru/en/z
 ### Technical Implementations
 - **Frontend**: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS, Bitrix24 JS SDK, react-i18next.
 - **Backend**: Express.js, TypeScript, PostgreSQL via Drizzle ORM, Bitrix24 REST API.
-- **Database**: PostgreSQL (Neon-backed) with 8 normalized tables:
+- **Database**: PostgreSQL (Neon-backed) with 12 normalized tables:
   - `users`: Authentication and role-based access control (admin/manager/viewer)
   - `forms`: Form builder definitions for lead generation
   - `formFields`: Dynamic form field configurations
-  - `leads`: CRM lead management with status tracking
-  - `leadStatusHistory`: Audit trail for lead status changes
+  - `leads`: CRM lead management with status tracking (new/contacted/qualified/won/lost)
+  - `leadStatusHistory`: Audit trail for lead status changes with user tracking
   - `formSubmissions`: Captured form submission data
+  - `contacts`: CRM contacts created from qualified leads
+  - `deals`: Sales deals linked to contacts with status tracking
+  - `crmEvents`: CRM events (meetings, calls) linked to contacts/deals
+  - `tourEvents`: Tour-specific events linked to Bitrix24 Smart Process items
   - `tourists`: Tourist records synchronized with Bitrix24 contacts
   - `cityVisits`: Itinerary details for each city visit
 - **Data Integrity**: All foreign key constraints enforced at database level with proper cascade/set null behaviors for referential integrity
@@ -59,6 +63,12 @@ The UI features a collapsible sidebar with internationalized navigation (ru/en/z
 - **Sharing & Export**: Enables sharing via "Copy link" and "Download Excel" options for the full table or city-specific data. Excel exports include tourist data, itineraries, and Bitrix24 entity IDs. The Smart Process title links to the Bitrix24 Event entity.
 - **DEV Mode (`/dev`)**: A standalone testing page with mock data, enabling rapid development and testing without a Bitrix24 connection. It mirrors all main functionalities of the production application.
 - **Bitrix24 Integration**: The application functions as an embedded tab within the "Event" Smart Process. It includes robust entity ID detection, data synchronization (Event → deals → contacts), and only updates existing Bitrix24 contacts. A rebind mechanism (`/rebind.html`) addresses incorrect placement configurations.
+- **CRM Lead Management**: Comprehensive lead tracking system with two view modes:
+  - **Kanban View**: Visual drag-and-drop board with 5 status columns (Новые, В контакте, Квалифицированы, Успех, Проиграны). Includes lead count badges, color-coded status indicators, and real-time status updates via drag-and-drop using @dnd-kit library.
+  - **Table View**: Sortable/filterable data table with columns for name, phone, email, source, and status. Features status badge color coding, column sorting (name, source, status, createdAt), and status filter dropdown.
+- **Lead Detail Modal**: Inline editing dialog with react-hook-form validation for lead fields (name, phone, email, source, status, notes). Status changes are tracked in `leadStatusHistory` table for complete audit trail.
+- **Lead-to-Deal Conversion**: Automated workflow for qualified leads with "Конвертировать в сделку" button. Creates linked Contact and Deal records in a single transaction, automatically updates lead status to "won", records conversion history, and invalidates all relevant caches for instant UI refresh.
+- **Standalone Demo Mode (`/demo/crm`)**: Full CRM functionality without Bitrix24 SDK dependency. Uses "system-user" placeholder for FK fields (assignedUserId, createdByUserId, changedByUserId) which are automatically set to NULL to avoid foreign key constraint violations. All CRUD operations and conversion workflows work identically to production mode.
 
 ### System Design Choices
 - **Modular Architecture**: Four independent but integrated modules (Bitrix24, CRM, Forms, Auth) sharing common database

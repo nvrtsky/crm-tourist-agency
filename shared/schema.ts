@@ -1,10 +1,10 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, jsonb, numeric, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Cities enum
+// Cities enum (for now, only Chinese cities, but can be extended)
 export const CITIES = ["Beijing", "Luoyang", "Xian", "Zhangjiajie", "Shanghai"] as const;
 export type City = typeof CITIES[number];
 
@@ -25,8 +25,25 @@ export const LEAD_STATUSES = ["new", "contacted", "qualified", "won", "lost"] as
 export type LeadStatus = typeof LEAD_STATUSES[number];
 
 // Lead sources
-export const LEAD_SOURCES = ["manual", "bitrix24", "form", "import", "other"] as const;
+export const LEAD_SOURCES = ["manual", "form", "import", "other"] as const;
 export type LeadSource = typeof LEAD_SOURCES[number];
+
+// Deal statuses
+export const DEAL_STATUSES = ["pending", "confirmed", "cancelled", "completed"] as const;
+export type DealStatus = typeof DEAL_STATUSES[number];
+
+// Tour types
+export const TOUR_TYPES = ["group", "individual", "excursion", "adventure", "cultural", "other"] as const;
+export type TourType = typeof TOUR_TYPES[number];
+
+// Notification types
+export const NOTIFICATION_TYPES = [
+  "new_booking",
+  "group_filled",
+  "event_upcoming",
+  "birthday_upcoming"
+] as const;
+export type NotificationType = typeof NOTIFICATION_TYPES[number];
 
 // Form field types
 export const FORM_FIELD_TYPES = [
@@ -41,44 +58,7 @@ export const FORM_FIELD_TYPES = [
 ] as const;
 export type FormFieldType = typeof FORM_FIELD_TYPES[number];
 
-// Tourist table - now includes Bitrix24 integration fields
-export const tourists = pgTable("tourists", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  entityId: text("entity_id").notNull(), // Bitrix24 Smart Process Element ID
-  entityTypeId: text("entity_type_id").notNull(), // Bitrix24 Smart Process Entity Type ID
-  bitrixContactId: text("bitrix_contact_id"), // Bitrix24 Contact ID
-  bitrixDealId: text("bitrix_deal_id"), // Bitrix24 Deal ID from UF_CRM_9_1711887457
-  name: text("name").notNull(),
-  email: text("email"),
-  phone: text("phone"),
-  passport: text("passport"), // Passport number
-  birthDate: text("birth_date"), // ISO date string
-  surcharge: text("surcharge"), // Surcharge/additional payment from Deal UF_CRM_1715027519285
-  nights: text("nights"), // Number of nights as string from Deal UF_CRM_1695942299984
-});
-
-// City visit table - stores each city visit for a tourist
-export const cityVisits = pgTable("city_visits", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  touristId: varchar("tourist_id").notNull().references(() => tourists.id, { onDelete: 'cascade' }),
-  city: text("city").notNull(),
-  arrivalDate: text("arrival_date").notNull(), // ISO date string
-  arrivalTime: text("arrival_time"), // Time string HH:MM (optional)
-  departureDate: text("departure_date"), // ISO date string (optional - tourist may still be in city)
-  departureTime: text("departure_time"), // Time string HH:MM (optional)
-  transportType: text("transport_type").notNull(), // 'train' or 'plane' for arrival
-  departureTransportType: text("departure_transport_type"), // 'train' or 'plane' for departure (optional)
-  flightNumber: text("flight_number"), // Flight/train number for arrival (optional)
-  airport: text("airport"), // Airport name for arrival (optional)
-  transfer: text("transfer"), // Transfer info for arrival (optional)
-  departureFlightNumber: text("departure_flight_number"), // Flight/train number for departure (optional)
-  departureAirport: text("departure_airport"), // Airport name for departure (optional)
-  departureTransfer: text("departure_transfer"), // Transfer info for departure (optional)
-  hotelName: text("hotel_name").notNull(),
-  roomType: text("room_type"), // 'twin' or 'double' (optional)
-});
-
-// ================= NEW CRM TABLES =================
+// ================= CRM TABLES =================
 
 // Users table - for authentication and authorization
 export const users = pgTable("users", {
@@ -90,13 +70,88 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Events table - tours/events
+export const events = pgTable("events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  country: text("country").notNull(), // e.g., "China", "Thailand", etc.
+  cities: text("cities").array().notNull(), // Array of city names in the tour route
+  tourType: text("tour_type").notNull(), // 'group', 'individual', 'excursion', etc.
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  participantLimit: integer("participant_limit").notNull(), // Maximum number of participants
+  price: numeric("price", { precision: 10, scale: 2 }).notNull(), // Tour price
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Contacts table - tourists/clients
+export const contacts = pgTable("contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  passport: text("passport"), // Passport number
+  birthDate: date("birth_date"), // Date of birth
+  leadId: varchar("lead_id").references(() => leads.id, { onDelete: 'set null' }), // Source lead (nullable)
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Deals table - связь контакт + событие
+export const deals = pgTable("deals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: 'cascade' }),
+  eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
+  status: text("status").notNull().default("pending"), // 'pending', 'confirmed', 'cancelled', 'completed'
+  amount: numeric("amount", { precision: 10, scale: 2 }), // Deal amount (может отличаться от базовой цены события)
+  surcharge: text("surcharge"), // Additional charges/notes
+  nights: text("nights"), // Number of nights
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// City visits table - itinerary details for each contact in an event
+export const cityVisits = pgTable("city_visits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  dealId: varchar("deal_id").notNull().references(() => deals.id, { onDelete: 'cascade' }),
+  city: text("city").notNull(),
+  arrivalDate: text("arrival_date").notNull(), // ISO date string
+  arrivalTime: text("arrival_time"), // Time string HH:MM (optional)
+  departureDate: text("departure_date"), // ISO date string (optional)
+  departureTime: text("departure_time"), // Time string HH:MM (optional)
+  transportType: text("transport_type").notNull(), // 'train' or 'plane' for arrival
+  departureTransportType: text("departure_transport_type"), // 'train' or 'plane' for departure
+  flightNumber: text("flight_number"), // Flight/train number for arrival
+  airport: text("airport"), // Airport/station name for arrival
+  transfer: text("transfer"), // Transfer info for arrival
+  departureFlightNumber: text("departure_flight_number"), // Flight/train number for departure
+  departureAirport: text("departure_airport"), // Airport/station name for departure
+  departureTransfer: text("departure_transfer"), // Transfer info for departure
+  hotelName: text("hotel_name").notNull(),
+  roomType: text("room_type"), // 'twin' or 'double'
+});
+
+// Notifications table - system notifications
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull(), // 'new_booking', 'group_filled', 'event_upcoming', 'birthday_upcoming'
+  message: text("message").notNull(),
+  eventId: varchar("event_id").references(() => events.id, { onDelete: 'cascade' }), // Related event (nullable)
+  contactId: varchar("contact_id").references(() => contacts.id, { onDelete: 'cascade' }), // Related contact (nullable)
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Forms table - for form builder
 export const forms = pgTable("forms", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description"),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }), // FK to users (form creator)
-  fieldsConfig: jsonb("fields_config"), // JSON snapshot of form layout/fields metadata
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  fieldsConfig: jsonb("fields_config"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -104,13 +159,13 @@ export const forms = pgTable("forms", {
 // Form fields table - individual fields for each form
 export const formFields = pgTable("form_fields", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  formId: varchar("form_id").notNull().references(() => forms.id, { onDelete: 'cascade' }), // FK to forms
-  key: text("key").notNull(), // Unique field key within form (e.g., "email", "phone")
-  label: text("label").notNull(), // Display label
-  type: text("type").notNull(), // 'text', 'email', 'phone', 'select', 'textarea', 'checkbox', 'date', 'number'
+  formId: varchar("form_id").notNull().references(() => forms.id, { onDelete: 'cascade' }),
+  key: text("key").notNull(),
+  label: text("label").notNull(),
+  type: text("type").notNull(),
   isRequired: boolean("is_required").notNull().default(false),
-  order: integer("order").notNull().default(0), // Display order
-  config: jsonb("config"), // Field-specific config (options for select, validation rules, etc.)
+  order: integer("order").notNull().default(0),
+  config: jsonb("config"),
 });
 
 // Leads table - CRM leads
@@ -120,11 +175,11 @@ export const leads = pgTable("leads", {
   email: text("email"),
   phone: text("phone"),
   status: text("status").notNull().default("new"), // 'new', 'contacted', 'qualified', 'won', 'lost'
-  source: text("source").notNull().default("manual"), // 'manual', 'bitrix24', 'form', 'import', 'other'
-  formId: varchar("form_id").references(() => forms.id, { onDelete: 'set null' }), // FK to forms (nullable - if lead came from form)
+  source: text("source").notNull().default("manual"), // 'manual', 'form', 'import', 'other'
+  formId: varchar("form_id").references(() => forms.id, { onDelete: 'set null' }),
   notes: text("notes"),
-  assignedUserId: varchar("assigned_user_id").references(() => users.id, { onDelete: 'set null' }), // FK to users (nullable - who is working on this lead)
-  createdByUserId: varchar("created_by_user_id").references(() => users.id, { onDelete: 'set null' }), // FK to users (who created this lead) - nullable to allow user deletion
+  assignedUserId: varchar("assigned_user_id").references(() => users.id, { onDelete: 'set null' }),
+  createdByUserId: varchar("created_by_user_id").references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -132,48 +187,59 @@ export const leads = pgTable("leads", {
 // Lead status history table - track status changes
 export const leadStatusHistory = pgTable("lead_status_history", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  leadId: varchar("lead_id").notNull().references(() => leads.id, { onDelete: 'cascade' }), // FK to leads
-  oldStatus: text("old_status"), // Previous status (nullable for first entry)
-  newStatus: text("new_status").notNull(), // New status
-  changedByUserId: varchar("changed_by_user_id").references(() => users.id, { onDelete: 'set null' }), // FK to users - nullable to allow user deletion
+  leadId: varchar("lead_id").notNull().references(() => leads.id, { onDelete: 'cascade' }),
+  oldStatus: text("old_status"),
+  newStatus: text("new_status").notNull(),
+  changedByUserId: varchar("changed_by_user_id").references(() => users.id, { onDelete: 'set null' }),
   changedAt: timestamp("changed_at").notNull().defaultNow(),
-  note: text("note"), // Optional note about the change
+  note: text("note"),
 });
 
 // Form submissions table - stores form submissions
 export const formSubmissions = pgTable("form_submissions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  formId: varchar("form_id").notNull().references(() => forms.id, { onDelete: 'cascade' }), // FK to forms
-  leadId: varchar("lead_id").references(() => leads.id, { onDelete: 'set null' }), // FK to leads (created from this submission)
+  formId: varchar("form_id").notNull().references(() => forms.id, { onDelete: 'cascade' }),
+  leadId: varchar("lead_id").references(() => leads.id, { onDelete: 'set null' }),
   submittedAt: timestamp("submitted_at").notNull().defaultNow(),
-  data: jsonb("data").notNull(), // JSON object with field keys and values
+  data: jsonb("data").notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
 });
 
 // ================= ZOD SCHEMAS =================
 
-// Tourist schemas (existing)
-export const insertCityVisitSchema = createInsertSchema(cityVisits).omit({ id: true });
-export const insertCityVisitWithoutTouristSchema = insertCityVisitSchema.omit({ touristId: true });
-export const insertTouristSchema = createInsertSchema(tourists).omit({ id: true }).extend({
-  bitrixContactId: z.string().optional(),
-  bitrixDealId: z.string().optional(),
-  visits: z.array(insertCityVisitWithoutTouristSchema).optional(),
-});
-
-// User schemas (new)
+// User schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
 
-// Form schemas (new)
+// Event schemas
+export const insertEventSchema = createInsertSchema(events).omit({ id: true, createdAt: true, updatedAt: true });
+export const updateEventSchema = insertEventSchema.partial();
+
+// Contact schemas
+export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, createdAt: true, updatedAt: true });
+export const updateContactSchema = insertContactSchema.partial();
+
+// Deal schemas
+export const insertDealSchema = createInsertSchema(deals).omit({ id: true, createdAt: true, updatedAt: true });
+export const updateDealSchema = insertDealSchema.partial();
+
+// City visit schemas
+export const insertCityVisitSchema = createInsertSchema(cityVisits).omit({ id: true });
+export const insertCityVisitWithoutDealSchema = insertCityVisitSchema.omit({ dealId: true });
+
+// Notification schemas
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
+export const updateNotificationSchema = insertNotificationSchema.partial();
+
+// Form schemas
 export const insertFormSchema = createInsertSchema(forms).omit({ id: true, createdAt: true });
 export const insertFormFieldSchema = createInsertSchema(formFields).omit({ id: true });
 
-// Lead schemas (new)
+// Lead schemas
 export const insertLeadSchema = createInsertSchema(leads).omit({ 
   id: true, 
   createdAt: true, 
@@ -185,7 +251,7 @@ export const insertLeadStatusHistorySchema = createInsertSchema(leadStatusHistor
   changedAt: true 
 });
 
-// Form submission schemas (new)
+// Form submission schemas
 export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).omit({ 
   id: true, 
   submittedAt: true 
@@ -193,45 +259,119 @@ export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).om
 
 // ================= TYPES =================
 
-// Tourist types (existing)
-export type Tourist = typeof tourists.$inferSelect;
-export type InsertTourist = z.infer<typeof insertTouristSchema>;
-export type CityVisit = typeof cityVisits.$inferSelect;
-export type InsertCityVisit = z.infer<typeof insertCityVisitSchema>;
-export type TouristWithVisits = Tourist & {
-  visits: CityVisit[];
-};
-
-// User types (new)
+// User types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginCredentials = z.infer<typeof loginSchema>;
 
-// Form types (new)
+// Event types
+export type Event = typeof events.$inferSelect;
+export type InsertEvent = z.infer<typeof insertEventSchema>;
+export type UpdateEvent = z.infer<typeof updateEventSchema>;
+
+// Contact types
+export type Contact = typeof contacts.$inferSelect;
+export type InsertContact = z.infer<typeof insertContactSchema>;
+export type UpdateContact = z.infer<typeof updateContactSchema>;
+
+// Deal types
+export type Deal = typeof deals.$inferSelect;
+export type InsertDeal = z.infer<typeof insertDealSchema>;
+export type UpdateDeal = z.infer<typeof updateDealSchema>;
+
+// City visit types
+export type CityVisit = typeof cityVisits.$inferSelect;
+export type InsertCityVisit = z.infer<typeof insertCityVisitSchema>;
+
+// Notification types
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type UpdateNotification = z.infer<typeof updateNotificationSchema>;
+
+// Form types
 export type Form = typeof forms.$inferSelect;
 export type InsertForm = z.infer<typeof insertFormSchema>;
 export type FormField = typeof formFields.$inferSelect;
 export type InsertFormField = z.infer<typeof insertFormFieldSchema>;
 
-// Lead types (new)
+// Lead types
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type UpdateLead = z.infer<typeof updateLeadSchema>;
 export type LeadStatusHistoryEntry = typeof leadStatusHistory.$inferSelect;
 export type InsertLeadStatusHistory = z.infer<typeof insertLeadStatusHistorySchema>;
 
-// Form submission types (new)
+// Form submission types
 export type FormSubmission = typeof formSubmissions.$inferSelect;
 export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
 
+// Complex types with relations
+export type EventWithStats = Event & {
+  bookedCount: number;
+  availableSpots: number;
+};
+
+export type DealWithDetails = Deal & {
+  contact: Contact;
+  event: Event;
+  visits: CityVisit[];
+};
+
+export type ContactWithDeals = Contact & {
+  deals: DealWithDetails[];
+};
+
 // ================= DRIZZLE RELATIONS =================
-// Reference: blueprint:javascript_database
 
 export const usersRelations = relations(users, ({ many }) => ({
   createdForms: many(forms),
   createdLeads: many(leads, { relationName: "createdLeads" }),
   assignedLeads: many(leads, { relationName: "assignedLeads" }),
   statusChanges: many(leadStatusHistory),
+}));
+
+export const eventsRelations = relations(events, ({ many }) => ({
+  deals: many(deals),
+  notifications: many(notifications),
+}));
+
+export const contactsRelations = relations(contacts, ({ one, many }) => ({
+  sourceLead: one(leads, {
+    fields: [contacts.leadId],
+    references: [leads.id],
+  }),
+  deals: many(deals),
+  notifications: many(notifications),
+}));
+
+export const dealsRelations = relations(deals, ({ one, many }) => ({
+  contact: one(contacts, {
+    fields: [deals.contactId],
+    references: [contacts.id],
+  }),
+  event: one(events, {
+    fields: [deals.eventId],
+    references: [events.id],
+  }),
+  cityVisits: many(cityVisits),
+}));
+
+export const cityVisitsRelations = relations(cityVisits, ({ one }) => ({
+  deal: one(deals, {
+    fields: [cityVisits.dealId],
+    references: [deals.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  event: one(events, {
+    fields: [notifications.eventId],
+    references: [events.id],
+  }),
+  contact: one(contacts, {
+    fields: [notifications.contactId],
+    references: [contacts.id],
+  }),
 }));
 
 export const formsRelations = relations(forms, ({ one, many }) => ({
@@ -267,6 +407,7 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
     references: [forms.id],
   }),
   statusHistory: many(leadStatusHistory),
+  convertedContacts: many(contacts),
 }));
 
 export const leadStatusHistoryRelations = relations(leadStatusHistory, ({ one }) => ({

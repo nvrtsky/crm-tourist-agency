@@ -1,376 +1,332 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { getBitrix24Service } from "./bitrix24";
 import { z } from "zod";
-import { insertTouristSchema, insertCityVisitSchema } from "@shared/schema";
+import {
+  insertEventSchema,
+  updateEventSchema,
+  insertContactSchema,
+  updateContactSchema,
+  insertDealSchema,
+  updateDealSchema,
+  insertCityVisitSchema,
+  insertNotificationSchema,
+  updateNotificationSchema,
+  insertLeadSchema,
+  updateLeadSchema,
+  insertLeadStatusHistorySchema,
+  insertFormSchema,
+  insertFormFieldSchema,
+  insertFormSubmissionSchema,
+} from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const bitrix24 = getBitrix24Service();
+  // ==================== EVENT ROUTES ====================
 
-  // Get event data (title and deals)
-  app.get("/api/event/:entityId", async (req, res) => {
+  // Get all events
+  app.get("/api/events", async (req, res) => {
     try {
-      const { entityId } = req.params;
-      const entityTypeId = req.query.entityTypeId as string || "176"; // Default to Event entity type
-      
-      if (!bitrix24) {
-        return res.json({ title: null, deals: [] });
-      }
-
-      const [title, deals] = await Promise.all([
-        bitrix24.getEventTitle(entityId, entityTypeId),
-        bitrix24.getEventDeals(entityId, entityTypeId),
-      ]);
-      
-      res.json({ title, deals });
+      const events = await storage.getAllEventsWithStats();
+      res.json(events);
     } catch (error) {
-      console.error("Error fetching event data:", error);
-      res.status(500).json({ error: "Failed to fetch event data" });
+      console.error("Error fetching events:", error);
+      res.status(500).json({ error: "Failed to fetch events" });
     }
   });
 
-  // Get tourists for a specific entity (smart process element)
-  app.get("/api/tourists/:entityId", async (req, res) => {
+  // Get single event with stats
+  app.get("/api/events/:id", async (req, res) => {
     try {
-      const { entityId } = req.params;
-      const entityTypeId = req.query.entityTypeId as string || "176"; // Default to Event entity type
+      const { id } = req.params;
+      const event = await storage.getEventWithStats(id);
       
-      // Check if we have data in storage
-      let tourists = await storage.getTouristsByEntity(entityId);
-      
-      // If no data and Bitrix24 is available, try to load from Bitrix24
-      if (tourists.length === 0 && bitrix24) {
-        try {
-          console.log(`No tourists in storage for entity ${entityId}, attempting to load from Bitrix24...`);
-          const bitrixTourists = await bitrix24.loadTouristsFromEvent(entityId, entityTypeId);
-          
-          // Save loaded tourists to storage
-          for (const bitrixTourist of bitrixTourists) {
-            const created = await storage.createTourist({
-              entityId,
-              entityTypeId,
-              name: bitrixTourist.name,
-              email: bitrixTourist.email || undefined,
-              phone: bitrixTourist.phone || undefined,
-              passport: bitrixTourist.passport || undefined,
-              birthDate: bitrixTourist.birthDate || undefined,
-              surcharge: bitrixTourist.surcharge || undefined,
-              nights: bitrixTourist.nights || undefined,
-              bitrixContactId: bitrixTourist.bitrixContactId,
-              bitrixDealId: bitrixTourist.bitrixDealId,
-            });
-            console.log(`Imported tourist from Bitrix24: ${created.name} (${created.id}), surcharge: ${created.surcharge}, nights: ${created.nights}, birthDate: ${created.birthDate}`);
-          }
-          
-          // Reload from storage to get the full data
-          tourists = await storage.getTouristsByEntity(entityId);
-          console.log(`Loaded ${tourists.length} tourists from Bitrix24`);
-        } catch (bitrixError) {
-          console.error("Failed to load from Bitrix24, using empty data:", bitrixError);
-          // Continue with empty array - not critical error
-        }
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
       }
       
-      res.json(tourists);
+      res.json(event);
     } catch (error) {
-      console.error("Error fetching tourists:", error);
-      res.status(500).json({ error: "Failed to fetch tourists" });
+      console.error("Error fetching event:", error);
+      res.status(500).json({ error: "Failed to fetch event" });
     }
   });
 
-  // Create tourist (updates existing Bitrix24 contacts if bitrixContactId provided, does not create new contacts)
-  app.post("/api/tourists", async (req, res) => {
-    let createdTourist: any = null;
-
+  // Create event
+  app.post("/api/events", async (req, res) => {
     try {
-      // Validate tourist data
-      const touristValidation = insertTouristSchema.safeParse(req.body);
-      if (!touristValidation.success) {
+      const validation = insertEventSchema.safeParse(req.body);
+      if (!validation.success) {
         return res.status(400).json({
           error: "Validation error",
-          details: touristValidation.error.errors,
+          details: validation.error.errors,
         });
       }
 
-      const { entityId, entityTypeId, name, email, phone, passport, birthDate, surcharge, nights, visits } = touristValidation.data;
-
-      // Pre-validate all visits before creating anything
-      if (visits && Array.isArray(visits) && visits.length > 0) {
-        for (const visit of visits) {
-          const visitValidation = insertCityVisitSchema.omit({ touristId: true }).safeParse(visit);
-          if (!visitValidation.success) {
-            return res.status(400).json({
-              error: "Visit validation error",
-              details: visitValidation.error.errors,
-            });
-          }
-        }
-      }
-
-      const touristData = {
-        entityId,
-        entityTypeId,
-        name,
-        email: email || undefined,
-        phone: phone || undefined,
-        passport: passport || undefined,
-        birthDate: birthDate || undefined,
-        surcharge: surcharge || undefined,
-        nights: nights || undefined,
-      };
-
-      // Create tourist in storage
-      // Note: bitrixContactId can be provided from frontend if linking to existing contact
-      createdTourist = await storage.createTourist({
-        ...touristData,
-        bitrixContactId: touristValidation.data.bitrixContactId,
-      });
-
-      // Update existing Bitrix24 contact if bitrixContactId was provided
-      if (bitrix24 && createdTourist.bitrixContactId) {
-        try {
-          await bitrix24.saveTouristToContact(createdTourist.bitrixContactId, {
-            name: createdTourist.name,
-            email: createdTourist.email,
-            phone: createdTourist.phone,
-            passport: createdTourist.passport,
-            birthDate: createdTourist.birthDate,
-          });
-          console.log(`Updated existing Bitrix24 contact ${createdTourist.bitrixContactId}`);
-        } catch (bitrixError) {
-          console.error("Failed to update Bitrix24 contact (non-critical):", bitrixError);
-          // Non-critical error - tourist is already created locally
-        }
-      }
-
-      // Update existing Bitrix24 deal if bitrixDealId was provided
-      if (bitrix24 && createdTourist.bitrixDealId) {
-        try {
-          await bitrix24.saveTouristToDeal(createdTourist.bitrixDealId, {
-            surcharge: createdTourist.surcharge,
-            nights: createdTourist.nights,
-          });
-          console.log(`Updated existing Bitrix24 deal ${createdTourist.bitrixDealId}`);
-        } catch (bitrixError) {
-          console.error("Failed to update Bitrix24 deal (non-critical):", bitrixError);
-          // Non-critical error - tourist is already created locally
-        }
-      }
-
-      // Create city visits
-      const createdVisits = [];
-      if (visits && Array.isArray(visits) && visits.length > 0) {
-        for (const visit of visits) {
-          const cityVisit = await storage.createCityVisit({
-            touristId: createdTourist.id,
-            city: visit.city,
-            arrivalDate: visit.arrivalDate,
-            arrivalTime: visit.arrivalTime,
-            departureDate: visit.departureDate,
-            departureTime: visit.departureTime,
-            transportType: visit.transportType,
-            departureTransportType: visit.departureTransportType,
-            flightNumber: visit.flightNumber,
-            airport: visit.airport,
-            transfer: visit.transfer,
-            departureFlightNumber: visit.departureFlightNumber,
-            departureAirport: visit.departureAirport,
-            departureTransfer: visit.departureTransfer,
-            hotelName: visit.hotelName,
-            roomType: visit.roomType,
-          });
-          createdVisits.push(cityVisit);
-        }
-      }
-
-      // Update entity user fields with route summary (only if Bitrix24 is available)
-      if (bitrix24) {
-        try {
-          await bitrix24.updateEntityUserFields(entityId, entityTypeId, {
-            totalTourists: (await storage.getTouristsByEntity(entityId)).length,
-            lastUpdated: new Date().toISOString(),
-          });
-        } catch (updateError) {
-          console.error("Failed to update entity fields, but tourist was created:", updateError);
-          // Non-critical error - tourist is already created, just log it
-        }
-      }
-
-      res.json({
-        ...createdTourist,
-        visits: createdVisits,
-      });
+      const event = await storage.createEvent(validation.data);
+      res.json(event);
     } catch (error) {
-      console.error("Error creating tourist:", error);
-
-      // Rollback: delete created tourist from storage
-      if (createdTourist) {
-        try {
-          await storage.deleteTourist(createdTourist.id);
-          console.log("Rolled back tourist creation:", createdTourist.id);
-        } catch (rollbackError) {
-          console.error("Failed to rollback tourist creation:", rollbackError);
-        }
-      }
-
-      res.status(500).json({ error: "Failed to create tourist" });
+      console.error("Error creating event:", error);
+      res.status(500).json({ error: "Failed to create event" });
     }
   });
 
-  // Update tourist
-  app.patch("/api/tourists/:id", async (req, res) => {
+  // Update event
+  app.patch("/api/events/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const { visits, ...touristData } = req.body;
+      const validation = updateEventSchema.safeParse(req.body);
       
-      // Validate update data (partial schema)
-      const updateValidation = insertTouristSchema.partial().safeParse(touristData);
-      if (!updateValidation.success) {
+      if (!validation.success) {
         return res.status(400).json({
           error: "Validation error",
-          details: updateValidation.error.errors,
+          details: validation.error.errors,
         });
       }
 
-      const updates = updateValidation.data;
-
-      const tourist = await storage.getTourist(id);
-      if (!tourist) {
-        return res.status(404).json({ error: "Tourist not found" });
-      }
-
-      // Update contact in Bitrix24 if exists and service is available
-      if (bitrix24 && tourist.bitrixContactId) {
-        try {
-          await bitrix24.saveTouristToContact(tourist.bitrixContactId, {
-            name: updates.name || tourist.name,
-            email: updates.email !== undefined ? updates.email : tourist.email,
-            phone: updates.phone !== undefined ? updates.phone : tourist.phone,
-            passport: updates.passport !== undefined ? updates.passport : tourist.passport,
-            birthDate: updates.birthDate !== undefined ? updates.birthDate : tourist.birthDate,
-          });
-        } catch (bitrixError) {
-          console.error("Failed to sync tourist contact update to Bitrix24:", bitrixError);
-          // Continue - not critical, data is saved locally
-        }
-      }
-
-      // Update deal in Bitrix24 if exists and service is available
-      if (bitrix24 && tourist.bitrixDealId) {
-        try {
-          await bitrix24.saveTouristToDeal(tourist.bitrixDealId, {
-            surcharge: updates.surcharge !== undefined ? updates.surcharge : tourist.surcharge,
-            nights: updates.nights !== undefined ? updates.nights : tourist.nights,
-          });
-        } catch (bitrixError) {
-          console.error("Failed to sync tourist deal update to Bitrix24:", bitrixError);
-          // Continue - not critical, data is saved locally
-        }
-      }
-
-      // Update in storage
-      const updated = await storage.updateTourist(id, updates);
+      const event = await storage.updateEvent(id, validation.data);
       
-      if (!updated) {
-        return res.status(404).json({ error: "Tourist not found" });
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
       }
-
-      // Update visits if provided
-      if (visits && Array.isArray(visits)) {
-        // Delete existing visits
-        const existingVisits = await storage.getCityVisitsByTourist(id);
-        for (const visit of existingVisits) {
-          await storage.deleteCityVisit(visit.id);
-        }
-
-        // Create new visits
-        for (const visit of visits) {
-          await storage.createCityVisit({
-            touristId: id,
-            city: visit.city,
-            arrivalDate: visit.arrivalDate,
-            arrivalTime: visit.arrivalTime,
-            departureDate: visit.departureDate,
-            departureTime: visit.departureTime,
-            transportType: visit.transportType,
-            departureTransportType: visit.departureTransportType,
-            flightNumber: visit.flightNumber,
-            airport: visit.airport,
-            transfer: visit.transfer,
-            departureFlightNumber: visit.departureFlightNumber,
-            departureAirport: visit.departureAirport,
-            departureTransfer: visit.departureTransfer,
-            hotelName: visit.hotelName,
-            roomType: visit.roomType,
-          });
-        }
-      }
-
-      // Get updated tourist with visits
-      const updatedWithVisits = await storage.getTourist(id);
-      res.json(updatedWithVisits);
+      
+      res.json(event);
     } catch (error) {
-      console.error("Error updating tourist:", error);
-      res.status(500).json({ error: "Failed to update tourist" });
+      console.error("Error updating event:", error);
+      res.status(500).json({ error: "Failed to update event" });
     }
   });
 
-  // Delete tourist (only removes from local storage, does not delete Bitrix24 contacts)
-  app.delete("/api/tourists/:id", async (req, res) => {
+  // Delete event
+  app.delete("/api/events/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      const success = await storage.deleteEvent(id);
       
-      const tourist = await storage.getTourist(id);
-      if (!tourist) {
-        return res.status(404).json({ error: "Tourist not found" });
+      if (!success) {
+        return res.status(404).json({ error: "Event not found" });
       }
-
-      // Delete from storage only (Bitrix24 contacts are not deleted)
-      await storage.deleteTourist(id);
-
+      
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting tourist:", error);
-      res.status(500).json({ error: "Failed to delete tourist" });
+      console.error("Error deleting event:", error);
+      res.status(500).json({ error: "Failed to delete event" });
     }
   });
 
-  // Create new city visit (empty template)
-  app.post("/api/tourists/:touristId/visits", async (req, res) => {
+  // ==================== CONTACT ROUTES ====================
+
+  // Get all contacts
+  app.get("/api/contacts", async (req, res) => {
     try {
-      const { touristId } = req.params;
-      const { city } = req.body;
+      const contacts = await storage.getAllContacts();
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ error: "Failed to fetch contacts" });
+    }
+  });
 
-      // Validate tourist exists
-      const tourist = await storage.getTourist(touristId);
-      if (!tourist) {
-        return res.status(404).json({ error: "Tourist not found" });
-      }
-
-      // Validate city
-      if (!city || typeof city !== 'string') {
-        return res.status(400).json({ error: "City is required" });
-      }
-
-      // Check if visit already exists for this city
-      const existingVisits = await storage.getCityVisitsByTourist(touristId);
-      const hasVisit = existingVisits.some(v => v.city === city);
+  // Get single contact with deals
+  app.get("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const contact = await storage.getContactWithDeals(id);
       
-      if (hasVisit) {
-        return res.status(400).json({ error: "Visit already exists for this city" });
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      
+      res.json(contact);
+    } catch (error) {
+      console.error("Error fetching contact:", error);
+      res.status(500).json({ error: "Failed to fetch contact" });
+    }
+  });
+
+  // Create contact
+  app.post("/api/contacts", async (req, res) => {
+    try {
+      const validation = insertContactSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
       }
 
-      // Create empty visit with placeholder values
-      const visit = await storage.createCityVisit({
-        touristId,
-        city,
-        arrivalDate: "", // User will fill this
-        transportType: "plane", // Default value
-        hotelName: "", // User will fill this
-        // All other fields are optional and will be null
-      });
+      const contact = await storage.createContact(validation.data);
+      res.json(contact);
+    } catch (error) {
+      console.error("Error creating contact:", error);
+      res.status(500).json({ error: "Failed to create contact" });
+    }
+  });
 
+  // Update contact
+  app.patch("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = updateContactSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const contact = await storage.updateContact(id, validation.data);
+      
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      
+      res.json(contact);
+    } catch (error) {
+      console.error("Error updating contact:", error);
+      res.status(500).json({ error: "Failed to update contact" });
+    }
+  });
+
+  // Delete contact
+  app.delete("/api/contacts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteContact(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+      res.status(500).json({ error: "Failed to delete contact" });
+    }
+  });
+
+  // ==================== DEAL ROUTES ====================
+
+  // Get deals for an event
+  app.get("/api/events/:eventId/deals", async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const deals = await storage.getDealsWithDetailsByEvent(eventId);
+      res.json(deals);
+    } catch (error) {
+      console.error("Error fetching deals:", error);
+      res.status(500).json({ error: "Failed to fetch deals" });
+    }
+  });
+
+  // Get single deal with details
+  app.get("/api/deals/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deal = await storage.getDealWithDetails(id);
+      
+      if (!deal) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+      
+      res.json(deal);
+    } catch (error) {
+      console.error("Error fetching deal:", error);
+      res.status(500).json({ error: "Failed to fetch deal" });
+    }
+  });
+
+  // Create deal
+  app.post("/api/deals", async (req, res) => {
+    try {
+      const validation = insertDealSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const deal = await storage.createDeal(validation.data);
+      res.json(deal);
+    } catch (error) {
+      console.error("Error creating deal:", error);
+      res.status(500).json({ error: "Failed to create deal" });
+    }
+  });
+
+  // Update deal
+  app.patch("/api/deals/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = updateDealSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const deal = await storage.updateDeal(id, validation.data);
+      
+      if (!deal) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+      
+      res.json(deal);
+    } catch (error) {
+      console.error("Error updating deal:", error);
+      res.status(500).json({ error: "Failed to update deal" });
+    }
+  });
+
+  // Delete deal
+  app.delete("/api/deals/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteDeal(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting deal:", error);
+      res.status(500).json({ error: "Failed to delete deal" });
+    }
+  });
+
+  // ==================== CITY VISIT ROUTES ====================
+
+  // Get visits for a deal
+  app.get("/api/deals/:dealId/visits", async (req, res) => {
+    try {
+      const { dealId } = req.params;
+      const visits = await storage.getCityVisitsByDeal(dealId);
+      res.json(visits);
+    } catch (error) {
+      console.error("Error fetching visits:", error);
+      res.status(500).json({ error: "Failed to fetch visits" });
+    }
+  });
+
+  // Create city visit
+  app.post("/api/deals/:dealId/visits", async (req, res) => {
+    try {
+      const { dealId } = req.params;
+      const visitData = { ...req.body, dealId };
+      
+      const validation = insertCityVisitSchema.safeParse(visitData);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const visit = await storage.createCityVisit(validation.data);
       res.json(visit);
     } catch (error) {
       console.error("Error creating visit:", error);
@@ -379,37 +335,344 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update city visit
-  app.patch("/api/tourists/:touristId/visits/:visitId", async (req, res) => {
+  app.patch("/api/visits/:id", async (req, res) => {
     try {
-      const { touristId, visitId } = req.params;
-      const updates = req.body;
-
-      // Validate tourist exists
-      const tourist = await storage.getTourist(touristId);
-      if (!tourist) {
-        return res.status(404).json({ error: "Tourist not found" });
-      }
-
-      // Validate update data (partial schema)
-      const updateValidation = insertCityVisitSchema.omit({ touristId: true }).partial().safeParse(updates);
-      if (!updateValidation.success) {
+      const { id } = req.params;
+      const validation = insertCityVisitSchema.partial().safeParse(req.body);
+      
+      if (!validation.success) {
         return res.status(400).json({
           error: "Validation error",
-          details: updateValidation.error.errors,
+          details: validation.error.errors,
         });
       }
 
-      // Update visit in storage
-      const updated = await storage.updateCityVisit(visitId, updateValidation.data);
+      const visit = await storage.updateCityVisit(id, validation.data);
       
-      if (!updated) {
+      if (!visit) {
         return res.status(404).json({ error: "Visit not found" });
       }
-
-      res.json(updated);
+      
+      res.json(visit);
     } catch (error) {
       console.error("Error updating visit:", error);
       res.status(500).json({ error: "Failed to update visit" });
+    }
+  });
+
+  // Delete city visit
+  app.delete("/api/visits/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteCityVisit(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Visit not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting visit:", error);
+      res.status(500).json({ error: "Failed to delete visit" });
+    }
+  });
+
+  // ==================== NOTIFICATION ROUTES ====================
+
+  // Get all notifications
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      const notifications = await storage.getAllNotifications();
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  // Get unread notifications
+  app.get("/api/notifications/unread", async (req, res) => {
+    try {
+      const notifications = await storage.getUnreadNotifications();
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching unread notifications:", error);
+      res.status(500).json({ error: "Failed to fetch unread notifications" });
+    }
+  });
+
+  // Mark notification as read
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const notification = await storage.markAsRead(id);
+      
+      if (!notification) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+      
+      res.json(notification);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  // Delete notification
+  app.delete("/api/notifications/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteNotification(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      res.status(500).json({ error: "Failed to delete notification" });
+    }
+  });
+
+  // ==================== LEAD ROUTES ====================
+
+  // Get all leads
+  app.get("/api/leads", async (req, res) => {
+    try {
+      const leads = await storage.getAllLeads();
+      res.json(leads);
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+      res.status(500).json({ error: "Failed to fetch leads" });
+    }
+  });
+
+  // Get single lead
+  app.get("/api/leads/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const lead = await storage.getLead(id);
+      
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+      
+      res.json(lead);
+    } catch (error) {
+      console.error("Error fetching lead:", error);
+      res.status(500).json({ error: "Failed to fetch lead" });
+    }
+  });
+
+  // Get lead status history
+  app.get("/api/leads/:id/history", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const history = await storage.getHistoryByLead(id);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching lead history:", error);
+      res.status(500).json({ error: "Failed to fetch lead history" });
+    }
+  });
+
+  // Create lead
+  app.post("/api/leads", async (req, res) => {
+    try {
+      const validation = insertLeadSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const lead = await storage.createLead(validation.data);
+      res.json(lead);
+    } catch (error) {
+      console.error("Error creating lead:", error);
+      res.status(500).json({ error: "Failed to create lead" });
+    }
+  });
+
+  // Update lead
+  app.patch("/api/leads/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = updateLeadSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const lead = await storage.updateLead(id, validation.data);
+      
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+      
+      res.json(lead);
+    } catch (error) {
+      console.error("Error updating lead:", error);
+      res.status(500).json({ error: "Failed to update lead" });
+    }
+  });
+
+  // Delete lead
+  app.delete("/api/leads/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteLead(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting lead:", error);
+      res.status(500).json({ error: "Failed to delete lead" });
+    }
+  });
+
+  // Convert lead to contact + deal
+  app.post("/api/leads/:id/convert", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { eventId } = req.body;
+
+      if (!eventId) {
+        return res.status(400).json({ error: "Event ID is required" });
+      }
+
+      // Get lead
+      const lead = await storage.getLead(id);
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      // Verify event exists
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      // Create contact from lead
+      const contact = await storage.createContact({
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        leadId: lead.id,
+        notes: lead.notes,
+      });
+
+      // Create deal
+      const deal = await storage.createDeal({
+        contactId: contact.id,
+        eventId: eventId,
+        status: 'pending',
+        amount: event.price,
+      });
+
+      // Update lead status to 'won'
+      await storage.updateLead(id, { status: 'won' });
+
+      res.json({ contact, deal });
+    } catch (error) {
+      console.error("Error converting lead:", error);
+      res.status(500).json({ error: "Failed to convert lead" });
+    }
+  });
+
+  // ==================== FORM ROUTES ====================
+
+  // Get all forms
+  app.get("/api/forms", async (req, res) => {
+    try {
+      const forms = await storage.getAllForms();
+      res.json(forms);
+    } catch (error) {
+      console.error("Error fetching forms:", error);
+      res.status(500).json({ error: "Failed to fetch forms" });
+    }
+  });
+
+  // Get single form with fields
+  app.get("/api/forms/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const form = await storage.getForm(id);
+      
+      if (!form) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+      
+      const fields = await storage.getFieldsByForm(id);
+      res.json({ ...form, fields });
+    } catch (error) {
+      console.error("Error fetching form:", error);
+      res.status(500).json({ error: "Failed to fetch form" });
+    }
+  });
+
+  // Create form
+  app.post("/api/forms", async (req, res) => {
+    try {
+      const validation = insertFormSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const form = await storage.createForm(validation.data);
+      res.json(form);
+    } catch (error) {
+      console.error("Error creating form:", error);
+      res.status(500).json({ error: "Failed to create form" });
+    }
+  });
+
+  // Submit form
+  app.post("/api/forms/:id/submit", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { data } = req.body;
+
+      // Verify form exists
+      const form = await storage.getForm(id);
+      if (!form) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+
+      // Auto-create lead from form data
+      const lead = await storage.createLead({
+        name: data.name || 'Unknown',
+        email: data.email,
+        phone: data.phone,
+        source: 'form',
+        formId: id,
+        status: 'new',
+      });
+
+      // Create submission linked to lead
+      const submission = await storage.createSubmission({
+        formId: id,
+        leadId: lead.id,
+        data,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+      });
+
+      res.json({ submission, lead });
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      res.status(500).json({ error: "Failed to submit form" });
     }
   });
 

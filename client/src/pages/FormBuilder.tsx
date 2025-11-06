@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -110,6 +110,13 @@ export default function FormBuilder() {
       order: 0,
     },
   });
+
+  // Debug: log form errors
+  useEffect(() => {
+    if (Object.keys(form.formState.errors).length > 0) {
+      console.log("[FormBuilder] Form validation errors:", form.formState.errors);
+    }
+  }, [form.formState.errors]);
 
   const createFieldMutation = useMutation({
     mutationFn: async (data: FieldFormData) => {
@@ -438,7 +445,13 @@ export default function FormBuilder() {
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <form 
+              onSubmit={(e) => {
+                console.log("[FormBuilder] Form submit event triggered");
+                form.handleSubmit(handleSubmit)(e);
+              }} 
+              className="space-y-4"
+            >
               <FormField
                 control={form.control}
                 name="label"

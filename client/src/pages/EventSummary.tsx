@@ -324,6 +324,7 @@ export default function EventSummary() {
     const exportData = participants.map((p, index) => {
       const baseData: Record<string, any> = {
         "№": index + 1,
+        "Группа": p.group?.name || "—",
         "ФИО": p.contact?.name || "—",
         "Email": p.contact?.email || "",
         "Телефон": p.contact?.phone || "",
@@ -353,6 +354,93 @@ export default function EventSummary() {
     });
 
     const ws = utils.json_to_sheet(exportData);
+    const merges: any[] = [];
+
+    // Track groups and their row ranges for merged cells
+    const groupRows = new Map<string, { start: number; end: number; type: string }>();
+    participants.forEach((p, index) => {
+      const rowIndex = index + 1; // +1 for header row
+      if (p.deal.groupId) {
+        const existing = groupRows.get(p.deal.groupId);
+        if (existing) {
+          existing.end = rowIndex;
+        } else {
+          groupRows.set(p.deal.groupId, {
+            start: rowIndex,
+            end: rowIndex,
+            type: p.group?.type || ''
+          });
+        }
+      }
+    });
+
+    // Create merges for group column
+    groupRows.forEach(({ start, end }) => {
+      if (end > start) {
+        // Merge "Группа" column (column 1)
+        merges.push({
+          s: { r: start, c: 1 },
+          e: { r: end, c: 1 }
+        });
+      }
+    });
+
+    // Create merges for hotel and transport columns (for groups)
+    groupRows.forEach(({ start, end, type }) => {
+      if (end > start) {
+        const baseColumns = 9; // № + Группа + ФИО + Email + Телефон + Паспорт + ДР + Статус + Сумма
+        
+        event.cities.forEach((city, cityIndex) => {
+          const cityBaseCol = baseColumns + (cityIndex * 8); // 8 columns per city
+          
+          // For families: merge both hotel and transport columns
+          if (type === 'family') {
+            // Merge transport arrival columns (transportType, flightNumber)
+            merges.push({
+              s: { r: start, c: cityBaseCol + 1 }, // Транспорт прибытия
+              e: { r: end, c: cityBaseCol + 1 }
+            });
+            merges.push({
+              s: { r: start, c: cityBaseCol + 2 }, // Рейс/Поезд прибытия
+              e: { r: end, c: cityBaseCol + 2 }
+            });
+            
+            // Merge hotel columns (hotelName, roomType)
+            merges.push({
+              s: { r: start, c: cityBaseCol + 3 }, // Отель
+              e: { r: end, c: cityBaseCol + 3 }
+            });
+            merges.push({
+              s: { r: start, c: cityBaseCol + 4 }, // Тип номера
+              e: { r: end, c: cityBaseCol + 4 }
+            });
+            
+            // Merge transport departure columns
+            merges.push({
+              s: { r: start, c: cityBaseCol + 6 }, // Транспорт отъезда
+              e: { r: end, c: cityBaseCol + 6 }
+            });
+            merges.push({
+              s: { r: start, c: cityBaseCol + 7 }, // Рейс/Поезд отъезда
+              e: { r: end, c: cityBaseCol + 7 }
+            });
+          } else if (type === 'mini_group') {
+            // For mini-groups: merge only hotel columns
+            merges.push({
+              s: { r: start, c: cityBaseCol + 3 }, // Отель
+              e: { r: end, c: cityBaseCol + 3 }
+            });
+            merges.push({
+              s: { r: start, c: cityBaseCol + 4 }, // Тип номера
+              e: { r: end, c: cityBaseCol + 4 }
+            });
+          }
+        });
+      }
+    });
+
+    ws['!merges'] = merges;
+    
     const wb = utils.book_new();
     utils.book_append_sheet(wb, ws, "Участники");
 

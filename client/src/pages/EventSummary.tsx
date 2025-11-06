@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, Ungroup, UserPlus } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -21,6 +21,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Form,
   FormControl,
@@ -144,7 +150,7 @@ export default function EventSummary() {
           name: data.name,
           type: "mini_group",
           eventId,
-        });
+        }) as unknown as Group;
         createdGroupId = group.id;
 
         // Add all members
@@ -192,6 +198,46 @@ export default function EventSummary() {
       name: "",
       dealIds: [],
       primaryDealId: "",
+    },
+  });
+
+  const removeFromGroupMutation = useMutation({
+    mutationFn: async ({ groupId, dealId }: { groupId: string; dealId: string }) => {
+      return apiRequest("DELETE", `/api/groups/${groupId}/members/${dealId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+      toast({
+        title: "Успешно",
+        description: "Участник удален из группы",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось удалить участника из группы",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteGroupMutation = useMutation({
+    mutationFn: async (groupId: string) => {
+      return apiRequest("DELETE", `/api/groups/${groupId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+      toast({
+        title: "Успешно",
+        description: "Группа расформирована",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось удалить группу",
+        variant: "destructive",
+      });
     },
   });
 
@@ -474,6 +520,23 @@ export default function EventSummary() {
                               <div className="text-[10px] text-muted-foreground">
                                 {groupSize} чел.
                               </div>
+                              {participant.group && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 px-2 text-[10px] mt-1"
+                                  onClick={() => {
+                                    if (confirm(`Расформировать группу "${participant.group?.name}"?`)) {
+                                      deleteGroupMutation.mutate(participant.group!.id);
+                                    }
+                                  }}
+                                  disabled={deleteGroupMutation.isPending || removeFromGroupMutation.isPending}
+                                  data-testid={`button-ungroup-${participant.group.id}`}
+                                >
+                                  <Ungroup className="h-3 w-3 mr-1" />
+                                  Расформ.
+                                </Button>
+                              )}
                             </div>
                           </td>
                         ) : !participant.group && (
@@ -483,8 +546,27 @@ export default function EventSummary() {
                         )}
                         
                         <td className="sticky left-28 bg-background z-10 p-2 font-medium border-r min-w-[150px]" data-testid={`text-name-${participant.deal.id}`}>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-between gap-2">
                             <span>{participant.contact?.name || "—"}</span>
+                            {participant.deal.groupId && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6 opacity-50 hover:opacity-100"
+                                onClick={() => {
+                                  if (confirm(`Удалить ${participant.contact?.name} из группы?`)) {
+                                    removeFromGroupMutation.mutate({
+                                      groupId: participant.deal.groupId!,
+                                      dealId: participant.deal.id,
+                                    });
+                                  }
+                                }}
+                                disabled={deleteGroupMutation.isPending || removeFromGroupMutation.isPending}
+                                data-testid={`button-remove-from-group-${participant.deal.id}`}
+                              >
+                                <UserMinus className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                         <td className="p-2 border-r text-muted-foreground">

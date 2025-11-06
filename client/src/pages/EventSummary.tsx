@@ -242,17 +242,80 @@ export default function EventSummary() {
   });
 
   const handleVisitUpdate = (visitId: string | undefined, dealId: string, city: string, field: string, value: string) => {
-    if (visitId) {
-      updateVisitMutation.mutate({ visitId, updates: { [field]: value || null } });
-    } else {
-      createVisitMutation.mutate({
-        dealId,
-        visitData: {
-          city,
-          [field]: value,
-        },
-      });
+    // Find the participant and their group
+    const participant = participants.find(p => p.deal.id === dealId);
+    const groupId = participant?.deal.groupId;
+    
+    if (!groupId) {
+      // No group - update only this participant
+      if (visitId) {
+        updateVisitMutation.mutate({ visitId, updates: { [field]: value || null } });
+      } else {
+        createVisitMutation.mutate({
+          dealId,
+          visitData: {
+            city,
+            [field]: value,
+          },
+        });
+      }
+      return;
     }
+
+    // Participant is in a group - determine which fields are shared
+    const group = participant.group;
+    const groupType = group?.type;
+    
+    // Define shared fields based on group type
+    const hotelFields = ['hotelName', 'roomType'];
+    const transportFields = ['transportType', 'flightNumber', 'departureTransportType', 'departureFlightNumber'];
+    
+    let shouldApplyToGroup = false;
+    if (groupType === 'family') {
+      // Families share both hotel and transport
+      shouldApplyToGroup = hotelFields.includes(field) || transportFields.includes(field);
+    } else if (groupType === 'mini_group') {
+      // Mini-groups share only hotel
+      shouldApplyToGroup = hotelFields.includes(field);
+    }
+
+    if (!shouldApplyToGroup) {
+      // Field is not shared - update only this participant
+      if (visitId) {
+        updateVisitMutation.mutate({ visitId, updates: { [field]: value || null } });
+      } else {
+        createVisitMutation.mutate({
+          dealId,
+          visitData: {
+            city,
+            [field]: value,
+          },
+        });
+      }
+      return;
+    }
+
+    // Field is shared - update all group members
+    const groupMembers = participants.filter(p => p.deal.groupId === groupId);
+    
+    groupMembers.forEach(member => {
+      const memberVisit = member.visits?.find(v => v.city === city);
+      
+      if (memberVisit?.id) {
+        updateVisitMutation.mutate({ 
+          visitId: memberVisit.id, 
+          updates: { [field]: value || null } 
+        });
+      } else {
+        createVisitMutation.mutate({
+          dealId: member.deal.id,
+          visitData: {
+            city,
+            [field]: value,
+          },
+        });
+      }
+    });
   };
 
   const handleExportExcel = () => {

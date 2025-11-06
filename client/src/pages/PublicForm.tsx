@@ -31,62 +31,61 @@ interface FormWithFields extends FormType {
   fields: FormFieldType[];
 }
 
-export default function PublicForm() {
-  const { id } = useParams();
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const { data: formData, isLoading } = useQuery<FormWithFields>({
-    queryKey: [`/api/public/forms/${id}`],
-    enabled: !!id,
+// Build dynamic schema based on form fields
+const buildSchema = (fields: FormFieldType[]) => {
+  const shape: Record<string, z.ZodTypeAny> = {};
+  
+  fields.forEach((field) => {
+    let fieldSchema: z.ZodTypeAny;
+    
+    switch (field.type) {
+      case "email":
+        fieldSchema = z.string().email("Неверный формат email");
+        break;
+      case "phone":
+        fieldSchema = z.string().min(10, "Введите корректный номер телефона");
+        break;
+      case "checkbox":
+        fieldSchema = z.boolean();
+        if (field.isRequired) {
+          fieldSchema = z.boolean().refine(val => val === true, {
+            message: "Обязательное поле",
+          });
+        }
+        break;
+      default:
+        fieldSchema = z.string();
+    }
+    
+    if (field.isRequired && field.type !== "checkbox") {
+      fieldSchema = (fieldSchema as z.ZodString).min(1, "Обязательное поле");
+    } else if (!field.isRequired && field.type !== "checkbox") {
+      fieldSchema = fieldSchema.optional();
+    }
+    
+    shape[field.key] = fieldSchema;
   });
+  
+  return z.object(shape);
+};
 
-  // Build dynamic schema based on form fields
-  const buildSchema = (fields: FormFieldType[]) => {
-    const shape: Record<string, z.ZodTypeAny> = {};
-    
-    fields.forEach((field) => {
-      let fieldSchema: z.ZodTypeAny;
-      
-      switch (field.type) {
-        case "email":
-          fieldSchema = z.string().email("Неверный формат email");
-          break;
-        case "phone":
-          fieldSchema = z.string().min(10, "Введите корректный номер телефона");
-          break;
-        case "checkbox":
-          fieldSchema = z.boolean();
-          break;
-        default:
-          fieldSchema = z.string();
-      }
-      
-      if (field.isRequired && field.type !== "checkbox") {
-        fieldSchema = (fieldSchema as z.ZodString).min(1, "Обязательное поле");
-      } else if (!field.isRequired) {
-        fieldSchema = fieldSchema.optional();
-      }
-      
-      shape[field.key] = fieldSchema;
-    });
-    
-    return z.object(shape);
-  };
-
-  const sortedFields = formData?.fields ? [...formData.fields].sort((a, b) => a.order - b.order) : [];
-  const formSchema = sortedFields.length > 0 ? buildSchema(sortedFields) : z.object({});
+function FormContent({ formData, onSubmitSuccess }: { formData: FormWithFields; onSubmitSuccess: () => void }) {
+  const sortedFields = [...formData.fields].sort((a, b) => a.order - b.order);
+  const formSchema = buildSchema(sortedFields);
+  
+  const defaultValues = sortedFields.reduce((acc, field) => {
+    acc[field.key] = field.type === "checkbox" ? false : "";
+    return acc;
+  }, {} as Record<string, string | boolean>);
   
   const form = useForm({
     resolver: zodResolver(formSchema),
-    defaultValues: sortedFields.reduce((acc, field) => {
-      acc[field.key] = field.type === "checkbox" ? false : "";
-      return acc;
-    }, {} as Record<string, string | boolean>),
+    defaultValues,
   });
 
   const submitMutation = useMutation({
     mutationFn: async (data: Record<string, string | boolean>) => {
-      const response = await fetch(`/api/public/forms/${id}/submit`, {
+      const response = await fetch(`/api/public/forms/${formData.id}/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -101,7 +100,7 @@ export default function PublicForm() {
       return response.json();
     },
     onSuccess: () => {
-      setIsSubmitted(true);
+      onSubmitSuccess();
       form.reset();
     },
   });
@@ -109,6 +108,106 @@ export default function PublicForm() {
   const handleSubmit = (data: Record<string, string | boolean>) => {
     submitMutation.mutate(data);
   };
+
+  return (
+    <Card className="w-full max-w-lg">
+      <CardHeader>
+        <CardTitle>{formData.name}</CardTitle>
+        {formData.description && (
+          <CardDescription>{formData.description}</CardDescription>
+        )}
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            {sortedFields.map((field) => (
+              <FormField
+                key={field.id}
+                control={form.control}
+                name={field.key}
+                render={({ field: formField }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {field.label}
+                      {field.isRequired && <span className="text-red-500 ml-1">*</span>}
+                    </FormLabel>
+                    <FormControl>
+                      {field.type === "textarea" ? (
+                        <Textarea
+                          {...formField}
+                          placeholder={`Введите ${field.label.toLowerCase()}`}
+                          data-testid={`input-${field.key}`}
+                          value={formField.value as string}
+                        />
+                      ) : field.type === "select" ? (
+                        <Select
+                          onValueChange={formField.onChange}
+                          value={formField.value as string}
+                        >
+                          <SelectTrigger data-testid={`select-${field.key}`}>
+                            <SelectValue placeholder="Выберите значение" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="option1">Опция 1</SelectItem>
+                            <SelectItem value="option2">Опция 2</SelectItem>
+                            <SelectItem value="option3">Опция 3</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : field.type === "checkbox" ? (
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={formField.value as boolean}
+                            onCheckedChange={formField.onChange}
+                            data-testid={`checkbox-${field.key}`}
+                          />
+                          <span className="text-sm">{field.label}</span>
+                        </div>
+                      ) : (
+                        <Input
+                          {...formField}
+                          type={field.type}
+                          placeholder={`Введите ${field.label.toLowerCase()}`}
+                          data-testid={`input-${field.key}`}
+                          value={formField.value as string}
+                        />
+                      )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={submitMutation.isPending}
+              data-testid="button-submit"
+            >
+              {submitMutation.isPending && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              Отправить
+            </Button>
+            {submitMutation.isError && (
+              <p className="text-sm text-red-500 text-center">
+                Ошибка отправки. Попробуйте еще раз.
+              </p>
+            )}
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function PublicForm() {
+  const { id } = useParams();
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const { data: formData, isLoading } = useQuery<FormWithFields>({
+    queryKey: [`/api/public/forms/${id}`],
+    enabled: !!id,
+  });
 
   if (isLoading) {
     return (
@@ -165,93 +264,7 @@ export default function PublicForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4" data-testid="page-public-form">
-      <Card className="w-full max-w-lg">
-        <CardHeader>
-          <CardTitle>{formData.name}</CardTitle>
-          {formData.description && (
-            <CardDescription>{formData.description}</CardDescription>
-          )}
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              {sortedFields.map((field) => (
-                <FormField
-                  key={field.id}
-                  control={form.control}
-                  name={field.key}
-                  render={({ field: formField }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {field.label}
-                        {field.isRequired && <span className="text-red-500 ml-1">*</span>}
-                      </FormLabel>
-                      <FormControl>
-                        {field.type === "textarea" ? (
-                          <Textarea
-                            {...formField}
-                            placeholder={`Введите ${field.label.toLowerCase()}`}
-                            data-testid={`input-${field.key}`}
-                            value={formField.value as string}
-                          />
-                        ) : field.type === "select" ? (
-                          <Select
-                            onValueChange={formField.onChange}
-                            value={formField.value as string}
-                          >
-                            <SelectTrigger data-testid={`select-${field.key}`}>
-                              <SelectValue placeholder="Выберите значение" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="option1">Опция 1</SelectItem>
-                              <SelectItem value="option2">Опция 2</SelectItem>
-                              <SelectItem value="option3">Опция 3</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : field.type === "checkbox" ? (
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              checked={formField.value as boolean}
-                              onCheckedChange={formField.onChange}
-                              data-testid={`checkbox-${field.key}`}
-                            />
-                            <span className="text-sm">{field.label}</span>
-                          </div>
-                        ) : (
-                          <Input
-                            {...formField}
-                            type={field.type}
-                            placeholder={`Введите ${field.label.toLowerCase()}`}
-                            data-testid={`input-${field.key}`}
-                            value={formField.value as string}
-                          />
-                        )}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={submitMutation.isPending}
-                data-testid="button-submit"
-              >
-                {submitMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
-                Отправить
-              </Button>
-              {submitMutation.isError && (
-                <p className="text-sm text-red-500 text-center">
-                  Ошибка отправки. Попробуйте еще раз.
-                </p>
-              )}
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      <FormContent formData={formData} onSubmitSuccess={() => setIsSubmitted(true)} />
     </div>
   );
 }

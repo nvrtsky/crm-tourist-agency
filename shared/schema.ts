@@ -54,7 +54,8 @@ export const FORM_FIELD_TYPES = [
   "textarea",
   "checkbox",
   "date",
-  "number"
+  "number",
+  "tour"
 ] as const;
 export type FormFieldType = typeof FORM_FIELD_TYPES[number];
 

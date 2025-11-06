@@ -47,6 +47,8 @@ import {
   List,
   CheckSquare,
   AlignLeft,
+  Calendar,
+  MapPin,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -78,6 +80,7 @@ const FIELD_TYPE_ICONS: Record<string, React.ComponentType<{ className?: string 
   select: List,
   checkbox: CheckSquare,
   textarea: AlignLeft,
+  tour: MapPin,
 };
 
 const FIELD_TYPE_LABELS: Record<string, string> = {
@@ -87,6 +90,7 @@ const FIELD_TYPE_LABELS: Record<string, string> = {
   select: "Выбор",
   checkbox: "Чекбокс",
   textarea: "Текстовое поле",
+  tour: "Тур",
 };
 
 export default function FormBuilder() {

@@ -1052,15 +1052,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Form not found or inactive" });
       }
 
-      // Determine lead name based on available data
-      let leadName = data.name || 'Unknown';
+      // Get form fields to identify tour fields
+      const fields = await storage.getFieldsByForm(id);
+      const tourFields = fields.filter(f => f.type === 'tour');
       
-      // If no name but has tour field, use event name
-      if (!data.name && data.tour) {
-        const event = await storage.getEvent(data.tour);
-        if (event) {
-          leadName = `Booking for ${event.name}`;
+      // Find first tour field value in submission data
+      const selectedTourField = tourFields.find(f => data[f.key]);
+      const selectedTourId = selectedTourField ? data[selectedTourField.key] : null;
+
+      // Determine lead name with flexible logic
+      let leadName = 'Unknown';
+      let selectedEvent = null;
+      
+      // Fetch selected event once if tour field present
+      if (selectedTourId) {
+        selectedEvent = await storage.getEvent(String(selectedTourId));
+      }
+      
+      // Try to find a name field by checking common keys or text fields
+      const possibleNameFields = fields.filter(f => 
+        f.type === 'text' && 
+        (f.key.toLowerCase().includes('name') || 
+         f.key.toLowerCase().includes('имя') ||
+         f.key.toLowerCase().includes('fio') ||
+         f.key.toLowerCase().includes('ФИО'))
+      );
+      
+      const nameField = possibleNameFields[0];
+      if (nameField && data[nameField.key]) {
+        leadName = String(data[nameField.key]);
+      } else if (selectedEvent) {
+        // If no name field but has tour, use event name
+        leadName = `Booking for ${selectedEvent.name}`;
+      } else {
+        // Fallback: use email or phone if no name available
+        const emailField = fields.find(f => f.type === 'email');
+        const phoneField = fields.find(f => f.type === 'phone');
+        
+        if (emailField && data[emailField.key]) {
+          leadName = String(data[emailField.key]);
+        } else if (phoneField && data[phoneField.key]) {
+          leadName = String(data[phoneField.key]);
         }
+      }
+
+      // Build notes with tour selection if present
+      let leadNotes: string | undefined = undefined;
+      if (selectedEvent) {
+        leadNotes = `Selected tour: ${selectedEvent.name} (ID: ${selectedTourId})`;
+      } else if (selectedTourId) {
+        leadNotes = `Selected tour ID: ${selectedTourId}`;
       }
 
       // Auto-create lead from form data
@@ -1071,7 +1112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         source: 'form',
         formId: id,
         status: 'new',
-        notes: data.tour ? `Selected tour ID: ${data.tour}` : undefined,
+        notes: leadNotes,
         createdByUserId: form.userId, // Assign to form owner
       });
 

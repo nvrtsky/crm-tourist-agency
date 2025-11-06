@@ -43,8 +43,16 @@ A PostgreSQL database with 9 normalized tables:
     - **Form Builder**: Visual drag-and-drop constructor with live preview for configuring form fields
     - **Public Form**: Standalone pages for form submissions with dynamic validation based on field configuration
     - **Form Submissions**: View all form submissions with detailed information and automatic lead creation
-    - **Field Types**: text, email, phone, textarea, select, checkbox, number, date
+    - **Field Types**: text, email, phone, textarea, select, checkbox, number, date, **tour** (dynamic event selector)
+    - **Tour Field Type**: Special field that displays available tours as Select dropdown:
+      - Dynamically loads non-full events from GET /api/events with isFull=false filter
+      - Shows event name, formatted dates, and color-coded availability badges
+      - Stores selected eventId in submission data
+      - Used for tour booking forms where customers select from available tours
     - **Auto-Lead Creation**: Submissions automatically create leads with source="form"
+      - If form has name field: uses submitted name
+      - If form has tour field without name: uses "Booking for {EventName}" as lead name
+      - Tour ID saved in lead notes for reference
     - **Demo User**: Hard-coded userId="demo-user-001" for testing (auth not implemented)
 -   **Booking Module**: Public-facing tour reservation system (November 2025):
     - **Public Booking Page** (/booking): Customer-facing interface for tour reservations

@@ -85,7 +85,7 @@ const buildSchema = (fields: FormFieldType[]) => {
 
 function AvailabilityBadge({ eventId }: { eventId: string }) {
   const { data: availability, isLoading } = useQuery<AvailabilityData>({
-    queryKey: ["/api/events/availability", eventId],
+    queryKey: [`/api/events/availability/${eventId}`],
   });
 
   if (isLoading) {

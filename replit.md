@@ -46,6 +46,19 @@ A PostgreSQL database with 9 normalized tables:
     - **Field Types**: text, email, phone, textarea, select, checkbox, number, date
     - **Auto-Lead Creation**: Submissions automatically create leads with source="form"
     - **Demo User**: Hard-coded userId="demo-user-001" for testing (auth not implemented)
+-   **Booking Module**: Public-facing tour reservation system (November 2025):
+    - **Public Booking Page** (/booking): Customer-facing interface for tour reservations
+    - **Event Filtering**: Dynamic filters for country, tour type, and date range; automatically excludes fully-booked events (isFull=true)
+    - **Availability Indicator**: Real-time color-coded availability display:
+      - Green (>30% available): "Много мест"
+      - Yellow (10-30% available): "Мало мест"
+      - Red (0-10% available): "Нет мест"
+    - **Booking Form**: Collects customer details (name*, phone*, email, participant count, notes) with validation
+    - **Auto-Lead Creation**: Submissions create leads with source="booking" and enriched notes containing full event details
+    - **Smart Availability Tracking**: events.isFull field auto-syncs when confirmed deals created/updated/deleted
+    - **API Endpoints**:
+      - GET /api/events/availability/:eventId - Returns available spots calculation
+      - POST /api/public/bookings - Creates lead from booking submission
 
 ### UI/UX Design
 The frontend uses React, TypeScript, Wouter, TanStack Query, Shadcn UI, and Tailwind CSS. It features a consistent design with Shadcn components, color-coded status indicators, responsive layouts, and accessibility attributes. The application displays the "Unique Travel" brand logo in the header and uses darker text colors (5% lightness) for improved readability.

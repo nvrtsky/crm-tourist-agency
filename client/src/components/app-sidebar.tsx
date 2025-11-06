@@ -51,9 +51,6 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4 border-b">
-        <h2 className="text-lg font-semibold">{t("app.title")}</h2>
-      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>{t("nav.main")}</SidebarGroupLabel>

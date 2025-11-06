@@ -15,7 +15,7 @@ import Settings from "@/pages/Settings";
 import DevTest from "@/pages/DevTest";
 import NotFound from "@/pages/not-found";
 import { useTranslation } from "react-i18next";
-import logoUrl from "@assets/image_1762425592503.png";
+import logoUrl from "@assets/logo_1762426754494.png";
 
 function Router() {
   const [, setLocation] = useLocation();

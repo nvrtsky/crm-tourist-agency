@@ -146,11 +146,12 @@ export default function EventSummary() {
       
       let createdGroupId: string | null = null;
       try {
-        const group = await apiRequest("POST", "/api/groups", {
+        const groupResponse = await apiRequest("POST", "/api/groups", {
           name: data.name,
           type: "mini_group",
           eventId,
-        }) as unknown as Group;
+        });
+        const group = await groupResponse.json() as Group;
         createdGroupId = group.id;
 
         // Add all members

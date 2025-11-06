@@ -113,12 +113,16 @@ export default function FormBuilder() {
 
   const createFieldMutation = useMutation({
     mutationFn: async (data: FieldFormData) => {
-      return await apiRequest("POST", `/api/forms/${id}/fields`, {
+      console.log("[FormBuilder] Creating field:", data);
+      const payload = {
         ...data,
         order: formData?.fields.length || 0,
-      });
+      };
+      console.log("[FormBuilder] Sending to POST /api/forms/${id}/fields:", payload);
+      return await apiRequest("POST", `/api/forms/${id}/fields`, payload);
     },
     onSuccess: () => {
+      console.log("[FormBuilder] Field created successfully");
       queryClient.invalidateQueries({ queryKey: [`/api/forms/${id}`] });
       toast({
         title: "Поле добавлено",
@@ -128,6 +132,7 @@ export default function FormBuilder() {
       form.reset();
     },
     onError: (error: Error) => {
+      console.error("[FormBuilder] Error creating field:", error);
       toast({
         title: "Ошибка",
         description: error.message,
@@ -192,9 +197,13 @@ export default function FormBuilder() {
   });
 
   const handleSubmit = (data: FieldFormData) => {
+    console.log("[FormBuilder] handleSubmit called with:", data);
+    console.log("[FormBuilder] Editing field:", editingField);
     if (editingField) {
+      console.log("[FormBuilder] Updating field");
       updateFieldMutation.mutate({ id: editingField.id, data });
     } else {
+      console.log("[FormBuilder] Creating new field");
       createFieldMutation.mutate(data);
     }
   };

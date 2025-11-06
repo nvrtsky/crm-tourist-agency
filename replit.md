@@ -38,7 +38,14 @@ A PostgreSQL database with 9 normalized tables:
     - Visual representation: merged cells in participant table with lucide-react icons (Users for families, UsersRound for mini-groups)
     - Rollback mechanism: ensures data consistency during group creation
 -   **Notification System**: Automated in-app notifications for bookings, group capacity, upcoming events, and participant birthdays.
--   **Form Builder**: Visual tool for creating web forms to capture leads directly into the CRM.
+-   **Forms Module**: Comprehensive lead generation system (November 2025):
+    - **Forms List**: CRUD operations for forms with embed code generation
+    - **Form Builder**: Visual drag-and-drop constructor with live preview for configuring form fields
+    - **Public Form**: Standalone pages for form submissions with dynamic validation based on field configuration
+    - **Form Submissions**: View all form submissions with detailed information and automatic lead creation
+    - **Field Types**: text, email, phone, textarea, select, checkbox, number, date
+    - **Auto-Lead Creation**: Submissions automatically create leads with source="form"
+    - **Demo User**: Hard-coded userId="demo-user-001" for testing (auth not implemented)
 
 ### UI/UX Design
 The frontend uses React, TypeScript, Wouter, TanStack Query, Shadcn UI, and Tailwind CSS. It features a consistent design with Shadcn components, color-coded status indicators, responsive layouts, and accessibility attributes. The application displays the "Unique Travel" brand logo in the header and uses darker text colors (5% lightness) for improved readability.

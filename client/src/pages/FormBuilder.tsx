@@ -57,11 +57,13 @@ import {
   FORM_FIELD_TYPES,
 } from "@shared/schema";
 
-const fieldFormSchema = insertFormFieldSchema.extend({
-  key: z.string().min(1, "Укажите ключ поля"),
-  label: z.string().min(1, "Укажите название поля"),
-  type: z.enum(FORM_FIELD_TYPES as unknown as [string, ...string[]]),
-});
+const fieldFormSchema = insertFormFieldSchema
+  .omit({ formId: true }) // formId добавляется на бэкенде из URL
+  .extend({
+    key: z.string().min(1, "Укажите ключ поля"),
+    label: z.string().min(1, "Укажите название поля"),
+    type: z.enum(FORM_FIELD_TYPES as unknown as [string, ...string[]]),
+  });
 
 type FieldFormData = z.infer<typeof fieldFormSchema>;
 

@@ -14,6 +14,7 @@ import Forms from "@/pages/Forms";
 import FormBuilder from "@/pages/FormBuilder";
 import FormSubmissions from "@/pages/FormSubmissions";
 import PublicForm from "@/pages/PublicForm";
+import Booking from "@/pages/Booking";
 import Settings from "@/pages/Settings";
 import DevTest from "@/pages/DevTest";
 import NotFound from "@/pages/not-found";
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/demo/leads" component={Leads} />
       <Route path="/demo/events/:id/summary" component={EventSummary} />
       <Route path="/demo/events" component={Events} />
+      <Route path="/demo/booking" component={Booking} />
       <Route path="/demo/forms/:id/public" component={PublicForm} />
       <Route path="/demo/forms/:id/submissions" component={FormSubmissions} />
       <Route path="/demo/forms/:id/builder" component={FormBuilder} />
@@ -43,6 +45,7 @@ function Router() {
       <Route path="/leads" component={Leads} />
       <Route path="/events/:id/summary" component={EventSummary} />
       <Route path="/events" component={Events} />
+      <Route path="/booking" component={Booking} />
       <Route path="/forms/:id/public" component={PublicForm} />
       <Route path="/forms/:id/submissions" component={FormSubmissions} />
       <Route path="/forms/:id/builder" component={FormBuilder} />

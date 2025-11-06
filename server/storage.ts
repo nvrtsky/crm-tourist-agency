@@ -312,6 +312,21 @@ export class DatabaseStorage implements IStorage {
     return dealsWithDetails.filter(d => d !== undefined);
   }
 
+  // Helper: Update event isFull flag based on confirmed deals
+  private async updateEventIsFull(eventId: string): Promise<void> {
+    const event = await this.getEvent(eventId);
+    if (!event) return;
+
+    const eventDeals = await this.getDealsByEvent(eventId);
+    const confirmedCount = eventDeals.filter(d => d.status === "confirmed").length;
+    const isFull = confirmedCount >= event.participantLimit;
+
+    // Update only if status changed
+    if (event.isFull !== isFull) {
+      await db.update(events).set({ isFull }).where(eq(events.id, eventId));
+    }
+  }
+
   async createDeal(deal: InsertDeal): Promise<Deal> {
     const [result] = await db.insert(deals).values(deal).returning();
     
@@ -338,10 +353,17 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
+    // Auto-update isFull if status is confirmed
+    if (deal.status === "confirmed") {
+      await this.updateEventIsFull(deal.eventId);
+    }
+
     return result;
   }
 
   async updateDeal(id: string, updates: Partial<UpdateDeal>): Promise<Deal | undefined> {
+    const oldDeal = await this.getDeal(id);
+    
     const result = await db
       .update(deals)
       .set({
@@ -351,11 +373,33 @@ export class DatabaseStorage implements IStorage {
       .where(eq(deals.id, id))
       .returning();
 
+    if (oldDeal) {
+      // Auto-update isFull if status changed to/from confirmed
+      const statusChanged = oldDeal.status !== updates.status && (oldDeal.status === "confirmed" || updates.status === "confirmed");
+      // Auto-update isFull if eventId changed (move deal between events)
+      const eventChanged = updates.eventId && updates.eventId !== oldDeal.eventId;
+
+      if (statusChanged || eventChanged) {
+        await this.updateEventIsFull(oldDeal.eventId);
+        // If event changed, also update new event's isFull
+        if (eventChanged && updates.eventId) {
+          await this.updateEventIsFull(updates.eventId);
+        }
+      }
+    }
+
     return result[0];
   }
 
   async deleteDeal(id: string): Promise<boolean> {
+    const deal = await this.getDeal(id);
     const result = await db.delete(deals).where(eq(deals.id, id)).returning();
+    
+    // Auto-update isFull if deleted deal was confirmed
+    if (deal && deal.status === "confirmed") {
+      await this.updateEventIsFull(deal.eventId);
+    }
+    
     return result.length > 0;
   }
 

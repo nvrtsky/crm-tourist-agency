@@ -25,7 +25,7 @@ export const LEAD_STATUSES = ["new", "contacted", "qualified", "won", "lost"] as
 export type LeadStatus = typeof LEAD_STATUSES[number];
 
 // Lead sources
-export const LEAD_SOURCES = ["manual", "form", "import", "other"] as const;
+export const LEAD_SOURCES = ["manual", "form", "import", "booking", "other"] as const;
 export type LeadSource = typeof LEAD_SOURCES[number];
 
 // Deal statuses
@@ -82,6 +82,7 @@ export const events = pgTable("events", {
   endDate: date("end_date").notNull(),
   participantLimit: integer("participant_limit").notNull(), // Maximum number of participants
   price: numeric("price", { precision: 10, scale: 2 }).notNull(), // Tour price
+  isFull: boolean("is_full").notNull().default(false), // Auto-updated when event is full
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

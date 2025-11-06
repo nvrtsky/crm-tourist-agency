@@ -101,6 +101,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get event availability
+  app.get("/api/events/availability/:eventId", async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      
+      // Get event
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      
+      // Count confirmed deals
+      const deals = await storage.getDealsByEvent(eventId);
+      const confirmedCount = deals.filter(d => d.status === "confirmed").length;
+      
+      // Calculate availability
+      const participantLimit = event.participantLimit;
+      const availableSpots = Math.max(0, participantLimit - confirmedCount);
+      const availabilityPercentage = participantLimit > 0 
+        ? Math.round((availableSpots / participantLimit) * 100) 
+        : 0;
+      
+      res.json({
+        eventId,
+        participantLimit,
+        confirmedCount,
+        availableSpots,
+        availabilityPercentage,
+        isFull: availableSpots === 0,
+      });
+    } catch (error) {
+      console.error("Error fetching event availability:", error);
+      res.status(500).json({ error: "Failed to fetch availability" });
+    }
+  });
+
   // Create event
   app.post("/api/events", async (req, res) => {
     try {
@@ -1040,6 +1076,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error submitting form:", error);
       res.status(500).json({ error: "Failed to submit form" });
+    }
+  });
+
+  // ==================== PUBLIC BOOKING ROUTES (no auth required) ====================
+
+  // Submit booking request
+  app.post("/api/public/bookings", async (req, res) => {
+    try {
+      const { eventId, participantCount, name, email, phone, notes } = req.body;
+
+      // Validate required fields
+      if (!eventId || !name || (!email && !phone)) {
+        return res.status(400).json({ 
+          error: "Validation error", 
+          details: "eventId, name, and either email or phone are required" 
+        });
+      }
+
+      // Verify event exists and is not full
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      if (event.isFull) {
+        return res.status(400).json({ error: "Event is fully booked" });
+      }
+
+      // Check actual availability
+      const deals = await storage.getDealsByEvent(eventId);
+      const confirmedCount = deals.filter(d => d.status === "confirmed").length;
+      const availableSpots = event.participantLimit - confirmedCount;
+
+      if (availableSpots <= 0) {
+        return res.status(400).json({ error: "No available spots" });
+      }
+
+      if (participantCount && participantCount > availableSpots) {
+        return res.status(400).json({ 
+          error: `Only ${availableSpots} spots available, but ${participantCount} requested` 
+        });
+      }
+
+      // Create enriched lead with event details in notes
+      const eventInfo = `Event: ${event.name}\nCountry: ${event.country}\nTour Type: ${event.tourType}\nDates: ${event.startDate} - ${event.endDate}\nParticipants: ${participantCount || 1}`;
+      const lead = await storage.createLead({
+        name,
+        email: email || null,
+        phone: phone || null,
+        source: 'booking',
+        status: 'new',
+        familyMembersCount: participantCount || 1,
+        notes: notes ? `${notes}\n\n${eventInfo}` : eventInfo,
+        createdByUserId: 'demo-user-001', // Default user for public bookings
+      });
+
+      res.json({ 
+        success: true,
+        lead,
+        message: "Booking request received successfully. Our team will contact you soon." 
+      });
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      res.status(500).json({ error: "Failed to create booking" });
     }
   });
 

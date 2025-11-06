@@ -1,4 +1,4 @@
-import { UserPlus, Calendar, FileText, Settings } from "lucide-react";
+import { UserPlus, Calendar, FileText, Settings, Ticket } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import {
@@ -34,6 +34,12 @@ export function AppSidebar() {
       url: `${urlPrefix}/events`,
       icon: Calendar,
       testId: "nav-events",
+    },
+    {
+      title: "Бронирование",
+      url: `${urlPrefix}/booking`,
+      icon: Ticket,
+      testId: "nav-booking",
     },
     {
       title: t("nav.forms"),

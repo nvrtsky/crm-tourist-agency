@@ -865,16 +865,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Submit form
-  app.post("/api/forms/:id/submit", async (req, res) => {
+  // Update form
+  app.patch("/api/forms/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = insertFormSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const form = await storage.updateForm(id, validation.data);
+      if (!form) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+
+      res.json(form);
+    } catch (error) {
+      console.error("Error updating form:", error);
+      res.status(500).json({ error: "Failed to update form" });
+    }
+  });
+
+  // Delete form
+  app.delete("/api/forms/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteForm(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Form not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting form:", error);
+      res.status(500).json({ error: "Failed to delete form" });
+    }
+  });
+
+  // Get form submissions
+  app.get("/api/forms/:id/submissions", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const submissions = await storage.getSubmissionsByForm(id);
+      res.json(submissions);
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
+      res.status(500).json({ error: "Failed to fetch submissions" });
+    }
+  });
+
+  // Add field to form
+  app.post("/api/forms/:id/fields", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = insertFormFieldSchema.safeParse({
+        ...req.body,
+        formId: id,
+      });
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const field = await storage.createFormField(validation.data);
+      res.json(field);
+    } catch (error) {
+      console.error("Error creating field:", error);
+      res.status(500).json({ error: "Failed to create field" });
+    }
+  });
+
+  // Update field
+  app.patch("/api/fields/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = insertFormFieldSchema.partial().safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      const field = await storage.updateFormField(id, validation.data);
+      if (!field) {
+        return res.status(404).json({ error: "Field not found" });
+      }
+
+      res.json(field);
+    } catch (error) {
+      console.error("Error updating field:", error);
+      res.status(500).json({ error: "Failed to update field" });
+    }
+  });
+
+  // Delete field
+  app.delete("/api/fields/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteFormField(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Field not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting field:", error);
+      res.status(500).json({ error: "Failed to delete field" });
+    }
+  });
+
+  // ==================== PUBLIC FORM ROUTES (no auth required) ====================
+
+  // Get public form (for embedding)
+  app.get("/api/public/forms/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const form = await storage.getForm(id);
+      
+      if (!form || !form.isActive) {
+        return res.status(404).json({ error: "Form not found or inactive" });
+      }
+      
+      const fields = await storage.getFieldsByForm(id);
+      res.json({ ...form, fields });
+    } catch (error) {
+      console.error("Error fetching public form:", error);
+      res.status(500).json({ error: "Failed to fetch form" });
+    }
+  });
+
+  // Submit form (public endpoint)
+  app.post("/api/public/forms/:id/submit", async (req, res) => {
     try {
       const { id } = req.params;
       const { data } = req.body;
 
-      // Verify form exists
+      // Verify form exists and is active
       const form = await storage.getForm(id);
-      if (!form) {
-        return res.status(404).json({ error: "Form not found" });
+      if (!form || !form.isActive) {
+        return res.status(404).json({ error: "Form not found or inactive" });
       }
 
       // Auto-create lead from form data
@@ -885,6 +1024,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         source: 'form',
         formId: id,
         status: 'new',
+        createdByUserId: form.userId, // Assign to form owner
       });
 
       // Create submission linked to lead

@@ -1052,14 +1052,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Form not found or inactive" });
       }
 
+      // Determine lead name based on available data
+      let leadName = data.name || 'Unknown';
+      
+      // If no name but has tour field, use event name
+      if (!data.name && data.tour) {
+        const event = await storage.getEvent(data.tour);
+        if (event) {
+          leadName = `Booking for ${event.name}`;
+        }
+      }
+
       // Auto-create lead from form data
       const lead = await storage.createLead({
-        name: data.name || 'Unknown',
-        email: data.email,
-        phone: data.phone,
+        name: leadName,
+        email: data.email || null,
+        phone: data.phone || null,
         source: 'form',
         formId: id,
         status: 'new',
+        notes: data.tour ? `Selected tour ID: ${data.tour}` : undefined,
         createdByUserId: form.userId, // Assign to form owner
       });
 

@@ -4,10 +4,12 @@ import { useParams } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -25,10 +27,19 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CheckCircle } from "lucide-react";
-import type { Form as FormType, FormField as FormFieldType } from "@shared/schema";
+import type { Form as FormType, FormField as FormFieldType, Event } from "@shared/schema";
 
 interface FormWithFields extends FormType {
   fields: FormFieldType[];
+}
+
+interface AvailabilityData {
+  eventId: string;
+  participantLimit: number;
+  confirmedCount: number;
+  availableSpots: number;
+  availabilityPercentage: number;
+  isFull: boolean;
 }
 
 // Build dynamic schema based on form fields
@@ -44,6 +55,9 @@ const buildSchema = (fields: FormFieldType[]) => {
         break;
       case "phone":
         fieldSchema = z.string().min(10, "Введите корректный номер телефона");
+        break;
+      case "tour":
+        fieldSchema = z.string();
         break;
       case "checkbox":
         fieldSchema = z.boolean();
@@ -68,6 +82,97 @@ const buildSchema = (fields: FormFieldType[]) => {
   
   return z.object(shape);
 };
+
+function AvailabilityBadge({ eventId }: { eventId: string }) {
+  const { data: availability, isLoading } = useQuery<AvailabilityData>({
+    queryKey: ["/api/events/availability", eventId],
+  });
+
+  if (isLoading) {
+    return <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />;
+  }
+
+  if (!availability) {
+    return null;
+  }
+
+  const { availabilityPercentage } = availability;
+
+  let badgeVariant: "default" | "secondary" | "destructive" = "default";
+  let badgeText = "Много мест";
+
+  if (availabilityPercentage <= 0) {
+    badgeVariant = "destructive";
+    badgeText = "Нет мест";
+  } else if (availabilityPercentage <= 10) {
+    badgeVariant = "destructive";
+    badgeText = "Мало мест";
+  } else if (availabilityPercentage <= 30) {
+    badgeVariant = "secondary";
+    badgeText = "Мало мест";
+  }
+
+  return (
+    <Badge variant={badgeVariant} className="text-xs">
+      {badgeText}
+    </Badge>
+  );
+}
+
+function TourSelect({ 
+  onChange, 
+  value, 
+  isRequired 
+}: { 
+  onChange: (value: string) => void; 
+  value: string; 
+  isRequired: boolean;
+}) {
+  const { data: events = [], isLoading } = useQuery<Event[]>({
+    queryKey: ["/api/events"],
+  });
+
+  const availableEvents = events.filter(event => !event.isFull);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (availableEvents.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground p-4 text-center">
+        Нет доступных туров
+      </div>
+    );
+  }
+
+  return (
+    <Select onValueChange={onChange} value={value}>
+      <SelectTrigger data-testid="select-tour">
+        <SelectValue placeholder="Выберите тур" />
+      </SelectTrigger>
+      <SelectContent>
+        {availableEvents.map((event) => (
+          <SelectItem key={event.id} value={event.id}>
+            <div className="flex items-center justify-between gap-2 w-full">
+              <div>
+                <div>{event.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {format(new Date(event.startDate), 'dd.MM.yyyy')} - {format(new Date(event.endDate), 'dd.MM.yyyy')}
+                </div>
+              </div>
+              <AvailabilityBadge eventId={event.id} />
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 function FormContent({ formData, onSubmitSuccess }: { formData: FormWithFields; onSubmitSuccess: () => void }) {
   const sortedFields = [...formData.fields].sort((a, b) => a.order - b.order);
@@ -153,6 +258,12 @@ function FormContent({ formData, onSubmitSuccess }: { formData: FormWithFields; 
                             <SelectItem value="option3">Опция 3</SelectItem>
                           </SelectContent>
                         </Select>
+                      ) : field.type === "tour" ? (
+                        <TourSelect
+                          onChange={formField.onChange}
+                          value={formField.value as string}
+                          isRequired={field.isRequired}
+                        />
                       ) : field.type === "checkbox" ? (
                         <div className="flex items-center gap-2">
                           <Checkbox

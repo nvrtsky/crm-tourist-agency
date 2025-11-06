@@ -24,7 +24,13 @@ A PostgreSQL database with 9 normalized tables:
 
 ### Key Features
 -   **Events Module**: Manages tourist events with filtering, sorting, color-coded availability, and detailed participant tracking. Includes a dynamic `EventSummary` page with inline editable city-specific itinerary details and Excel export.
--   **Leads Module**: Comprehensive lead management, including creation, conversion (with special handling for families via `familyMembersCount` field), and status tracking.
+-   **Leads Module**: Comprehensive lead management with dual-view interface:
+    - **Table View**: Traditional tabular display with sorting and filtering
+    - **Kanban View**: Visual drag-and-drop board with 5 columns (New, Contacted, Qualified, Converted, Lost)
+    - **Filters**: Status, source, date range, and family toggle with localStorage persistence
+    - **View Toggle**: Seamless switching between table and kanban modes
+    - **Drag & Drop**: HTML5 drag-and-drop API for status updates in kanban view
+    - **Lead Conversion**: Special handling for families via `familyMembersCount` field
 -   **Group Management**: 
     - Two group types: **Families** (shared hotel/transport/invoice, separate passports) and **Mini-groups** (shared hotel only, individual transport/invoices)
     - Family creation: automatic during lead-to-contact conversion when `familyMembersCount > 1`

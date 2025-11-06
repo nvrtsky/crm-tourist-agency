@@ -97,9 +97,6 @@ function AppInDemoMode() {
                 <div className="flex items-center gap-3">
                   <SidebarTrigger data-testid="button-sidebar-toggle" />
                   <img src={logoUrl} alt="Unique Travel" className="h-8 w-auto" data-testid="img-logo" />
-                  <h1 className="font-semibold text-sm">
-                    {t("app.title")} <span className="text-xs text-muted-foreground">(DEMO)</span>
-                  </h1>
                 </div>
                 <div className="flex items-center gap-2">
                   <LanguageSwitcher />

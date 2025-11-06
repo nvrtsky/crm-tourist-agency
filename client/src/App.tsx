@@ -15,6 +15,7 @@ import Settings from "@/pages/Settings";
 import DevTest from "@/pages/DevTest";
 import NotFound from "@/pages/not-found";
 import { useTranslation } from "react-i18next";
+import logoUrl from "@assets/image_1762425592503.png";
 
 function Router() {
   const [, setLocation] = useLocation();
@@ -93,8 +94,9 @@ function AppInDemoMode() {
             <AppSidebar />
             <div className="flex flex-col flex-1 overflow-hidden">
               <header className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <SidebarTrigger data-testid="button-sidebar-toggle" />
+                  <img src={logoUrl} alt="Unique Travel" className="h-8 w-auto" data-testid="img-logo" />
                   <h1 className="font-semibold text-sm">
                     {t("app.title")} <span className="text-xs text-muted-foreground">(DEMO)</span>
                   </h1>

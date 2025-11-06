@@ -41,7 +41,7 @@ A PostgreSQL database with 9 normalized tables:
 -   **Form Builder**: Visual tool for creating web forms to capture leads directly into the CRM.
 
 ### UI/UX Design
-The frontend uses React, TypeScript, Wouter, TanStack Query, Shadcn UI, and Tailwind CSS. It features a consistent design with Shadcn components, color-coded status indicators, responsive layouts, and accessibility attributes.
+The frontend uses React, TypeScript, Wouter, TanStack Query, Shadcn UI, and Tailwind CSS. It features a consistent design with Shadcn components, color-coded status indicators, responsive layouts, and accessibility attributes. The application displays the "Unique Travel" brand logo in the header and uses darker text colors (5% lightness) for improved readability.
 
 ### Backend Architecture
 Built with Express.js, TypeScript, and Drizzle ORM, interacting with PostgreSQL. It provides RESTful APIs for all core CRM entities (Events, Contacts, Deals, Leads, Notifications, Forms, CityVisits) with Zod for data validation and a storage layer for database abstraction.

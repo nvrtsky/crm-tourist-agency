@@ -16,19 +16,19 @@
 
   --background: 0 0% 100%;
 
-  --foreground: 0 0% 10%;
+  --foreground: 0 0% 5%;
 
   --border: 30 8% 88%;
 
   --card: 0 0% 100%;
 
-  --card-foreground: 0 0% 10%;
+  --card-foreground: 0 0% 5%;
 
   --card-border: 30 6% 90%;
 
   --sidebar: 35 15% 97%;
 
-  --sidebar-foreground: 0 0% 10%;
+  --sidebar-foreground: 0 0% 5%;
 
   --sidebar-border: 35 10% 88%;
 
@@ -44,7 +44,7 @@
 
   --popover: 0 0% 98%;
 
-  --popover-foreground: 0 0% 10%;
+  --popover-foreground: 0 0% 5%;
 
   --popover-border: 30 8% 85%;
 

@@ -102,6 +102,11 @@ Built with Express.js, TypeScript, and Drizzle ORM, interacting with PostgreSQL.
     - `leads` table: Stores contact point data (phone, email, event selection, payment tracking)
     - `leadTourists` table: Stores detailed tourist passport and personal information
     - This separation improves data organization and allows multiple tourists per lead with individual passport details
+-   **Tourist Dialog Management** (November 2025): Fixed dialog interaction issues:
+    - All action buttons in tourist table (edit, delete, set primary) have `type="button"` to prevent form submission
+    - Separate `togglePrimaryMutation` for primary status changes that doesn't close parent lead dialog
+    - Explicit query invalidation after primary toggle ensures UI updates correctly
+    - Tourist table uses compact 5-column layout with icon badges (User/Baby for type, Star for primary)
 -   **Database Migrations** (November 2025): Manual SQL migrations required for:
     1. `lead_tourists.participant_type` → `tourist_type` column rename
     2. `lead_tourists.name` → split into `lastName`, `firstName`, `middleName` columns

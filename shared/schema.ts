@@ -28,6 +28,17 @@ export type LeadStatus = typeof LEAD_STATUSES[number];
 export const LEAD_SOURCES = ["manual", "form", "import", "booking", "other"] as const;
 export type LeadSource = typeof LEAD_SOURCES[number];
 
+// Client categories
+export const CLIENT_CATEGORIES = [
+  "category_ab",      // Категория А и В (Даты и бюджет)
+  "category_c",       // Категория C (Неопределились)
+  "category_d",       // Категория D (Нет бюджета)
+  "vip",              // VIP
+  "not_segmented",    // Не сегментированный
+  "travel_agent"      // Турагент
+] as const;
+export type ClientCategory = typeof CLIENT_CATEGORIES[number];
+
 // Deal statuses
 export const DEAL_STATUSES = ["pending", "confirmed", "cancelled", "completed"] as const;
 export type DealStatus = typeof DEAL_STATUSES[number];
@@ -184,9 +195,19 @@ export const formFields = pgTable("form_fields", {
 // Leads table - CRM leads
 export const leads = pgTable("leads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
+  lastName: text("last_name").notNull(), // Фамилия
+  firstName: text("first_name").notNull(), // Имя
+  middleName: text("middle_name"), // Отчество
   email: text("email"),
   phone: text("phone"),
+  birthDate: date("birth_date"), // Дата рождения
+  passportSeries: text("passport_series"), // Серия и номер (национальный паспорт)
+  passportIssuedBy: text("passport_issued_by"), // Кем выдан (нац паспорт)
+  registrationAddress: text("registration_address"), // Адрес регистрации
+  foreignPassportName: text("foreign_passport_name"), // ФИО Загранпаспорт (Латиница)
+  foreignPassportNumber: text("foreign_passport_number"), // Номер загранпаспорта
+  foreignPassportValidUntil: date("foreign_passport_valid_until"), // Годен до (загран)
+  clientCategory: text("client_category"), // Категория клиента
   status: text("status").notNull().default("new"), // 'new', 'contacted', 'qualified', 'won', 'lost'
   source: text("source").notNull().default("manual"), // 'manual', 'form', 'import', 'other'
   formId: varchar("form_id").references(() => forms.id, { onDelete: 'set null' }),
@@ -220,16 +241,16 @@ export const formSubmissions = pgTable("form_submissions", {
   userAgent: text("user_agent"),
 });
 
-// Lead participants table - stores multiple participants for a lead
-export const leadParticipants = pgTable("lead_participants", {
+// Lead tourists table - stores multiple tourists for a lead
+export const leadTourists = pgTable("lead_tourists", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   leadId: varchar("lead_id").notNull().references(() => leads.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
   dateOfBirth: date("date_of_birth"),
-  participantType: text("participant_type").notNull().default("adult"), // 'adult' or 'child'
-  isPrimary: boolean("is_primary").notNull().default(false), // One participant must be primary
+  touristType: text("tourist_type").notNull().default("adult"), // 'adult', 'child', or 'infant'
+  isPrimary: boolean("is_primary").notNull().default(false), // One tourist must be primary
   notes: text("notes"),
   order: integer("order").notNull().default(0), // Display order
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -287,13 +308,13 @@ export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).om
   submittedAt: true 
 });
 
-// Lead participant schemas
-export const insertLeadParticipantSchema = createInsertSchema(leadParticipants).omit({ 
+// Lead tourist schemas
+export const insertLeadTouristSchema = createInsertSchema(leadTourists).omit({ 
   id: true, 
   createdAt: true, 
   updatedAt: true 
 });
-export const updateLeadParticipantSchema = insertLeadParticipantSchema.partial();
+export const updateLeadTouristSchema = insertLeadTouristSchema.partial();
 
 // Group schemas
 export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
@@ -352,10 +373,10 @@ export type InsertLeadStatusHistory = z.infer<typeof insertLeadStatusHistorySche
 export type FormSubmission = typeof formSubmissions.$inferSelect;
 export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
 
-// Lead participant types
-export type LeadParticipant = typeof leadParticipants.$inferSelect;
-export type InsertLeadParticipant = z.infer<typeof insertLeadParticipantSchema>;
-export type UpdateLeadParticipant = z.infer<typeof updateLeadParticipantSchema>;
+// Lead tourist types
+export type LeadTourist = typeof leadTourists.$inferSelect;
+export type InsertLeadTourist = z.infer<typeof insertLeadTouristSchema>;
+export type UpdateLeadTourist = z.infer<typeof updateLeadTouristSchema>;
 
 // Complex types with relations
 export type EventWithStats = Event & {
@@ -465,12 +486,12 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
   }),
   statusHistory: many(leadStatusHistory),
   convertedContacts: many(contacts),
-  participants: many(leadParticipants),
+  tourists: many(leadTourists),
 }));
 
-export const leadParticipantsRelations = relations(leadParticipants, ({ one }) => ({
+export const leadTouristsRelations = relations(leadTourists, ({ one }) => ({
   lead: one(leads, {
-    fields: [leadParticipants.leadId],
+    fields: [leadTourists.leadId],
     references: [leads.id],
   }),
 }));

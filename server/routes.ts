@@ -690,6 +690,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // If updating isPrimary to true, use togglePrimaryTourist for atomicity
+      if (validation.data.isPrimary === true) {
+        const existingTourist = await storage.getTourist(id);
+        if (!existingTourist) {
+          return res.status(404).json({ error: "Tourist not found" });
+        }
+        
+        await storage.togglePrimaryTourist(existingTourist.leadId, id);
+        const updatedTourist = await storage.getTourist(id);
+        return res.json(updatedTourist);
+      }
+      
       const tourist = await storage.updateTourist(id, validation.data);
       
       if (!tourist) {

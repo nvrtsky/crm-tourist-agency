@@ -154,6 +154,7 @@ export interface IStorage {
   createTourist(tourist: InsertLeadTourist): Promise<LeadTourist>;
   updateTourist(id: string, tourist: Partial<UpdateLeadTourist>): Promise<LeadTourist | undefined>;
   deleteTourist(id: string): Promise<boolean>;
+  togglePrimaryTourist(leadId: string, touristId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -805,7 +806,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTourist(tourist: InsertLeadTourist): Promise<LeadTourist> {
-    const [result] = await db.insert(leadTourists).values(tourist).returning();
+    // Check if this is the first tourist for this lead
+    const existingTourists = await db
+      .select()
+      .from(leadTourists)
+      .where(eq(leadTourists.leadId, tourist.leadId));
+
+    // If no existing tourists, make this one primary automatically
+    const touristData = {
+      ...tourist,
+      isPrimary: existingTourists.length === 0 ? true : (tourist.isPrimary || false)
+    };
+
+    const [result] = await db.insert(leadTourists).values(touristData).returning();
     return result;
   }
 
@@ -820,8 +833,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTourist(id: string): Promise<boolean> {
+    // Get the tourist to be deleted
+    const tourist = await this.getTourist(id);
+    if (!tourist) return false;
+
+    const wasPrimary = tourist.isPrimary;
+    const leadId = tourist.leadId;
+
+    // Delete the tourist
     const result = await db.delete(leadTourists).where(eq(leadTourists.id, id)).returning();
+    
+    // If the deleted tourist was primary, assign a new primary
+    if (wasPrimary && result.length > 0) {
+      const remainingTourists = await db
+        .select()
+        .from(leadTourists)
+        .where(eq(leadTourists.leadId, leadId))
+        .orderBy(leadTourists.createdAt)
+        .limit(1);
+
+      if (remainingTourists.length > 0) {
+        await db
+          .update(leadTourists)
+          .set({ isPrimary: true, updatedAt: new Date() })
+          .where(eq(leadTourists.id, remainingTourists[0].id));
+      }
+    }
+
     return result.length > 0;
+  }
+
+  async togglePrimaryTourist(leadId: string, touristId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      // Step 1: Unset isPrimary for all tourists in this lead
+      await tx
+        .update(leadTourists)
+        .set({ isPrimary: false, updatedAt: new Date() })
+        .where(eq(leadTourists.leadId, leadId));
+
+      // Step 2: Set isPrimary=true for the selected tourist
+      await tx
+        .update(leadTourists)
+        .set({ isPrimary: true, updatedAt: new Date() })
+        .where(eq(leadTourists.id, touristId));
+    });
   }
 }
 

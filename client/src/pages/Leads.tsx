@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -813,7 +813,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
   };
 
   return (
-    <>
+    <TooltipProvider delayDuration={300} skipDelayDuration={0} disableHoverableContent>
       <DialogHeader>
         <DialogTitle>{lead ? "Редактировать лид" : "Создать новый лид"}</DialogTitle>
         <DialogDescription>
@@ -1193,14 +1193,12 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="inline-flex items-center rounded-md border border-input bg-background px-2 py-1 text-[10px] font-semibold transition-colors">
-                                    {tourist.touristType === "adult" ? (
-                                      <User className="h-3 w-3" />
-                                    ) : (
-                                      <Baby className="h-3 w-3" />
-                                    )}
-                                  </div>
+                                <TooltipTrigger type="button" className="inline-flex items-center rounded-md border border-input bg-background px-2 py-1 text-[10px] font-semibold transition-colors cursor-default hover-elevate" onClick={(e) => e.stopPropagation()}>
+                                  {tourist.touristType === "adult" ? (
+                                    <User className="h-3 w-3" />
+                                  ) : (
+                                    <Baby className="h-3 w-3" />
+                                  )}
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>{tourist.touristType === "adult" ? "Взрослый" : tourist.touristType === "child" ? "Ребенок" : "Младенец"}</p>
@@ -1208,13 +1206,13 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                               </Tooltip>
                               {tourist.isPrimary ? (
                                 <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div 
-                                      className="inline-flex items-center rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground transition-colors"
-                                      data-testid={`badge-primary-${tourist.id}`}
-                                    >
-                                      <Star className="h-3 w-3" />
-                                    </div>
+                                  <TooltipTrigger 
+                                    type="button"
+                                    className="inline-flex items-center rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground transition-colors cursor-default hover-elevate"
+                                    data-testid={`badge-primary-${tourist.id}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Star className="h-3 w-3" />
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Основной турист</p>
@@ -1335,7 +1333,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
           isPending={createTouristMutation.isPending || updateTouristMutation.isPending}
         />
       )}
-    </>
+    </TooltipProvider>
   );
 }
 

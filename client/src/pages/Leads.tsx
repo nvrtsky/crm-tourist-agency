@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, UserPlus, LayoutGrid, LayoutList, Filter, Star } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, UserPlus, LayoutGrid, LayoutList, Filter, Star, User, Baby } from "lucide-react";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -1154,23 +1154,71 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                   Нет туристов. Добавьте первого туриста.
                 </div>
               ) : (
-                <Table data-testid="table-tourists">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Имя</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Телефон</TableHead>
-                      <TableHead>Дата рождения</TableHead>
-                      <TableHead>Тип</TableHead>
-                      <TableHead>Основной</TableHead>
-                      <TableHead>Действия</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                <div className="overflow-x-auto">
+                  <Table data-testid="table-tourists">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Имя</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Телефон</TableHead>
+                        <TableHead>Дата рождения</TableHead>
+                        <TableHead>Действия</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {tourists.map((tourist) => (
                       <TableRow key={tourist.id} data-testid={`row-tourist-${tourist.id}`}>
-                        <TableCell className="font-medium">
-                          {tourist.lastName} {tourist.firstName} {tourist.middleName || ""}
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium">
+                              {tourist.lastName} {tourist.firstName} {tourist.middleName || ""}
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="outline" className="text-[10px]">
+                                    {tourist.touristType === "adult" ? (
+                                      <User className="h-3 w-3" />
+                                    ) : (
+                                      <Baby className="h-3 w-3" />
+                                    )}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{tourist.touristType === "adult" ? "Взрослый" : tourist.touristType === "child" ? "Ребенок" : "Младенец"}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              {tourist.isPrimary ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="default" className="text-[10px]" data-testid={`badge-primary-${tourist.id}`}>
+                                      <Star className="h-3 w-3" />
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Основной турист</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() => handleTogglePrimary(tourist)}
+                                      data-testid={`button-set-primary-${tourist.id}`}
+                                    >
+                                      <Star className="h-3 w-3" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Сделать основным</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell>{tourist.email || "—"}</TableCell>
                         <TableCell>{tourist.phone || "—"}</TableCell>
@@ -1178,28 +1226,6 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                           {tourist.dateOfBirth
                             ? format(new Date(tourist.dateOfBirth), "dd.MM.yyyy")
                             : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={tourist.touristType === "adult" ? "default" : "secondary"}>
-                            {tourist.touristType === "adult" ? "Взрослый" : tourist.touristType === "child" ? "Ребенок" : "Младенец"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {tourist.isPrimary ? (
-                            <Badge variant="default" data-testid={`badge-primary-${tourist.id}`}>
-                              <Star className="h-3 w-3 mr-1" />
-                              Основной
-                            </Badge>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleTogglePrimary(tourist)}
-                              data-testid={`button-set-primary-${tourist.id}`}
-                            >
-                              Сделать основным
-                            </Button>
-                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
@@ -1229,6 +1255,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </div>
           )}

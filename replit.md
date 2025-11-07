@@ -25,29 +25,30 @@ A PostgreSQL database with 10 normalized tables:
 
 ### Key Features
 -   **Events Module**: Manages tourist events with filtering, sorting, color-coded availability, and detailed participant tracking. Includes a dynamic `EventSummary` page with inline editable city-specific itinerary details and Excel export.
--   **Leads Module**: Comprehensive lead management with dual-view interface and detailed passport data (November 2025):
-    - **Lead Structure**: Each lead now contains full passport and client data:
-      - Personal Info: lastName*, firstName*, middleName, birthDate
-      - Russian Passport: passportSeries, passportIssuedBy, registrationAddress
-      - Foreign Passport: foreignPassportName, foreignPassportNumber, foreignPassportValidUntil
-      - Client Category: dropdown with 6 options ("!Категория А и В (Даты и бюджет)", "Категория C (Неопределились)", "Категория D (Нет бюджета)", "VIP", "Не сегментированный", "Турагент")
-    - **Table View**: Traditional tabular display with sorting and filtering, shows ФИО and category
-    - **Kanban View**: Visual drag-and-drop board with 5 columns (New, Contacted, Qualified, Converted, Lost)
+-   **Leads Module**: Comprehensive lead management with dual-view interface (November 2025 Refactor):
+    - **Lead Structure**: Simplified contact point model separating client contact info from tourist passport data:
+      - **Contact Info** (in `leads` table): lastName*, firstName*, middleName, phone*, email*, eventId (tour selection), tourCost, advancePayment, remainingPayment
+      - **Client Category**: dropdown with 6 options ("Категория А и В", "Категория C", "Категория D", "VIP", "Не сегментированный", "Турагент")
+      - **Passport Data**: Moved to `leadTourists` table for each individual tourist
+    - **Table View**: Displays ФИО, phone, email, tour name, status, source, and category with sorting/filtering
+    - **Kanban View**: Visual drag-and-drop board with 5 columns (New, Contacted, Qualified, Converted, Lost); cards show ФИО, phone, email, tour name
     - **Filters**: Status, source, and date range with localStorage persistence
     - **View Toggle**: Seamless switching between table and kanban modes
     - **Drag & Drop**: HTML5 drag-and-drop API for status updates in kanban view
-    - **Lead Tourists**: Detailed tourist tracking within leads (renamed from "participants"):
+    - **Lead Tourists**: Detailed passport and personal data for each tourist in the booking:
       - Tourists section appears when editing existing leads (requires lead.id)
-      - Each tourist has: name*, email, phone, dateOfBirth, touristType (adult/child/infant), isPrimary flag, notes, order
+      - Each tourist has: lastName*, firstName*, middleName, email, phone, dateOfBirth, touristType (adult/child/infant)
+      - **Russian Passport**: passportSeries, passportNumber, passportIssuedBy, passportIssueDate, registrationAddress
+      - **Foreign Passport**: foreignPassportName, foreignPassportNumber, foreignPassportValidUntil
       - CRUD operations via API: GET/POST /api/leads/:id/tourists, PATCH/DELETE /api/tourists/:id
       - Primary tourist designation with automatic radio-button behavior
       - Supports family bookings with multiple tourists under one lead
     - **Lead Conversion**: Enhanced conversion process:
       - Reads tourists from `leadTourists` table during conversion
-      - Creates one contact per tourist with individual data (name, email, phone, birthDate from tourist)
+      - Creates one contact per tourist with individual data (lastName, firstName, middleName, email, phone, dateOfBirth from tourist)
       - Creates one deal per contact, all linked to the same event
-      - Auto-creates family group when lead has 2+ tourists (named "Семья {primary tourist name}")
-      - Fallback: if no tourists exist, creates single contact from lead data
+      - Auto-creates family group when lead has 2+ tourists (named "Семья {primary tourist lastName}")
+      - Fallback: if no tourists exist, creates single contact from lead contact data
       - All deals marked as 'pending' status with groupId reference
       - Lead status updated to 'won' after successful conversion
 -   **Group Management**: 
@@ -97,7 +98,16 @@ Built with Express.js, TypeScript, and Drizzle ORM, interacting with PostgreSQL.
 -   **Dynamic Geography**: Events store cities as arrays, allowing flexible tour routing.
 -   **Standalone System**: The application is designed as a fully independent CRM, with no external integrations like Bitrix24.
 -   **Notification Strategy**: Backend-automated notifications based on predefined triggers (e.g., group capacity thresholds).
--   **Database Migrations** (November 2025): Manual SQL migration was required to rename `lead_tourists.participant_type` → `tourist_type` after schema refactoring. Future deployments should include this migration to ensure consistency.
+-   **Lead Data Separation** (November 2025): Lead structure refactored to separate contact information from tourist passport data:
+    - `leads` table: Stores contact point data (phone, email, event selection, payment tracking)
+    - `leadTourists` table: Stores detailed tourist passport and personal information
+    - This separation improves data organization and allows multiple tourists per lead with individual passport details
+-   **Database Migrations** (November 2025): Manual SQL migrations required for:
+    1. `lead_tourists.participant_type` → `tourist_type` column rename
+    2. `lead_tourists.name` → split into `lastName`, `firstName`, `middleName` columns
+    3. Moving passport fields from `leads` to `leadTourists` table
+    4. Adding payment tracking fields (`tourCost`, `advancePayment`, `remainingPayment`) to `leads` table
+    5. Migration of existing data using `parseFullName()` helper for backward compatibility
 
 ## External Dependencies
 -   **Frontend**: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS

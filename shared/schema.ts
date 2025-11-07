@@ -198,8 +198,6 @@ export const leads = pgTable("leads", {
   lastName: text("last_name").notNull(), // Фамилия
   firstName: text("first_name").notNull(), // Имя
   middleName: text("middle_name"), // Отчество
-  email: text("email"),
-  phone: text("phone"),
   birthDate: date("birth_date"), // Дата рождения
   passportSeries: text("passport_series"), // Серия и номер (национальный паспорт)
   passportIssuedBy: text("passport_issued_by"), // Кем выдан (нац паспорт)
@@ -212,7 +210,6 @@ export const leads = pgTable("leads", {
   source: text("source").notNull().default("manual"), // 'manual', 'form', 'import', 'other'
   formId: varchar("form_id").references(() => forms.id, { onDelete: 'set null' }),
   notes: text("notes"),
-  familyMembersCount: integer("family_members_count"), // Number of family members (optional, for family groups)
   assignedUserId: varchar("assigned_user_id").references(() => users.id, { onDelete: 'set null' }),
   createdByUserId: varchar("created_by_user_id").references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp("created_at").notNull().defaultNow(),

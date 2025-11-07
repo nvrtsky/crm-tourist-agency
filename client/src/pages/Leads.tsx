@@ -14,8 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, UserPlus, LayoutGrid, LayoutList, Filter, Star } from "lucide-react";
-import type { Lead, InsertLead, LeadParticipant, InsertLeadParticipant } from "@shared/schema";
-import { insertLeadSchema, insertLeadParticipantSchema } from "@shared/schema";
+import type { Lead, InsertLead, LeadTourist, InsertLeadTourist } from "@shared/schema";
+import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -36,6 +36,15 @@ const leadSourceMap: Record<string, string> = {
   other: "Другое",
 };
 
+const clientCategoryMap: Record<string, string> = {
+  category_ab: "Категория А и В (Даты и бюджет)",
+  category_c: "Категория C (Неопределились)",
+  category_d: "Категория D (Нет бюджета)",
+  vip: "VIP",
+  not_segmented: "Не сегментированный",
+  travel_agent: "Турагент",
+};
+
 export default function Leads() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -50,13 +59,10 @@ export default function Leads() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string>('');
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
-  const [onlyWithFamily, setOnlyWithFamily] = useState(false);
 
   const { data: leads = [], isLoading } = useQuery<Lead[]>({
     queryKey: ["/api/leads"],
   });
-
-  // Will be calculated after filteredLeads is defined
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertLead) => {
@@ -145,14 +151,9 @@ export default function Leads() {
         if (dateRange.to && leadDate > dateRange.to) return false;
       }
       
-      // Family filter
-      if (onlyWithFamily && (!lead.familyMembersCount || lead.familyMembersCount <= 1)) {
-        return false;
-      }
-      
       return true;
     });
-  }, [leads, statusFilter, sourceFilter, dateRange, onlyWithFamily]);
+  }, [leads, statusFilter, sourceFilter, dateRange]);
 
   // Calculate stats from filtered leads
   const stats = {
@@ -160,6 +161,11 @@ export default function Leads() {
     new: filteredLeads.filter((l) => l.status === "new").length,
     inProgress: filteredLeads.filter((l) => ["contacted", "qualified"].includes(l.status)).length,
     completed: filteredLeads.filter((l) => l.status === "converted").length,
+  };
+
+  // Helper function to get lead display name
+  const getLeadName = (lead: Lead) => {
+    return `${lead.lastName || ''} ${lead.firstName || ''}`.trim() || 'Без имени';
   };
 
   return (
@@ -300,31 +306,14 @@ export default function Leads() {
               </Select>
             </div>
 
-            {/* Family Filter */}
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="only-family"
-                checked={onlyWithFamily}
-                onCheckedChange={(checked) => setOnlyWithFamily(checked as boolean)}
-                data-testid="checkbox-only-family"
-              />
-              <label
-                htmlFor="only-family"
-                className="text-sm font-medium leading-none cursor-pointer select-none"
-              >
-                Только семьи
-              </label>
-            </div>
-
             {/* Clear Filters */}
-            {(statusFilter.length > 0 || sourceFilter || onlyWithFamily) && (
+            {(statusFilter.length > 0 || sourceFilter) && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
                   setStatusFilter([]);
                   setSourceFilter('');
-                  setOnlyWithFamily(false);
                 }}
                 data-testid="button-clear-filters"
               >
@@ -350,6 +339,7 @@ export default function Leads() {
             }
           }}
           onConvert={setConvertingLead}
+          getLeadName={getLeadName}
         />
       ) : (
         // Table View
@@ -369,12 +359,10 @@ export default function Leads() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Имя</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Телефон</TableHead>
+                  <TableHead>ФИО</TableHead>
                   <TableHead>Статус</TableHead>
                   <TableHead>Источник</TableHead>
-                  <TableHead>Семья</TableHead>
+                  <TableHead>Категория</TableHead>
                   <TableHead>Дата создания</TableHead>
                   <TableHead>Действия</TableHead>
                 </TableRow>
@@ -382,9 +370,7 @@ export default function Leads() {
               <TableBody>
                 {filteredLeads.map((lead) => (
                   <TableRow key={lead.id} data-testid={`row-lead-${lead.id}`}>
-                    <TableCell className="font-medium">{lead.name}</TableCell>
-                    <TableCell>{lead.email || "—"}</TableCell>
-                    <TableCell>{lead.phone || "—"}</TableCell>
+                    <TableCell className="font-medium">{getLeadName(lead)}</TableCell>
                     <TableCell>
                       <Badge variant={leadStatusMap[lead.status]?.variant || "default"} data-testid={`status-${lead.id}`}>
                         {leadStatusMap[lead.status]?.label || lead.status}
@@ -392,9 +378,9 @@ export default function Leads() {
                     </TableCell>
                     <TableCell>{leadSourceMap[lead.source] || lead.source}</TableCell>
                     <TableCell>
-                      {lead.familyMembersCount && lead.familyMembersCount > 1 ? (
-                        <Badge variant="outline" data-testid={`family-${lead.id}`}>
-                          {lead.familyMembersCount} чел.
+                      {lead.clientCategory ? (
+                        <Badge variant="outline" data-testid={`category-${lead.id}`}>
+                          {clientCategoryMap[lead.clientCategory] || lead.clientCategory}
                         </Badge>
                       ) : (
                         "—"
@@ -461,6 +447,7 @@ export default function Leads() {
         <ConvertLeadDialog
           lead={convertingLead}
           onClose={() => setConvertingLead(null)}
+          getLeadName={getLeadName}
         />
       )}
     </div>
@@ -475,9 +462,10 @@ interface KanbanBoardProps {
   onEdit: (lead: Lead) => void;
   onDelete: (leadId: string) => void;
   onConvert: (lead: Lead) => void;
+  getLeadName: (lead: Lead) => string;
 }
 
-function KanbanBoard({ leads, isLoading, onStatusChange, onEdit, onDelete, onConvert }: KanbanBoardProps) {
+function KanbanBoard({ leads, isLoading, onStatusChange, onEdit, onDelete, onConvert, getLeadName }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
 
   const columns: { status: string; label: string; variant: "default" | "secondary" | "outline" | "destructive" }[] = [
@@ -560,21 +548,14 @@ function KanbanBoard({ leads, isLoading, onStatusChange, onEdit, onDelete, onCon
                 >
                   <CardContent className="p-4">
                     <div className="space-y-2">
-                      <div className="font-medium">{lead.name}</div>
-                      {lead.email && (
-                        <div className="text-xs text-muted-foreground truncate">{lead.email}</div>
-                      )}
-                      {lead.phone && (
-                        <div className="text-xs text-muted-foreground">{lead.phone}</div>
-                      )}
+                      <div className="font-medium">{getLeadName(lead)}</div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[10px]">
                           {leadSourceMap[lead.source] || lead.source}
                         </Badge>
-                        {lead.familyMembersCount && lead.familyMembersCount > 1 && (
+                        {lead.clientCategory && (
                           <Badge variant="outline" className="text-[10px]">
-                            <Users className="h-3 w-3 mr-1" />
-                            {lead.familyMembersCount}
+                            {clientCategoryMap[lead.clientCategory] || lead.clientCategory}
                           </Badge>
                         )}
                       </div>
@@ -631,18 +612,25 @@ interface LeadFormProps {
 
 function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
   const { toast } = useToast();
-  const [isParticipantDialogOpen, setIsParticipantDialogOpen] = useState(false);
-  const [editingParticipant, setEditingParticipant] = useState<LeadParticipant | null>(null);
+  const [isTouristDialogOpen, setIsTouristDialogOpen] = useState(false);
+  const [editingTourist, setEditingTourist] = useState<LeadTourist | null>(null);
 
   const form = useForm<InsertLead>({
     resolver: zodResolver(insertLeadSchema),
     defaultValues: {
-      name: lead?.name || "",
-      email: lead?.email || null,
-      phone: lead?.phone || null,
+      lastName: lead?.lastName || "",
+      firstName: lead?.firstName || "",
+      middleName: lead?.middleName || null,
+      birthDate: lead?.birthDate || null,
+      passportSeries: lead?.passportSeries || null,
+      passportIssuedBy: lead?.passportIssuedBy || null,
+      registrationAddress: lead?.registrationAddress || null,
+      foreignPassportName: lead?.foreignPassportName || null,
+      foreignPassportNumber: lead?.foreignPassportNumber || null,
+      foreignPassportValidUntil: lead?.foreignPassportValidUntil || null,
+      clientCategory: lead?.clientCategory || null,
       status: lead?.status || "new",
       source: lead?.source || "direct",
-      familyMembersCount: lead?.familyMembersCount || null,
       notes: lead?.notes || null,
       formId: lead?.formId || null,
       assignedUserId: lead?.assignedUserId || null,
@@ -650,53 +638,34 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
     },
   });
 
-  // Fetch participants only if editing an existing lead
-  const { data: participants = [], isLoading: isLoadingParticipants } = useQuery<LeadParticipant[]>({
-    queryKey: ["/api/leads", lead?.id, "participants"],
+  // Fetch tourists only if editing an existing lead
+  const { data: tourists = [], isLoading: isLoadingTourists } = useQuery<LeadTourist[]>({
+    queryKey: ["/api/leads", lead?.id, "tourists"],
     enabled: !!lead?.id,
   });
 
-  // Auto-update familyMembersCount when participants change
-  useEffect(() => {
-    if (lead?.id && participants.length > 0) {
-      const newCount = participants.length;
-      const currentCount = lead.familyMembersCount;
-      
-      // Only update if different
-      if (currentCount !== newCount) {
-        apiRequest("PATCH", `/api/leads/${lead.id}`, { familyMembersCount: newCount })
-          .then(() => {
-            queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
-          })
-          .catch((error) => {
-            console.error("Failed to update familyMembersCount:", error);
-          });
-      }
-    }
-  }, [participants.length, lead?.id, lead?.familyMembersCount]);
-
-  // Create participant mutation
-  const createParticipantMutation = useMutation({
-    mutationFn: async (data: InsertLeadParticipant) => {
-      console.log("[PARTICIPANT] Creating participant for lead:", lead?.id, "data:", data);
+  // Create tourist mutation
+  const createTouristMutation = useMutation({
+    mutationFn: async (data: InsertLeadTourist) => {
+      console.log("[TOURIST] Creating tourist for lead:", lead?.id, "data:", data);
       if (!lead?.id) throw new Error("Lead ID is required");
-      const result = await apiRequest("POST", `/api/leads/${lead.id}/participants`, data);
-      console.log("[PARTICIPANT] Participant created:", result);
+      const result = await apiRequest("POST", `/api/leads/${lead.id}/tourists`, data);
+      console.log("[TOURIST] Tourist created:", result);
       return result;
     },
     onSuccess: async () => {
-      console.log("[PARTICIPANT] onSuccess - invalidating queries");
-      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "participants"] });
+      console.log("[TOURIST] onSuccess - invalidating queries");
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
-      setIsParticipantDialogOpen(false);
-      setEditingParticipant(null);
+      setIsTouristDialogOpen(false);
+      setEditingTourist(null);
       toast({
         title: "Успешно",
-        description: "Участник добавлен",
+        description: "Турист добавлен",
       });
     },
     onError: (error: Error) => {
-      console.error("[PARTICIPANT] Error creating participant:", error);
+      console.error("[TOURIST] Error creating tourist:", error);
       toast({
         title: "Ошибка",
         description: error.message,
@@ -705,19 +674,19 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
     },
   });
 
-  // Update participant mutation
-  const updateParticipantMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertLeadParticipant> }) => {
-      return await apiRequest("PATCH", `/api/participants/${id}`, data);
+  // Update tourist mutation
+  const updateTouristMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertLeadTourist> }) => {
+      return await apiRequest("PATCH", `/api/tourists/${id}`, data);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "participants"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
-      setIsParticipantDialogOpen(false);
-      setEditingParticipant(null);
+      setIsTouristDialogOpen(false);
+      setEditingTourist(null);
       toast({
         title: "Успешно",
-        description: "Участник обновлен",
+        description: "Турист обновлен",
       });
     },
     onError: (error: Error) => {
@@ -729,17 +698,17 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
     },
   });
 
-  // Delete participant mutation
-  const deleteParticipantMutation = useMutation({
+  // Delete tourist mutation
+  const deleteTouristMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/participants/${id}`);
+      return await apiRequest("DELETE", `/api/tourists/${id}`);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "participants"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       toast({
         title: "Успешно",
-        description: "Участник удален",
+        description: "Турист удален",
       });
     },
     onError: (error: Error) => {
@@ -751,36 +720,36 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
     },
   });
 
-  const handleDeleteParticipant = (participant: LeadParticipant) => {
-    // Prevent deletion of last participant
-    if (participants.length <= 1) {
+  const handleDeleteTourist = (tourist: LeadTourist) => {
+    // Prevent deletion of last tourist
+    if (tourists.length <= 1) {
       toast({
         title: "Ошибка",
-        description: "Должен быть хотя бы один участник",
+        description: "Должен быть хотя бы один турист",
         variant: "destructive",
       });
       return;
     }
 
-    if (confirm(`Вы уверены, что хотите удалить участника ${participant.name}?`)) {
-      deleteParticipantMutation.mutate(participant.id);
+    if (confirm(`Вы уверены, что хотите удалить туриста ${tourist.name}?`)) {
+      deleteTouristMutation.mutate(tourist.id);
     }
   };
 
-  const handleTogglePrimary = async (participant: LeadParticipant) => {
+  const handleTogglePrimary = async (tourist: LeadTourist) => {
     // If already primary, do nothing
-    if (participant.isPrimary) return;
+    if (tourist.isPrimary) return;
 
-    // Update all participants: unset others, set this one
-    const updates = participants.map((p) => {
-      if (p.id === participant.id) {
-        return updateParticipantMutation.mutateAsync({
-          id: p.id,
+    // Update all tourists: unset others, set this one
+    const updates = tourists.map((t) => {
+      if (t.id === tourist.id) {
+        return updateTouristMutation.mutateAsync({
+          id: t.id,
           data: { isPrimary: true },
         });
-      } else if (p.isPrimary) {
-        return updateParticipantMutation.mutateAsync({
-          id: p.id,
+      } else if (t.isPrimary) {
+        return updateTouristMutation.mutateAsync({
+          id: t.id,
           data: { isPrimary: false },
         });
       }
@@ -803,12 +772,26 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="name"
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Фамилия *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Иванов" {...field} data-testid="input-lastName" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="firstName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Имя *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Иван Иванов" {...field} data-testid="input-name" />
+                    <Input placeholder="Иван" {...field} data-testid="input-firstName" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -817,17 +800,16 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
 
             <FormField
               control={form.control}
-              name="email"
+              name="middleName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Отчество</FormLabel>
                   <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="email@example.com"
-                      {...field}
+                    <Input 
+                      placeholder="Иванович" 
+                      {...field} 
                       value={field.value || ""}
-                      data-testid="input-email"
+                      data-testid="input-middleName" 
                     />
                   </FormControl>
                   <FormMessage />
@@ -837,19 +819,162 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
 
             <FormField
               control={form.control}
-              name="phone"
+              name="birthDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Телефон</FormLabel>
+                  <FormLabel>Дата рождения</FormLabel>
                   <FormControl>
                     <Input
-                      type="tel"
-                      placeholder="+7 (999) 123-45-67"
+                      type="date"
                       {...field}
                       value={field.value || ""}
-                      data-testid="input-phone"
+                      data-testid="input-birthDate"
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="passportSeries"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Серия паспорта</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="45 12 123456"
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-passportSeries"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="passportIssuedBy"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Кем выдан паспорт</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Отделом УФМС..."
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-passportIssuedBy"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="registrationAddress"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Адрес регистрации</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="г. Москва, ул. ..."
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-registrationAddress"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="foreignPassportName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ФИО в загранпаспорте</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="IVANOV IVAN"
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-foreignPassportName"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="foreignPassportNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Номер загранпаспорта</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="12 3456789"
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-foreignPassportNumber"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="foreignPassportValidUntil"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Загранпаспорт действителен до</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-foreignPassportValidUntil"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="clientCategory"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Категория клиента</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || undefined} 
+                    data-testid="select-clientCategory"
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите категорию" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
+                      <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
+                      <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
+                      <SelectItem value="vip">VIP</SelectItem>
+                      <SelectItem value="not_segmented">Не сегментированный</SelectItem>
+                      <SelectItem value="travel_agent">Турагент</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -904,28 +1029,6 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="familyMembersCount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Количество членов семьи</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="1"
-                      placeholder="1"
-                      {...field}
-                      value={field.value || ""}
-                      onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                      data-testid="input-family-members"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
 
           <FormField
@@ -949,34 +1052,34 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
             )}
           />
 
-          {/* Participants Section - Only show when editing an existing lead */}
+          {/* Tourists Section - Only show when editing an existing lead */}
           {lead?.id && (
             <div className="border-t pt-4 mt-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Участники</h3>
+                <h3 className="text-lg font-semibold">Туристы</h3>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setEditingParticipant(null);
-                    setIsParticipantDialogOpen(true);
+                    setEditingTourist(null);
+                    setIsTouristDialogOpen(true);
                   }}
-                  data-testid="button-add-participant"
+                  data-testid="button-add-tourist"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Добавить участника
+                  Добавить туриста
                 </Button>
               </div>
 
-              {isLoadingParticipants ? (
-                <div className="text-center py-4 text-muted-foreground">Загрузка участников...</div>
-              ) : participants.length === 0 ? (
+              {isLoadingTourists ? (
+                <div className="text-center py-4 text-muted-foreground">Загрузка туристов...</div>
+              ) : tourists.length === 0 ? (
                 <div className="text-center py-4 text-muted-foreground">
-                  Нет участников. Добавьте первого участника.
+                  Нет туристов. Добавьте первого туриста.
                 </div>
               ) : (
-                <Table data-testid="table-participants">
+                <Table data-testid="table-tourists">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Имя</TableHead>
@@ -989,24 +1092,24 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {participants.map((participant) => (
-                      <TableRow key={participant.id} data-testid={`row-participant-${participant.id}`}>
-                        <TableCell className="font-medium">{participant.name}</TableCell>
-                        <TableCell>{participant.email || "—"}</TableCell>
-                        <TableCell>{participant.phone || "—"}</TableCell>
+                    {tourists.map((tourist) => (
+                      <TableRow key={tourist.id} data-testid={`row-tourist-${tourist.id}`}>
+                        <TableCell className="font-medium">{tourist.name}</TableCell>
+                        <TableCell>{tourist.email || "—"}</TableCell>
+                        <TableCell>{tourist.phone || "—"}</TableCell>
                         <TableCell>
-                          {participant.dateOfBirth
-                            ? format(new Date(participant.dateOfBirth), "dd.MM.yyyy")
+                          {tourist.dateOfBirth
+                            ? format(new Date(tourist.dateOfBirth), "dd.MM.yyyy")
                             : "—"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={participant.participantType === "adult" ? "default" : "secondary"}>
-                            {participant.participantType === "adult" ? "Взрослый" : "Ребенок"}
+                          <Badge variant={tourist.touristType === "adult" ? "default" : "secondary"}>
+                            {tourist.touristType === "adult" ? "Взрослый" : tourist.touristType === "child" ? "Ребенок" : "Младенец"}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {participant.isPrimary ? (
-                            <Badge variant="default" data-testid={`badge-primary-${participant.id}`}>
+                          {tourist.isPrimary ? (
+                            <Badge variant="default" data-testid={`badge-primary-${tourist.id}`}>
                               <Star className="h-3 w-3 mr-1" />
                               Основной
                             </Badge>
@@ -1014,8 +1117,8 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleTogglePrimary(participant)}
-                              data-testid={`button-set-primary-${participant.id}`}
+                              onClick={() => handleTogglePrimary(tourist)}
+                              data-testid={`button-set-primary-${tourist.id}`}
                             >
                               Сделать основным
                             </Button>
@@ -1027,19 +1130,19 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
                               variant="ghost"
                               size="icon"
                               onClick={() => {
-                                setEditingParticipant(participant);
-                                setIsParticipantDialogOpen(true);
+                                setEditingTourist(tourist);
+                                setIsTouristDialogOpen(true);
                               }}
-                              data-testid={`button-edit-participant-${participant.id}`}
+                              data-testid={`button-edit-tourist-${tourist.id}`}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDeleteParticipant(participant)}
-                              disabled={participants.length <= 1}
-                              data-testid={`button-delete-participant-${participant.id}`}
+                              onClick={() => handleDeleteTourist(tourist)}
+                              disabled={tourists.length <= 1}
+                              data-testid={`button-delete-tourist-${tourist.id}`}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -1061,75 +1164,75 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
         </form>
       </Form>
 
-      {/* Participant Dialog */}
+      {/* Tourist Dialog */}
       {lead?.id && (
-        <ParticipantDialog
-          open={isParticipantDialogOpen}
-          onOpenChange={setIsParticipantDialogOpen}
-          participant={editingParticipant}
+        <TouristDialog
+          open={isTouristDialogOpen}
+          onOpenChange={setIsTouristDialogOpen}
+          tourist={editingTourist}
           leadId={lead.id}
-          participants={participants}
+          tourists={tourists}
           onSubmit={(data) => {
-            if (editingParticipant) {
-              updateParticipantMutation.mutate({ id: editingParticipant.id, data });
+            if (editingTourist) {
+              updateTouristMutation.mutate({ id: editingTourist.id, data });
             } else {
-              createParticipantMutation.mutate(data);
+              createTouristMutation.mutate(data);
             }
           }}
-          isPending={createParticipantMutation.isPending || updateParticipantMutation.isPending}
+          isPending={createTouristMutation.isPending || updateTouristMutation.isPending}
         />
       )}
     </>
   );
 }
 
-interface ParticipantDialogProps {
+interface TouristDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  participant: LeadParticipant | null;
+  tourist: LeadTourist | null;
   leadId: string;
-  participants: LeadParticipant[];
-  onSubmit: (data: InsertLeadParticipant) => void;
+  tourists: LeadTourist[];
+  onSubmit: (data: InsertLeadTourist) => void;
   isPending: boolean;
 }
 
-function ParticipantDialog({
+function TouristDialog({
   open,
   onOpenChange,
-  participant,
+  tourist,
   leadId,
-  participants,
+  tourists,
   onSubmit,
   isPending,
-}: ParticipantDialogProps) {
-  const form = useForm<InsertLeadParticipant>({
-    resolver: zodResolver(insertLeadParticipantSchema),
+}: TouristDialogProps) {
+  const form = useForm<InsertLeadTourist>({
+    resolver: zodResolver(insertLeadTouristSchema),
     defaultValues: {
       leadId,
-      name: participant?.name || "",
-      email: participant?.email || null,
-      phone: participant?.phone || null,
-      dateOfBirth: participant?.dateOfBirth || null,
-      participantType: participant?.participantType || "adult",
-      isPrimary: participant?.isPrimary || false,
-      notes: participant?.notes || null,
-      order: participant?.order || participants.length,
+      name: tourist?.name || "",
+      email: tourist?.email || null,
+      phone: tourist?.phone || null,
+      dateOfBirth: tourist?.dateOfBirth || null,
+      touristType: tourist?.touristType || "adult",
+      isPrimary: tourist?.isPrimary || false,
+      notes: tourist?.notes || null,
+      order: tourist?.order || tourists.length,
     },
   });
 
-  // Reset form when participant changes
+  // Reset form when tourist changes
   useEffect(() => {
-    if (participant) {
+    if (tourist) {
       form.reset({
         leadId,
-        name: participant.name,
-        email: participant.email,
-        phone: participant.phone,
-        dateOfBirth: participant.dateOfBirth,
-        participantType: participant.participantType,
-        isPrimary: participant.isPrimary,
-        notes: participant.notes,
-        order: participant.order,
+        name: tourist.name,
+        email: tourist.email,
+        phone: tourist.phone,
+        dateOfBirth: tourist.dateOfBirth,
+        touristType: tourist.touristType,
+        isPrimary: tourist.isPrimary,
+        notes: tourist.notes,
+        order: tourist.order,
       });
     } else {
       form.reset({
@@ -1138,23 +1241,23 @@ function ParticipantDialog({
         email: null,
         phone: null,
         dateOfBirth: null,
-        participantType: "adult",
-        isPrimary: participants.length === 0,
+        touristType: "adult",
+        isPrimary: tourists.length === 0,
         notes: null,
-        order: participants.length,
+        order: tourists.length,
       });
     }
-  }, [participant, leadId, participants.length, form]);
+  }, [tourist, leadId, tourists.length, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {participant ? "Редактировать участника" : "Добавить участника"}
+            {tourist ? "Редактировать туриста" : "Добавить туриста"}
           </DialogTitle>
           <DialogDescription>
-            {participant ? "Обновите информацию об участнике" : "Введите данные нового участника"}
+            {tourist ? "Обновите информацию о туристе" : "Введите данные нового туриста"}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -1166,7 +1269,7 @@ function ParticipantDialog({
                 <FormItem>
                   <FormLabel>Имя *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Иван Иванов" {...field} data-testid="input-participant-name" />
+                    <Input placeholder="Иван Иванов" {...field} data-testid="input-tourist-name" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -1185,7 +1288,7 @@ function ParticipantDialog({
                       placeholder="email@example.com"
                       {...field}
                       value={field.value || ""}
-                      data-testid="input-participant-email"
+                      data-testid="input-tourist-email"
                     />
                   </FormControl>
                   <FormMessage />
@@ -1205,7 +1308,7 @@ function ParticipantDialog({
                       placeholder="+7 (999) 123-45-67"
                       {...field}
                       value={field.value || ""}
-                      data-testid="input-participant-phone"
+                      data-testid="input-tourist-phone"
                     />
                   </FormControl>
                   <FormMessage />
@@ -1224,7 +1327,7 @@ function ParticipantDialog({
                       type="date"
                       {...field}
                       value={field.value || ""}
-                      data-testid="input-participant-dob"
+                      data-testid="input-tourist-dob"
                     />
                   </FormControl>
                   <FormMessage />
@@ -1234,11 +1337,11 @@ function ParticipantDialog({
 
             <FormField
               control={form.control}
-              name="participantType"
+              name="touristType"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Тип *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} data-testid="select-participant-type">
+                  <Select onValueChange={field.onChange} value={field.value} data-testid="select-tourist-type">
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Выберите тип" />
@@ -1247,6 +1350,7 @@ function ParticipantDialog({
                     <SelectContent>
                       <SelectItem value="adult">Взрослый</SelectItem>
                       <SelectItem value="child">Ребенок</SelectItem>
+                      <SelectItem value="infant">Младенец</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -1263,13 +1367,13 @@ function ParticipantDialog({
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
-                      data-testid="checkbox-participant-primary"
+                      data-testid="checkbox-tourist-primary"
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Основной участник</FormLabel>
+                    <FormLabel>Основной турист</FormLabel>
                     <p className="text-sm text-muted-foreground">
-                      Должен быть только один основной участник
+                      Должен быть только один основной турист
                     </p>
                   </div>
                 </FormItem>
@@ -1289,7 +1393,7 @@ function ParticipantDialog({
                       rows={2}
                       {...field}
                       value={field.value || ""}
-                      data-testid="input-participant-notes"
+                      data-testid="input-tourist-notes"
                     />
                   </FormControl>
                   <FormMessage />
@@ -1302,12 +1406,12 @@ function ParticipantDialog({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                data-testid="button-cancel-participant"
+                data-testid="button-cancel-tourist"
               >
                 Отмена
               </Button>
-              <Button type="submit" disabled={isPending} data-testid="button-submit-participant">
-                {isPending ? "Сохранение..." : participant ? "Обновить" : "Добавить"}
+              <Button type="submit" disabled={isPending} data-testid="button-submit-tourist">
+                {isPending ? "Сохранение..." : tourist ? "Обновить" : "Добавить"}
               </Button>
             </DialogFooter>
           </form>
@@ -1320,9 +1424,10 @@ function ParticipantDialog({
 interface ConvertLeadDialogProps {
   lead: Lead;
   onClose: () => void;
+  getLeadName: (lead: Lead) => string;
 }
 
-function ConvertLeadDialog({ lead, onClose }: ConvertLeadDialogProps) {
+function ConvertLeadDialog({ lead, onClose, getLeadName }: ConvertLeadDialogProps) {
   const { toast } = useToast();
   const [eventId, setEventId] = useState("");
 
@@ -1330,9 +1435,9 @@ function ConvertLeadDialog({ lead, onClose }: ConvertLeadDialogProps) {
     queryKey: ["/api/events"],
   });
 
-  // Fetch participants to show info
-  const { data: participants = [] } = useQuery<LeadParticipant[]>({
-    queryKey: ["/api/leads", lead.id, "participants"],
+  // Fetch tourists to show info
+  const { data: tourists = [] } = useQuery<LeadTourist[]>({
+    queryKey: ["/api/leads", lead.id, "tourists"],
     enabled: !!lead.id,
   });
 
@@ -1346,8 +1451,8 @@ function ConvertLeadDialog({ lead, onClose }: ConvertLeadDialogProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       
       const message = data.message || 
-        (participants.length > 1 
-          ? `Лид конвертирован. Создано ${participants.length} контактов и семейная группа.`
+        (tourists.length > 1 
+          ? `Лид конвертирован. Создано ${tourists.length} контактов и семейная группа.`
           : "Лид успешно конвертирован в контакт и сделку.");
       
       toast({
@@ -1377,11 +1482,11 @@ function ConvertLeadDialog({ lead, onClose }: ConvertLeadDialogProps) {
       return;
     }
 
-    // Check if participants exist
-    if (participants.length === 0) {
+    // Check if tourists exist
+    if (tourists.length === 0) {
       toast({
         title: "Внимание",
-        description: "У лида нет участников. Будет создан контакт из данных лида.",
+        description: "У лида нет туристов. Будет создан контакт из данных лида.",
       });
     }
 
@@ -1392,11 +1497,11 @@ function ConvertLeadDialog({ lead, onClose }: ConvertLeadDialogProps) {
     <Dialog open onOpenChange={() => onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Конвертировать лид: {lead.name}</DialogTitle>
+          <DialogTitle>Конвертировать лид: {getLeadName(lead)}</DialogTitle>
           <DialogDescription>
-            {participants.length > 1
-              ? `Будет создано ${participants.length} контактов и семейная группа`
-              : participants.length === 1
+            {tourists.length > 1
+              ? `Будет создано ${tourists.length} контактов и семейная группа`
+              : tourists.length === 1
               ? "Будет создан 1 контакт и сделка"
               : "Будет создан контакт из данных лида"}
           </DialogDescription>
@@ -1419,15 +1524,16 @@ function ConvertLeadDialog({ lead, onClose }: ConvertLeadDialogProps) {
             </Select>
           </div>
 
-          {participants.length > 0 && (
+          {tourists.length > 0 && (
             <div className="p-3 bg-muted rounded-md">
-              <p className="text-sm font-medium mb-2">Участники ({participants.length}):</p>
+              <p className="text-sm font-medium mb-2">Туристы ({tourists.length}):</p>
               <ul className="text-sm space-y-1">
-                {participants.map((p) => (
-                  <li key={p.id} className="flex items-center gap-2">
-                    {p.isPrimary && <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />}
-                    <span>{p.name}</span>
-                    {p.participantType === 'child' && <Badge variant="outline" className="text-xs">Ребенок</Badge>}
+                {tourists.map((t) => (
+                  <li key={t.id} className="flex items-center gap-2">
+                    {t.isPrimary && <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />}
+                    <span>{t.name}</span>
+                    {t.touristType === 'child' && <Badge variant="outline" className="text-xs">Ребенок</Badge>}
+                    {t.touristType === 'infant' && <Badge variant="outline" className="text-xs">Младенец</Badge>}
                   </li>
                 ))}
               </ul>

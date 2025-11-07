@@ -20,8 +20,8 @@ import {
   insertFormSubmissionSchema,
   insertGroupSchema,
   updateGroupSchema,
-  insertLeadParticipantSchema,
-  updateLeadParticipantSchema,
+  insertLeadTouristSchema,
+  updateLeadTouristSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -642,25 +642,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ==================== LEAD PARTICIPANTS ROUTES ====================
+  // ==================== LEAD TOURISTS ROUTES ====================
   
-  // Get participants for a lead
-  app.get("/api/leads/:id/participants", async (req, res) => {
+  // Get tourists for a lead
+  app.get("/api/leads/:id/tourists", async (req, res) => {
     try {
       const { id } = req.params;
-      const participants = await storage.getParticipantsByLead(id);
-      res.json(participants);
+      const tourists = await storage.getTouristsByLead(id);
+      res.json(tourists);
     } catch (error) {
-      console.error("Error fetching participants:", error);
-      res.status(500).json({ error: "Failed to fetch participants" });
+      console.error("Error fetching tourists:", error);
+      res.status(500).json({ error: "Failed to fetch tourists" });
     }
   });
 
-  // Create a participant for a lead
-  app.post("/api/leads/:id/participants", async (req, res) => {
+  // Create a tourist for a lead
+  app.post("/api/leads/:id/tourists", async (req, res) => {
     try {
       const { id } = req.params;
-      const validation = insertLeadParticipantSchema.safeParse({ ...req.body, leadId: id });
+      const validation = insertLeadTouristSchema.safeParse({ ...req.body, leadId: id });
       
       if (!validation.success) {
         return res.status(400).json({
@@ -669,19 +669,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const participant = await storage.createParticipant(validation.data);
-      res.json(participant);
+      const tourist = await storage.createTourist(validation.data);
+      res.json(tourist);
     } catch (error) {
-      console.error("Error creating participant:", error);
-      res.status(500).json({ error: "Failed to create participant" });
+      console.error("Error creating tourist:", error);
+      res.status(500).json({ error: "Failed to create tourist" });
     }
   });
 
-  // Update a participant
-  app.patch("/api/participants/:id", async (req, res) => {
+  // Update a tourist
+  app.patch("/api/tourists/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const validation = updateLeadParticipantSchema.safeParse(req.body);
+      const validation = updateLeadTouristSchema.safeParse(req.body);
       
       if (!validation.success) {
         return res.status(400).json({
@@ -690,33 +690,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const participant = await storage.updateParticipant(id, validation.data);
+      const tourist = await storage.updateTourist(id, validation.data);
       
-      if (!participant) {
-        return res.status(404).json({ error: "Participant not found" });
+      if (!tourist) {
+        return res.status(404).json({ error: "Tourist not found" });
       }
       
-      res.json(participant);
+      res.json(tourist);
     } catch (error) {
-      console.error("Error updating participant:", error);
-      res.status(500).json({ error: "Failed to update participant" });
+      console.error("Error updating tourist:", error);
+      res.status(500).json({ error: "Failed to update tourist" });
     }
   });
 
-  // Delete a participant
-  app.delete("/api/participants/:id", async (req, res) => {
+  // Delete a tourist
+  app.delete("/api/tourists/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const success = await storage.deleteParticipant(id);
+      const success = await storage.deleteTourist(id);
       
       if (!success) {
-        return res.status(404).json({ error: "Participant not found" });
+        return res.status(404).json({ error: "Tourist not found" });
       }
       
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting participant:", error);
-      res.status(500).json({ error: "Failed to delete participant" });
+      console.error("Error deleting tourist:", error);
+      res.status(500).json({ error: "Failed to delete tourist" });
     }
   });
 
@@ -745,13 +745,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Event not found" });
       }
 
-      // Get participants for this lead
-      const participants = await storage.getParticipantsByLead(id);
-      console.log(`[CONVERT] Found ${participants.length} participants for lead ${id}`);
+      // Get tourists for this lead
+      const tourists = await storage.getTouristsByLead(id);
+      console.log(`[CONVERT] Found ${tourists.length} tourists for lead ${id}`);
 
-      // If no participants, fallback to old behavior (create from lead data)
-      if (participants.length === 0) {
-        console.log("[CONVERT] No participants found, using fallback logic");
+      // If no tourists, fallback to old behavior (create from lead data)
+      if (tourists.length === 0) {
+        console.log("[CONVERT] No tourists found, using fallback logic");
 
         const contact = await storage.createContact({
           name: lead.name,
@@ -785,34 +785,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ contact, deal });
       }
 
-      // If participants exist, create contacts from all participants
-      console.log("[CONVERT] Using participants logic");
+      // If tourists exist, create contacts from all tourists
+      console.log("[CONVERT] Using tourists logic");
       let group = null;
       const contacts = [];
       const deals = [];
 
-      // If multiple participants, create a family group
-      if (participants.length > 1) {
-        const primaryParticipant = participants.find(p => p.isPrimary) || participants[0];
-        console.log(`[CONVERT] Creating family group for ${participants.length} participants`);
+      // If multiple tourists, create a family group
+      if (tourists.length > 1) {
+        const primaryTourist = tourists.find(p => p.isPrimary) || tourists[0];
+        console.log(`[CONVERT] Creating family group for ${tourists.length} tourists`);
         group = await storage.createGroup({
           eventId,
-          name: `Семья ${primaryParticipant.name}`,
+          name: `Семья ${primaryTourist.name}`,
           type: 'family',
         });
         console.log(`[CONVERT] Created group ${group.id}: ${group.name}`);
       }
 
-      // Create contacts and deals for each participant
-      for (const participant of participants) {
-        console.log(`[CONVERT] Creating contact for participant ${participant.name}`);
+      // Create contacts and deals for each tourist
+      for (const tourist of tourists) {
+        console.log(`[CONVERT] Creating contact for tourist ${tourist.name}`);
         const contact = await storage.createContact({
-          name: participant.name,
-          email: participant.email,
-          phone: participant.phone,
-          birthDate: participant.dateOfBirth,
+          name: tourist.name,
+          email: tourist.email,
+          phone: tourist.phone,
+          birthDate: tourist.dateOfBirth,
           leadId: lead.id,
-          notes: participant.notes,
+          notes: tourist.notes,
         });
         contacts.push(contact);
         console.log(`[CONVERT] Created contact ${contact.id}`);
@@ -823,7 +823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: 'pending',
           amount: event.price,
           groupId: group?.id,
-          isPrimaryInGroup: participant.isPrimary,
+          isPrimaryInGroup: tourist.isPrimary,
         });
         deals.push(deal);
         console.log(`[CONVERT] Created deal ${deal.id} for contact ${contact.id}`);
@@ -849,7 +849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[CONVERT] Updating lead ${id} status to 'won'`);
       await storage.updateLead(id, { status: 'won' });
 
-      const successMessage = participants.length > 1 
+      const successMessage = tourists.length > 1 
         ? `Created ${contacts.length} contacts and family group` 
         : 'Lead converted successfully';
       

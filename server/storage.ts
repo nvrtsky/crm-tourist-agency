@@ -35,9 +35,9 @@ import {
   type Group,
   type InsertGroup,
   type UpdateGroup,
-  type LeadParticipant,
-  type InsertLeadParticipant,
-  type UpdateLeadParticipant,
+  type LeadTourist,
+  type InsertLeadTourist,
+  type UpdateLeadTourist,
   events,
   contacts,
   deals,
@@ -50,7 +50,7 @@ import {
   leadStatusHistory,
   formSubmissions,
   groups,
-  leadParticipants,
+  leadTourists,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -147,12 +147,12 @@ export interface IStorage {
   addDealToGroup(dealId: string, groupId: string, isPrimary?: boolean): Promise<Deal | undefined>;
   removeDealFromGroup(dealId: string): Promise<Deal | undefined>;
 
-  // Lead participant operations
-  getParticipantsByLead(leadId: string): Promise<LeadParticipant[]>;
-  getParticipant(id: string): Promise<LeadParticipant | undefined>;
-  createParticipant(participant: InsertLeadParticipant): Promise<LeadParticipant>;
-  updateParticipant(id: string, participant: Partial<UpdateLeadParticipant>): Promise<LeadParticipant | undefined>;
-  deleteParticipant(id: string): Promise<boolean>;
+  // Lead tourist operations
+  getTouristsByLead(leadId: string): Promise<LeadTourist[]>;
+  getTourist(id: string): Promise<LeadTourist | undefined>;
+  createTourist(tourist: InsertLeadTourist): Promise<LeadTourist>;
+  updateTourist(id: string, tourist: Partial<UpdateLeadTourist>): Promise<LeadTourist | undefined>;
+  deleteTourist(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -761,38 +761,38 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  // ==================== LEAD PARTICIPANT OPERATIONS ====================
+  // ==================== LEAD TOURIST OPERATIONS ====================
 
-  async getParticipantsByLead(leadId: string): Promise<LeadParticipant[]> {
+  async getTouristsByLead(leadId: string): Promise<LeadTourist[]> {
     return await db
       .select()
-      .from(leadParticipants)
-      .where(eq(leadParticipants.leadId, leadId))
-      .orderBy(leadParticipants.order);
+      .from(leadTourists)
+      .where(eq(leadTourists.leadId, leadId))
+      .orderBy(leadTourists.order);
   }
 
-  async getParticipant(id: string): Promise<LeadParticipant | undefined> {
-    const result = await db.select().from(leadParticipants).where(eq(leadParticipants.id, id));
+  async getTourist(id: string): Promise<LeadTourist | undefined> {
+    const result = await db.select().from(leadTourists).where(eq(leadTourists.id, id));
     return result[0];
   }
 
-  async createParticipant(participant: InsertLeadParticipant): Promise<LeadParticipant> {
-    const [result] = await db.insert(leadParticipants).values(participant).returning();
+  async createTourist(tourist: InsertLeadTourist): Promise<LeadTourist> {
+    const [result] = await db.insert(leadTourists).values(tourist).returning();
     return result;
   }
 
-  async updateParticipant(id: string, updates: Partial<UpdateLeadParticipant>): Promise<LeadParticipant | undefined> {
+  async updateTourist(id: string, updates: Partial<UpdateLeadTourist>): Promise<LeadTourist | undefined> {
     const result = await db
-      .update(leadParticipants)
+      .update(leadTourists)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(leadParticipants.id, id))
+      .where(eq(leadTourists.id, id))
       .returning();
 
     return result[0];
   }
 
-  async deleteParticipant(id: string): Promise<boolean> {
-    const result = await db.delete(leadParticipants).where(eq(leadParticipants.id, id)).returning();
+  async deleteTourist(id: string): Promise<boolean> {
+    const result = await db.delete(leadTourists).where(eq(leadTourists.id, id)).returning();
     return result.length > 0;
   }
 }

@@ -1176,13 +1176,13 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                             <div className="flex items-center gap-2 flex-wrap">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Badge variant="outline" className="text-[10px]">
+                                  <div className="inline-flex items-center rounded-md border border-input bg-background px-2 py-1 text-[10px] font-semibold transition-colors">
                                     {tourist.touristType === "adult" ? (
                                       <User className="h-3 w-3" />
                                     ) : (
                                       <Baby className="h-3 w-3" />
                                     )}
-                                  </Badge>
+                                  </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>{tourist.touristType === "adult" ? "Взрослый" : tourist.touristType === "child" ? "Ребенок" : "Младенец"}</p>
@@ -1191,9 +1191,12 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                               {tourist.isPrimary ? (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <Badge variant="default" className="text-[10px]" data-testid={`badge-primary-${tourist.id}`}>
+                                    <div 
+                                      className="inline-flex items-center rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground transition-colors"
+                                      data-testid={`badge-primary-${tourist.id}`}
+                                    >
                                       <Star className="h-3 w-3" />
-                                    </Badge>
+                                    </div>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Основной турист</p>

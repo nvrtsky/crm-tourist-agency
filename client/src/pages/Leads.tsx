@@ -768,293 +768,318 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Фамилия *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Иванов" {...field} data-testid="input-lastName" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Имя *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Иван" {...field} data-testid="input-firstName" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="middleName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Отчество</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Иванович" 
-                      {...field} 
-                      value={field.value || ""}
-                      data-testid="input-middleName" 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="birthDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Дата рождения</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-birthDate"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="passportSeries"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Серия паспорта</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="45 12 123456"
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-passportSeries"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="passportIssuedBy"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Кем выдан паспорт</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Отделом УФМС..."
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-passportIssuedBy"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="registrationAddress"
-              render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Адрес регистрации</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="г. Москва, ул. ..."
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-registrationAddress"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="foreignPassportName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>ФИО в загранпаспорте</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="IVANOV IVAN"
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-foreignPassportName"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="foreignPassportNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Номер загранпаспорта</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="12 3456789"
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-foreignPassportNumber"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="foreignPassportValidUntil"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Загранпаспорт действителен до</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-foreignPassportValidUntil"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="clientCategory"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Категория клиента</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value || undefined} 
-                    data-testid="select-clientCategory"
-                  >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Личные данные */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-foreground">Личные данные</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Фамилия *</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Выберите категорию" />
-                      </SelectTrigger>
+                      <Input placeholder="Иванов" {...field} data-testid="input-lastName" />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
-                      <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
-                      <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
-                      <SelectItem value="vip">VIP</SelectItem>
-                      <SelectItem value="not_segmented">Не сегментированный</SelectItem>
-                      <SelectItem value="travel_agent">Турагент</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Имя *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Иван" {...field} data-testid="input-firstName" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="middleName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Отчество</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Иванович" 
+                        {...field} 
+                        value={field.value || ""}
+                        data-testid="input-middleName" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="birthDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Дата рождения</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-birthDate"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Российский паспорт */}
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="text-sm font-semibold text-foreground">Российский паспорт</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="passportSeries"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Серия паспорта</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="45 12 123456"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-passportSeries"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="passportIssuedBy"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Кем выдан паспорт</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Отделом УФМС..."
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-passportIssuedBy"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="registrationAddress"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Адрес регистрации</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="г. Москва, ул. ..."
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-registrationAddress"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Загранпаспорт */}
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="text-sm font-semibold text-foreground">Загранпаспорт</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="foreignPassportName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ФИО в загранпаспорте</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="IVANOV IVAN"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-foreignPassportName"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="foreignPassportNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Номер загранпаспорта</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="12 3456789"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-foreignPassportNumber"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="foreignPassportValidUntil"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Загранпаспорт действителен до</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-foreignPassportValidUntil"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Информация о лиде */}
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="text-sm font-semibold text-foreground">Информация о лиде</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="clientCategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Категория клиента</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || undefined} 
+                      data-testid="select-clientCategory"
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите категорию" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
+                        <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
+                        <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
+                        <SelectItem value="vip">VIP</SelectItem>
+                        <SelectItem value="not_segmented">Не сегментированный</SelectItem>
+                        <SelectItem value="travel_agent">Турагент</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Статус *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} data-testid="select-status">
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите статус" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="new">Новый</SelectItem>
+                        <SelectItem value="contacted">Связались</SelectItem>
+                        <SelectItem value="qualified">Квалифицирован</SelectItem>
+                        <SelectItem value="converted">Конвертирован</SelectItem>
+                        <SelectItem value="lost">Потерян</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="source"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Источник *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} data-testid="select-source">
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите источник" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="form">Веб-форма</SelectItem>
+                        <SelectItem value="referral">Рекомендация</SelectItem>
+                        <SelectItem value="direct">Прямое обращение</SelectItem>
+                        <SelectItem value="advertisement">Реклама</SelectItem>
+                        <SelectItem value="other">Другое</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Заметки */}
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="text-sm font-semibold text-foreground">Заметки</h4>
             <FormField
               control={form.control}
-              name="status"
+              name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Статус *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} data-testid="select-status">
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Выберите статус" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="new">Новый</SelectItem>
-                      <SelectItem value="contacted">Связались</SelectItem>
-                      <SelectItem value="qualified">Квалифицирован</SelectItem>
-                      <SelectItem value="converted">Конвертирован</SelectItem>
-                      <SelectItem value="lost">Потерян</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="source"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Источник *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} data-testid="select-source">
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Выберите источник" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="form">Веб-форма</SelectItem>
-                      <SelectItem value="referral">Рекомендация</SelectItem>
-                      <SelectItem value="direct">Прямое обращение</SelectItem>
-                      <SelectItem value="advertisement">Реклама</SelectItem>
-                      <SelectItem value="other">Другое</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Дополнительная информация..."
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-notes"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
 
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Заметки</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Дополнительная информация..."
-                    className="resize-none"
-                    rows={3}
-                    {...field}
-                    value={field.value || ""}
-                    data-testid="input-notes"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           {/* Tourists Section - Only show when editing an existing lead */}
           {lead?.id && (
-            <div className="border-t pt-4 mt-4">
+            <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Туристы</h3>
                 <Button

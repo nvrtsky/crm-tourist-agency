@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 import type { TouristDataCompleteness, CompletenessStatus } from "@/lib/utils";
@@ -63,14 +62,13 @@ export function DataCompletenessIndicator({ completeness }: DataCompletenessIndi
 
         return (
           <Tooltip key={category}>
-            <TooltipTrigger asChild>
-              <Badge
-                variant={config.variant}
-                className={`${config.className} px-1.5 py-0.5 h-6 cursor-help`}
-                data-testid={`indicator-${category}-${status}`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-              </Badge>
+            <TooltipTrigger
+              type="button"
+              className={`inline-flex items-center rounded-md border px-1.5 py-0.5 h-6 text-xs font-semibold transition-colors cursor-help ${config.className}`}
+              data-testid={`indicator-${category}-${status}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Icon className="h-3.5 w-3.5" />
             </TooltipTrigger>
             <TooltipContent>
               <p className="font-semibold">{categoryLabels[category]}</p>

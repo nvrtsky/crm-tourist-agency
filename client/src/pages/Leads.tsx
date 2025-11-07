@@ -802,23 +802,30 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
     // If already primary, do nothing
     if (tourist.isPrimary) return;
 
-    // Update all tourists: unset others, set this one
-    const updates = tourists.map((t) => {
-      if (t.id === tourist.id) {
-        return togglePrimaryMutation.mutateAsync({
-          id: t.id,
-          data: { isPrimary: true },
-        });
-      } else if (t.isPrimary) {
-        return togglePrimaryMutation.mutateAsync({
-          id: t.id,
-          data: { isPrimary: false },
-        });
-      }
-      return Promise.resolve();
-    });
+    try {
+      // Update all tourists: unset others, set this one
+      const updates = tourists.map((t) => {
+        if (t.id === tourist.id) {
+          return togglePrimaryMutation.mutateAsync({
+            id: t.id,
+            data: { isPrimary: true },
+          });
+        } else if (t.isPrimary) {
+          return togglePrimaryMutation.mutateAsync({
+            id: t.id,
+            data: { isPrimary: false },
+          });
+        }
+        return Promise.resolve();
+      });
 
-    await Promise.all(updates);
+      await Promise.all(updates);
+      
+      // Force refetch to ensure UI updates
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
+    } catch (error) {
+      console.error("Error toggling primary tourist:", error);
+    }
   };
 
   return (

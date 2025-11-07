@@ -754,11 +754,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("[CONVERT] No tourists found, using fallback logic");
 
         const contact = await storage.createContact({
-          name: lead.name,
-          email: lead.email,
-          phone: lead.phone,
+          name: `${lead.firstName} ${lead.lastName}${lead.middleName ? ' ' + lead.middleName : ''}`.trim(),
+          email: lead.email || undefined,
+          phone: lead.phone || undefined,
           leadId: lead.id,
-          notes: lead.notes,
+          notes: lead.notes || undefined,
         });
 
         const deal = await storage.createDeal({
@@ -797,7 +797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[CONVERT] Creating family group for ${tourists.length} tourists`);
         group = await storage.createGroup({
           eventId,
-          name: `Семья ${primaryTourist.name}`,
+          name: `Семья ${primaryTourist.lastName}`,
           type: 'family',
         });
         console.log(`[CONVERT] Created group ${group.id}: ${group.name}`);
@@ -805,14 +805,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create contacts and deals for each tourist
       for (const tourist of tourists) {
-        console.log(`[CONVERT] Creating contact for tourist ${tourist.name}`);
+        const touristFullName = `${tourist.firstName} ${tourist.lastName}${tourist.middleName ? ' ' + tourist.middleName : ''}`.trim();
+        console.log(`[CONVERT] Creating contact for tourist ${touristFullName}`);
         const contact = await storage.createContact({
-          name: tourist.name,
-          email: tourist.email,
-          phone: tourist.phone,
-          birthDate: tourist.dateOfBirth,
+          name: touristFullName,
+          email: tourist.email || undefined,
+          phone: tourist.phone || undefined,
+          birthDate: tourist.dateOfBirth || undefined,
           leadId: lead.id,
-          notes: tourist.notes,
+          notes: tourist.notes || undefined,
         });
         contacts.push(contact);
         console.log(`[CONVERT] Created contact ${contact.id}`);
@@ -919,7 +920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create group
         group = await storage.createGroup({
           eventId,
-          name: groupName || `Семья ${lead.name}`,
+          name: groupName || `Семья ${lead.lastName}`,
           type: "family",
         });
 
@@ -1289,12 +1290,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         leadNotes = `Selected tour ID: ${selectedTourId}`;
       }
 
+      // Extract email and phone from form data
+      const emailField = fields.find(f => f.type === 'email');
+      const phoneField = fields.find(f => f.type === 'phone');
+      const extractedEmail = emailField && data[emailField.key] ? String(data[emailField.key]) : undefined;
+      const extractedPhone = phoneField && data[phoneField.key] ? String(data[phoneField.key]) : undefined;
+
       // Auto-create lead from form data
       const { lastName, firstName, middleName } = parseFullName(leadName);
       const lead = await storage.createLead({
         lastName,
         firstName,
         middleName,
+        email: extractedEmail,
+        phone: extractedPhone,
+        eventId: selectedTourId || undefined,
         source: 'form',
         formId: id,
         status: 'new',
@@ -1365,6 +1375,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName,
         firstName,
         middleName,
+        phone: phone || undefined,
+        email: email || undefined,
+        eventId: eventId,
         source: 'booking',
         status: 'new',
         notes: notes ? `${notes}\n\n${eventInfo}` : eventInfo,

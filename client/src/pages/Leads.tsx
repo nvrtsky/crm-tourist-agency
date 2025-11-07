@@ -14,11 +14,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, UserPlus, LayoutGrid, LayoutList, Filter, Star } from "lucide-react";
-import type { Lead, InsertLead, LeadTourist, InsertLeadTourist } from "@shared/schema";
+import type { Lead, InsertLead, LeadTourist, InsertLeadTourist, Event } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 
 const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   new: { label: "Новый", variant: "default" },
@@ -62,6 +63,10 @@ export default function Leads() {
 
   const { data: leads = [], isLoading } = useQuery<Lead[]>({
     queryKey: ["/api/leads"],
+  });
+
+  const { data: events = [] } = useQuery<Event[]>({
+    queryKey: ["/api/events"],
   });
 
   const createMutation = useMutation({
@@ -328,6 +333,7 @@ export default function Leads() {
       {viewMode === 'kanban' ? (
         <KanbanBoard
           leads={filteredLeads}
+          events={events}
           isLoading={isLoading}
           onStatusChange={(leadId, newStatus) => {
             updateMutation.mutate({ id: leadId, data: { status: newStatus } });
@@ -360,17 +366,24 @@ export default function Leads() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ФИО</TableHead>
+                  <TableHead>Телефон</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Тур</TableHead>
                   <TableHead>Статус</TableHead>
                   <TableHead>Источник</TableHead>
                   <TableHead>Категория</TableHead>
-                  <TableHead>Дата создания</TableHead>
                   <TableHead>Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLeads.map((lead) => (
+                {filteredLeads.map((lead) => {
+                  const event = events.find(e => e.id === lead.eventId);
+                  return (
                   <TableRow key={lead.id} data-testid={`row-lead-${lead.id}`}>
                     <TableCell className="font-medium">{getLeadName(lead)}</TableCell>
+                    <TableCell>{lead.phone || "—"}</TableCell>
+                    <TableCell>{lead.email || "—"}</TableCell>
+                    <TableCell>{event?.name || "—"}</TableCell>
                     <TableCell>
                       <Badge variant={leadStatusMap[lead.status]?.variant || "default"} data-testid={`status-${lead.id}`}>
                         {leadStatusMap[lead.status]?.label || lead.status}
@@ -386,7 +399,6 @@ export default function Leads() {
                         "—"
                       )}
                     </TableCell>
-                    <TableCell>{format(new Date(lead.createdAt), "dd.MM.yyyy")}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -423,7 +435,8 @@ export default function Leads() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
               </Table>
             )}
@@ -457,6 +470,7 @@ export default function Leads() {
 // Kanban Board Component
 interface KanbanBoardProps {
   leads: Lead[];
+  events: Event[];
   isLoading: boolean;
   onStatusChange: (leadId: string, newStatus: string) => void;
   onEdit: (lead: Lead) => void;
@@ -465,7 +479,7 @@ interface KanbanBoardProps {
   getLeadName: (lead: Lead) => string;
 }
 
-function KanbanBoard({ leads, isLoading, onStatusChange, onEdit, onDelete, onConvert, getLeadName }: KanbanBoardProps) {
+function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelete, onConvert, getLeadName }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
 
   const columns: { status: string; label: string; variant: "default" | "secondary" | "outline" | "destructive" }[] = [
@@ -538,7 +552,9 @@ function KanbanBoard({ leads, isLoading, onStatusChange, onEdit, onDelete, onCon
             </Card>
             
             <div className="space-y-2 min-h-[200px]">
-              {columnLeads.map((lead) => (
+              {columnLeads.map((lead) => {
+                const event = events.find(e => e.id === lead.eventId);
+                return (
                 <Card
                   key={lead.id}
                   className="cursor-move hover-elevate active-elevate-2 transition-shadow"
@@ -549,6 +565,11 @@ function KanbanBoard({ leads, isLoading, onStatusChange, onEdit, onDelete, onCon
                   <CardContent className="p-4">
                     <div className="space-y-2">
                       <div className="font-medium">{getLeadName(lead)}</div>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        {lead.phone && <div>{lead.phone}</div>}
+                        {lead.email && <div>{lead.email}</div>}
+                        {event && <div className="font-medium text-primary">{event.name}</div>}
+                      </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[10px]">
                           {leadSourceMap[lead.source] || lead.source}
@@ -595,7 +616,8 @@ function KanbanBoard({ leads, isLoading, onStatusChange, onEdit, onDelete, onCon
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                )
+              })}
             </div>
           </div>
         );
@@ -621,13 +643,12 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
       lastName: lead?.lastName || "",
       firstName: lead?.firstName || "",
       middleName: lead?.middleName || null,
-      birthDate: lead?.birthDate || null,
-      passportSeries: lead?.passportSeries || null,
-      passportIssuedBy: lead?.passportIssuedBy || null,
-      registrationAddress: lead?.registrationAddress || null,
-      foreignPassportName: lead?.foreignPassportName || null,
-      foreignPassportNumber: lead?.foreignPassportNumber || null,
-      foreignPassportValidUntil: lead?.foreignPassportValidUntil || null,
+      phone: lead?.phone || null,
+      email: lead?.email || null,
+      eventId: lead?.eventId || null,
+      tourCost: lead?.tourCost || null,
+      advancePayment: lead?.advancePayment || null,
+      remainingPayment: lead?.remainingPayment || null,
       clientCategory: lead?.clientCategory || null,
       status: lead?.status || "new",
       source: lead?.source || "direct",
@@ -636,6 +657,11 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
       assignedUserId: lead?.assignedUserId || null,
       createdByUserId: lead?.createdByUserId || null,
     },
+  });
+
+  // Fetch events for tour selection
+  const { data: events = [] } = useQuery<Event[]>({
+    queryKey: ["/api/events"],
   });
 
   // Fetch tourists only if editing an existing lead
@@ -731,7 +757,8 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
       return;
     }
 
-    if (confirm(`Вы уверены, что хотите удалить туриста ${tourist.name}?`)) {
+    const fullName = `${tourist.lastName} ${tourist.firstName}`;
+    if (confirm(`Вы уверены, что хотите удалить туриста ${fullName}?`)) {
       deleteTouristMutation.mutate(tourist.id);
     }
   };
@@ -822,41 +849,17 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
 
               <FormField
                 control={form.control}
-                name="birthDate"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Дата рождения</FormLabel>
+                    <FormLabel>Телефон</FormLabel>
                     <FormControl>
                       <Input
-                        type="date"
+                        type="tel"
+                        placeholder="+7 (999) 123-45-67"
                         {...field}
                         value={field.value || ""}
-                        data-testid="input-birthDate"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* Российский паспорт */}
-          <div className="space-y-4 pt-4 border-t">
-            <h4 className="text-sm font-semibold text-foreground">Российский паспорт</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="passportSeries"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Серия паспорта</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="45 12 123456"
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-passportSeries"
+                        data-testid="input-phone"
                       />
                     </FormControl>
                     <FormMessage />
@@ -866,35 +869,17 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
 
               <FormField
                 control={form.control}
-                name="passportIssuedBy"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Кем выдан паспорт</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Отделом УФМС..."
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-passportIssuedBy"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="registrationAddress"
+                name="email"
                 render={({ field }) => (
                   <FormItem className="col-span-2">
-                    <FormLabel>Адрес регистрации</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="г. Москва, ул. ..."
+                        type="email"
+                        placeholder="example@mail.com"
                         {...field}
                         value={field.value || ""}
-                        data-testid="input-registrationAddress"
+                        data-testid="input-email"
                       />
                     </FormControl>
                     <FormMessage />
@@ -904,22 +889,59 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
             </div>
           </div>
 
-          {/* Загранпаспорт */}
+          {/* Тур и оплата */}
           <div className="space-y-4 pt-4 border-t">
-            <h4 className="text-sm font-semibold text-foreground">Загранпаспорт</h4>
+            <h4 className="text-sm font-semibold text-foreground">Тур и оплата</h4>
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="foreignPassportName"
+                name="eventId"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Тур</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || undefined}
+                      data-testid="select-eventId"
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите тур" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {events.map((event) => (
+                          <SelectItem key={event.id} value={event.id}>
+                            {event.name} ({format(new Date(event.startDate), "dd.MM.yyyy", { locale: ru })} - {format(new Date(event.endDate), "dd.MM.yyyy", { locale: ru })})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tourCost"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>ФИО в загранпаспорте</FormLabel>
+                    <FormLabel>Стоимость тура</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="IVANOV IVAN"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
                         {...field}
                         value={field.value || ""}
-                        data-testid="input-foreignPassportName"
+                        onChange={(e) => {
+                          field.onChange(e);
+                          const tourCost = parseFloat(e.target.value) || 0;
+                          const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
+                          form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
+                        }}
+                        data-testid="input-tourCost"
                       />
                     </FormControl>
                     <FormMessage />
@@ -929,16 +951,24 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
 
               <FormField
                 control={form.control}
-                name="foreignPassportNumber"
+                name="advancePayment"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Номер загранпаспорта</FormLabel>
+                    <FormLabel>Аванс</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="12 3456789"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
                         {...field}
                         value={field.value || ""}
-                        data-testid="input-foreignPassportNumber"
+                        onChange={(e) => {
+                          field.onChange(e);
+                          const tourCost = parseFloat(form.getValues("tourCost") || "0") || 0;
+                          const advancePayment = parseFloat(e.target.value) || 0;
+                          form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
+                        }}
+                        data-testid="input-advancePayment"
                       />
                     </FormControl>
                     <FormMessage />
@@ -948,16 +978,19 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
 
               <FormField
                 control={form.control}
-                name="foreignPassportValidUntil"
+                name="remainingPayment"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Загранпаспорт действителен до</FormLabel>
+                  <FormItem className="col-span-2">
+                    <FormLabel>Остаток</FormLabel>
                     <FormControl>
                       <Input
-                        type="date"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
                         {...field}
                         value={field.value || ""}
-                        data-testid="input-foreignPassportValidUntil"
+                        data-testid="input-remainingPayment"
+                        disabled
                       />
                     </FormControl>
                     <FormMessage />
@@ -1119,7 +1152,9 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
                   <TableBody>
                     {tourists.map((tourist) => (
                       <TableRow key={tourist.id} data-testid={`row-tourist-${tourist.id}`}>
-                        <TableCell className="font-medium">{tourist.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {tourist.lastName} {tourist.firstName} {tourist.middleName || ""}
+                        </TableCell>
                         <TableCell>{tourist.email || "—"}</TableCell>
                         <TableCell>{tourist.phone || "—"}</TableCell>
                         <TableCell>
@@ -1234,10 +1269,18 @@ function TouristDialog({
     resolver: zodResolver(insertLeadTouristSchema),
     defaultValues: {
       leadId,
-      name: tourist?.name || "",
+      lastName: tourist?.lastName || "",
+      firstName: tourist?.firstName || "",
+      middleName: tourist?.middleName || null,
       email: tourist?.email || null,
       phone: tourist?.phone || null,
       dateOfBirth: tourist?.dateOfBirth || null,
+      passportSeries: tourist?.passportSeries || null,
+      passportIssuedBy: tourist?.passportIssuedBy || null,
+      registrationAddress: tourist?.registrationAddress || null,
+      foreignPassportName: tourist?.foreignPassportName || null,
+      foreignPassportNumber: tourist?.foreignPassportNumber || null,
+      foreignPassportValidUntil: tourist?.foreignPassportValidUntil || null,
       touristType: tourist?.touristType || "adult",
       isPrimary: tourist?.isPrimary || false,
       notes: tourist?.notes || null,
@@ -1250,10 +1293,18 @@ function TouristDialog({
     if (tourist) {
       form.reset({
         leadId,
-        name: tourist.name,
+        lastName: tourist.lastName,
+        firstName: tourist.firstName,
+        middleName: tourist.middleName,
         email: tourist.email,
         phone: tourist.phone,
         dateOfBirth: tourist.dateOfBirth,
+        passportSeries: tourist.passportSeries,
+        passportIssuedBy: tourist.passportIssuedBy,
+        registrationAddress: tourist.registrationAddress,
+        foreignPassportName: tourist.foreignPassportName,
+        foreignPassportNumber: tourist.foreignPassportNumber,
+        foreignPassportValidUntil: tourist.foreignPassportValidUntil,
         touristType: tourist.touristType,
         isPrimary: tourist.isPrimary,
         notes: tourist.notes,
@@ -1262,10 +1313,18 @@ function TouristDialog({
     } else {
       form.reset({
         leadId,
-        name: "",
+        lastName: "",
+        firstName: "",
+        middleName: null,
         email: null,
         phone: null,
         dateOfBirth: null,
+        passportSeries: null,
+        passportIssuedBy: null,
+        registrationAddress: null,
+        foreignPassportName: null,
+        foreignPassportNumber: null,
+        foreignPassportValidUntil: null,
         touristType: "adult",
         isPrimary: tourists.length === 0,
         notes: null,
@@ -1276,7 +1335,7 @@ function TouristDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {tourist ? "Редактировать туриста" : "Добавить туриста"}
@@ -1287,144 +1346,313 @@ function TouristDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Имя *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Иван Иванов" {...field} data-testid="input-tourist-name" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Личные данные */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-foreground">Личные данные</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Фамилия *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Иванов" {...field} data-testid="input-tourist-lastName" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="email@example.com"
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-tourist-email"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Имя *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Иван" {...field} data-testid="input-tourist-firstName" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Телефон</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="tel"
-                      placeholder="+7 (999) 123-45-67"
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-tourist-phone"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="middleName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Отчество</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Иванович" 
+                          {...field} 
+                          value={field.value || ""}
+                          data-testid="input-tourist-middleName" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="dateOfBirth"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Дата рождения</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-tourist-dob"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="dateOfBirth"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Дата рождения</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-tourist-dob"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="touristType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Тип *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} data-testid="select-tourist-type">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="email@example.com"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-tourist-email"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Телефон</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          placeholder="+7 (999) 123-45-67"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-tourist-phone"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Российский паспорт */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-sm font-semibold text-foreground">Российский паспорт</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="passportSeries"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Серия паспорта</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="45 12 123456"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-tourist-passportSeries"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="passportIssuedBy"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Кем выдан паспорт</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Отделом УФМС..."
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-tourist-passportIssuedBy"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="registrationAddress"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Адрес регистрации</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="г. Москва, ул. ..."
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-tourist-registrationAddress"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Загранпаспорт */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-sm font-semibold text-foreground">Загранпаспорт</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="foreignPassportName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ФИО в загранпаспорте</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="IVANOV IVAN"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-tourist-foreignPassportName"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="foreignPassportNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Номер загранпаспорта</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="12 3456789"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-tourist-foreignPassportNumber"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="foreignPassportValidUntil"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Загранпаспорт действителен до</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          value={field.value || ""}
+                          data-testid="input-tourist-foreignPassportValidUntil"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Тип и настройки туриста */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-sm font-semibold text-foreground">Тип и настройки</h4>
+              <FormField
+                control={form.control}
+                name="touristType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Тип *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} data-testid="select-tourist-type">
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите тип" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="adult">Взрослый</SelectItem>
+                        <SelectItem value="child">Ребенок</SelectItem>
+                        <SelectItem value="infant">Младенец</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isPrimary"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Выберите тип" />
-                      </SelectTrigger>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="checkbox-tourist-primary"
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="adult">Взрослый</SelectItem>
-                      <SelectItem value="child">Ребенок</SelectItem>
-                      <SelectItem value="infant">Младенец</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Основной турист</FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Должен быть только один основной турист
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="isPrimary"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      data-testid="checkbox-tourist-primary"
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Основной турист</FormLabel>
-                    <p className="text-sm text-muted-foreground">
-                      Должен быть только один основной турист
-                    </p>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Заметки</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Дополнительная информация..."
-                      className="resize-none"
-                      rows={2}
-                      {...field}
-                      value={field.value || ""}
-                      data-testid="input-tourist-notes"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Заметки</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Дополнительная информация..."
+                        className="resize-none"
+                        rows={2}
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-tourist-notes"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter>
               <Button
@@ -1556,7 +1784,7 @@ function ConvertLeadDialog({ lead, onClose, getLeadName }: ConvertLeadDialogProp
                 {tourists.map((t) => (
                   <li key={t.id} className="flex items-center gap-2">
                     {t.isPrimary && <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />}
-                    <span>{t.name}</span>
+                    <span>{t.lastName} {t.firstName} {t.middleName || ""}</span>
                     {t.touristType === 'child' && <Badge variant="outline" className="text-xs">Ребенок</Badge>}
                     {t.touristType === 'infant' && <Badge variant="outline" className="text-xs">Младенец</Badge>}
                   </li>

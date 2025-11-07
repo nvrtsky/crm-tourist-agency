@@ -198,16 +198,15 @@ export const leads = pgTable("leads", {
   lastName: text("last_name").notNull(), // Фамилия
   firstName: text("first_name").notNull(), // Имя
   middleName: text("middle_name"), // Отчество
-  birthDate: date("birth_date"), // Дата рождения
-  passportSeries: text("passport_series"), // Серия и номер (национальный паспорт)
-  passportIssuedBy: text("passport_issued_by"), // Кем выдан (нац паспорт)
-  registrationAddress: text("registration_address"), // Адрес регистрации
-  foreignPassportName: text("foreign_passport_name"), // ФИО Загранпаспорт (Латиница)
-  foreignPassportNumber: text("foreign_passport_number"), // Номер загранпаспорта
-  foreignPassportValidUntil: date("foreign_passport_valid_until"), // Годен до (загран)
+  phone: text("phone"), // Телефон
+  email: text("email"), // Email
   clientCategory: text("client_category"), // Категория клиента
   status: text("status").notNull().default("new"), // 'new', 'contacted', 'qualified', 'won', 'lost'
   source: text("source").notNull().default("manual"), // 'manual', 'form', 'import', 'other'
+  eventId: varchar("event_id").references(() => events.id, { onDelete: 'set null' }), // Выбранный тур
+  tourCost: numeric("tour_cost", { precision: 10, scale: 2 }), // Стоимость тура (price * количество туристов)
+  advancePayment: numeric("advance_payment", { precision: 10, scale: 2 }), // Аванс
+  remainingPayment: numeric("remaining_payment", { precision: 10, scale: 2 }), // Остаток оплаты
   formId: varchar("form_id").references(() => forms.id, { onDelete: 'set null' }),
   notes: text("notes"),
   assignedUserId: varchar("assigned_user_id").references(() => users.id, { onDelete: 'set null' }),
@@ -242,10 +241,18 @@ export const formSubmissions = pgTable("form_submissions", {
 export const leadTourists = pgTable("lead_tourists", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   leadId: varchar("lead_id").notNull().references(() => leads.id, { onDelete: 'cascade' }),
-  name: text("name").notNull(),
+  lastName: text("last_name").notNull(), // Фамилия
+  firstName: text("first_name").notNull(), // Имя
+  middleName: text("middle_name"), // Отчество
   email: text("email"),
   phone: text("phone"),
-  dateOfBirth: date("date_of_birth"),
+  dateOfBirth: date("date_of_birth"), // Дата рождения
+  passportSeries: text("passport_series"), // Серия и номер (национальный паспорт)
+  passportIssuedBy: text("passport_issued_by"), // Кем выдан (нац паспорт)
+  registrationAddress: text("registration_address"), // Адрес регистрации
+  foreignPassportName: text("foreign_passport_name"), // ФИО Загранпаспорт (Латиница)
+  foreignPassportNumber: text("foreign_passport_number"), // Номер загранпаспорта
+  foreignPassportValidUntil: date("foreign_passport_valid_until"), // Годен до (загран)
   touristType: text("tourist_type").notNull().default("adult"), // 'adult', 'child', or 'infant'
   isPrimary: boolean("is_primary").notNull().default(false), // One tourist must be primary
   notes: text("notes"),

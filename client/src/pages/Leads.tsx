@@ -446,7 +446,7 @@ export default function Leads() {
       )}
 
       <Dialog open={!!editingLead} onOpenChange={(open) => !open && setEditingLead(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {editingLead && (
             <LeadForm
               lead={editingLead}

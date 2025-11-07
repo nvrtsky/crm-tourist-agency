@@ -678,10 +678,14 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
   // Create participant mutation
   const createParticipantMutation = useMutation({
     mutationFn: async (data: InsertLeadParticipant) => {
+      console.log("[PARTICIPANT] Creating participant for lead:", lead?.id, "data:", data);
       if (!lead?.id) throw new Error("Lead ID is required");
-      return await apiRequest("POST", `/api/leads/${lead.id}/participants`, data);
+      const result = await apiRequest("POST", `/api/leads/${lead.id}/participants`, data);
+      console.log("[PARTICIPANT] Participant created:", result);
+      return result;
     },
     onSuccess: async () => {
+      console.log("[PARTICIPANT] onSuccess - invalidating queries");
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "participants"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       setIsParticipantDialogOpen(false);
@@ -692,6 +696,7 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
       });
     },
     onError: (error: Error) => {
+      console.error("[PARTICIPANT] Error creating participant:", error);
       toast({
         title: "Ошибка",
         description: error.message,

@@ -115,7 +115,18 @@ Built with Express.js, TypeScript, and Drizzle ORM, interacting with PostgreSQL.
     - All action buttons in tourist table (edit, delete, set primary) have `type="button"` to prevent form submission
     - Separate `togglePrimaryMutation` for primary status changes that doesn't close parent lead dialog
     - Explicit query invalidation after primary toggle ensures UI updates correctly
-    - Tourist table uses compact 5-column layout with icon badges (User/Baby for type, Star for primary)
+    - Tourist table uses compact 6-column layout with icon badges (User/Baby for type, Star for primary)
+-   **Tourist Data Completeness Indicators** (November 2025): Visual data quality tracking:
+    - New "Данные туриста" column in tourist table displaying completeness status for 3 categories
+    - **Personal Data**: lastName, firstName, dateOfBirth, email, phone (5 fields)
+    - **Russian Passport**: passportSeries, passportIssuedBy, registrationAddress (3 fields)
+    - **Foreign Passport**: foreignPassportName, foreignPassportNumber, foreignPassportValidUntil (3 fields)
+    - Color-coded badge indicators: 🟢 complete (all fields filled), 🟡 partial (some fields filled), 🔴 empty (no fields filled)
+    - Tooltips display category name and completion status on hover
+    - `calculateTouristDataCompleteness()` helper in client/src/lib/utils.ts analyzes field groups
+    - `DataCompletenessIndicator` component in client/src/components renders three badges with tooltips
+    - Click on tourist table row opens edit dialog for quick data entry
+    - Action buttons use stopPropagation to prevent row-click interference
 -   **Database Migrations** (November 2025): Manual SQL migrations required for:
     1. `lead_tourists.participant_type` → `tourist_type` column rename
     2. `lead_tourists.name` → split into `lastName`, `firstName`, `middleName` columns

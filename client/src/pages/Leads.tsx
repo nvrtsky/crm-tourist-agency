@@ -558,28 +558,28 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                 return (
                 <Card
                   key={lead.id}
-                  className="cursor-move hover-elevate active-elevate-2 transition-shadow relative"
+                  className="cursor-move hover-elevate active-elevate-2 transition-shadow"
                   draggable
                   onDragStart={() => handleDragStart(lead)}
                   data-testid={`kanban-card-${lead.id}`}
                 >
-                  {/* Edit button in top-right corner */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 z-10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(lead);
-                    }}
-                    data-testid={`kanban-edit-${lead.id}`}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-
-                  <CardContent className="p-4 pr-10">
+                  <CardContent className="p-4">
                     <div className="space-y-2">
-                      <div className="font-medium">{getLeadName(lead)}</div>
+                      {/* ФИО и кнопка Edit на одной линии */}
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div className="font-medium flex-1">{getLeadName(lead)}</div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(lead);
+                          }}
+                          data-testid={`kanban-edit-${lead.id}`}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <div className="text-xs text-muted-foreground space-y-1">
                         {lead.phone && <div>{lead.phone}</div>}
                         {lead.email && <div>{lead.email}</div>}

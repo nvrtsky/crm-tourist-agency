@@ -864,19 +864,41 @@ export class DatabaseStorage implements IStorage {
   }
 
   async togglePrimaryTourist(leadId: string, touristId: string): Promise<void> {
+    console.log(`[TOGGLE_PRIMARY] Starting toggle for tourist ${touristId} in lead ${leadId}`);
+    
     await db.transaction(async (tx) => {
       // Step 1: Unset isPrimary for all tourists in this lead
-      await tx
+      console.log(`[TOGGLE_PRIMARY] Step 1: Demoting all tourists in lead ${leadId}`);
+      const demoted = await tx
         .update(leadTourists)
         .set({ isPrimary: false, updatedAt: new Date() })
-        .where(eq(leadTourists.leadId, leadId));
+        .where(eq(leadTourists.leadId, leadId))
+        .returning();
+      console.log(`[TOGGLE_PRIMARY] Demoted ${demoted.length} tourists`);
 
       // Step 2: Set isPrimary=true for the selected tourist
-      await tx
+      console.log(`[TOGGLE_PRIMARY] Step 2: Promoting tourist ${touristId}`);
+      const promoted = await tx
         .update(leadTourists)
         .set({ isPrimary: true, updatedAt: new Date() })
-        .where(eq(leadTourists.id, touristId));
+        .where(eq(leadTourists.id, touristId))
+        .returning();
+      console.log(`[TOGGLE_PRIMARY] Promoted ${promoted.length} tourists`);
     });
+    
+    console.log(`[TOGGLE_PRIMARY] Transaction completed successfully`);
+    
+    // Verify the result
+    const allTourists = await db
+      .select()
+      .from(leadTourists)
+      .where(eq(leadTourists.leadId, leadId));
+    const primaryCount = allTourists.filter(t => t.isPrimary).length;
+    console.log(`[TOGGLE_PRIMARY] Verification: ${primaryCount} primary tourist(s) in lead ${leadId}`);
+    
+    if (primaryCount !== 1) {
+      console.error(`[TOGGLE_PRIMARY] ERROR: Expected 1 primary tourist, but found ${primaryCount}!`);
+    }
   }
 }
 

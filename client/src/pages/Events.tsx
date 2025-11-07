@@ -34,6 +34,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Plus, Search, Filter, X } from "lucide-react";
 import { EventCard } from "@/components/EventCard";
+import { ColorPicker, type ColorOption } from "@/components/ColorPicker";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Event, InsertEvent } from "@shared/schema";
@@ -46,6 +47,7 @@ interface EventWithStats extends Event {
 const createEventFormSchema = z.object({
   name: z.string().min(3, "Название должно содержать минимум 3 символа"),
   description: z.string().optional(),
+  color: z.string().nullable(),
   country: z.string().min(2, "Укажите страну"),
   cities: z.string().min(1, "Укажите города через запятую"),
   tourType: z.string().min(1, "Выберите тип тура"),
@@ -92,6 +94,7 @@ export default function Events() {
     defaultValues: {
       name: "",
       description: "",
+      color: null,
       country: "",
       cities: "",
       tourType: "",
@@ -107,6 +110,7 @@ export default function Events() {
       const eventData: InsertEvent = {
         name: data.name,
         description: data.description || "",
+        color: data.color,
         country: data.country,
         cities: data.cities.split(",").map(c => c.trim()).filter(Boolean),
         tourType: data.tourType,
@@ -375,6 +379,22 @@ export default function Events() {
                         placeholder="Краткое описание тура..." 
                         {...field} 
                         data-testid="input-event-description"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <ColorPicker 
+                        value={field.value as ColorOption} 
+                        onChange={field.onChange}
                       />
                     </FormControl>
                     <FormMessage />

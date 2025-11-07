@@ -23,6 +23,8 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
 import { calculateTouristDataCompleteness } from "@/lib/utils";
+import { ColorPicker, ColorIndicator, type ColorOption } from "@/components/ColorPicker";
+import { z } from "zod";
 
 const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   new: { label: "Новый", variant: "default" },
@@ -48,6 +50,30 @@ const clientCategoryMap: Record<string, string> = {
   not_segmented: "Не сегментированный",
   travel_agent: "Турагент",
 };
+
+// Helper function to determine lead display color
+function getLeadDisplayColor(lead: Lead): ColorOption {
+  // If manual color is set, use it
+  if (lead.color) {
+    return lead.color as ColorOption;
+  }
+  
+  // Auto-color based on status
+  if (lead.status === "won" || lead.status === "converted") {
+    return "green";
+  }
+  if (lead.status === "lost") {
+    return "red";
+  }
+  
+  // No color for other statuses
+  return null;
+}
+
+// Form schema with color field
+const createLeadFormSchema = insertLeadSchema.extend({
+  color: z.string().nullable(),
+});
 
 export default function Leads() {
   const { t } = useTranslation();
@@ -95,10 +121,17 @@ export default function Leads() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertLead> }) => {
-      return await apiRequest("PATCH", `/api/leads/${id}`, data);
+      console.log("[UPDATE_LEAD] Updating lead with data:", data);
+      const result = await apiRequest("PATCH", `/api/leads/${id}`, data);
+      const json = await result.json();
+      console.log("[UPDATE_LEAD] Server response:", json);
+      return json;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+    onSuccess: async (updatedLead) => {
+      console.log("[UPDATE_LEAD] onSuccess - updatedLead:", updatedLead);
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/leads"] });
+      console.log("[UPDATE_LEAD] Queries invalidated and refetched");
       setEditingLead(null);
       toast({
         title: "Успешно",
@@ -106,6 +139,7 @@ export default function Leads() {
       });
     },
     onError: (error: Error) => {
+      console.error("[UPDATE_LEAD] Error:", error);
       toast({
         title: "Ошибка",
         description: error.message,
@@ -381,9 +415,15 @@ export default function Leads() {
               <TableBody>
                 {filteredLeads.map((lead) => {
                   const event = events.find(e => e.id === lead.eventId);
+                  const displayColor = getLeadDisplayColor(lead);
                   return (
                   <TableRow key={lead.id} data-testid={`row-lead-${lead.id}`}>
-                    <TableCell className="font-medium">{getLeadName(lead)}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <ColorIndicator color={displayColor} />
+                        <span>{getLeadName(lead)}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>{lead.phone || "—"}</TableCell>
                     <TableCell>{lead.email || "—"}</TableCell>
                     <TableCell>{event?.name || "—"}</TableCell>
@@ -558,6 +598,7 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
             <div className="space-y-2 min-h-[200px]">
               {columnLeads.map((lead) => {
                 const event = events.find(e => e.id === lead.eventId);
+                const displayColor = getLeadDisplayColor(lead);
                 return (
                 <Card
                   key={lead.id}
@@ -570,7 +611,10 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                     <div className="space-y-2">
                       {/* ФИО и кнопки Edit/Convert на одной линии */}
                       <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <div className="font-medium flex-1">{getLeadName(lead)}</div>
+                        <div className="font-medium flex-1 flex items-center gap-2">
+                          <ColorIndicator color={displayColor} />
+                          <span>{getLeadName(lead)}</span>
+                        </div>
                         <div className="flex items-center gap-1">
                           {lead.status === "qualified" && (
                             <Tooltip>
@@ -656,8 +700,8 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
     return `${lead.lastName || ''} ${lead.firstName || ''}`.trim() || 'Без имени';
   };
 
-  const form = useForm<InsertLead>({
-    resolver: zodResolver(insertLeadSchema),
+  const form = useForm<z.infer<typeof createLeadFormSchema>>({
+    resolver: zodResolver(createLeadFormSchema),
     defaultValues: {
       lastName: lead?.lastName || "",
       firstName: lead?.firstName || "",
@@ -669,6 +713,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
       advancePayment: lead?.advancePayment || null,
       remainingPayment: lead?.remainingPayment || null,
       clientCategory: lead?.clientCategory || null,
+      color: lead?.color ?? null,
       status: lead?.status || "new",
       source: lead?.source || "direct",
       notes: lead?.notes || null,
@@ -677,6 +722,31 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
       createdByUserId: lead?.createdByUserId || null,
     },
   });
+
+  // Reset form when lead changes (for edit mode)
+  useEffect(() => {
+    if (lead) {
+      form.reset({
+        lastName: lead.lastName || "",
+        firstName: lead.firstName || "",
+        middleName: lead.middleName || null,
+        phone: lead.phone || null,
+        email: lead.email || null,
+        eventId: lead.eventId || null,
+        tourCost: lead.tourCost || null,
+        advancePayment: lead.advancePayment || null,
+        remainingPayment: lead.remainingPayment || null,
+        clientCategory: lead.clientCategory || null,
+        color: lead.color ?? null,
+        status: lead.status || "new",
+        source: lead.source || "direct",
+        notes: lead.notes || null,
+        formId: lead.formId || null,
+        assignedUserId: lead.assignedUserId || null,
+        createdByUserId: lead.createdByUserId || null,
+      });
+    }
+  }, [lead, form]);
 
   // Fetch events for tour selection
   const { data: events = [] } = useQuery<Event[]>({
@@ -1105,6 +1175,24 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                         <SelectItem value="other">Другое</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Цветовая индикация</FormLabel>
+                    <FormControl>
+                      <ColorPicker
+                        value={field.value as ColorOption}
+                        onChange={field.onChange}
+                        label=""
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

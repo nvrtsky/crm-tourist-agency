@@ -95,6 +95,7 @@ export const events = pgTable("events", {
   participantLimit: integer("participant_limit").notNull(), // Maximum number of participants
   price: numeric("price", { precision: 10, scale: 2 }).notNull(), // Tour price
   isFull: boolean("is_full").notNull().default(false), // Auto-updated when event is full
+  color: text("color"), // Color indicator: 'red', 'blue', 'green', 'yellow', 'purple'
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -208,6 +209,7 @@ export const leads = pgTable("leads", {
   advancePayment: numeric("advance_payment", { precision: 10, scale: 2 }), // Аванс
   remainingPayment: numeric("remaining_payment", { precision: 10, scale: 2 }), // Остаток оплаты
   formId: varchar("form_id").references(() => forms.id, { onDelete: 'set null' }),
+  color: text("color"), // Color indicator: 'red', 'blue', 'green', 'yellow', 'purple'
   notes: text("notes"),
   assignedUserId: varchar("assigned_user_id").references(() => users.id, { onDelete: 'set null' }),
   createdByUserId: varchar("created_by_user_id").references(() => users.id, { onDelete: 'set null' }),

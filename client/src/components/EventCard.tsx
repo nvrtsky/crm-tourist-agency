@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Users, DollarSign, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { ColorIndicator, type ColorOption } from "@/components/ColorPicker";
 import type { Event } from "@shared/schema";
 
 interface EventWithStats extends Event {
@@ -43,9 +44,12 @@ export function EventCard({ event, onViewSummary }: EventCardProps) {
     <Card className="overflow-hidden hover-elevate" data-testid={`card-event-${event.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg" data-testid={`text-event-name-${event.id}`}>
-            {event.name}
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <ColorIndicator color={event.color as ColorOption} />
+            <CardTitle className="text-lg" data-testid={`text-event-name-${event.id}`}>
+              {event.name}
+            </CardTitle>
+          </div>
           <Badge className={getStatusClasses()} data-testid={`badge-status-${event.id}`}>
             {getStatusText()}
           </Badge>

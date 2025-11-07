@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -565,20 +566,42 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                 >
                   <CardContent className="p-4">
                     <div className="space-y-2">
-                      {/* ФИО и кнопка Edit на одной линии */}
+                      {/* ФИО и кнопки Edit/Convert на одной линии */}
                       <div className="flex items-start justify-between gap-2 flex-wrap">
                         <div className="font-medium flex-1">{getLeadName(lead)}</div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(lead);
-                          }}
-                          data-testid={`kanban-edit-${lead.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {lead.status === "qualified" && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="default"
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onConvert(lead);
+                                  }}
+                                  data-testid={`kanban-convert-${lead.id}`}
+                                >
+                                  <UserPlus className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Конвертировать</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(lead);
+                            }}
+                            data-testid={`kanban-edit-${lead.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       <div className="text-xs text-muted-foreground space-y-1">
                         {lead.phone && <div>{lead.phone}</div>}
@@ -601,23 +624,6 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                           </Badge>
                         )}
                       </div>
-                      {lead.status === "qualified" && (
-                        <div className="flex gap-1 mt-2">
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onConvert(lead);
-                            }}
-                            data-testid={`kanban-convert-${lead.id}`}
-                          >
-                            <UserPlus className="h-3 w-3 mr-1" />
-                            Конв.
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </Card>

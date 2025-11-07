@@ -255,6 +255,7 @@ export const leadTourists = pgTable("lead_tourists", {
   foreignPassportValidUntil: date("foreign_passport_valid_until"), // Годен до (загран)
   touristType: text("tourist_type").notNull().default("adult"), // 'adult', 'child', or 'infant'
   isPrimary: boolean("is_primary").notNull().default(false), // One tourist must be primary
+  isAutoCreated: boolean("is_auto_created").notNull().default(false), // Created automatically from lead data
   notes: text("notes"),
   order: integer("order").notNull().default(0), // Display order
   createdAt: timestamp("created_at").notNull().defaultNow(),

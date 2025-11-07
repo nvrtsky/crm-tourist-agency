@@ -591,7 +591,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const lead = await storage.createLead(validation.data);
+      // Create lead with auto-created tourist in a single transaction
+      const lead = await storage.createLeadWithAutoTourist(validation.data);
+      
       res.json(lead);
     } catch (error) {
       console.error("Error creating lead:", error);
@@ -616,6 +618,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!lead) {
         return res.status(404).json({ error: "Lead not found" });
+      }
+      
+      // Sync auto-created tourist if contact fields changed
+      const contactFields = ['lastName', 'firstName', 'middleName', 'email', 'phone'];
+      const hasContactChanges = contactFields.some(field => validation.data.hasOwnProperty(field));
+      
+      if (hasContactChanges) {
+        console.log(`[UPDATE_LEAD] Contact fields changed, checking for auto-created tourist`);
+        const tourists = await storage.getTouristsByLead(id);
+        const autoCreatedTourist = tourists.find(t => t.isAutoCreated);
+        
+        if (autoCreatedTourist) {
+          console.log(`[UPDATE_LEAD] Syncing auto-created tourist ${autoCreatedTourist.id}`);
+          const touristUpdates: any = {};
+          
+          if (validation.data.lastName !== undefined) touristUpdates.lastName = validation.data.lastName;
+          if (validation.data.firstName !== undefined) touristUpdates.firstName = validation.data.firstName;
+          if (validation.data.middleName !== undefined) touristUpdates.middleName = validation.data.middleName;
+          if (validation.data.email !== undefined) touristUpdates.email = validation.data.email;
+          if (validation.data.phone !== undefined) touristUpdates.phone = validation.data.phone;
+          
+          await storage.updateTourist(autoCreatedTourist.id, touristUpdates);
+          console.log(`[UPDATE_LEAD] Auto-created tourist synced`);
+        }
       }
       
       res.json(lead);
@@ -1316,9 +1342,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const extractedEmail = emailField && data[emailField.key] ? String(data[emailField.key]) : undefined;
       const extractedPhone = phoneField && data[phoneField.key] ? String(data[phoneField.key]) : undefined;
 
-      // Auto-create lead from form data
+      // Auto-create lead from form data with auto-tourist
       const { lastName, firstName, middleName } = parseFullName(leadName);
-      const lead = await storage.createLead({
+      const lead = await storage.createLeadWithAutoTourist({
         lastName,
         firstName,
         middleName,
@@ -1388,10 +1414,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Create enriched lead with event details in notes
+      // Create enriched lead with event details in notes and auto-tourist
       const eventInfo = `Event: ${event.name}\nCountry: ${event.country}\nTour Type: ${event.tourType}\nDates: ${event.startDate} - ${event.endDate}\nParticipants: ${participantCount || 1}`;
       const { lastName, firstName, middleName } = parseFullName(name);
-      const lead = await storage.createLead({
+      const lead = await storage.createLeadWithAutoTourist({
         lastName,
         firstName,
         middleName,

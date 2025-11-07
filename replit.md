@@ -102,6 +102,13 @@ Built with Express.js, TypeScript, and Drizzle ORM, interacting with PostgreSQL.
     - `leads` table: Stores contact point data (phone, email, event selection, payment tracking)
     - `leadTourists` table: Stores detailed tourist passport and personal information
     - This separation improves data organization and allows multiple tourists per lead with individual passport details
+-   **Auto-Created Tourists** (November 2025): Automatic first tourist creation system:
+    - When a new lead is created via POST /api/leads, the system automatically creates the first tourist
+    - Auto-created tourist copies ФИО, email, phone from lead's contact data
+    - Marked with `isAutoCreated=true` flag, set as `isPrimary=true`, `touristType=adult`
+    - When lead contact fields (lastName, firstName, middleName, email, phone) are updated via PATCH /api/leads, the auto-created tourist syncs automatically
+    - Users can delete auto-created tourist if not needed (will auto-promote next tourist to primary)
+    - Simplifies workflow: users only need to fill lead contact info once, can add more tourists manually later
 -   **Tourist Dialog Management** (November 2025): Fixed dialog interaction issues:
     - All action buttons in tourist table (edit, delete, set primary) have `type="button"` to prevent form submission
     - Separate `togglePrimaryMutation` for primary status changes that doesn't close parent lead dialog

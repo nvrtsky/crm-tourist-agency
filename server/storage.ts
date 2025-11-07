@@ -658,6 +658,40 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async createLeadWithAutoTourist(lead: InsertLead): Promise<Lead> {
+    return await db.transaction(async (tx) => {
+      // Create the lead
+      const [createdLead] = await tx.insert(leads).values(lead).returning();
+      
+      // Create history entry
+      await tx.insert(leadStatusHistory).values({
+        leadId: createdLead.id,
+        oldStatus: null,
+        newStatus: createdLead.status,
+        changedByUserId: lead.createdByUserId,
+        note: "Lead created",
+      });
+
+      // Auto-create first tourist from lead contact data
+      console.log(`[CREATE_LEAD_TX] Auto-creating first tourist for lead ${createdLead.id}`);
+      await tx.insert(leadTourists).values({
+        leadId: createdLead.id,
+        lastName: createdLead.lastName,
+        firstName: createdLead.firstName,
+        middleName: createdLead.middleName,
+        email: createdLead.email,
+        phone: createdLead.phone,
+        touristType: 'adult',
+        isPrimary: true,
+        isAutoCreated: true,
+        order: 0,
+      });
+      console.log(`[CREATE_LEAD_TX] Auto-created tourist successfully`);
+
+      return createdLead;
+    });
+  }
+
   async updateLead(id: string, updates: Partial<InsertLead>): Promise<Lead | undefined> {
     const currentLead = await this.getLead(id);
     if (!currentLead) return undefined;

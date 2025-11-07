@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, jsonb, numeric, date } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, jsonb, numeric, date, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -259,7 +259,12 @@ export const leadTourists = pgTable("lead_tourists", {
   order: integer("order").notNull().default(0), // Display order
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  // Partial unique index: only one primary tourist per lead
+  uniquePrimaryPerLead: uniqueIndex("lead_tourists_unique_primary_per_lead")
+    .on(table.leadId)
+    .where(sql`${table.isPrimary} = true`),
+}));
 
 // ================= ZOD SCHEMAS =================
 

@@ -97,6 +97,7 @@ Built with Express.js, TypeScript, and Drizzle ORM, interacting with PostgreSQL.
 -   **Dynamic Geography**: Events store cities as arrays, allowing flexible tour routing.
 -   **Standalone System**: The application is designed as a fully independent CRM, with no external integrations like Bitrix24.
 -   **Notification Strategy**: Backend-automated notifications based on predefined triggers (e.g., group capacity thresholds).
+-   **Database Migrations** (November 2025): Manual SQL migration was required to rename `lead_tourists.participant_type` → `tourist_type` after schema refactoring. Future deployments should include this migration to ensure consistency.
 
 ## External Dependencies
 -   **Frontend**: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS

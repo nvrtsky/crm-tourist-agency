@@ -121,17 +121,11 @@ export default function Leads() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertLead> }) => {
-      console.log("[UPDATE_LEAD] Updating lead with data:", data);
-      const result = await apiRequest("PATCH", `/api/leads/${id}`, data);
-      const json = await result.json();
-      console.log("[UPDATE_LEAD] Server response:", json);
-      return json;
+      return await apiRequest("PATCH", `/api/leads/${id}`, data);
     },
-    onSuccess: async (updatedLead) => {
-      console.log("[UPDATE_LEAD] onSuccess - updatedLead:", updatedLead);
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       await queryClient.refetchQueries({ queryKey: ["/api/leads"] });
-      console.log("[UPDATE_LEAD] Queries invalidated and refetched");
       setEditingLead(null);
       toast({
         title: "Успешно",
@@ -139,7 +133,6 @@ export default function Leads() {
       });
     },
     onError: (error: Error) => {
-      console.error("[UPDATE_LEAD] Error:", error);
       toast({
         title: "Ошибка",
         description: error.message,

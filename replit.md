@@ -89,7 +89,7 @@ A PostgreSQL database with 10 normalized tables:
       - POST /api/public/bookings - Creates lead from booking submission
 
 ### UI/UX Design
-The frontend uses React, TypeScript, Wouter, TanStack Query, Shadcn UI, and Tailwind CSS. It features a consistent design with Shadcn components, color-coded status indicators, responsive layouts, and accessibility attributes. The application displays the "Unique Travel" brand logo in the header and uses darker text colors (5% lightness) for improved readability.
+The frontend uses React, TypeScript, Wouter, TanStack Query, Shadcn UI, and Tailwind CSS. It features a consistent design with Shadcn components, color-coded status indicators, responsive layouts, and accessibility attributes. The application displays the "Unique Travel" brand logo in the header with theme-aware switching (dark logo for light theme, white logo for dark theme) and uses darker text colors (5% lightness) for improved readability.
 
 ### Backend Architecture
 Built with Express.js, TypeScript, and Drizzle ORM, interacting with PostgreSQL. It provides RESTful APIs for all core CRM entities (Events, Contacts, Deals, Leads, Notifications, Forms, CityVisits) with Zod for data validation and a storage layer for database abstraction.
@@ -127,6 +127,13 @@ Built with Express.js, TypeScript, and Drizzle ORM, interacting with PostgreSQL.
     - `DataCompletenessIndicator` component in client/src/components renders three badges with tooltips
     - Click on tourist table row opens edit dialog for quick data entry
     - Action buttons use stopPropagation to prevent row-click interference
+-   **Theme-Aware Logo Switching** (November 2025): Automatic logo adaptation based on theme:
+    - Dark logo (logo_1762426754494.png) displays in light theme
+    - White logo (logo_white_1762533626956.png) displays in dark theme
+    - Implementation uses `MutationObserver` to watch for "dark" class changes on `document.documentElement`
+    - React state updates trigger logo re-render when theme changes
+    - Seamless logo transition without flicker or loading delay
+    - Located in `AppInDemoMode` component in client/src/App.tsx
 -   **Database Migrations** (November 2025): Manual SQL migrations required for:
     1. `lead_tourists.participant_type` → `tourist_type` column rename
     2. `lead_tourists.name` → split into `lastName`, `firstName`, `middleName` columns

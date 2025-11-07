@@ -21,6 +21,8 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
+import { calculateTouristDataCompleteness } from "@/lib/utils";
 
 const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   new: { label: "Новый", variant: "default" },
@@ -1169,12 +1171,21 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                         <TableHead>Email</TableHead>
                         <TableHead>Телефон</TableHead>
                         <TableHead>Дата рождения</TableHead>
+                        <TableHead>Данные туриста</TableHead>
                         <TableHead>Действия</TableHead>
                       </TableRow>
                     </TableHeader>
                   <TableBody>
                     {tourists.map((tourist) => (
-                      <TableRow key={tourist.id} data-testid={`row-tourist-${tourist.id}`}>
+                      <TableRow 
+                        key={tourist.id} 
+                        data-testid={`row-tourist-${tourist.id}`}
+                        className="cursor-pointer hover-elevate"
+                        onClick={() => {
+                          setEditingTourist(tourist);
+                          setIsTouristDialogOpen(true);
+                        }}
+                      >
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-medium">
@@ -1217,7 +1228,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                                       variant="ghost"
                                       size="icon"
                                       className="h-6 w-6"
-                                      onClick={() => handleTogglePrimary(tourist)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleTogglePrimary(tourist);
+                                      }}
                                       disabled={togglePrimaryMutation.isPending}
                                       data-testid={`button-set-primary-${tourist.id}`}
                                     >
@@ -1240,7 +1254,12 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                             : "—"}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
+                          <DataCompletenessIndicator 
+                            completeness={calculateTouristDataCompleteness(tourist)} 
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                             <Button
                               type="button"
                               variant="ghost"

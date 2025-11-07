@@ -1168,9 +1168,6 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Имя</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Телефон</TableHead>
-                        <TableHead>Дата рождения</TableHead>
                         <TableHead>Данные туриста</TableHead>
                         <TableHead>Действия</TableHead>
                       </TableRow>
@@ -1243,13 +1240,6 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                               )}
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell>{tourist.email || "—"}</TableCell>
-                        <TableCell>{tourist.phone || "—"}</TableCell>
-                        <TableCell>
-                          {tourist.dateOfBirth
-                            ? format(new Date(tourist.dateOfBirth), "dd.MM.yyyy")
-                            : "—"}
                         </TableCell>
                         <TableCell>
                           <DataCompletenessIndicator 

@@ -690,25 +690,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // If updating isPrimary to true, use togglePrimaryTourist for atomicity
-      if (validation.data.isPrimary === true) {
+      // Separate isPrimary from other updates
+      const { isPrimary, ...otherUpdates } = validation.data;
+      
+      // If updating isPrimary to true, toggle primary status first
+      if (isPrimary === true) {
         const existingTourist = await storage.getTourist(id);
         if (!existingTourist) {
           return res.status(404).json({ error: "Tourist not found" });
         }
         
         await storage.togglePrimaryTourist(existingTourist.leadId, id);
+      }
+      
+      // Apply other field updates if any
+      if (Object.keys(otherUpdates).length > 0) {
+        const tourist = await storage.updateTourist(id, otherUpdates);
+        
+        if (!tourist) {
+          return res.status(404).json({ error: "Tourist not found" });
+        }
+        
+        res.json(tourist);
+      } else {
+        // If only isPrimary was updated, fetch and return the updated tourist
         const updatedTourist = await storage.getTourist(id);
-        return res.json(updatedTourist);
+        res.json(updatedTourist);
       }
-      
-      const tourist = await storage.updateTourist(id, validation.data);
-      
-      if (!tourist) {
-        return res.status(404).json({ error: "Tourist not found" });
-      }
-      
-      res.json(tourist);
     } catch (error) {
       console.error("Error updating tourist:", error);
       res.status(500).json({ error: "Failed to update tourist" });

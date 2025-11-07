@@ -798,34 +798,16 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
     }
   };
 
-  const handleTogglePrimary = async (tourist: LeadTourist) => {
+  const handleTogglePrimary = (tourist: LeadTourist) => {
     // If already primary, do nothing
     if (tourist.isPrimary) return;
 
-    try {
-      // Update all tourists: unset others, set this one
-      const updates = tourists.map((t) => {
-        if (t.id === tourist.id) {
-          return togglePrimaryMutation.mutateAsync({
-            id: t.id,
-            data: { isPrimary: true },
-          });
-        } else if (t.isPrimary) {
-          return togglePrimaryMutation.mutateAsync({
-            id: t.id,
-            data: { isPrimary: false },
-          });
-        }
-        return Promise.resolve();
-      });
-
-      await Promise.all(updates);
-      
-      // Force refetch to ensure UI updates
-      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
-    } catch (error) {
-      console.error("Error toggling primary tourist:", error);
-    }
+    // Backend's togglePrimaryTourist will atomically demote the old primary
+    // and promote this tourist, so we only need to send isPrimary=true for this one
+    togglePrimaryMutation.mutate({
+      id: tourist.id,
+      data: { isPrimary: true },
+    });
   };
 
   return (
@@ -1236,6 +1218,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                                       size="icon"
                                       className="h-6 w-6"
                                       onClick={() => handleTogglePrimary(tourist)}
+                                      disabled={togglePrimaryMutation.isPending}
                                       data-testid={`button-set-primary-${tourist.id}`}
                                     >
                                       <Star className="h-3 w-3" />
@@ -1266,6 +1249,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                                 setEditingTourist(tourist);
                                 setIsTouristDialogOpen(true);
                               }}
+                              disabled={togglePrimaryMutation.isPending || deleteTouristMutation.isPending}
                               data-testid={`button-edit-tourist-${tourist.id}`}
                             >
                               <Edit className="h-4 w-4" />
@@ -1275,7 +1259,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeleteTourist(tourist)}
-                              disabled={tourists.length <= 1}
+                              disabled={tourists.length <= 1 || togglePrimaryMutation.isPending || deleteTouristMutation.isPending}
                               data-testid={`button-delete-tourist-${tourist.id}`}
                             >
                               <Trash2 className="h-4 w-4" />

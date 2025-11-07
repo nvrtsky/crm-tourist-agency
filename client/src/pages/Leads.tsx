@@ -741,6 +741,24 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
     },
   });
 
+  // Toggle primary mutation (doesn't close dialog)
+  const togglePrimaryMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertLeadTourist> }) => {
+      return await apiRequest("PATCH", `/api/tourists/${id}`, data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
+      // Note: deliberately not invalidating "/api/leads" to avoid closing parent dialog
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Delete tourist mutation
   const deleteTouristMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -787,12 +805,12 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
     // Update all tourists: unset others, set this one
     const updates = tourists.map((t) => {
       if (t.id === tourist.id) {
-        return updateTouristMutation.mutateAsync({
+        return togglePrimaryMutation.mutateAsync({
           id: t.id,
           data: { isPrimary: true },
         });
       } else if (t.isPrimary) {
-        return updateTouristMutation.mutateAsync({
+        return togglePrimaryMutation.mutateAsync({
           id: t.id,
           data: { isPrimary: false },
         });
@@ -1206,6 +1224,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
+                                      type="button"
                                       variant="ghost"
                                       size="icon"
                                       className="h-6 w-6"
@@ -1233,6 +1252,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                         <TableCell>
                           <div className="flex gap-2">
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
                               onClick={() => {
@@ -1244,6 +1264,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeleteTourist(tourist)}

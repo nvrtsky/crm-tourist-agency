@@ -18,8 +18,9 @@ The system follows a lead-first, deal-centric, and event-based CRM flow:
 4.  **Event & Group Management**: Tracks participants, availability, payments, and organizes tourists into families or mini-groups with detailed itinerary management.
 
 ### Database Schema
-A PostgreSQL database with 9 normalized tables:
+A PostgreSQL database with 10 normalized tables:
 -   **Core CRM Tables**: `events`, `contacts`, `deals`, `leads`, `groups`
+-   **Lead Tracking**: `leadParticipants` - stores individual participants within each lead for detailed family/group booking
 -   **Supporting Tables**: `cityVisits`, `leadStatusHistory`, `notifications`, `forms`, `formSubmissions`
 
 ### Key Features
@@ -30,10 +31,23 @@ A PostgreSQL database with 9 normalized tables:
     - **Filters**: Status, source, date range, and family toggle with localStorage persistence
     - **View Toggle**: Seamless switching between table and kanban modes
     - **Drag & Drop**: HTML5 drag-and-drop API for status updates in kanban view
-    - **Lead Conversion**: Special handling for families via `familyMembersCount` field
+    - **Lead Participants**: Detailed participant tracking within leads (November 2025):
+      - Participants section appears when editing existing leads (requires lead.id)
+      - Each participant has: name*, email, phone, dateOfBirth, participantType (adult/child/infant), isPrimary flag, notes, order
+      - CRUD operations via API: GET/POST /api/leads/:id/participants, PATCH/DELETE /api/participants/:id
+      - Primary participant designation with automatic radio-button behavior
+      - Supports family bookings with multiple participants under one lead
+    - **Lead Conversion**: Enhanced conversion process (November 2025):
+      - Reads participants from `leadParticipants` table during conversion
+      - Creates one contact per participant with individual data (name, email, phone, birthDate from participant)
+      - Creates one deal per contact, all linked to the same event
+      - Auto-creates family group when lead has 2+ participants (named "Семья {primary participant name}")
+      - Fallback: if no participants exist, creates single contact from lead data
+      - All deals marked as 'pending' status with groupId reference
+      - Lead status updated to 'won' after successful conversion
 -   **Group Management**: 
     - Two group types: **Families** (shared hotel/transport/invoice, separate passports) and **Mini-groups** (shared hotel only, individual transport/invoices)
-    - Family creation: automatic during lead-to-contact conversion when `familyMembersCount > 1`
+    - Family creation: automatic during lead-to-contact conversion when lead has 2+ participants in `leadParticipants` table
     - Mini-group creation: manual via dialog in EventSummary for existing ungrouped participants
     - Visual representation: merged cells in participant table with lucide-react icons (Users for families, UsersRound for mini-groups)
     - Rollback mechanism: ensures data consistency during group creation

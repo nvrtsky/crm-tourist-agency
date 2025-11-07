@@ -20,34 +20,39 @@ The system follows a lead-first, deal-centric, and event-based CRM flow:
 ### Database Schema
 A PostgreSQL database with 10 normalized tables:
 -   **Core CRM Tables**: `events`, `contacts`, `deals`, `leads`, `groups`
--   **Lead Tracking**: `leadParticipants` - stores individual participants within each lead for detailed family/group booking
+-   **Lead Tracking**: `leadTourists` - stores individual tourists within each lead for detailed family/group booking
 -   **Supporting Tables**: `cityVisits`, `leadStatusHistory`, `notifications`, `forms`, `formSubmissions`
 
 ### Key Features
 -   **Events Module**: Manages tourist events with filtering, sorting, color-coded availability, and detailed participant tracking. Includes a dynamic `EventSummary` page with inline editable city-specific itinerary details and Excel export.
--   **Leads Module**: Comprehensive lead management with dual-view interface:
-    - **Table View**: Traditional tabular display with sorting and filtering
+-   **Leads Module**: Comprehensive lead management with dual-view interface and detailed passport data (November 2025):
+    - **Lead Structure**: Each lead now contains full passport and client data:
+      - Personal Info: lastName*, firstName*, middleName, birthDate
+      - Russian Passport: passportSeries, passportIssuedBy, registrationAddress
+      - Foreign Passport: foreignPassportName, foreignPassportNumber, foreignPassportValidUntil
+      - Client Category: dropdown with 6 options ("!Категория А и В (Даты и бюджет)", "Категория C (Неопределились)", "Категория D (Нет бюджета)", "VIP", "Не сегментированный", "Турагент")
+    - **Table View**: Traditional tabular display with sorting and filtering, shows ФИО and category
     - **Kanban View**: Visual drag-and-drop board with 5 columns (New, Contacted, Qualified, Converted, Lost)
-    - **Filters**: Status, source, date range, and family toggle with localStorage persistence
+    - **Filters**: Status, source, and date range with localStorage persistence
     - **View Toggle**: Seamless switching between table and kanban modes
     - **Drag & Drop**: HTML5 drag-and-drop API for status updates in kanban view
-    - **Lead Participants**: Detailed participant tracking within leads (November 2025):
-      - Participants section appears when editing existing leads (requires lead.id)
-      - Each participant has: name*, email, phone, dateOfBirth, participantType (adult/child/infant), isPrimary flag, notes, order
-      - CRUD operations via API: GET/POST /api/leads/:id/participants, PATCH/DELETE /api/participants/:id
-      - Primary participant designation with automatic radio-button behavior
-      - Supports family bookings with multiple participants under one lead
-    - **Lead Conversion**: Enhanced conversion process (November 2025):
-      - Reads participants from `leadParticipants` table during conversion
-      - Creates one contact per participant with individual data (name, email, phone, birthDate from participant)
+    - **Lead Tourists**: Detailed tourist tracking within leads (renamed from "participants"):
+      - Tourists section appears when editing existing leads (requires lead.id)
+      - Each tourist has: name*, email, phone, dateOfBirth, touristType (adult/child/infant), isPrimary flag, notes, order
+      - CRUD operations via API: GET/POST /api/leads/:id/tourists, PATCH/DELETE /api/tourists/:id
+      - Primary tourist designation with automatic radio-button behavior
+      - Supports family bookings with multiple tourists under one lead
+    - **Lead Conversion**: Enhanced conversion process:
+      - Reads tourists from `leadTourists` table during conversion
+      - Creates one contact per tourist with individual data (name, email, phone, birthDate from tourist)
       - Creates one deal per contact, all linked to the same event
-      - Auto-creates family group when lead has 2+ participants (named "Семья {primary participant name}")
-      - Fallback: if no participants exist, creates single contact from lead data
+      - Auto-creates family group when lead has 2+ tourists (named "Семья {primary tourist name}")
+      - Fallback: if no tourists exist, creates single contact from lead data
       - All deals marked as 'pending' status with groupId reference
       - Lead status updated to 'won' after successful conversion
 -   **Group Management**: 
     - Two group types: **Families** (shared hotel/transport/invoice, separate passports) and **Mini-groups** (shared hotel only, individual transport/invoices)
-    - Family creation: automatic during lead-to-contact conversion when lead has 2+ participants in `leadParticipants` table
+    - Family creation: automatic during lead-to-contact conversion when lead has 2+ tourists in `leadTourists` table
     - Mini-group creation: manual via dialog in EventSummary for existing ungrouped participants
     - Visual representation: merged cells in participant table with lucide-react icons (Users for families, UsersRound for mini-groups)
     - Rollback mechanism: ensures data consistency during group creation

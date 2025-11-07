@@ -1184,6 +1184,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper to parse full name into components for leads
+  function parseFullName(fullName: string): { lastName: string; firstName: string; middleName: string | null } {
+    if (!fullName || !fullName.trim()) {
+      return { lastName: 'Unknown', firstName: '', middleName: null };
+    }
+    
+    const parts = fullName.trim().split(/\s+/);
+    
+    if (parts.length === 1) {
+      return { lastName: parts[0], firstName: '', middleName: null };
+    } else if (parts.length === 2) {
+      return { lastName: parts[0], firstName: parts[1], middleName: null };
+    } else {
+      return { 
+        lastName: parts[0], 
+        firstName: parts[1], 
+        middleName: parts.slice(2).join(' ') 
+      };
+    }
+  }
+
   // ==================== PUBLIC FORM ROUTES (no auth required) ====================
 
   // Get public form (for embedding)
@@ -1269,15 +1290,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Auto-create lead from form data
+      const { lastName, firstName, middleName } = parseFullName(leadName);
       const lead = await storage.createLead({
-        name: leadName,
-        email: data.email || null,
-        phone: data.phone || null,
+        lastName,
+        firstName,
+        middleName,
         source: 'form',
         formId: id,
         status: 'new',
         notes: leadNotes,
-        createdByUserId: form.userId, // Assign to form owner
+        createdByUserId: form.userId,
       });
 
       // Create submission linked to lead
@@ -1338,15 +1360,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create enriched lead with event details in notes
       const eventInfo = `Event: ${event.name}\nCountry: ${event.country}\nTour Type: ${event.tourType}\nDates: ${event.startDate} - ${event.endDate}\nParticipants: ${participantCount || 1}`;
+      const { lastName, firstName, middleName } = parseFullName(name);
       const lead = await storage.createLead({
-        name,
-        email: email || null,
-        phone: phone || null,
+        lastName,
+        firstName,
+        middleName,
         source: 'booking',
         status: 'new',
-        familyMembersCount: participantCount || 1,
         notes: notes ? `${notes}\n\n${eventInfo}` : eventInfo,
-        createdByUserId: 'demo-user-001', // Default user for public bookings
+        createdByUserId: 'demo-user-001',
       });
 
       res.json({ 

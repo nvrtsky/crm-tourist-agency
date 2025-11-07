@@ -220,6 +220,22 @@ export const formSubmissions = pgTable("form_submissions", {
   userAgent: text("user_agent"),
 });
 
+// Lead participants table - stores multiple participants for a lead
+export const leadParticipants = pgTable("lead_participants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  leadId: varchar("lead_id").notNull().references(() => leads.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  dateOfBirth: date("date_of_birth"),
+  participantType: text("participant_type").notNull().default("adult"), // 'adult' or 'child'
+  isPrimary: boolean("is_primary").notNull().default(false), // One participant must be primary
+  notes: text("notes"),
+  order: integer("order").notNull().default(0), // Display order
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ================= ZOD SCHEMAS =================
 
 // User schemas
@@ -270,6 +286,14 @@ export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).om
   id: true, 
   submittedAt: true 
 });
+
+// Lead participant schemas
+export const insertLeadParticipantSchema = createInsertSchema(leadParticipants).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const updateLeadParticipantSchema = insertLeadParticipantSchema.partial();
 
 // Group schemas
 export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
@@ -327,6 +351,11 @@ export type InsertLeadStatusHistory = z.infer<typeof insertLeadStatusHistorySche
 // Form submission types
 export type FormSubmission = typeof formSubmissions.$inferSelect;
 export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
+
+// Lead participant types
+export type LeadParticipant = typeof leadParticipants.$inferSelect;
+export type InsertLeadParticipant = z.infer<typeof insertLeadParticipantSchema>;
+export type UpdateLeadParticipant = z.infer<typeof updateLeadParticipantSchema>;
 
 // Complex types with relations
 export type EventWithStats = Event & {
@@ -436,6 +465,14 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
   }),
   statusHistory: many(leadStatusHistory),
   convertedContacts: many(contacts),
+  participants: many(leadParticipants),
+}));
+
+export const leadParticipantsRelations = relations(leadParticipants, ({ one }) => ({
+  lead: one(leads, {
+    fields: [leadParticipants.leadId],
+    references: [leads.id],
+  }),
 }));
 
 export const leadStatusHistoryRelations = relations(leadStatusHistory, ({ one }) => ({

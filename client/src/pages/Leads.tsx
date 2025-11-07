@@ -13,9 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, UserPlus, LayoutGrid, LayoutList, Filter } from "lucide-react";
-import type { Lead, InsertLead } from "@shared/schema";
-import { insertLeadSchema } from "@shared/schema";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, UserPlus, LayoutGrid, LayoutList, Filter, Star } from "lucide-react";
+import type { Lead, InsertLead, LeadParticipant, InsertLeadParticipant } from "@shared/schema";
+import { insertLeadSchema, insertLeadParticipantSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -630,6 +630,10 @@ interface LeadFormProps {
 }
 
 function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
+  const { toast } = useToast();
+  const [isParticipantDialogOpen, setIsParticipantDialogOpen] = useState(false);
+  const [editingParticipant, setEditingParticipant] = useState<LeadParticipant | null>(null);
+
   const form = useForm<InsertLead>({
     resolver: zodResolver(insertLeadSchema),
     defaultValues: {
@@ -645,6 +649,141 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
       createdByUserId: lead?.createdByUserId || null,
     },
   });
+
+  // Fetch participants only if editing an existing lead
+  const { data: participants = [], isLoading: isLoadingParticipants } = useQuery<LeadParticipant[]>({
+    queryKey: ["/api/leads", lead?.id, "participants"],
+    enabled: !!lead?.id,
+  });
+
+  // Auto-update familyMembersCount when participants change
+  useEffect(() => {
+    if (lead?.id && participants.length > 0) {
+      const newCount = participants.length;
+      const currentCount = lead.familyMembersCount;
+      
+      // Only update if different
+      if (currentCount !== newCount) {
+        apiRequest("PATCH", `/api/leads/${lead.id}`, { familyMembersCount: newCount })
+          .then(() => {
+            queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+          })
+          .catch((error) => {
+            console.error("Failed to update familyMembersCount:", error);
+          });
+      }
+    }
+  }, [participants.length, lead?.id, lead?.familyMembersCount]);
+
+  // Create participant mutation
+  const createParticipantMutation = useMutation({
+    mutationFn: async (data: InsertLeadParticipant) => {
+      if (!lead?.id) throw new Error("Lead ID is required");
+      return await apiRequest("POST", `/api/leads/${lead.id}/participants`, data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "participants"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      setIsParticipantDialogOpen(false);
+      setEditingParticipant(null);
+      toast({
+        title: "Успешно",
+        description: "Участник добавлен",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update participant mutation
+  const updateParticipantMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertLeadParticipant> }) => {
+      return await apiRequest("PATCH", `/api/participants/${id}`, data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "participants"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      setIsParticipantDialogOpen(false);
+      setEditingParticipant(null);
+      toast({
+        title: "Успешно",
+        description: "Участник обновлен",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete participant mutation
+  const deleteParticipantMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/participants/${id}`);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "participants"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      toast({
+        title: "Успешно",
+        description: "Участник удален",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteParticipant = (participant: LeadParticipant) => {
+    // Prevent deletion of last participant
+    if (participants.length <= 1) {
+      toast({
+        title: "Ошибка",
+        description: "Должен быть хотя бы один участник",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (confirm(`Вы уверены, что хотите удалить участника ${participant.name}?`)) {
+      deleteParticipantMutation.mutate(participant.id);
+    }
+  };
+
+  const handleTogglePrimary = async (participant: LeadParticipant) => {
+    // If already primary, do nothing
+    if (participant.isPrimary) return;
+
+    // Update all participants: unset others, set this one
+    const updates = participants.map((p) => {
+      if (p.id === participant.id) {
+        return updateParticipantMutation.mutateAsync({
+          id: p.id,
+          data: { isPrimary: true },
+        });
+      } else if (p.isPrimary) {
+        return updateParticipantMutation.mutateAsync({
+          id: p.id,
+          data: { isPrimary: false },
+        });
+      }
+      return Promise.resolve();
+    });
+
+    await Promise.all(updates);
+  };
 
   return (
     <>
@@ -805,6 +944,110 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
             )}
           />
 
+          {/* Participants Section - Only show when editing an existing lead */}
+          {lead?.id && (
+            <div className="border-t pt-4 mt-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Участники</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditingParticipant(null);
+                    setIsParticipantDialogOpen(true);
+                  }}
+                  data-testid="button-add-participant"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Добавить участника
+                </Button>
+              </div>
+
+              {isLoadingParticipants ? (
+                <div className="text-center py-4 text-muted-foreground">Загрузка участников...</div>
+              ) : participants.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  Нет участников. Добавьте первого участника.
+                </div>
+              ) : (
+                <Table data-testid="table-participants">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Имя</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Телефон</TableHead>
+                      <TableHead>Дата рождения</TableHead>
+                      <TableHead>Тип</TableHead>
+                      <TableHead>Основной</TableHead>
+                      <TableHead>Действия</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {participants.map((participant) => (
+                      <TableRow key={participant.id} data-testid={`row-participant-${participant.id}`}>
+                        <TableCell className="font-medium">{participant.name}</TableCell>
+                        <TableCell>{participant.email || "—"}</TableCell>
+                        <TableCell>{participant.phone || "—"}</TableCell>
+                        <TableCell>
+                          {participant.dateOfBirth
+                            ? format(new Date(participant.dateOfBirth), "dd.MM.yyyy")
+                            : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={participant.participantType === "adult" ? "default" : "secondary"}>
+                            {participant.participantType === "adult" ? "Взрослый" : "Ребенок"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {participant.isPrimary ? (
+                            <Badge variant="default" data-testid={`badge-primary-${participant.id}`}>
+                              <Star className="h-3 w-3 mr-1" />
+                              Основной
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleTogglePrimary(participant)}
+                              data-testid={`button-set-primary-${participant.id}`}
+                            >
+                              Сделать основным
+                            </Button>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setEditingParticipant(participant);
+                                setIsParticipantDialogOpen(true);
+                              }}
+                              data-testid={`button-edit-participant-${participant.id}`}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteParticipant(participant)}
+                              disabled={participants.length <= 1}
+                              data-testid={`button-delete-participant-${participant.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          )}
+
           <DialogFooter>
             <Button type="submit" disabled={isPending} data-testid="button-submit-lead">
               {isPending ? "Сохранение..." : lead ? "Обновить" : "Создать"}
@@ -812,7 +1055,260 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
           </DialogFooter>
         </form>
       </Form>
+
+      {/* Participant Dialog */}
+      {lead?.id && (
+        <ParticipantDialog
+          open={isParticipantDialogOpen}
+          onOpenChange={setIsParticipantDialogOpen}
+          participant={editingParticipant}
+          leadId={lead.id}
+          participants={participants}
+          onSubmit={(data) => {
+            if (editingParticipant) {
+              updateParticipantMutation.mutate({ id: editingParticipant.id, data });
+            } else {
+              createParticipantMutation.mutate(data);
+            }
+          }}
+          isPending={createParticipantMutation.isPending || updateParticipantMutation.isPending}
+        />
+      )}
     </>
+  );
+}
+
+interface ParticipantDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  participant: LeadParticipant | null;
+  leadId: string;
+  participants: LeadParticipant[];
+  onSubmit: (data: InsertLeadParticipant) => void;
+  isPending: boolean;
+}
+
+function ParticipantDialog({
+  open,
+  onOpenChange,
+  participant,
+  leadId,
+  participants,
+  onSubmit,
+  isPending,
+}: ParticipantDialogProps) {
+  const form = useForm<InsertLeadParticipant>({
+    resolver: zodResolver(insertLeadParticipantSchema),
+    defaultValues: {
+      leadId,
+      name: participant?.name || "",
+      email: participant?.email || null,
+      phone: participant?.phone || null,
+      dateOfBirth: participant?.dateOfBirth || null,
+      participantType: participant?.participantType || "adult",
+      isPrimary: participant?.isPrimary || false,
+      notes: participant?.notes || null,
+      order: participant?.order || participants.length,
+    },
+  });
+
+  // Reset form when participant changes
+  useEffect(() => {
+    if (participant) {
+      form.reset({
+        leadId,
+        name: participant.name,
+        email: participant.email,
+        phone: participant.phone,
+        dateOfBirth: participant.dateOfBirth,
+        participantType: participant.participantType,
+        isPrimary: participant.isPrimary,
+        notes: participant.notes,
+        order: participant.order,
+      });
+    } else {
+      form.reset({
+        leadId,
+        name: "",
+        email: null,
+        phone: null,
+        dateOfBirth: null,
+        participantType: "adult",
+        isPrimary: participants.length === 0,
+        notes: null,
+        order: participants.length,
+      });
+    }
+  }, [participant, leadId, participants.length, form]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {participant ? "Редактировать участника" : "Добавить участника"}
+          </DialogTitle>
+          <DialogDescription>
+            {participant ? "Обновите информацию об участнике" : "Введите данные нового участника"}
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Имя *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Иван Иванов" {...field} data-testid="input-participant-name" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="email@example.com"
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-participant-email"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Телефон</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="tel"
+                      placeholder="+7 (999) 123-45-67"
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-participant-phone"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dateOfBirth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Дата рождения</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-participant-dob"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="participantType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Тип *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} data-testid="select-participant-type">
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите тип" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="adult">Взрослый</SelectItem>
+                      <SelectItem value="child">Ребенок</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="isPrimary"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      data-testid="checkbox-participant-primary"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Основной участник</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Должен быть только один основной участник
+                    </p>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Заметки</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Дополнительная информация..."
+                      className="resize-none"
+                      rows={2}
+                      {...field}
+                      value={field.value || ""}
+                      data-testid="input-participant-notes"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                data-testid="button-cancel-participant"
+              >
+                Отмена
+              </Button>
+              <Button type="submit" disabled={isPending} data-testid="button-submit-participant">
+                {isPending ? "Сохранение..." : participant ? "Обновить" : "Добавить"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -824,30 +1320,34 @@ interface ConvertLeadDialogProps {
 function ConvertLeadDialog({ lead, onClose }: ConvertLeadDialogProps) {
   const { toast } = useToast();
   const [eventId, setEventId] = useState("");
-  const [groupName, setGroupName] = useState(`Семья ${lead.name}`);
-  const [members, setMembers] = useState<Array<{
-    name: string;
-    email: string;
-    phone: string;
-    passport: string;
-    birthDate: string;
-    notes: string;
-  }>>([]);
 
   const { data: events = [] } = useQuery<any[]>({
     queryKey: ["/api/events"],
   });
 
+  // Fetch participants to show info
+  const { data: participants = [] } = useQuery<LeadParticipant[]>({
+    queryKey: ["/api/leads", lead.id, "participants"],
+    enabled: !!lead.id,
+  });
+
   const convertMutation = useMutation({
-    mutationFn: async (data: { eventId: string; groupName: string; members: any[] }) => {
-      return await apiRequest(`/api/leads/${lead.id}/convert-family`, "POST", data);
+    mutationFn: async (eventId: string) => {
+      const response = await apiRequest("POST", `/api/leads/${lead.id}/convert`, { eventId });
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      
+      const message = data.message || 
+        (participants.length > 1 
+          ? `Лид конвертирован. Создано ${participants.length} контактов и семейная группа.`
+          : "Лид успешно конвертирован в контакт и сделку.");
+      
       toast({
         title: "Успешно",
-        description: `Лид конвертирован. Создано ${members.length} участников.`,
+        description: message,
       });
       onClose();
     },
@@ -858,23 +1358,6 @@ function ConvertLeadDialog({ lead, onClose }: ConvertLeadDialogProps) {
         variant: "destructive",
       });
     },
-  });
-
-  // Initialize members array based on familyMembersCount
-  useState(() => {
-    const count = lead.familyMembersCount || 1;
-    const initialMembers = [];
-    for (let i = 0; i < count; i++) {
-      initialMembers.push({
-        name: i === 0 ? lead.name : "",
-        email: i === 0 ? (lead.email || "") : "",
-        phone: i === 0 ? (lead.phone || "") : "",
-        passport: "",
-        birthDate: "",
-        notes: "",
-      });
-    }
-    setMembers(initialMembers);
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -889,159 +1372,69 @@ function ConvertLeadDialog({ lead, onClose }: ConvertLeadDialogProps) {
       return;
     }
 
-    // Validate that all members have names
-    const hasEmptyNames = members.some(m => !m.name.trim());
-    if (hasEmptyNames) {
+    // Check if participants exist
+    if (participants.length === 0) {
       toast({
-        title: "Ошибка",
-        description: "Все члены семьи должны иметь имя",
-        variant: "destructive",
+        title: "Внимание",
+        description: "У лида нет участников. Будет создан контакт из данных лида.",
       });
-      return;
     }
 
-    convertMutation.mutate({
-      eventId,
-      groupName,
-      members: members.map(m => ({
-        ...m,
-        email: m.email || null,
-        phone: m.phone || null,
-        passport: m.passport || null,
-        birthDate: m.birthDate || null,
-        notes: m.notes || null,
-      })),
-    });
-  };
-
-  const updateMember = (index: number, field: string, value: string) => {
-    const updated = [...members];
-    updated[index] = { ...updated[index], [field]: value };
-    setMembers(updated);
+    convertMutation.mutate(eventId);
   };
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Конвертировать лид: {lead.name}</DialogTitle>
           <DialogDescription>
-            {lead.familyMembersCount && lead.familyMembersCount > 1
-              ? `Введите данные ${lead.familyMembersCount} членов семьи`
-              : "Введите данные для создания контакта и сделки"}
+            {participants.length > 1
+              ? `Будет создано ${participants.length} контактов и семейная группа`
+              : participants.length === 1
+              ? "Будет создан 1 контакт и сделка"
+              : "Будет создан контакт из данных лида"}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Выберите тур *</label>
-              <Select value={eventId} onValueChange={setEventId}>
-                <SelectTrigger data-testid="select-event">
-                  <SelectValue placeholder="Выберите тур" />
-                </SelectTrigger>
-                <SelectContent>
-                  {events.map((event: any) => (
-                    <SelectItem key={event.id} value={event.id}>
-                      {event.name} ({event.startDate} - {event.endDate})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Выберите тур *</label>
+            <Select value={eventId} onValueChange={setEventId}>
+              <SelectTrigger data-testid="select-event">
+                <SelectValue placeholder="Выберите тур" />
+              </SelectTrigger>
+              <SelectContent>
+                {events.map((event: any) => (
+                  <SelectItem key={event.id} value={event.id}>
+                    {event.name} ({event.startDate} - {event.endDate})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {participants.length > 0 && (
+            <div className="p-3 bg-muted rounded-md">
+              <p className="text-sm font-medium mb-2">Участники ({participants.length}):</p>
+              <ul className="text-sm space-y-1">
+                {participants.map((p) => (
+                  <li key={p.id} className="flex items-center gap-2">
+                    {p.isPrimary && <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />}
+                    <span>{p.name}</span>
+                    {p.participantType === 'child' && <Badge variant="outline" className="text-xs">Ребенок</Badge>}
+                  </li>
+                ))}
+              </ul>
             </div>
-
-            {lead.familyMembersCount && lead.familyMembersCount > 1 && (
-              <div>
-                <label className="text-sm font-medium">Название группы</label>
-                <Input
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="Название семьи"
-                  data-testid="input-group-name"
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-6">
-            <h3 className="font-semibold text-lg">Участники</h3>
-            {members.map((member, index) => (
-              <Card key={index} data-testid={`member-card-${index}`}>
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    Участник {index + 1} {index === 0 && <Badge variant="outline" className="ml-2">Основной</Badge>}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Имя *</label>
-                      <Input
-                        value={member.name}
-                        onChange={(e) => updateMember(index, "name", e.target.value)}
-                        placeholder="Имя и фамилия"
-                        data-testid={`input-member-name-${index}`}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Email</label>
-                      <Input
-                        type="email"
-                        value={member.email}
-                        onChange={(e) => updateMember(index, "email", e.target.value)}
-                        placeholder="email@example.com"
-                        data-testid={`input-member-email-${index}`}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Телефон</label>
-                      <Input
-                        type="tel"
-                        value={member.phone}
-                        onChange={(e) => updateMember(index, "phone", e.target.value)}
-                        placeholder="+7 (999) 123-45-67"
-                        data-testid={`input-member-phone-${index}`}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Паспорт</label>
-                      <Input
-                        value={member.passport}
-                        onChange={(e) => updateMember(index, "passport", e.target.value)}
-                        placeholder="Номер паспорта"
-                        data-testid={`input-member-passport-${index}`}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Дата рождения</label>
-                      <Input
-                        type="date"
-                        value={member.birthDate}
-                        onChange={(e) => updateMember(index, "birthDate", e.target.value)}
-                        data-testid={`input-member-birthdate-${index}`}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Заметки</label>
-                      <Input
-                        value={member.notes}
-                        onChange={(e) => updateMember(index, "notes", e.target.value)}
-                        placeholder="Дополнительная информация"
-                        data-testid={`input-member-notes-${index}`}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} data-testid="button-cancel">
               Отмена
             </Button>
             <Button type="submit" disabled={convertMutation.isPending} data-testid="button-submit-convert">
-              {convertMutation.isPending ? "Создание..." : "Конвертировать"}
+              {convertMutation.isPending ? "Конвертация..." : "Конвертировать"}
             </Button>
           </DialogFooter>
         </form>

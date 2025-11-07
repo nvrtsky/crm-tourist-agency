@@ -35,6 +35,9 @@ import {
   type Group,
   type InsertGroup,
   type UpdateGroup,
+  type LeadParticipant,
+  type InsertLeadParticipant,
+  type UpdateLeadParticipant,
   events,
   contacts,
   deals,
@@ -47,6 +50,7 @@ import {
   leadStatusHistory,
   formSubmissions,
   groups,
+  leadParticipants,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -142,6 +146,13 @@ export interface IStorage {
   deleteGroup(id: string): Promise<boolean>;
   addDealToGroup(dealId: string, groupId: string, isPrimary?: boolean): Promise<Deal | undefined>;
   removeDealFromGroup(dealId: string): Promise<Deal | undefined>;
+
+  // Lead participant operations
+  getParticipantsByLead(leadId: string): Promise<LeadParticipant[]>;
+  getParticipant(id: string): Promise<LeadParticipant | undefined>;
+  createParticipant(participant: InsertLeadParticipant): Promise<LeadParticipant>;
+  updateParticipant(id: string, participant: Partial<UpdateLeadParticipant>): Promise<LeadParticipant | undefined>;
+  deleteParticipant(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -748,6 +759,41 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return result[0];
+  }
+
+  // ==================== LEAD PARTICIPANT OPERATIONS ====================
+
+  async getParticipantsByLead(leadId: string): Promise<LeadParticipant[]> {
+    return await db
+      .select()
+      .from(leadParticipants)
+      .where(eq(leadParticipants.leadId, leadId))
+      .orderBy(leadParticipants.order);
+  }
+
+  async getParticipant(id: string): Promise<LeadParticipant | undefined> {
+    const result = await db.select().from(leadParticipants).where(eq(leadParticipants.id, id));
+    return result[0];
+  }
+
+  async createParticipant(participant: InsertLeadParticipant): Promise<LeadParticipant> {
+    const [result] = await db.insert(leadParticipants).values(participant).returning();
+    return result;
+  }
+
+  async updateParticipant(id: string, updates: Partial<UpdateLeadParticipant>): Promise<LeadParticipant | undefined> {
+    const result = await db
+      .update(leadParticipants)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(leadParticipants.id, id))
+      .returning();
+
+    return result[0];
+  }
+
+  async deleteParticipant(id: string): Promise<boolean> {
+    const result = await db.delete(leadParticipants).where(eq(leadParticipants.id, id)).returning();
+    return result.length > 0;
   }
 }
 

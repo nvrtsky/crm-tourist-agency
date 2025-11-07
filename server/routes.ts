@@ -20,6 +20,8 @@ import {
   insertFormSubmissionSchema,
   insertGroupSchema,
   updateGroupSchema,
+  insertLeadParticipantSchema,
+  updateLeadParticipantSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -640,13 +642,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Convert lead to contact + deal
+  // ==================== LEAD PARTICIPANTS ROUTES ====================
+  
+  // Get participants for a lead
+  app.get("/api/leads/:id/participants", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const participants = await storage.getParticipantsByLead(id);
+      res.json(participants);
+    } catch (error) {
+      console.error("Error fetching participants:", error);
+      res.status(500).json({ error: "Failed to fetch participants" });
+    }
+  });
+
+  // Create a participant for a lead
+  app.post("/api/leads/:id/participants", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = insertLeadParticipantSchema.safeParse({ ...req.body, leadId: id });
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+      
+      const participant = await storage.createParticipant(validation.data);
+      res.json(participant);
+    } catch (error) {
+      console.error("Error creating participant:", error);
+      res.status(500).json({ error: "Failed to create participant" });
+    }
+  });
+
+  // Update a participant
+  app.patch("/api/participants/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = updateLeadParticipantSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+      
+      const participant = await storage.updateParticipant(id, validation.data);
+      
+      if (!participant) {
+        return res.status(404).json({ error: "Participant not found" });
+      }
+      
+      res.json(participant);
+    } catch (error) {
+      console.error("Error updating participant:", error);
+      res.status(500).json({ error: "Failed to update participant" });
+    }
+  });
+
+  // Delete a participant
+  app.delete("/api/participants/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteParticipant(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Participant not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting participant:", error);
+      res.status(500).json({ error: "Failed to delete participant" });
+    }
+  });
+
+  // Convert lead to contact + deal (with participants support)
   app.post("/api/leads/:id/convert", async (req, res) => {
     try {
       const { id } = req.params;
       const { eventId } = req.body;
 
+      console.log(`[CONVERT] Starting conversion for lead ${id} to event ${eventId}`);
+
       if (!eventId) {
+        console.log("[CONVERT] Error: No eventId provided");
         return res.status(400).json({ error: "Event ID is required" });
       }
 
@@ -662,42 +745,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Event not found" });
       }
 
-      // Create contact from lead
-      const contact = await storage.createContact({
-        name: lead.name,
-        email: lead.email,
-        phone: lead.phone,
-        leadId: lead.id,
-        notes: lead.notes,
-      });
+      // Get participants for this lead
+      const participants = await storage.getParticipantsByLead(id);
+      console.log(`[CONVERT] Found ${participants.length} participants for lead ${id}`);
 
-      // Create deal
-      const deal = await storage.createDeal({
-        contactId: contact.id,
-        eventId: eventId,
-        status: 'pending',
-        amount: event.price,
-      });
+      // If no participants, fallback to old behavior (create from lead data)
+      if (participants.length === 0) {
+        console.log("[CONVERT] No participants found, using fallback logic");
 
-      // Auto-create city visits for all cities in the event route
-      if (event.cities && event.cities.length > 0) {
-        for (const city of event.cities) {
-          await storage.createCityVisit({
-            dealId: deal.id,
-            city,
-            arrivalDate: event.startDate,
-            transportType: "plane",
-            hotelName: `Hotel ${city}`,
-          });
+        const contact = await storage.createContact({
+          name: lead.name,
+          email: lead.email,
+          phone: lead.phone,
+          leadId: lead.id,
+          notes: lead.notes,
+        });
+
+        const deal = await storage.createDeal({
+          contactId: contact.id,
+          eventId: eventId,
+          status: 'pending',
+          amount: event.price,
+        });
+
+        // Auto-create city visits
+        if (event.cities && event.cities.length > 0) {
+          for (const city of event.cities) {
+            await storage.createCityVisit({
+              dealId: deal.id,
+              city,
+              arrivalDate: event.startDate,
+              transportType: "plane",
+              hotelName: `Hotel ${city}`,
+            });
+          }
+        }
+
+        await storage.updateLead(id, { status: 'won' });
+        return res.json({ contact, deal });
+      }
+
+      // If participants exist, create contacts from all participants
+      console.log("[CONVERT] Using participants logic");
+      let group = null;
+      const contacts = [];
+      const deals = [];
+
+      // If multiple participants, create a family group
+      if (participants.length > 1) {
+        const primaryParticipant = participants.find(p => p.isPrimary) || participants[0];
+        console.log(`[CONVERT] Creating family group for ${participants.length} participants`);
+        group = await storage.createGroup({
+          eventId,
+          name: `Семья ${primaryParticipant.name}`,
+          type: 'family',
+        });
+        console.log(`[CONVERT] Created group ${group.id}: ${group.name}`);
+      }
+
+      // Create contacts and deals for each participant
+      for (const participant of participants) {
+        console.log(`[CONVERT] Creating contact for participant ${participant.name}`);
+        const contact = await storage.createContact({
+          name: participant.name,
+          email: participant.email,
+          phone: participant.phone,
+          birthDate: participant.dateOfBirth,
+          leadId: lead.id,
+          notes: participant.notes,
+        });
+        contacts.push(contact);
+        console.log(`[CONVERT] Created contact ${contact.id}`);
+
+        const deal = await storage.createDeal({
+          contactId: contact.id,
+          eventId: eventId,
+          status: 'pending',
+          amount: event.price,
+          groupId: group?.id,
+          isPrimaryInGroup: participant.isPrimary,
+        });
+        deals.push(deal);
+        console.log(`[CONVERT] Created deal ${deal.id} for contact ${contact.id}`);
+
+
+        // Auto-create city visits for each deal
+        if (event.cities && event.cities.length > 0) {
+          for (const city of event.cities) {
+            await storage.createCityVisit({
+              dealId: deal.id,
+              city,
+              arrivalDate: event.startDate,
+              transportType: "plane",
+              hotelName: `Hotel ${city}`,
+            });
+          }
         }
       }
 
+      // Note: isFull is automatically updated by storage.createDeal when status is 'confirmed'
+
       // Update lead status to 'won'
+      console.log(`[CONVERT] Updating lead ${id} status to 'won'`);
       await storage.updateLead(id, { status: 'won' });
 
-      res.json({ contact, deal });
+      const successMessage = participants.length > 1 
+        ? `Created ${contacts.length} contacts and family group` 
+        : 'Lead converted successfully';
+      
+      console.log(`[CONVERT] SUCCESS: ${successMessage}`);
+      res.json({ 
+        contacts, 
+        deals,
+        group,
+        message: successMessage
+      });
     } catch (error) {
-      console.error("Error converting lead:", error);
+      console.error("[CONVERT] Error converting lead:", error);
       res.status(500).json({ error: "Failed to convert lead" });
     }
   });

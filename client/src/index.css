@@ -276,6 +276,11 @@
     pointer-events: none;
   }
 
+  /* Fix calendar icon visibility in dark mode for date inputs */
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+
   /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
    * buttons/badges can remove the automatic brightness adjustment on interactions
    * and program their own. */

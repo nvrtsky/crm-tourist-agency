@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, UserPlus, LayoutGrid, LayoutList, Filter, Star } from "lucide-react";
-import type { Lead, InsertLead, LeadTourist, InsertLeadTourist, Event } from "@shared/schema";
+import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -61,7 +61,7 @@ export default function Leads() {
   const [sourceFilter, setSourceFilter] = useState<string>('');
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
 
-  const { data: leads = [], isLoading } = useQuery<Lead[]>({
+  const { data: leads = [], isLoading } = useQuery<LeadWithTouristCount[]>({
     queryKey: ["/api/leads"],
   });
 
@@ -451,6 +451,7 @@ export default function Leads() {
               lead={editingLead}
               onSubmit={(data) => updateMutation.mutate({ id: editingLead.id, data })}
               isPending={updateMutation.isPending}
+              onDelete={(id) => deleteMutation.mutate(id)}
             />
           )}
         </DialogContent>
@@ -469,18 +470,18 @@ export default function Leads() {
 
 // Kanban Board Component
 interface KanbanBoardProps {
-  leads: Lead[];
+  leads: LeadWithTouristCount[];
   events: Event[];
   isLoading: boolean;
   onStatusChange: (leadId: string, newStatus: string) => void;
-  onEdit: (lead: Lead) => void;
+  onEdit: (lead: LeadWithTouristCount) => void;
   onDelete: (leadId: string) => void;
-  onConvert: (lead: Lead) => void;
+  onConvert: (lead: LeadWithTouristCount) => void;
   getLeadName: (lead: Lead) => string;
 }
 
 function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelete, onConvert, getLeadName }: KanbanBoardProps) {
-  const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
+  const [draggedLead, setDraggedLead] = useState<LeadWithTouristCount | null>(null);
 
   const columns: { status: string; label: string; variant: "default" | "secondary" | "outline" | "destructive" }[] = [
     { status: "new", label: "Новый", variant: "default" },
@@ -557,12 +558,26 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                 return (
                 <Card
                   key={lead.id}
-                  className="cursor-move hover-elevate active-elevate-2 transition-shadow"
+                  className="cursor-move hover-elevate active-elevate-2 transition-shadow relative"
                   draggable
                   onDragStart={() => handleDragStart(lead)}
                   data-testid={`kanban-card-${lead.id}`}
                 >
-                  <CardContent className="p-4">
+                  {/* Edit button in top-right corner */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(lead);
+                    }}
+                    data-testid={`kanban-edit-${lead.id}`}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+
+                  <CardContent className="p-4 pr-10">
                     <div className="space-y-2">
                       <div className="font-medium">{getLeadName(lead)}</div>
                       <div className="text-xs text-muted-foreground space-y-1">
@@ -570,7 +585,7 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                         {lead.email && <div>{lead.email}</div>}
                         {event && <div className="font-medium text-primary">{event.name}</div>}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="outline" className="text-[10px]">
                           {leadSourceMap[lead.source] || lead.source}
                         </Badge>
@@ -579,40 +594,30 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                             {clientCategoryMap[lead.clientCategory] || lead.clientCategory}
                           </Badge>
                         )}
+                        {lead.touristCount !== undefined && lead.touristCount > 0 && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            <Users className="h-3 w-3 mr-1" />
+                            {lead.touristCount}
+                          </Badge>
+                        )}
                       </div>
-                      <div className="flex gap-1 mt-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => onEdit(lead)}
-                          data-testid={`kanban-edit-${lead.id}`}
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Ред.
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs text-destructive"
-                          onClick={() => onDelete(lead.id)}
-                          data-testid={`kanban-delete-${lead.id}`}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                        {lead.status === "qualified" && (
+                      {lead.status === "qualified" && (
+                        <div className="flex gap-1 mt-2">
                           <Button
                             variant="default"
                             size="sm"
                             className="h-7 px-2 text-xs"
-                            onClick={() => onConvert(lead)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onConvert(lead);
+                            }}
                             data-testid={`kanban-convert-${lead.id}`}
                           >
                             <UserPlus className="h-3 w-3 mr-1" />
                             Конв.
                           </Button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -630,12 +635,18 @@ interface LeadFormProps {
   lead?: Lead;
   onSubmit: (data: InsertLead) => void;
   isPending: boolean;
+  onDelete?: (id: string) => void;
 }
 
-function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
+function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
   const { toast } = useToast();
   const [isTouristDialogOpen, setIsTouristDialogOpen] = useState(false);
   const [editingTourist, setEditingTourist] = useState<LeadTourist | null>(null);
+
+  // Helper function to get lead display name
+  const getLeadName = (lead: Lead) => {
+    return `${lead.lastName || ''} ${lead.firstName || ''}`.trim() || 'Без имени';
+  };
 
   const form = useForm<InsertLead>({
     resolver: zodResolver(insertLeadSchema),
@@ -1216,7 +1227,22 @@ function LeadForm({ lead, onSubmit, isPending }: LeadFormProps) {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex justify-between items-center">
+            {lead && onDelete && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  if (confirm(`Вы уверены, что хотите удалить лид "${getLeadName(lead)}"?`)) {
+                    onDelete(lead.id);
+                  }
+                }}
+                data-testid="button-delete-lead"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Удалить
+              </Button>
+            )}
             <Button type="submit" disabled={isPending} data-testid="button-submit-lead">
               {isPending ? "Сохранение..." : lead ? "Обновить" : "Создать"}
             </Button>

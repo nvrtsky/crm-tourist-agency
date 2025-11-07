@@ -370,6 +370,9 @@ export type InsertFormField = z.infer<typeof insertFormFieldSchema>;
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = z.infer<typeof insertLeadSchema>;
 export type UpdateLead = z.infer<typeof updateLeadSchema>;
+export type LeadWithTouristCount = Lead & {
+  touristCount?: number;
+};
 export type LeadStatusHistoryEntry = typeof leadStatusHistory.$inferSelect;
 export type InsertLeadStatusHistory = z.infer<typeof insertLeadStatusHistorySchema>;
 

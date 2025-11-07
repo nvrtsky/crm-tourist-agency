@@ -27,6 +27,7 @@ import {
   type Lead,
   type InsertLead,
   type UpdateLead,
+  type LeadWithTouristCount,
   type LeadStatusHistoryEntry,
   type InsertLeadStatusHistory,
   type FormSubmission,
@@ -121,7 +122,7 @@ export interface IStorage {
 
   // Lead operations
   getLead(id: string): Promise<Lead | undefined>;
-  getAllLeads(): Promise<Lead[]>;
+  getAllLeads(): Promise<LeadWithTouristCount[]>;
   getLeadsByUser(userId: string): Promise<Lead[]>;
   getLeadsByStatus(status: LeadStatus): Promise<Lead[]>;
   createLead(lead: InsertLead): Promise<Lead>;
@@ -595,8 +596,35 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getAllLeads(): Promise<Lead[]> {
-    return await db.select().from(leads);
+  async getAllLeads(): Promise<LeadWithTouristCount[]> {
+    const result = await db
+      .select({
+        id: leads.id,
+        lastName: leads.lastName,
+        firstName: leads.firstName,
+        middleName: leads.middleName,
+        phone: leads.phone,
+        email: leads.email,
+        clientCategory: leads.clientCategory,
+        status: leads.status,
+        source: leads.source,
+        eventId: leads.eventId,
+        tourCost: leads.tourCost,
+        advancePayment: leads.advancePayment,
+        remainingPayment: leads.remainingPayment,
+        formId: leads.formId,
+        notes: leads.notes,
+        assignedUserId: leads.assignedUserId,
+        createdByUserId: leads.createdByUserId,
+        createdAt: leads.createdAt,
+        updatedAt: leads.updatedAt,
+        touristCount: sql<number>`cast(count(${leadTourists.id}) as int)`.as('touristCount')
+      })
+      .from(leads)
+      .leftJoin(leadTourists, eq(leads.id, leadTourists.leadId))
+      .groupBy(leads.id);
+    
+    return result;
   }
 
   async getLeadsByUser(userId: string): Promise<Lead[]> {

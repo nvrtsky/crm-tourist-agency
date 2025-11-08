@@ -519,11 +519,16 @@ interface KanbanBoardProps {
 function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelete, onConvert, getLeadName }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadWithTouristCount | null>(null);
 
-  const columns: { status: string; label: string; variant: "default" | "secondary" | "outline" | "destructive" }[] = [
-    { status: "new", label: "Новый", variant: "default" },
+  const columns: { 
+    status: string; 
+    label: string; 
+    variant: "default" | "secondary" | "outline" | "destructive";
+    customClass?: string;
+  }[] = [
+    { status: "new", label: "Новый", variant: "secondary" },
     { status: "contacted", label: "Связались", variant: "secondary" },
-    { status: "qualified", label: "Квалифицирован", variant: "outline" },
-    { status: "converted", label: "Конвертирован", variant: "default" },
+    { status: "qualified", label: "Квалифицирован", variant: "outline", customClass: "bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-50 border-amber-200 dark:border-amber-800" },
+    { status: "converted", label: "Конвертирован", variant: "default", customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" },
     { status: "lost", label: "Потерян", variant: "destructive" },
   ];
 
@@ -581,7 +586,10 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
               <CardHeader className="p-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium">{column.label}</CardTitle>
-                  <Badge variant={column.variant} className="ml-2">
+                  <Badge 
+                    variant={column.variant} 
+                    className={column.customClass ? `ml-2 ${column.customClass}` : "ml-2"}
+                  >
                     {columnLeads.length}
                   </Badge>
                 </div>

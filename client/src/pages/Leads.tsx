@@ -31,7 +31,7 @@ const leadStatusMap: Record<string, { label: string; variant: "default" | "secon
   contacted: { label: "Квалифицирован", variant: "secondary" },
   qualified: { label: "Забронирован", variant: "outline" },
   converted: { label: "Подтвержден", variant: "default" },
-  lost: { label: "Потерян", variant: "destructive" },
+  lost: { label: "Отложен", variant: "destructive" },
 };
 
 const leadSourceMap: Record<string, string> = {
@@ -340,7 +340,7 @@ export default function Leads() {
                   <SelectItem value="contacted">Квалифицирован</SelectItem>
                   <SelectItem value="qualified">Забронирован</SelectItem>
                   <SelectItem value="converted">Подтвержден</SelectItem>
-                  <SelectItem value="lost">Потерян</SelectItem>
+                  <SelectItem value="lost">Отложен</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -622,7 +622,7 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
     { status: "contacted", label: "Квалифицирован", variant: "secondary" },
     { status: "qualified", label: "Забронирован", variant: "outline", customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420]" },
     { status: "converted", label: "Подтвержден", variant: "default", customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" },
-    { status: "lost", label: "Потерян", variant: "destructive" },
+    { status: "lost", label: "Отложен", variant: "destructive" },
   ];
 
   const handleDragStart = (lead: Lead) => {
@@ -1221,7 +1221,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                         <SelectItem value="contacted">Квалифицирован</SelectItem>
                         <SelectItem value="qualified">Забронирован</SelectItem>
                         <SelectItem value="converted">Подтвержден</SelectItem>
-                        <SelectItem value="lost">Потерян</SelectItem>
+                        <SelectItem value="lost">Отложен</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

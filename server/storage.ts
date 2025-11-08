@@ -598,6 +598,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllLeads(): Promise<LeadWithTouristCount[]> {
+    // Auto-reactivate postponed leads whose date has passed
+    const now = new Date();
+    await db
+      .update(leads)
+      .set({ 
+        status: 'new', 
+        hasBeenContacted: true,
+        postponedUntil: null 
+      })
+      .where(
+        and(
+          eq(leads.status, 'lost'),
+          sql`${leads.postponedUntil} IS NOT NULL`,
+          sql`${leads.postponedUntil} <= ${now}`
+        )
+      );
+    
     const result = await db
       .select({
         id: leads.id,
@@ -618,6 +635,9 @@ export class DatabaseStorage implements IStorage {
         notes: leads.notes,
         assignedUserId: leads.assignedUserId,
         createdByUserId: leads.createdByUserId,
+        postponedUntil: leads.postponedUntil,
+        postponeReason: leads.postponeReason,
+        hasBeenContacted: leads.hasBeenContacted,
         createdAt: leads.createdAt,
         updatedAt: leads.updatedAt,
         touristCount: sql<number>`cast(count(${leadTourists.id}) as int)`.as('touristCount')

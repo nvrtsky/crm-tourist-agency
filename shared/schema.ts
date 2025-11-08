@@ -213,6 +213,9 @@ export const leads = pgTable("leads", {
   notes: text("notes"),
   assignedUserId: varchar("assigned_user_id").references(() => users.id, { onDelete: 'set null' }),
   createdByUserId: varchar("created_by_user_id").references(() => users.id, { onDelete: 'set null' }),
+  postponedUntil: timestamp("postponed_until"), // Дата, до которой лид отложен
+  postponeReason: text("postpone_reason"), // Причина отложения: 'expensive', 'no_response', 'went_to_competitors', 'changed_mind'
+  hasBeenContacted: boolean("has_been_contacted").notNull().default(false), // Была ли коммуникация с лидом
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

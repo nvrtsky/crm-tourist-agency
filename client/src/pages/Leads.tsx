@@ -24,6 +24,7 @@ import { ru } from "date-fns/locale";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
 import { calculateTouristDataCompleteness } from "@/lib/utils";
 import { ColorPicker, ColorIndicator, type ColorOption } from "@/components/ColorPicker";
+import { DeferLeadDialog } from "@/components/DeferLeadDialog";
 import { z } from "zod";
 
 const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -80,6 +81,10 @@ export default function Leads() {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  
+  // Defer dialog state
+  const [isDeferDialogOpen, setIsDeferDialogOpen] = useState(false);
+  const [leadToDefer, setLeadToDefer] = useState<{ id: string; name: string } | null>(null);
   
   // View and filter state
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>(() => {
@@ -480,7 +485,17 @@ export default function Leads() {
           events={events}
           isLoading={isLoading}
           onStatusChange={(leadId, newStatus) => {
-            updateMutation.mutate({ id: leadId, data: { status: newStatus } });
+            // If changing to "lost" status, show defer dialog
+            if (newStatus === 'lost') {
+              const lead = leads.find(l => l.id === leadId);
+              if (lead) {
+                setLeadToDefer({ id: leadId, name: getLeadName(lead) });
+                setIsDeferDialogOpen(true);
+              }
+            } else {
+              // For other status changes, update directly
+              updateMutation.mutate({ id: leadId, data: { status: newStatus } });
+            }
           }}
           onEdit={setEditingLead}
           onDelete={(leadId) => {
@@ -594,6 +609,26 @@ export default function Leads() {
           )}
         </DialogContent>
       </Dialog>
+
+      <DeferLeadDialog
+        open={isDeferDialogOpen}
+        onOpenChange={setIsDeferDialogOpen}
+        leadName={leadToDefer?.name}
+        onConfirm={(data) => {
+          if (leadToDefer) {
+            updateMutation.mutate({
+              id: leadToDefer.id,
+              data: {
+                status: 'lost',
+                postponedUntil: data.postponedUntil.toISOString(),
+                postponeReason: data.postponeReason,
+              },
+            });
+            setIsDeferDialogOpen(false);
+            setLeadToDefer(null);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -614,6 +614,7 @@ export class DatabaseStorage implements IStorage {
         advancePayment: leads.advancePayment,
         remainingPayment: leads.remainingPayment,
         formId: leads.formId,
+        color: leads.color,
         notes: leads.notes,
         assignedUserId: leads.assignedUserId,
         createdByUserId: leads.createdByUserId,

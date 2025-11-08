@@ -59,7 +59,7 @@ function getLeadDisplayColor(lead: Lead): ColorOption {
   }
   
   // Auto-color based on status
-  if (lead.status === "won" || lead.status === "converted") {
+  if (lead.status === "converted" || lead.status === "won") {
     return "green";
   }
   if (lead.status === "lost") {

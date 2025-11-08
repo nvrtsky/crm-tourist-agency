@@ -21,7 +21,7 @@ export const USER_ROLES = ["admin", "manager", "viewer"] as const;
 export type UserRole = typeof USER_ROLES[number];
 
 // Lead statuses
-export const LEAD_STATUSES = ["new", "contacted", "qualified", "won", "lost"] as const;
+export const LEAD_STATUSES = ["new", "contacted", "qualified", "converted", "won", "lost"] as const;
 export type LeadStatus = typeof LEAD_STATUSES[number];
 
 // Lead sources

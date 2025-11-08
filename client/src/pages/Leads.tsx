@@ -646,7 +646,7 @@ export default function Leads() {
               id: leadToDefer.id,
               data: {
                 status: 'lost',
-                postponedUntil: data.postponedUntil,
+                postponedUntil: data.postponedUntil.toISOString() as any,
                 postponeReason: data.postponeReason,
               },
             });

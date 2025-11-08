@@ -605,14 +605,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/leads/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      console.log(`[UPDATE_LEAD] Updating lead ${id} with data:`, JSON.stringify(req.body, null, 2));
       const validation = updateLeadSchema.safeParse(req.body);
       
       if (!validation.success) {
+        console.error(`[UPDATE_LEAD] Validation failed:`, JSON.stringify(validation.error.errors, null, 2));
         return res.status(400).json({
           error: "Validation error",
           details: validation.error.errors,
         });
       }
+      console.log(`[UPDATE_LEAD] Validation successful, data:`, JSON.stringify(validation.data, null, 2));
 
       // Get the current lead before updating to check if eventId is changing
       const currentLead = await storage.getLead(id);

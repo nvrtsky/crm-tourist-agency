@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, UserPlus, LayoutGrid, LayoutList, Filter, Star, User, Baby } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User, Baby } from "lucide-react";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -80,7 +80,6 @@ export default function Leads() {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [convertingLead, setConvertingLead] = useState<Lead | null>(null);
   
   // View and filter state
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>(() => {
@@ -489,7 +488,6 @@ export default function Leads() {
               deleteMutation.mutate(leadId);
             }
           }}
-          onConvert={setConvertingLead}
           getLeadName={getLeadName}
         />
       ) : (
@@ -572,17 +570,6 @@ export default function Leads() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                        {lead.status === "qualified" && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => setConvertingLead(lead)}
-                            data-testid={`button-convert-${lead.id}`}
-                          >
-                            <UserPlus className="h-4 w-4 mr-1" />
-                            Конвертировать
-                          </Button>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -607,14 +594,6 @@ export default function Leads() {
           )}
         </DialogContent>
       </Dialog>
-
-      {convertingLead && (
-        <ConvertLeadDialog
-          lead={convertingLead}
-          onClose={() => setConvertingLead(null)}
-          getLeadName={getLeadName}
-        />
-      )}
     </div>
   );
 }
@@ -627,11 +606,10 @@ interface KanbanBoardProps {
   onStatusChange: (leadId: string, newStatus: string) => void;
   onEdit: (lead: LeadWithTouristCount) => void;
   onDelete: (leadId: string) => void;
-  onConvert: (lead: LeadWithTouristCount) => void;
   getLeadName: (lead: Lead) => string;
 }
 
-function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelete, onConvert, getLeadName }: KanbanBoardProps) {
+function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelete, getLeadName }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadWithTouristCount | null>(null);
 
   const columns: { 
@@ -732,26 +710,6 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                           <span>{getLeadName(lead)}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          {lead.status === "qualified" && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="default"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onConvert(lead);
-                                  }}
-                                  data-testid={`kanban-convert-${lead.id}`}
-                                >
-                                  <UserPlus className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Конвертировать</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1954,139 +1912,6 @@ function TouristDialog({
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-interface ConvertLeadDialogProps {
-  lead: Lead;
-  onClose: () => void;
-  getLeadName: (lead: Lead) => string;
-}
-
-function ConvertLeadDialog({ lead, onClose, getLeadName }: ConvertLeadDialogProps) {
-  const { toast } = useToast();
-  const [eventId, setEventId] = useState("");
-
-  const { data: events = [] } = useQuery<any[]>({
-    queryKey: ["/api/events"],
-  });
-
-  // Fetch tourists to show info
-  const { data: tourists = [] } = useQuery<LeadTourist[]>({
-    queryKey: ["/api/leads", lead.id, "tourists"],
-    enabled: !!lead.id,
-  });
-
-  const convertMutation = useMutation({
-    mutationFn: async (eventId: string) => {
-      const response = await apiRequest("POST", `/api/leads/${lead.id}/convert`, { eventId });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
-      
-      const message = data.message || 
-        (tourists.length > 1 
-          ? `Лид конвертирован. Создано ${tourists.length} контактов и семейная группа.`
-          : "Лид успешно конвертирован в контакт и сделку.");
-      
-      toast({
-        title: "Успешно",
-        description: message,
-      });
-      onClose();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!eventId) {
-      toast({
-        title: "Ошибка",
-        description: "Выберите тур",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if tourists exist
-    if (tourists.length === 0) {
-      toast({
-        title: "Внимание",
-        description: "У лида нет туристов. Будет создан контакт из данных лида.",
-      });
-    }
-
-    convertMutation.mutate(eventId);
-  };
-
-  return (
-    <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Конвертировать лид: {getLeadName(lead)}</DialogTitle>
-          <DialogDescription>
-            {tourists.length > 1
-              ? `Будет создано ${tourists.length} контактов и семейная группа`
-              : tourists.length === 1
-              ? "Будет создан 1 контакт и сделка"
-              : "Будет создан контакт из данных лида"}
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Выберите тур *</label>
-            <Select value={eventId} onValueChange={setEventId}>
-              <SelectTrigger data-testid="select-event">
-                <SelectValue placeholder="Выберите тур" />
-              </SelectTrigger>
-              <SelectContent>
-                {events.map((event: any) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.name} ({event.startDate} - {event.endDate})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {tourists.length > 0 && (
-            <div className="p-3 bg-muted rounded-md">
-              <p className="text-sm font-medium mb-2">Туристы ({tourists.length}):</p>
-              <ul className="text-sm space-y-1">
-                {tourists.map((t) => (
-                  <li key={t.id} className="flex items-center gap-2">
-                    {t.isPrimary && <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />}
-                    <span>{t.lastName} {t.firstName} {t.middleName || ""}</span>
-                    {t.touristType === 'child' && <Badge variant="outline" className="text-xs">Ребенок</Badge>}
-                    {t.touristType === 'infant' && <Badge variant="outline" className="text-xs">Младенец</Badge>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} data-testid="button-cancel">
-              Отмена
-            </Button>
-            <Button type="submit" disabled={convertMutation.isPending} data-testid="button-submit-convert">
-              {convertMutation.isPending ? "Конвертация..." : "Конвертировать"}
-            </Button>
-          </DialogFooter>
-        </form>
       </DialogContent>
     </Dialog>
   );

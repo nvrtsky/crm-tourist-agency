@@ -614,10 +614,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Get the current lead before updating to check if eventId is changing
+      const currentLead = await storage.getLead(id);
+      if (!currentLead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
       const lead = await storage.updateLead(id, validation.data);
       
       if (!lead) {
         return res.status(404).json({ error: "Lead not found" });
+      }
+      
+      // Auto-convert if eventId was set or changed
+      const eventIdChanged = validation.data.hasOwnProperty('eventId') && 
+                            validation.data.eventId !== currentLead.eventId;
+      const eventIdIsSet = lead.eventId !== null && lead.eventId !== undefined;
+      
+      if (eventIdChanged && eventIdIsSet && lead.eventId) {
+        console.log(`[UPDATE_LEAD] EventId changed to ${lead.eventId}, triggering auto-conversion`);
+        await autoConvertLeadToEvent(id, lead.eventId);
       }
       
       // Sync auto-created tourist if contact fields changed
@@ -765,6 +781,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to delete tourist" });
     }
   });
+
+  // ==================== HELPER FUNCTIONS ====================
+
+  /**
+   * Auto-convert lead to contacts and deals when eventId is set
+   * Does NOT change lead status (unlike manual convert endpoint)
+   * Returns true if conversion happened, false if skipped (already converted)
+   */
+  async function autoConvertLeadToEvent(leadId: string, eventId: string): Promise<boolean> {
+    try {
+      console.log(`[AUTO_CONVERT] Checking auto-conversion for lead ${leadId} to event ${eventId}`);
+
+      // Get lead
+      const lead = await storage.getLead(leadId);
+      if (!lead) {
+        console.log(`[AUTO_CONVERT] Lead ${leadId} not found, skipping`);
+        return false;
+      }
+
+      // Verify event exists
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        console.log(`[AUTO_CONVERT] Event ${eventId} not found, skipping`);
+        return false;
+      }
+
+      // Check if already converted: look for existing contacts with this leadId
+      const existingContacts = await storage.getContactsByLead(leadId);
+      if (existingContacts.length > 0) {
+        // Check if any of these contacts have deals for this event
+        for (const contact of existingContacts) {
+          const contactDeals = await storage.getDealsByContact(contact.id);
+          const hasEventDeal = contactDeals.some(d => d.eventId === eventId);
+          if (hasEventDeal) {
+            console.log(`[AUTO_CONVERT] Lead ${leadId} already converted to event ${eventId}, skipping`);
+            return false;
+          }
+        }
+      }
+
+      // Get tourists for this lead
+      const tourists = await storage.getTouristsByLead(leadId);
+      console.log(`[AUTO_CONVERT] Found ${tourists.length} tourists for lead ${leadId}`);
+
+      // If no tourists, fallback to creating from lead data
+      if (tourists.length === 0) {
+        console.log("[AUTO_CONVERT] No tourists found, using fallback logic");
+
+        const contact = await storage.createContact({
+          name: `${lead.firstName} ${lead.lastName}${lead.middleName ? ' ' + lead.middleName : ''}`.trim(),
+          email: lead.email || undefined,
+          phone: lead.phone || undefined,
+          leadId: lead.id,
+          notes: lead.notes || undefined,
+        });
+
+        const deal = await storage.createDeal({
+          contactId: contact.id,
+          eventId: eventId,
+          status: 'pending',
+          amount: event.price,
+        });
+
+        // Auto-create city visits
+        if (event.cities && event.cities.length > 0) {
+          for (const city of event.cities) {
+            await storage.createCityVisit({
+              dealId: deal.id,
+              city,
+              arrivalDate: event.startDate,
+              transportType: "plane",
+              hotelName: `Hotel ${city}`,
+            });
+          }
+        }
+
+        console.log(`[AUTO_CONVERT] SUCCESS: Created contact ${contact.id} and deal ${deal.id}`);
+        return true;
+      }
+
+      // If tourists exist, create contacts from all tourists
+      console.log("[AUTO_CONVERT] Using tourists logic");
+      let group = null;
+      const contacts = [];
+      const deals = [];
+
+      // If multiple tourists, create a family group
+      if (tourists.length > 1) {
+        const primaryTourist = tourists.find(p => p.isPrimary) || tourists[0];
+        console.log(`[AUTO_CONVERT] Creating family group for ${tourists.length} tourists`);
+        group = await storage.createGroup({
+          eventId,
+          name: `Семья ${primaryTourist.lastName}`,
+          type: 'family',
+        });
+        console.log(`[AUTO_CONVERT] Created group ${group.id}: ${group.name}`);
+      }
+
+      // Create contacts and deals for each tourist
+      for (const tourist of tourists) {
+        const touristFullName = `${tourist.firstName} ${tourist.lastName}${tourist.middleName ? ' ' + tourist.middleName : ''}`.trim();
+        console.log(`[AUTO_CONVERT] Creating contact for tourist ${touristFullName}`);
+        const contact = await storage.createContact({
+          name: touristFullName,
+          email: tourist.email || undefined,
+          phone: tourist.phone || undefined,
+          birthDate: tourist.dateOfBirth || undefined,
+          leadId: lead.id,
+          notes: tourist.notes || undefined,
+        });
+        contacts.push(contact);
+        console.log(`[AUTO_CONVERT] Created contact ${contact.id}`);
+
+        const deal = await storage.createDeal({
+          contactId: contact.id,
+          eventId: eventId,
+          status: 'pending',
+          amount: event.price,
+          groupId: group?.id,
+          isPrimaryInGroup: tourist.isPrimary,
+        });
+        deals.push(deal);
+        console.log(`[AUTO_CONVERT] Created deal ${deal.id} for contact ${contact.id}`);
+
+        // Auto-create city visits for each deal
+        if (event.cities && event.cities.length > 0) {
+          for (const city of event.cities) {
+            await storage.createCityVisit({
+              dealId: deal.id,
+              city,
+              arrivalDate: event.startDate,
+              transportType: "plane",
+              hotelName: `Hotel ${city}`,
+            });
+          }
+        }
+      }
+
+      const successMessage = tourists.length > 1 
+        ? `Created ${contacts.length} contacts and family group` 
+        : 'Lead auto-converted successfully';
+      
+      console.log(`[AUTO_CONVERT] SUCCESS: ${successMessage}`);
+      return true;
+    } catch (error) {
+      console.error("[AUTO_CONVERT] Error during auto-conversion:", error);
+      // Don't throw - just log and return false so the lead update can still succeed
+      return false;
+    }
+  }
+
+  // ==================== LEAD CONVERSION ROUTES ====================
 
   // Convert lead to contact + deal (with participants support)
   app.post("/api/leads/:id/convert", async (req, res) => {

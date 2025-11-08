@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User, Baby } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User, Baby, RotateCcw } from "lucide-react";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -549,9 +549,25 @@ export default function Leads() {
                     <TableCell>{lead.email || "—"}</TableCell>
                     <TableCell>{event?.name || "—"}</TableCell>
                     <TableCell>
-                      <Badge variant={leadStatusMap[lead.status]?.variant || "default"} data-testid={`status-${lead.id}`}>
-                        {leadStatusMap[lead.status]?.label || lead.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={leadStatusMap[lead.status]?.variant || "default"} data-testid={`status-${lead.id}`}>
+                          {leadStatusMap[lead.status]?.label || lead.status}
+                        </Badge>
+                        {lead.hasBeenContacted && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className="text-[10px]" data-testid={`badge-reactivated-table-${lead.id}`}>
+                                  <RotateCcw className="h-3 w-3" />
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Возвращен после отложения</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>{leadSourceMap[lead.source] || lead.source}</TableCell>
                     <TableCell>
@@ -787,6 +803,20 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                             <Users className="h-3 w-3 mr-1" />
                             {lead.touristCount}
                           </Badge>
+                        )}
+                        {lead.hasBeenContacted && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className="text-[10px]" data-testid={`badge-reactivated-${lead.id}`}>
+                                  <RotateCcw className="h-3 w-3" />
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Возвращен после отложения</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                       </div>
                     </div>

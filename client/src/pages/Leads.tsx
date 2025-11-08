@@ -28,9 +28,9 @@ import { z } from "zod";
 
 const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   new: { label: "Новый", variant: "default" },
-  contacted: { label: "Связались", variant: "secondary" },
-  qualified: { label: "Квалифицирован", variant: "outline" },
-  converted: { label: "Конвертирован", variant: "default" },
+  contacted: { label: "Квалифицирован", variant: "secondary" },
+  qualified: { label: "Забронирован", variant: "outline" },
+  converted: { label: "Подтвержден", variant: "default" },
   lost: { label: "Потерян", variant: "destructive" },
 };
 
@@ -337,9 +337,9 @@ export default function Leads() {
                 <SelectContent>
                   <SelectItem value="all">Все статусы</SelectItem>
                   <SelectItem value="new">Новый</SelectItem>
-                  <SelectItem value="contacted">Связались</SelectItem>
-                  <SelectItem value="qualified">Квалифицирован</SelectItem>
-                  <SelectItem value="converted">Конвертирован</SelectItem>
+                  <SelectItem value="contacted">Квалифицирован</SelectItem>
+                  <SelectItem value="qualified">Забронирован</SelectItem>
+                  <SelectItem value="converted">Подтвержден</SelectItem>
                   <SelectItem value="lost">Потерян</SelectItem>
                 </SelectContent>
               </Select>
@@ -619,9 +619,9 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
     customClass?: string;
   }[] = [
     { status: "new", label: "Новый", variant: "secondary" },
-    { status: "contacted", label: "Связались", variant: "secondary" },
-    { status: "qualified", label: "Квалифицирован", variant: "outline", customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420]" },
-    { status: "converted", label: "Конвертирован", variant: "default", customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" },
+    { status: "contacted", label: "Квалифицирован", variant: "secondary" },
+    { status: "qualified", label: "Забронирован", variant: "outline", customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420]" },
+    { status: "converted", label: "Подтвержден", variant: "default", customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" },
     { status: "lost", label: "Потерян", variant: "destructive" },
   ];
 
@@ -1218,9 +1218,9 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="new">Новый</SelectItem>
-                        <SelectItem value="contacted">Связались</SelectItem>
-                        <SelectItem value="qualified">Квалифицирован</SelectItem>
-                        <SelectItem value="converted">Конвертирован</SelectItem>
+                        <SelectItem value="contacted">Квалифицирован</SelectItem>
+                        <SelectItem value="qualified">Забронирован</SelectItem>
+                        <SelectItem value="converted">Подтвержден</SelectItem>
                         <SelectItem value="lost">Потерян</SelectItem>
                       </SelectContent>
                     </Select>

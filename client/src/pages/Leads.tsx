@@ -527,7 +527,7 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
   }[] = [
     { status: "new", label: "Новый", variant: "secondary" },
     { status: "contacted", label: "Связались", variant: "secondary" },
-    { status: "qualified", label: "Квалифицирован", variant: "outline", customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-black dark:text-black !border-[#d89420]" },
+    { status: "qualified", label: "Квалифицирован", variant: "outline", customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420]" },
     { status: "converted", label: "Конвертирован", variant: "default", customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" },
     { status: "lost", label: "Потерян", variant: "destructive" },
   ];

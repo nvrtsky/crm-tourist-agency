@@ -88,6 +88,9 @@ export default function Leads() {
   });
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string>('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [tourFilter, setTourFilter] = useState<string>('');
+  const [colorFilter, setColorFilter] = useState<string>('');
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
 
   const { data: leads = [], isLoading } = useQuery<LeadWithTouristCount[]>({
@@ -179,6 +182,28 @@ export default function Leads() {
         return false;
       }
       
+      // Category filter
+      if (categoryFilter && lead.clientCategory !== categoryFilter) {
+        return false;
+      }
+      
+      // Tour filter
+      if (tourFilter && lead.eventId !== tourFilter) {
+        return false;
+      }
+      
+      // Color filter
+      if (colorFilter) {
+        const displayColor = getLeadDisplayColor(lead);
+        if (colorFilter === "none") {
+          // Filter for leads with no color (neither manual nor auto)
+          if (displayColor !== null) return false;
+        } else {
+          // Filter for specific color
+          if (displayColor !== colorFilter) return false;
+        }
+      }
+      
       // Date range filter
       if (dateRange.from || dateRange.to) {
         const leadDate = new Date(lead.createdAt);
@@ -188,7 +213,7 @@ export default function Leads() {
       
       return true;
     });
-  }, [leads, statusFilter, sourceFilter, dateRange]);
+  }, [leads, statusFilter, sourceFilter, categoryFilter, tourFilter, colorFilter, dateRange]);
 
   // Calculate stats from filtered leads
   const stats = {
@@ -341,14 +366,104 @@ export default function Leads() {
               </Select>
             </div>
 
+            {/* Category Filter */}
+            <div className="flex items-center gap-2 min-w-[200px]">
+              <Select
+                value={categoryFilter || "all"}
+                onValueChange={(value) => setCategoryFilter(value === "all" ? "" : value)}
+              >
+                <SelectTrigger className="h-8" data-testid="select-category-filter">
+                  <SelectValue placeholder="Фильтр по категории" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все категории</SelectItem>
+                  <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
+                  <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
+                  <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
+                  <SelectItem value="vip">VIP</SelectItem>
+                  <SelectItem value="not_segmented">Не сегментированный</SelectItem>
+                  <SelectItem value="travel_agent">Турагент</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tour Filter */}
+            <div className="flex items-center gap-2 min-w-[200px]">
+              <Select
+                value={tourFilter || "all"}
+                onValueChange={(value) => setTourFilter(value === "all" ? "" : value)}
+              >
+                <SelectTrigger className="h-8" data-testid="select-tour-filter">
+                  <SelectValue placeholder="Фильтр по туру" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все туры</SelectItem>
+                  {events.map((event) => (
+                    <SelectItem key={event.id} value={event.id}>
+                      {event.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Color Filter */}
+            <div className="flex items-center gap-2 min-w-[180px]">
+              <Select
+                value={colorFilter || "all"}
+                onValueChange={(value) => setColorFilter(value === "all" ? "" : value)}
+              >
+                <SelectTrigger className="h-8" data-testid="select-color-filter">
+                  <SelectValue placeholder="Фильтр по цвету" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все цвета</SelectItem>
+                  <SelectItem value="red">
+                    <div className="flex items-center gap-2">
+                      <ColorIndicator color="red" />
+                      <span>Красный</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="blue">
+                    <div className="flex items-center gap-2">
+                      <ColorIndicator color="blue" />
+                      <span>Синий</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="green">
+                    <div className="flex items-center gap-2">
+                      <ColorIndicator color="green" />
+                      <span>Зеленый</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="yellow">
+                    <div className="flex items-center gap-2">
+                      <ColorIndicator color="yellow" />
+                      <span>Желтый</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="purple">
+                    <div className="flex items-center gap-2">
+                      <ColorIndicator color="purple" />
+                      <span>Фиолетовый</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="none">Без цвета</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Clear Filters */}
-            {(statusFilter.length > 0 || sourceFilter) && (
+            {(statusFilter.length > 0 || sourceFilter || categoryFilter || tourFilter || colorFilter) && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
                   setStatusFilter([]);
                   setSourceFilter('');
+                  setCategoryFilter('');
+                  setTourFilter('');
+                  setColorFilter('');
                 }}
                 data-testid="button-clear-filters"
               >

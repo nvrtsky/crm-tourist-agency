@@ -602,7 +602,17 @@ export default function Leads() {
           {editingLead && (
             <LeadForm
               lead={editingLead}
-              onSubmit={(data) => updateMutation.mutate({ id: editingLead.id, data })}
+              onSubmit={(data) => {
+                // If changing to "lost" status, show defer dialog
+                if (data.status === 'lost' && editingLead.status !== 'lost') {
+                  setLeadToDefer({ id: editingLead.id, name: getLeadName(editingLead) });
+                  setIsDeferDialogOpen(true);
+                  setEditingLead(null); // Close the edit dialog
+                } else {
+                  // For other changes, update directly
+                  updateMutation.mutate({ id: editingLead.id, data });
+                }
+              }}
               isPending={updateMutation.isPending}
               onDelete={(id) => deleteMutation.mutate(id)}
             />
@@ -620,7 +630,7 @@ export default function Leads() {
               id: leadToDefer.id,
               data: {
                 status: 'lost',
-                postponedUntil: data.postponedUntil.toISOString(),
+                postponedUntil: data.postponedUntil,
                 postponeReason: data.postponeReason,
               },
             });

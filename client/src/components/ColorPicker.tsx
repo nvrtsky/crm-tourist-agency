@@ -1,4 +1,5 @@
 import { Label } from "@/components/ui/label";
+import { Check } from "lucide-react";
 
 export type ColorOption = "red" | "blue" | "green" | "yellow" | "purple" | null;
 
@@ -66,12 +67,16 @@ export function ColorPicker({ value, onChange, label = "Цвет" }: ColorPicker
               key={color}
               type="button"
               onClick={() => onChange(color)}
-              className={`h-8 w-8 rounded-md border-2 transition-all hover-elevate ${config.bg} ${
-                isSelected ? config.border : "border-transparent"
+              className={`h-8 w-8 rounded-md border-2 transition-all hover-elevate flex items-center justify-center ${config.bg} ${
+                isSelected 
+                  ? `${config.border} ring-2 ring-offset-2 ring-foreground` 
+                  : "border-transparent"
               }`}
               title={config.label}
               data-testid={`color-${color}`}
-            />
+            >
+              {isSelected && <Check className="h-4 w-4 text-white" />}
+            </button>
           );
         })}
       </div>

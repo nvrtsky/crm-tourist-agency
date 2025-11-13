@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import type { Event, Contact, Deal, CityVisit, Group } from "@shared/schema";
+import type { Event, Contact, Deal, CityVisit, Group, User } from "@shared/schema";
 import { EditableCell } from "@/components/EditableCell";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -73,6 +73,12 @@ export default function EventSummary() {
     enabled: !!eventId,
   });
 
+  // Load viewer users for displaying guide names
+  const { data: viewers = [] } = useQuery<User[]>({
+    queryKey: ["/api/users/viewers"],
+    enabled: !!event,
+  });
+
   const { data: rawParticipants = [], isLoading: participantsLoading } = useQuery<Participant[]>({
     queryKey: [`/api/events/${eventId}/participants`],
     enabled: !!eventId,
@@ -93,6 +99,19 @@ export default function EventSummary() {
     }
     return 0;
   });
+
+  // Create viewer map for quick guide name lookups
+  const viewerMap = new Map(
+    viewers.map(v => [v.id, `${v.firstName} ${v.lastName}`])
+  );
+
+  // Helper to get guide name for a city
+  const getGuideName = (city: string): string | null => {
+    if (!event?.cityGuides) return null;
+    const cityGuides = event.cityGuides as Record<string, string>;
+    const guideId = cityGuides[city];
+    return guideId ? viewerMap.get(guideId) || null : null;
+  };
 
   const updateVisitMutation = useMutation({
     mutationFn: async ({ visitId, updates }: { visitId: string; updates: Partial<CityVisit> }) => {
@@ -612,11 +631,21 @@ export default function EventSummary() {
                     <th className="sticky left-28 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Паспорт</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Статус</th>
-                    {event.cities.map((city) => (
-                      <th key={city} className="text-center p-2 font-medium border-r bg-muted/30" colSpan={4}>
-                        {city}
-                      </th>
-                    ))}
+                    {event.cities.map((city) => {
+                      const guideName = getGuideName(city);
+                      return (
+                        <th key={city} className="text-center p-2 font-medium border-r bg-muted/30" colSpan={4}>
+                          <div className="flex flex-col gap-1">
+                            <span>{city}</span>
+                            {guideName && (
+                              <span className="text-xs text-muted-foreground font-normal">
+                                Гид: {guideName}
+                              </span>
+                            )}
+                          </div>
+                        </th>
+                      );
+                    })}
                   </tr>
                   <tr className="border-b text-xs text-muted-foreground">
                     {event.cities.map((city) => (

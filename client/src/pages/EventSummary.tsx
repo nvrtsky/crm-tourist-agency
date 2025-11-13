@@ -4,7 +4,7 @@ import { useState, Fragment } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, Ungroup, UserPlus, Edit, Star, Baby, User } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, Ungroup, UserPlus, Edit, Star, Baby, User as UserIcon } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -55,6 +55,7 @@ interface EventWithStats extends Event {
 interface Participant {
   deal: Deal;
   contact: Contact;
+  leadTourist: LeadTourist | null;
   visits: CityVisit[];
   group: Group | null;
 }
@@ -747,7 +748,43 @@ export default function EventSummary() {
                         
                         <td className="sticky left-28 bg-background z-10 p-2 font-medium border-r min-w-[150px]" data-testid={`text-name-${participant.deal.id}`}>
                           <div className="flex items-center justify-between gap-2">
-                            <span>{participant.contact?.name || "—"}</span>
+                            <div className="flex items-center gap-2">
+                              <span>{participant.contact?.name || "—"}</span>
+                              {participant.leadTourist && (
+                                <div className="flex items-center gap-1">
+                                  <Tooltip>
+                                    <TooltipTrigger 
+                                      type="button" 
+                                      className="inline-flex items-center rounded-md border border-input bg-background px-2 py-1 text-[10px] font-semibold transition-colors cursor-default hover-elevate"
+                                      data-testid={`badge-tourist-type-${participant.deal.id}`}
+                                    >
+                                      {participant.leadTourist.touristType === "adult" ? (
+                                        <UserIcon className="h-3 w-3" />
+                                      ) : (
+                                        <Baby className="h-3 w-3" />
+                                      )}
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{participant.leadTourist.touristType === "adult" ? "Взрослый" : participant.leadTourist.touristType === "child" ? "Ребенок" : "Младенец"}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  {participant.leadTourist.isPrimary && (
+                                    <Tooltip>
+                                      <TooltipTrigger 
+                                        type="button"
+                                        className="inline-flex items-center rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground transition-colors cursor-default hover-elevate"
+                                        data-testid={`badge-primary-tourist-${participant.deal.id}`}
+                                      >
+                                        <Star className="h-3 w-3" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Основной турист</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                             <div className="flex gap-1">
                               <Button
                                 size="icon"

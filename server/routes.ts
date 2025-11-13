@@ -29,6 +29,7 @@ import {
   updateUserSchema,
   loginSchema,
   type User,
+  type LeadTourist,
 } from "@shared/schema";
 
 // Utility to sanitize user object (remove password hash)
@@ -331,10 +332,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         groupIds.length > 0 ? Promise.all(groupIds.map(gId => storage.getGroup(gId))) : Promise.resolve([])
       ]);
       
+      // Fetch leadTourist data for all contacts
+      const leadTouristIds = Array.from(new Set(allContacts.filter(c => c?.leadTouristId).map(c => c!.leadTouristId!)));
+      const allLeadTourists = leadTouristIds.length > 0
+        ? await Promise.all(leadTouristIds.map(ltId => storage.getTourist(ltId)))
+        : [];
+      
       // Create lookup maps
       const contactMap = new Map(allContacts.filter(Boolean).map(c => [c!.id, c!]));
       const visitsMap = new Map(dealIds.map((dId, idx) => [dId, allVisits[idx]]));
       const groupMap = new Map(allGroups.filter(Boolean).map(g => [g!.id, g!]));
+      const leadTouristMap = new Map(allLeadTourists.filter((lt): lt is LeadTourist => lt !== undefined).map(lt => [lt.id, lt]));
       
       // For viewers, get their assigned cities
       let assignedCities: string[] = [];
@@ -364,9 +372,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             visits = visits.filter(visit => assignedCities.includes(visit.city));
           }
           
+          const leadTourist = contact.leadTouristId ? leadTouristMap.get(contact.leadTouristId) || null : null;
+          
           return {
             deal,
             contact,
+            leadTourist,
             visits,
             group: deal.groupId ? (groupMap.get(deal.groupId) || null) : null,
           };

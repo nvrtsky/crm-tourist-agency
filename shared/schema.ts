@@ -113,10 +113,16 @@ export const contacts = pgTable("contacts", {
   passport: text("passport"), // Passport number
   birthDate: date("birth_date"), // Date of birth
   leadId: varchar("lead_id").references(() => leads.id, { onDelete: 'set null' }), // Source lead (nullable)
+  leadTouristId: varchar("lead_tourist_id").references(() => leadTourists.id, { onDelete: 'set null' }), // Link to detailed tourist data (nullable, unique)
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  // Ensure one-to-one relationship between contact and leadTourist
+  uniqueLeadTourist: uniqueIndex("contacts_unique_lead_tourist")
+    .on(table.leadTouristId)
+    .where(sql`${table.leadTouristId} IS NOT NULL`),
+}));
 
 // Groups table - for families and mini-groups
 export const groups = pgTable("groups", {

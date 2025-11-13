@@ -4,15 +4,17 @@ import { useState, Fragment } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, Ungroup, UserPlus } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, Ungroup, UserPlus, Edit } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import type { Event, Contact, Deal, CityVisit, Group, User } from "@shared/schema";
+import type { Event, Contact, Deal, CityVisit, Group, User, LeadTourist } from "@shared/schema";
+import { updateLeadTouristSchema } from "@shared/schema";
 import { EditableCell } from "@/components/EditableCell";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { TOURIST_FIELD_DESCRIPTORS, SECTION_TITLES } from "@/lib/touristFormConfig";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +39,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -67,6 +72,7 @@ export default function EventSummary() {
   const eventId = params?.id;
   const { toast } = useToast();
   const [showCreateMiniGroupDialog, setShowCreateMiniGroupDialog] = useState(false);
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
 
   const { data: event, isLoading: eventLoading } = useQuery<EventWithStats>({
     queryKey: [`/api/events/${eventId}`],
@@ -260,6 +266,18 @@ export default function EventSummary() {
       });
     },
   });
+
+  const handleEditTourist = (contactId: string | undefined) => {
+    if (!contactId) {
+      toast({
+        title: "Ошибка",
+        description: "ID контакта не найден",
+        variant: "destructive",
+      });
+      return;
+    }
+    setEditingContactId(contactId);
+  };
 
   const handleVisitUpdate = (visitId: string | undefined, dealId: string, city: string, field: string, value: string) => {
     // Find the participant and their group
@@ -729,25 +747,36 @@ export default function EventSummary() {
                         <td className="sticky left-28 bg-background z-10 p-2 font-medium border-r min-w-[150px]" data-testid={`text-name-${participant.deal.id}`}>
                           <div className="flex items-center justify-between gap-2">
                             <span>{participant.contact?.name || "—"}</span>
-                            {participant.deal.groupId && (
+                            <div className="flex gap-1">
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 className="h-6 w-6 opacity-50 hover:opacity-100"
-                                onClick={() => {
-                                  if (confirm(`Удалить ${participant.contact?.name} из группы?`)) {
-                                    removeFromGroupMutation.mutate({
-                                      groupId: participant.deal.groupId!,
-                                      dealId: participant.deal.id,
-                                    });
-                                  }
-                                }}
-                                disabled={deleteGroupMutation.isPending || removeFromGroupMutation.isPending}
-                                data-testid={`button-remove-from-group-${participant.deal.id}`}
+                                onClick={() => handleEditTourist(participant.contact?.id)}
+                                data-testid={`button-edit-tourist-${participant.deal.id}`}
                               >
-                                <UserMinus className="h-3 w-3" />
+                                <Edit className="h-3 w-3" />
                               </Button>
-                            )}
+                              {participant.deal.groupId && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 opacity-50 hover:opacity-100"
+                                  onClick={() => {
+                                    if (confirm(`Удалить ${participant.contact?.name} из группы?`)) {
+                                      removeFromGroupMutation.mutate({
+                                        groupId: participant.deal.groupId!,
+                                        dealId: participant.deal.id,
+                                      });
+                                    }
+                                  }}
+                                  disabled={deleteGroupMutation.isPending || removeFromGroupMutation.isPending}
+                                  data-testid={`button-remove-from-group-${participant.deal.id}`}
+                                >
+                                  <UserMinus className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="p-2 border-r text-muted-foreground">
@@ -980,6 +1009,177 @@ export default function EventSummary() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Tourist Details Dialog */}
+      <TouristDetailsDialog
+        contactId={editingContactId}
+        onClose={() => setEditingContactId(null)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+        }}
+      />
     </div>
+  );
+}
+
+// TouristDetailsDialog Component
+interface TouristDetailsDialogProps {
+  contactId: string | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+interface ContactDetails {
+  contact: Contact;
+  leadTourist: LeadTourist | null;
+}
+
+function TouristDetailsDialog({ contactId, onClose, onSuccess }: TouristDetailsDialogProps) {
+  const { toast } = useToast();
+  
+  const { data: details, isLoading } = useQuery<ContactDetails>({
+    queryKey: ["/api/contacts", contactId, "details"],
+    enabled: !!contactId,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: Partial<LeadTourist>) => {
+      return apiRequest("PATCH", `/api/contacts/${contactId}/details`, data);
+    },
+    onSuccess: () => {
+      onSuccess();
+      toast({
+        title: "Успешно",
+        description: "Данные туриста обновлены",
+      });
+      onClose();
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось обновить данные",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const form = useForm<Partial<LeadTourist>>({
+    resolver: zodResolver(updateLeadTouristSchema.partial()),
+    values: details?.leadTourist || undefined,
+  });
+
+  if (!contactId) return null;
+
+  return (
+    <Dialog open={!!contactId} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Редактировать данные туриста</DialogTitle>
+          <DialogDescription>
+            {details?.contact?.name || "Загрузка..."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="space-y-4 p-4">
+            <div className="h-10 bg-muted rounded animate-pulse" />
+            <div className="h-10 bg-muted rounded animate-pulse" />
+            <div className="h-10 bg-muted rounded animate-pulse" />
+          </div>
+        ) : !details?.leadTourist ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              У этого контакта нет связанных данных туриста. Редактирование невозможно.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit((data) => updateMutation.mutate(data))} className="space-y-4">
+              {(["personal", "passport", "foreign", "additional"] as const).map((section) => {
+                const fields = TOURIST_FIELD_DESCRIPTORS.filter((f) => f.section === section);
+                if (fields.length === 0) return null;
+
+                return (
+                  <div key={section} className="space-y-4">
+                    <h4 className="text-sm font-semibold text-foreground">
+                      {SECTION_TITLES[section]}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      {fields.map((field) => (
+                        <FormField
+                          key={field.key}
+                          control={form.control}
+                          name={field.key as any}
+                          render={({ field: formField }) => (
+                            <FormItem className={field.type === "textarea" ? "col-span-2" : ""}>
+                              <FormLabel>
+                                {field.label} {field.required && "*"}
+                              </FormLabel>
+                              <FormControl>
+                                {field.type === "select" ? (
+                                  <Select
+                                    onValueChange={formField.onChange}
+                                    value={formField.value || ""}
+                                  >
+                                    <SelectTrigger data-testid={field.testId}>
+                                      <SelectValue placeholder="Выберите" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {field.selectOptions?.map((opt) => (
+                                        <SelectItem key={opt.value} value={opt.value}>
+                                          {opt.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : field.type === "textarea" ? (
+                                  <Textarea
+                                    placeholder={field.placeholder}
+                                    {...formField}
+                                    value={formField.value || ""}
+                                    data-testid={field.testId}
+                                  />
+                                ) : (
+                                  <Input
+                                    type={field.type || "text"}
+                                    placeholder={field.placeholder}
+                                    {...formField}
+                                    value={formField.value || ""}
+                                    data-testid={field.testId}
+                                  />
+                                )}
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  data-testid="button-cancel-tourist-edit"
+                >
+                  Отмена
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateMutation.isPending || !details?.leadTourist}
+                  data-testid="button-submit-tourist-edit"
+                >
+                  {updateMutation.isPending ? "Сохранение..." : "Сохранить"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

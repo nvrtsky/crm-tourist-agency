@@ -69,8 +69,10 @@ export interface IStorage {
   getAllContacts(): Promise<Contact[]>;
   getContactsByLead(leadId: string): Promise<Contact[]>;
   getContactWithDeals(id: string): Promise<ContactWithDeals | undefined>;
+  getContactDetails(id: string): Promise<{ contact: Contact; leadTourist: LeadTourist } | undefined>;
   createContact(contact: InsertContact): Promise<Contact>;
   updateContact(id: string, contact: Partial<UpdateContact>): Promise<Contact | undefined>;
+  updateContactDetails(id: string, touristData: UpdateLeadTourist): Promise<void>;
   deleteContact(id: string): Promise<boolean>;
 
   // Deal operations
@@ -281,6 +283,126 @@ export class DatabaseStorage implements IStorage {
   async deleteContact(id: string): Promise<boolean> {
     const result = await db.delete(contacts).where(eq(contacts.id, id)).returning();
     return result.length > 0;
+  }
+
+  async getContactDetails(id: string): Promise<{ contact: Contact; leadTourist: LeadTourist | null } | undefined> {
+    const contact = await this.getContact(id);
+    if (!contact) {
+      return undefined;
+    }
+
+    // Return contact with null leadTourist if not linked
+    // This allows frontend to open dialog and seed data
+    if (!contact.leadTouristId) {
+      return { contact, leadTourist: null };
+    }
+
+    const tourist = await this.getTourist(contact.leadTouristId);
+    // If linked but tourist missing (data integrity issue), return null
+    return { contact, leadTourist: tourist || null };
+  }
+
+  async updateContactDetails(id: string, touristData: UpdateLeadTourist): Promise<void> {
+    // Use transaction to handle both linked and unlinked contacts
+    await db.transaction(async (tx) => {
+      // Fetch contact within transaction
+      const [contact] = await tx.select().from(contacts).where(eq(contacts.id, id));
+      if (!contact) {
+        throw new Error('Contact not found');
+      }
+
+      let touristId = contact.leadTouristId;
+      let currentTourist: LeadTourist | null = null;
+
+      // Fetch existing leadTourist if linked (within transaction)
+      if (touristId) {
+        const [tourist] = await tx.select().from(leadTourists).where(eq(leadTourists.id, touristId));
+        currentTourist = tourist || null;
+      }
+
+      // If contact has no leadTourist or link is broken, create one from contact data
+      if (!touristId || !currentTourist) {
+        // Parse contact name into parts - handle single-token names gracefully
+        const nameParts = (contact.name || '').trim().split(/\s+/).filter(Boolean);
+        let seedFirstName = '';
+        let seedLastName = '';
+        let seedMiddleName: string | null = null;
+
+        if (nameParts.length === 1) {
+          // Single name - replicate to both fields to satisfy validation
+          seedFirstName = nameParts[0];
+          seedLastName = nameParts[0];
+        } else if (nameParts.length === 2) {
+          // Two names - treat as firstName lastName
+          seedFirstName = nameParts[0];
+          seedLastName = nameParts[1];
+        } else if (nameParts.length >= 3) {
+          // Three or more - first is lastName (Russian convention)
+          seedLastName = nameParts[0];
+          seedFirstName = nameParts[1];
+          seedMiddleName = nameParts[2];
+        }
+
+        // Use touristData values if provided, otherwise use seeds
+        const [newTourist] = await tx.insert(leadTourists).values({
+          leadId: null, // No lead association for legacy contacts
+          lastName: touristData.lastName || seedLastName || '',
+          firstName: touristData.firstName || seedFirstName || '',
+          middleName: touristData.middleName !== undefined ? touristData.middleName : seedMiddleName,
+          email: contact.email,
+          phone: contact.phone,
+          dateOfBirth: contact.birthDate,
+          foreignPassportNumber: contact.passport,
+          passportSeries: null,
+          passportIssuedBy: null,
+          registrationAddress: null,
+          foreignPassportName: null,
+          foreignPassportValidUntil: null,
+          touristType: 'adult',
+          isPrimary: false,
+          notes: null,
+          order: 0,
+          ...touristData, // Apply updates on top of seed (touristData overrides seeds)
+        }).returning();
+
+        touristId = newTourist.id;
+        currentTourist = newTourist;
+
+        // Link contact to new leadTourist
+        await tx.update(contacts).set({ leadTouristId: touristId }).where(eq(contacts.id, id));
+      } else {
+        // Update existing leadTourist
+        await tx
+          .update(leadTourists)
+          .set({
+            ...touristData,
+            updatedAt: new Date(),
+          })
+          .where(eq(leadTourists.id, touristId));
+
+        // Refresh currentTourist with updates for sync
+        const [updated] = await tx.select().from(leadTourists).where(eq(leadTourists.id, touristId));
+        currentTourist = updated;
+      }
+
+      // Sync denormalized fields back to contact
+      const firstName = currentTourist.firstName;
+      const lastName = currentTourist.lastName;
+      const middleName = currentTourist.middleName;
+      const fullName = `${lastName || ''} ${firstName || ''}${middleName ? ' ' + middleName : ''}`.trim();
+
+      await tx
+        .update(contacts)
+        .set({
+          name: fullName || contact.name, // Fallback to original if empty
+          email: currentTourist.email,
+          phone: currentTourist.phone,
+          birthDate: currentTourist.dateOfBirth,
+          passport: currentTourist.foreignPassportNumber,
+          updatedAt: new Date(),
+        })
+        .where(eq(contacts.id, id));
+    });
   }
 
   // ==================== DEAL OPERATIONS ====================

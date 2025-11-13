@@ -591,6 +591,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get contact details (merged with leadTourist data)
+  app.get("/api/contacts/:id/details", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const details = await storage.getContactDetails(id);
+      
+      if (!details) {
+        return res.status(404).json({ error: "Contact not found or not linked to tourist data" });
+      }
+      
+      res.json(details);
+    } catch (error) {
+      console.error("Error fetching contact details:", error);
+      res.status(500).json({ error: "Failed to fetch contact details" });
+    }
+  });
+
+  // Update contact details (updates leadTourist and syncs to contact)
+  app.patch("/api/contacts/:id/details", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = updateLeadTouristSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation error",
+          details: validation.error.errors,
+        });
+      }
+
+      await storage.updateContactDetails(id, validation.data);
+      
+      // Fetch updated details to return
+      const updatedDetails = await storage.getContactDetails(id);
+      res.json(updatedDetails);
+    } catch (error: any) {
+      console.error("Error updating contact details:", error);
+      if (error.message === 'Contact not found') {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      res.status(500).json({ error: "Failed to update contact details" });
+    }
+  });
+
   // ==================== DEAL ROUTES ====================
 
   // Get deals for an event
@@ -1197,10 +1241,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: tourist.phone || undefined,
           birthDate: tourist.dateOfBirth || undefined,
           leadId: lead.id,
+          leadTouristId: tourist.id, // Link to detailed tourist data
           notes: tourist.notes || undefined,
         });
         contacts.push(contact);
-        console.log(`[AUTO_CONVERT] Created contact ${contact.id}`);
+        console.log(`[AUTO_CONVERT] Created contact ${contact.id} linked to tourist ${tourist.id}`);
 
         const deal = await storage.createDeal({
           contactId: contact.id,
@@ -1335,10 +1380,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: tourist.phone || undefined,
           birthDate: tourist.dateOfBirth || undefined,
           leadId: lead.id,
+          leadTouristId: tourist.id, // Link to detailed tourist data
           notes: tourist.notes || undefined,
         });
         contacts.push(contact);
-        console.log(`[CONVERT] Created contact ${contact.id}`);
+        console.log(`[CONVERT] Created contact ${contact.id} linked to tourist ${tourist.id}`);
 
         const deal = await storage.createDeal({
           contactId: contact.id,

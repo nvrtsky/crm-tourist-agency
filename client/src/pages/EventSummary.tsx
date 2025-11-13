@@ -364,10 +364,19 @@ export default function EventSummary() {
     if (!event || participants.length === 0) return;
 
     const exportData = participants.map((p, index) => {
+      // Calculate tourist data completeness for export
+      let completenessText = "—";
+      if (p.leadTourist) {
+        const completeness = calculateTouristDataCompleteness(p.leadTourist);
+        const statusSymbol = (status: string) => status === "complete" ? "✓" : status === "partial" ? "◐" : "—";
+        completenessText = `${statusSymbol(completeness.personalData)} ${statusSymbol(completeness.rfPassport)} ${statusSymbol(completeness.foreignPassport)}`;
+      }
+
       const baseData: Record<string, any> = {
         "№": index + 1,
         "Группа": p.group?.name || "—",
         "ФИО": p.contact?.name || "—",
+        "Данные": completenessText,
         "Email": p.contact?.email || "",
         "Телефон": p.contact?.phone || "",
         "Паспорт": p.contact?.passport || "",
@@ -652,6 +661,8 @@ export default function EventSummary() {
                     <th className="sticky left-12 bg-background z-10 text-center p-2 font-medium border-r w-16" rowSpan={2}>Группа</th>
                     <th className="sticky left-28 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Данные туриста</th>
+                    <th className="text-left p-2 font-medium border-r" rowSpan={2}>Email</th>
+                    <th className="text-left p-2 font-medium border-r" rowSpan={2}>Телефон</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Паспорт</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Статус</th>
                     {event.cities.map((city) => {
@@ -828,6 +839,12 @@ export default function EventSummary() {
                           ) : (
                             <span className="text-muted-foreground text-xs">—</span>
                           )}
+                        </td>
+                        <td className="p-2 border-r text-muted-foreground text-xs">
+                          {participant.contact?.email || "—"}
+                        </td>
+                        <td className="p-2 border-r text-muted-foreground text-xs">
+                          {participant.contact?.phone || "—"}
                         </td>
                         <td className="p-2 border-r text-muted-foreground">
                           {participant.contact?.passport || "—"}

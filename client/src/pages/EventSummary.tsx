@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -649,12 +649,12 @@ export default function EventSummary() {
                   </tr>
                   <tr className="border-b text-xs text-muted-foreground">
                     {event.cities.map((city) => (
-                      <>
-                        <th key={`${city}-arrival`} className="text-left p-2 border-r bg-muted/10">Прибытие</th>
-                        <th key={`${city}-transport`} className="text-left p-2 border-r bg-muted/10">Транспорт</th>
-                        <th key={`${city}-hotel`} className="text-left p-2 border-r bg-muted/10">Отель</th>
-                        <th key={`${city}-departure`} className="text-left p-2 border-r bg-muted/10">Отъезд</th>
-                      </>
+                      <Fragment key={city}>
+                        <th className="text-left p-2 border-r bg-muted/10">Прибытие</th>
+                        <th className="text-left p-2 border-r bg-muted/10">Транспорт</th>
+                        <th className="text-left p-2 border-r bg-muted/10">Отель</th>
+                        <th className="text-left p-2 border-r bg-muted/10">Отъезд</th>
+                      </Fragment>
                     ))}
                   </tr>
                 </thead>

@@ -264,14 +264,16 @@ export function EditEventDialog({
                     <div key={city} className="grid grid-cols-[1fr,2fr] gap-3 items-center">
                       <div className="text-sm font-medium">{city}</div>
                       <Select
-                        value={form.watch("cityGuides")?.[city] || ""}
+                        value={form.watch("cityGuides")?.[city] || "__NONE__"}
                         onValueChange={(value) => {
                           const currentGuides = form.getValues("cityGuides") || {};
-                          if (value) {
-                            form.setValue("cityGuides", { ...currentGuides, [city]: value });
-                          } else {
+                          if (value === "__NONE__") {
+                            // Remove guide assignment for this city
                             const { [city]: _, ...rest } = currentGuides;
                             form.setValue("cityGuides", rest);
+                          } else {
+                            // Assign guide to this city
+                            form.setValue("cityGuides", { ...currentGuides, [city]: value });
                           }
                         }}
                       >
@@ -279,7 +281,7 @@ export function EditEventDialog({
                           <SelectValue placeholder="Выберите гида" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Без гида</SelectItem>
+                          <SelectItem value="__NONE__">Без гида</SelectItem>
                           {viewers.map((viewer) => (
                             <SelectItem key={viewer.id} value={viewer.id}>
                               {viewer.firstName} {viewer.lastName}

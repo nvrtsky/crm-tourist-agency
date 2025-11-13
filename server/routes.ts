@@ -140,6 +140,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get viewer users (authenticated users only)
+  app.get("/api/users/viewers", requireAuth, async (req, res) => {
+    try {
+      const viewers = await storage.getUsersByRole("viewer");
+      const sanitized = viewers.map(sanitizeUser);
+      res.json(sanitized);
+    } catch (error) {
+      console.error("Error fetching viewers:", error);
+      res.status(500).json({ error: "Failed to fetch viewers" });
+    }
+  });
+  
   // Create user (admin only)
   app.post("/api/users", requireAdmin, async (req, res) => {
     try {

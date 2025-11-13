@@ -99,6 +99,7 @@ export const events = pgTable("events", {
   price: numeric("price", { precision: 10, scale: 2 }).notNull(), // Tour price
   isFull: boolean("is_full").notNull().default(false), // Auto-updated when event is full
   color: text("color"), // Color indicator: 'red', 'blue', 'green', 'yellow', 'purple'
+  cityGuides: jsonb("city_guides"), // City to guide mapping: { "cityName": "userId" }
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

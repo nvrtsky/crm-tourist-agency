@@ -85,6 +85,7 @@ export default function Leads() {
   // Defer dialog state
   const [isDeferDialogOpen, setIsDeferDialogOpen] = useState(false);
   const [leadToDefer, setLeadToDefer] = useState<{ id: string; name: string } | null>(null);
+  const [pendingFormData, setPendingFormData] = useState<Partial<InsertLead> | null>(null);
   
   // View and filter state
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>(() => {
@@ -621,6 +622,8 @@ export default function Leads() {
               onSubmit={(data) => {
                 // If changing to "lost" status, show defer dialog
                 if (data.status === 'lost' && editingLead.status !== 'lost') {
+                  // Store pending form data to apply after defer dialog confirmation
+                  setPendingFormData(data);
                   setLeadToDefer({ id: editingLead.id, name: getLeadName(editingLead) });
                   setIsDeferDialogOpen(true);
                   setEditingLead(null); // Close the edit dialog
@@ -638,20 +641,32 @@ export default function Leads() {
 
       <DeferLeadDialog
         open={isDeferDialogOpen}
-        onOpenChange={setIsDeferDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeferDialogOpen(open);
+          if (!open) {
+            // Clear pending data if dialog is cancelled
+            setPendingFormData(null);
+            setLeadToDefer(null);
+          }
+        }}
         leadName={leadToDefer?.name}
         onConfirm={(data) => {
           if (leadToDefer) {
+            // Merge pending form data with defer data
+            const updateData: Partial<InsertLead> = {
+              ...(pendingFormData || {}),
+              status: 'lost',
+              postponedUntil: data.postponedUntil.toISOString() as any,
+              postponeReason: data.postponeReason,
+            };
+            
             updateMutation.mutate({
               id: leadToDefer.id,
-              data: {
-                status: 'lost',
-                postponedUntil: data.postponedUntil.toISOString() as any,
-                postponeReason: data.postponeReason,
-              },
+              data: updateData,
             });
             setIsDeferDialogOpen(false);
             setLeadToDefer(null);
+            setPendingFormData(null);
           }
         }}
       />

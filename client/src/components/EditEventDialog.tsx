@@ -3,7 +3,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEffect } from "react";
 import { format } from "date-fns";
-import { updateEventSchema, type Event } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { updateEventSchema, type Event, type User } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ const formSchema = z.object({
   participantLimit: z.number().min(1, "Лимит должен быть больше 0"),
   price: z.string().trim().min(1, "Цена обязательна"),
   color: z.enum(["red", "blue", "green", "yellow", "purple"]).nullable(),
+  cityGuides: z.record(z.string(), z.string()).optional(), // City name -> user ID mapping
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,6 +65,12 @@ export function EditEventDialog({
   onOpenChange,
   onSave,
 }: EditEventDialogProps) {
+  // Load viewer users for guide assignment
+  const { data: viewers = [] } = useQuery<User[]>({
+    queryKey: ["/api/users/viewers"],
+    enabled: open,
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -76,6 +84,7 @@ export function EditEventDialog({
       participantLimit: event?.participantLimit || 10,
       price: event?.price ? String(event.price) : "0",
       color: (event?.color as ColorOption) || null,
+      cityGuides: (event?.cityGuides as Record<string, string>) || {},
     },
   });
 
@@ -112,6 +121,13 @@ export function EditEventDialog({
       normalizedData.color = null;
     }
 
+    // Add cityGuides if provided
+    if (data.cityGuides && Object.keys(data.cityGuides).length > 0) {
+      normalizedData.cityGuides = data.cityGuides;
+    } else {
+      normalizedData.cityGuides = null;
+    }
+
     onSave(normalizedData);
     // Don't close dialog here - let parent handle it after mutation success
   };
@@ -134,6 +150,7 @@ export function EditEventDialog({
         participantLimit: event.participantLimit || 10,
         price: event.price ? String(event.price) : "0",
         color: (event.color as ColorOption) || null,
+        cityGuides: (event.cityGuides as Record<string, string>) || {},
       });
     }
   }, [event, form]);
@@ -237,6 +254,44 @@ export function EditEventDialog({
                 </FormItem>
               )}
             />
+
+            {/* City Guides Section */}
+            {form.watch("cities")?.length > 0 && (
+              <div className="space-y-3">
+                <FormLabel>Назначение гидов</FormLabel>
+                <div className="grid gap-3">
+                  {form.watch("cities")?.map((city: string) => (
+                    <div key={city} className="grid grid-cols-[1fr,2fr] gap-3 items-center">
+                      <div className="text-sm font-medium">{city}</div>
+                      <Select
+                        value={form.watch("cityGuides")?.[city] || ""}
+                        onValueChange={(value) => {
+                          const currentGuides = form.getValues("cityGuides") || {};
+                          if (value) {
+                            form.setValue("cityGuides", { ...currentGuides, [city]: value });
+                          } else {
+                            const { [city]: _, ...rest } = currentGuides;
+                            form.setValue("cityGuides", rest);
+                          }
+                        }}
+                      >
+                        <SelectTrigger data-testid={`select-guide-${city}`}>
+                          <SelectValue placeholder="Выберите гида" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Без гида</SelectItem>
+                          {viewers.map((viewer) => (
+                            <SelectItem key={viewer.id} value={viewer.id}>
+                              {viewer.firstName} {viewer.lastName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField

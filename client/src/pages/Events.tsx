@@ -39,6 +39,9 @@ import { ColorPicker, type ColorOption } from "@/components/ColorPicker";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Event, InsertEvent } from "@shared/schema";
+import { updateEventSchema } from "@shared/schema";
+import { ZodError } from "zod";
+import { format as formatDate } from "date-fns";
 
 interface EventWithStats extends Event {
   bookedCount: number;
@@ -75,6 +78,81 @@ const createEventFormSchema = z.object({
 });
 
 type CreateEventForm = z.infer<typeof createEventFormSchema>;
+
+// Defensive normalization helper for event update payloads
+function normalizeEventUpdatePayload(data: unknown): unknown {
+  if (!data || typeof data !== "object") {
+    throw new Error("Invalid payload: expected object");
+  }
+
+  const payload = data as Record<string, any>;
+  const normalized: Record<string, any> = {};
+
+  // Copy all fields
+  Object.assign(normalized, payload);
+
+  // Normalize dates to YYYY-MM-DD strings (prevent timezone shift)
+  const normalizeDate = (value: any, fieldName: string): string => {
+    if (value instanceof Date) {
+      // Convert Date object to YYYY-MM-DD string
+      return formatDate(value, "yyyy-MM-dd");
+    }
+    if (typeof value === "string") {
+      // Validate and normalize string dates
+      const trimmed = value.trim();
+      // Check if it matches YYYY-MM-DD format
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        throw new Error(`Invalid ${fieldName} format: expected YYYY-MM-DD, got "${trimmed}"`);
+      }
+      // Parse to verify it's a valid date
+      const parsed = new Date(trimmed);
+      if (isNaN(parsed.getTime())) {
+        throw new Error(`Invalid ${fieldName}: "${trimmed}" is not a valid date`);
+      }
+      // Return normalized (already in correct format)
+      return trimmed;
+    }
+    throw new Error(`Invalid ${fieldName} type: expected Date or string, got ${typeof value}`);
+  };
+
+  if (payload.startDate !== undefined && payload.startDate !== null) {
+    normalized.startDate = normalizeDate(payload.startDate, "startDate");
+  }
+  if (payload.endDate !== undefined && payload.endDate !== null) {
+    normalized.endDate = normalizeDate(payload.endDate, "endDate");
+  }
+
+  // Ensure numeric types
+  if (payload.participantLimit !== undefined && payload.participantLimit !== null) {
+    const limit = Number(payload.participantLimit);
+    if (!isNaN(limit)) {
+      normalized.participantLimit = limit;
+    }
+  }
+
+  // Ensure price is string
+  if (payload.price !== undefined && payload.price !== null) {
+    normalized.price = String(payload.price).trim();
+  }
+
+  // Normalize arrays (trim strings)
+  if (Array.isArray(payload.cities)) {
+    normalized.cities = payload.cities.map((c: any) => String(c).trim()).filter(Boolean);
+  }
+
+  // Trim string fields
+  if (typeof payload.name === "string") {
+    normalized.name = payload.name.trim();
+  }
+  if (typeof payload.country === "string") {
+    normalized.country = payload.country.trim();
+  }
+  if (typeof payload.description === "string") {
+    normalized.description = payload.description.trim() || null;
+  }
+
+  return normalized;
+}
 
 export default function Events() {
   const { t } = useTranslation();
@@ -147,9 +225,20 @@ export default function Events() {
   });
 
   const updateEventMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      // EditEventDialog already normalized data (dates as YYYY-MM-DD strings)
-      const response = await apiRequest("PATCH", `/api/events/${id}`, data);
+    mutationFn: async ({ id, data }: { id: string; data: unknown }) => {
+      // Normalize payload defensively (Date → string, type coercion)
+      const normalized = normalizeEventUpdatePayload(data);
+      
+      // Validate with shared schema
+      const parseResult = updateEventSchema.safeParse(normalized);
+      if (!parseResult.success) {
+        const zodError = parseResult.error as ZodError;
+        const errorMessages = zodError.errors.map(e => `${e.path.join(".")}: ${e.message}`).join("; ");
+        throw new Error(`Ошибка валидации: ${errorMessages}`);
+      }
+
+      // Send validated payload to API
+      const response = await apiRequest("PATCH", `/api/events/${id}`, parseResult.data);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || "Не удалось обновить тур");
@@ -182,8 +271,9 @@ export default function Events() {
     setEditingEvent(event);
   };
 
-  const handleSaveEdit = (data: any) => {
+  const handleSaveEdit = (data: unknown) => {
     if (editingEvent) {
+      // Mutation will normalize and validate, but we can also normalize here for extra safety
       updateEventMutation.mutate({ id: editingEvent.id, data });
     }
   };

@@ -239,9 +239,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== EVENT ROUTES ====================
 
   // Get all events
-  app.get("/api/events", async (req, res) => {
+  app.get("/api/events", requireAuth, async (req, res) => {
     try {
-      const events = await storage.getAllEventsWithStats();
+      const user = req.user as User;
+      let events = await storage.getAllEventsWithStats();
+      
+      // Filter events for viewer role - only show events where they are assigned as guide
+      if (user.role === "viewer") {
+        events = events.filter(event => {
+          const cityGuides = event.cityGuides as Record<string, string> | null;
+          if (!cityGuides) return false;
+          const assignedGuideIds = Object.values(cityGuides);
+          return assignedGuideIds.includes(user.id);
+        });
+      }
+      
       res.json(events);
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -250,13 +262,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get single event with stats
-  app.get("/api/events/:id", async (req, res) => {
+  app.get("/api/events/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const user = req.user as User;
       const event = await storage.getEventWithStats(id);
       
       if (!event) {
         return res.status(404).json({ error: "Event not found" });
+      }
+      
+      // Check viewer access - must be assigned as guide
+      if (user.role === "viewer") {
+        const cityGuides = event.cityGuides as Record<string, string> | null;
+        if (!cityGuides) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        const assignedGuideIds = Object.values(cityGuides);
+        if (!assignedGuideIds.includes(user.id)) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        
+        // Filter cities to only show assigned ones
+        const assignedCities = event.cities.filter(city => cityGuides[city] === user.id);
+        event.cities = assignedCities;
       }
       
       res.json(event);
@@ -267,15 +296,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get event participants (deals with contacts)
-  app.get("/api/events/:id/participants", async (req, res) => {
+  app.get("/api/events/:id/participants", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const user = req.user as User;
+      
+      // Check viewer access to this event
+      if (user.role === "viewer") {
+        const event = await storage.getEvent(id);
+        if (!event) {
+          return res.status(404).json({ error: "Event not found" });
+        }
+        const cityGuides = event.cityGuides as Record<string, string> | null;
+        if (!cityGuides) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        const assignedGuideIds = Object.values(cityGuides);
+        if (!assignedGuideIds.includes(user.id)) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+      }
+      
       const deals = await storage.getDealsByEvent(id);
       
       // Batch fetch all related data to avoid N+1 queries
-      const contactIds = [...new Set(deals.map(d => d.contactId))];
+      const contactIds = Array.from(new Set(deals.map(d => d.contactId)));
       const dealIds = deals.map(d => d.id);
-      const groupIds = [...new Set(deals.map(d => d.groupId).filter(Boolean))];
+      const groupIds = Array.from(new Set(deals.map(d => d.groupId).filter(Boolean) as string[]));
       
       // Fetch all contacts, visits, and groups in parallel
       const [allContacts, allVisits, allGroups] = await Promise.all([
@@ -289,6 +336,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const visitsMap = new Map(dealIds.map((dId, idx) => [dId, allVisits[idx]]));
       const groupMap = new Map(allGroups.filter(Boolean).map(g => [g!.id, g!]));
       
+      // For viewers, get their assigned cities
+      let assignedCities: string[] = [];
+      if (user.role === "viewer") {
+        const event = await storage.getEvent(id);
+        if (event) {
+          const cityGuides = event.cityGuides as Record<string, string> | null;
+          if (cityGuides) {
+            assignedCities = event.cities.filter(city => cityGuides[city] === user.id);
+          }
+        }
+      }
+      
       // Assemble participants using lookups
       const participants = deals
         .map((deal) => {
@@ -298,10 +357,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return null;
           }
           
+          let visits = visitsMap.get(deal.id) || [];
+          
+          // Filter visits for viewer role - only show assigned cities
+          if (user.role === "viewer" && assignedCities.length > 0) {
+            visits = visits.filter(visit => assignedCities.includes(visit.city));
+          }
+          
           return {
             deal,
             contact,
-            visits: visitsMap.get(deal.id) || [],
+            visits,
             group: deal.groupId ? (groupMap.get(deal.groupId) || null) : null,
           };
         })
@@ -351,8 +417,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create event
-  app.post("/api/events", async (req, res) => {
+  app.post("/api/events", requireAuth, async (req, res) => {
     try {
+      const user = req.user as User;
+      
+      // Only admin and manager can create events
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const validation = insertEventSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
@@ -370,8 +443,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update event
-  app.patch("/api/events/:id", async (req, res) => {
+  app.patch("/api/events/:id", requireAuth, async (req, res) => {
     try {
+      const user = req.user as User;
+      
+      // Only admin and manager can update events
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const { id } = req.params;
       const validation = updateEventSchema.safeParse(req.body);
       
@@ -396,8 +476,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete event
-  app.delete("/api/events/:id", async (req, res) => {
+  app.delete("/api/events/:id", requireAuth, async (req, res) => {
     try {
+      const user = req.user as User;
+      
+      // Only admin and manager can delete events
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const { id } = req.params;
       const success = await storage.deleteEvent(id);
       

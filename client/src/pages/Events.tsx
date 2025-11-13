@@ -278,6 +278,7 @@ export default function Events() {
     }
   };
 
+  // Backend now filters events for viewer role, so we only need to apply UI filters
   const filteredEvents = events
     .filter(event => {
       const matchesSearch = !searchQuery || 

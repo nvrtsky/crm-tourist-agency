@@ -1,6 +1,7 @@
 import { UserPlus, Calendar, FileText, Settings, Ticket } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/lib/auth";
 import {
   Sidebar,
   SidebarContent,
@@ -17,12 +18,13 @@ import {
 export function AppSidebar() {
   const { t } = useTranslation();
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
 
   // Check if we're in demo mode
   const isDemoMode = location.startsWith("/demo");
   const urlPrefix = isDemoMode ? "/demo" : "";
 
-  const menuItems = [
+  const allMenuItems = [
     {
       title: "Лиды",
       url: `${urlPrefix}/leads`,
@@ -54,6 +56,11 @@ export function AppSidebar() {
       testId: "nav-settings",
     },
   ];
+
+  // Filter menu items based on user role
+  const menuItems = user?.role === "viewer"
+    ? allMenuItems.filter(item => item.testId === "nav-events")
+    : allMenuItems;
 
   return (
     <Sidebar>

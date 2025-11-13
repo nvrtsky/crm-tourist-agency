@@ -47,6 +47,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function Router() {
   const [, setLocation] = useLocation();
+  const { user, isLoading } = useAuth();
   
   return (
     <Switch>
@@ -190,7 +191,21 @@ function Router() {
       </Route>
       <Route path="/">
         {() => {
-          setLocation("/leads");
+          // Wait for auth to load before redirecting
+          if (isLoading) {
+            return (
+              <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            );
+          }
+          
+          // Redirect based on user role
+          if (user?.role === "viewer") {
+            setLocation("/events");
+          } else {
+            setLocation("/leads");
+          }
           return null;
         }}
       </Route>

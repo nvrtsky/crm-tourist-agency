@@ -75,10 +75,13 @@ export type FormFieldType = typeof FORM_FIELD_TYPES[number];
 // Users table - for authentication and authorization
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").notNull().unique(),
+  username: text("username").notNull().unique(), // Login username
   passwordHash: text("password_hash").notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  position: text("position"), // Job position/title (optional)
   role: text("role").notNull(), // 'admin', 'manager', 'viewer'
-  name: text("name").notNull(),
+  email: text("email"), // Email (optional)
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -276,9 +279,10 @@ export const leadTourists = pgTable("lead_tourists", {
 
 // User schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const updateUserSchema = insertUserSchema.partial();
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 // Event schemas

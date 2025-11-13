@@ -1,8 +1,16 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { setupAuth } from "./auth";
+import { storage } from "./storage";
 
 const app = express();
+
+// Trust proxy for secure cookies behind TLS termination
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 declare module 'http' {
   interface IncomingMessage {
@@ -15,6 +23,29 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: false }));
+
+// Session secret validation
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET environment variable is required in production');
+}
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-only-secret-not-for-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax'
+  }
+}));
+
+// Passport initialization
+const passport = setupAuth(storage);
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Log ALL incoming requests for debugging
 app.use((req, _res, next) => {

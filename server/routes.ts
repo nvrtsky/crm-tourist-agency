@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { requireAuth, requireAdmin } from "./auth";
+import passport from "passport";
+import bcrypt from "bcrypt";
 import { z } from "zod";
 import {
   insertEventSchema,
@@ -22,9 +25,205 @@ import {
   updateGroupSchema,
   insertLeadTouristSchema,
   updateLeadTouristSchema,
+  insertUserSchema,
+  updateUserSchema,
+  loginSchema,
+  type User,
 } from "@shared/schema";
 
+// Utility to sanitize user object (remove password hash)
+function sanitizeUser(user: User) {
+  const { passwordHash, ...sanitized } = user;
+  return sanitized;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ==================== AUTHENTICATION ROUTES ====================
+  
+  // Login (with rate limiting and session regeneration)
+  const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+  const RATE_LIMIT = 5; // max attempts
+  const RATE_WINDOW = 15 * 60 * 1000; // 15 minutes
+  
+  app.post("/api/auth/login", (req, res, next) => {
+    const validation = loginSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid credentials format" });
+    }
+    
+    // Rate limiting
+    const ip = req.ip || 'unknown';
+    const now = Date.now();
+    const attempts = loginAttempts.get(ip);
+    
+    if (attempts && attempts.count >= RATE_LIMIT && now < attempts.resetAt) {
+      const waitMinutes = Math.ceil((attempts.resetAt - now) / 60000);
+      return res.status(429).json({ 
+        error: `Too many login attempts. Please try again in ${waitMinutes} minutes.`
+      });
+    }
+    
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        return next(err);
+      }
+      
+      if (!user) {
+        // Track failed attempt
+        if (!attempts || now >= attempts.resetAt) {
+          loginAttempts.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
+        } else {
+          attempts.count++;
+        }
+        return res.status(401).json({ error: info?.message || "Authentication failed" });
+      }
+      
+      // Clear failed attempts on successful login
+      loginAttempts.delete(ip);
+      
+      // Regenerate session to prevent session fixation
+      const oldSession = req.session;
+      req.session.regenerate((err) => {
+        if (err) {
+          return next(err);
+        }
+        
+        // Restore any data from old session if needed
+        Object.assign(req.session, oldSession);
+        
+        req.logIn(user, (err) => {
+          if (err) {
+            return next(err);
+          }
+          return res.json({ user: sanitizeUser(user) });
+        });
+      });
+    })(req, res, next);
+  });
+  
+  // Logout (with session regeneration)
+  app.post("/api/auth/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to logout" });
+      }
+      
+      // Regenerate session after logout to prevent session fixation
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("Session regeneration error on logout:", err);
+        }
+        res.json({ message: "Logged out successfully" });
+      });
+    });
+  });
+  
+  // Get current user
+  app.get("/api/auth/me", (req, res) => {
+    if (req.isAuthenticated() && req.user) {
+      return res.json({ user: sanitizeUser(req.user as User) });
+    }
+    res.status(401).json({ error: "Not authenticated" });
+  });
+  
+  // ==================== USER MANAGEMENT ROUTES ====================
+  
+  // Get all users (admin only)
+  app.get("/api/users", requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const sanitized = users.map(sanitizeUser);
+      res.json(sanitized);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+  
+  // Create user (admin only)
+  app.post("/api/users", requireAdmin, async (req, res) => {
+    try {
+      const validation = insertUserSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: "Invalid user data",
+          details: validation.error.errors 
+        });
+      }
+      
+      const { passwordHash, ...userData } = validation.data;
+      
+      // Hash password
+      const hashedPassword = await bcrypt.hash(passwordHash, 10);
+      
+      const user = await storage.createUser({
+        ...userData,
+        passwordHash: hashedPassword
+      });
+      
+      res.status(201).json(sanitizeUser(user));
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+  
+  // Update user (admin only)
+  app.patch("/api/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validation = updateUserSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: "Invalid user data",
+          details: validation.error.errors 
+        });
+      }
+      
+      let updates = { ...validation.data };
+      
+      // Hash password if being updated
+      if (updates.passwordHash) {
+        updates.passwordHash = await bcrypt.hash(updates.passwordHash, 10);
+      }
+      
+      const user = await storage.updateUser(id, updates);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(sanitizeUser(user));
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+  
+  // Delete user (admin only)
+  app.delete("/api/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Prevent deleting yourself
+      if (req.user && (req.user as User).id === id) {
+        return res.status(400).json({ error: "Cannot delete your own account" });
+      }
+      
+      const success = await storage.deleteUser(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+  
   // ==================== EVENT ROUTES ====================
 
   // Get all events

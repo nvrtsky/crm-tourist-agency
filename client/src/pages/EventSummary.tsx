@@ -363,6 +363,10 @@ export default function EventSummary() {
   const handleExportExcel = () => {
     if (!event || participants.length === 0) return;
 
+    // NOTE: Excel export provides higher granularity than UI table:
+    // - UI: 4 columns per city (Прибытие, Транспорт, Отель, Отъезд) for readability
+    // - Excel: 8 columns per city (expanding each category into discrete fields)
+    //   This provides operations teams with detailed information (flight numbers, room types, etc.)
     const exportData = participants.map((p, index) => {
       // Calculate tourist data completeness for export
       let completenessText = "—";

@@ -555,18 +555,9 @@ export default function Leads() {
                           {leadStatusMap[lead.status]?.label || lead.status}
                         </Badge>
                         {lead.hasBeenContacted && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-[10px]" data-testid={`badge-reactivated-table-${lead.id}`}>
-                                  <RotateCcw className="h-3 w-3" />
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Возвращен после отложения</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Badge variant="secondary" className="text-[10px]" data-testid={`badge-reactivated-table-${lead.id}`}>
+                            Лид из Отложенных
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
@@ -656,7 +647,7 @@ export default function Leads() {
             const updateData: Partial<InsertLead> = {
               ...(pendingFormData || {}),
               status: 'lost',
-              postponedUntil: data.postponedUntil.toISOString() as any,
+              postponedUntil: data.postponedUntil,
               postponeReason: data.postponeReason,
             };
             
@@ -820,18 +811,9 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                           </Badge>
                         )}
                         {lead.hasBeenContacted && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-[10px]" data-testid={`badge-reactivated-${lead.id}`}>
-                                  <RotateCcw className="h-3 w-3" />
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Возвращен после отложения</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Badge variant="secondary" className="text-[10px]" data-testid={`badge-reactivated-${lead.id}`}>
+                            Лид из Отложенных
+                          </Badge>
                         )}
                       </div>
                     </div>

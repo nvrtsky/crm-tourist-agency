@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Users, DollarSign, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, ArrowRight, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ColorIndicator, type ColorOption } from "@/components/ColorPicker";
@@ -15,9 +15,10 @@ interface EventWithStats extends Event {
 interface EventCardProps {
   event: EventWithStats;
   onViewSummary: (eventId: string) => void;
+  onEdit: (event: Event) => void;
 }
 
-export function EventCard({ event, onViewSummary }: EventCardProps) {
+export function EventCard({ event, onViewSummary, onEdit }: EventCardProps) {
   const availablePercentage = (event.availableSpots / event.participantLimit) * 100;
   
   const getStatusClasses = () => {
@@ -44,15 +45,25 @@ export function EventCard({ event, onViewSummary }: EventCardProps) {
     <Card className="overflow-hidden hover-elevate" data-testid={`card-event-${event.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <ColorIndicator color={event.color as ColorOption} />
             <CardTitle className="text-lg" data-testid={`text-event-name-${event.id}`}>
               {event.name}
             </CardTitle>
           </div>
-          <Badge className={getStatusClasses()} data-testid={`badge-status-${event.id}`}>
-            {getStatusText()}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => onEdit(event)}
+              data-testid={`button-edit-event-${event.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Badge className={getStatusClasses()} data-testid={`badge-status-${event.id}`}>
+              {getStatusText()}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       

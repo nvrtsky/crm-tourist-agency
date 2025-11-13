@@ -34,6 +34,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Plus, Search, Filter, X } from "lucide-react";
 import { EventCard } from "@/components/EventCard";
+import { EditEventDialog } from "@/components/EditEventDialog";
 import { ColorPicker, type ColorOption } from "@/components/ColorPicker";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -84,6 +85,7 @@ export default function Events() {
   const [tourTypeFilter, setTourTypeFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("startDate");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const { data: events = [], isLoading } = useQuery<EventWithStats[]>({
     queryKey: ["/api/events"],
@@ -144,8 +146,46 @@ export default function Events() {
     },
   });
 
+  const updateEventMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      // EditEventDialog already normalized data (dates as YYYY-MM-DD strings)
+      const response = await apiRequest("PATCH", `/api/events/${id}`, data);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Не удалось обновить тур");
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({
+        title: "Тур обновлен",
+        description: "Изменения успешно сохранены",
+      });
+      setEditingEvent(null); // Close dialog on success
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось обновить тур",
+        variant: "destructive",
+      });
+      // Keep editingEvent so user can see error and retry
+    },
+  });
+
   const onSubmit = (data: CreateEventForm) => {
     createEventMutation.mutate(data);
+  };
+
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
+  };
+
+  const handleSaveEdit = (data: any) => {
+    if (editingEvent) {
+      updateEventMutation.mutate({ id: editingEvent.id, data });
+    }
   };
 
   const filteredEvents = events
@@ -170,8 +210,8 @@ export default function Events() {
       return 0;
     });
 
-  const countries = Array.from(new Set(events.map(e => e.country)));
-  const tourTypes = Array.from(new Set(events.map(e => e.tourType)));
+  const countries = Array.from(new Set(events.map(e => e.country))).filter(Boolean);
+  const tourTypes = Array.from(new Set(events.map(e => e.tourType))).filter(Boolean);
 
   const stats = {
     total: events.length,
@@ -338,6 +378,7 @@ export default function Events() {
               key={event.id}
               event={event}
               onViewSummary={(eventId) => setLocation(`/events/${eventId}/summary`)}
+              onEdit={handleEditEvent}
             />
           ))}
         </div>
@@ -544,6 +585,15 @@ export default function Events() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {editingEvent && (
+        <EditEventDialog
+          open={true}
+          event={editingEvent}
+          onOpenChange={(open) => !open && setEditingEvent(null)}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 }

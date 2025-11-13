@@ -165,8 +165,8 @@ export default function Booking() {
     return matchesCountry && matchesTourType && matchesDate;
   });
 
-  const countries = Array.from(new Set(availableEvents.map((e) => e.country)));
-  const tourTypes = Array.from(new Set(availableEvents.map((e) => e.tourType)));
+  const countries = Array.from(new Set(availableEvents.map((e) => e.country))).filter(Boolean);
+  const tourTypes = Array.from(new Set(availableEvents.map((e) => e.tourType))).filter(Boolean);
 
   if (isSubmitted) {
     return (

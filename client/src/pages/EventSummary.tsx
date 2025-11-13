@@ -15,6 +15,8 @@ import { EditableCell } from "@/components/EditableCell";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { TOURIST_FIELD_DESCRIPTORS, SECTION_TITLES } from "@/lib/touristFormConfig";
+import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
+import { calculateTouristDataCompleteness } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -428,7 +430,7 @@ export default function EventSummary() {
     // Create merges for hotel and transport columns (for groups)
     groupRows.forEach(({ start, end, type }) => {
       if (end > start) {
-        const baseColumns = 9; // № + Группа + ФИО + Email + Телефон + Паспорт + ДР + Статус + Сумма
+        const baseColumns = 10; // № + Группа + ФИО + Данные туриста + Email + Телефон + Паспорт + ДР + Статус + Сумма
         
         event.cities.forEach((city, cityIndex) => {
           const cityBaseCol = baseColumns + (cityIndex * 8); // 8 columns per city
@@ -649,6 +651,7 @@ export default function EventSummary() {
                     <th className="sticky left-0 bg-background z-10 text-center p-2 font-medium border-r w-12" rowSpan={2}>№</th>
                     <th className="sticky left-12 bg-background z-10 text-center p-2 font-medium border-r w-16" rowSpan={2}>Группа</th>
                     <th className="sticky left-28 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
+                    <th className="text-left p-2 font-medium border-r" rowSpan={2}>Данные туриста</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Паспорт</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Статус</th>
                     {event.cities.map((city) => {
@@ -755,13 +758,13 @@ export default function EventSummary() {
                                   <Tooltip>
                                     <TooltipTrigger 
                                       type="button" 
-                                      className="inline-flex items-center rounded-md border border-input bg-background px-2 py-1 text-[10px] font-semibold transition-colors cursor-default hover-elevate"
+                                      className="inline-flex items-center rounded-md border border-input bg-background px-2.5 py-1.5 text-[10px] font-semibold transition-colors cursor-default hover-elevate"
                                       data-testid={`badge-tourist-type-${participant.deal.id}`}
                                     >
                                       {participant.leadTourist.touristType === "adult" ? (
-                                        <UserIcon className="h-3 w-3" />
+                                        <UserIcon className="h-4 w-4 text-muted-foreground" />
                                       ) : (
-                                        <Baby className="h-3 w-3" />
+                                        <Baby className="h-4 w-4 text-muted-foreground" />
                                       )}
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -772,10 +775,10 @@ export default function EventSummary() {
                                     <Tooltip>
                                       <TooltipTrigger 
                                         type="button"
-                                        className="inline-flex items-center rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground transition-colors cursor-default hover-elevate"
+                                        className="inline-flex items-center rounded-md bg-primary px-2.5 py-1.5 text-[10px] font-semibold text-primary-foreground transition-colors cursor-default hover-elevate"
                                         data-testid={`badge-primary-tourist-${participant.deal.id}`}
                                       >
-                                        <Star className="h-3 w-3" />
+                                        <Star className="h-4 w-4" />
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p>Основной турист</p>
@@ -816,6 +819,15 @@ export default function EventSummary() {
                               )}
                             </div>
                           </div>
+                        </td>
+                        <td className="p-2 border-r">
+                          {participant.leadTourist ? (
+                            <DataCompletenessIndicator 
+                              completeness={calculateTouristDataCompleteness(participant.leadTourist)} 
+                            />
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
                         </td>
                         <td className="p-2 border-r text-muted-foreground">
                           {participant.contact?.passport || "—"}

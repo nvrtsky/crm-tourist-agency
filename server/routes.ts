@@ -606,7 +606,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       console.log(`[UPDATE_LEAD] Updating lead ${id} with data:`, JSON.stringify(req.body, null, 2));
-      const validation = updateLeadSchema.safeParse(req.body);
+      
+      // Convert postponedUntil string to Date if present (JSON.stringify converts Date to ISO string)
+      const dataToValidate = { ...req.body };
+      if (dataToValidate.postponedUntil && typeof dataToValidate.postponedUntil === 'string') {
+        dataToValidate.postponedUntil = new Date(dataToValidate.postponedUntil);
+      }
+      
+      const validation = updateLeadSchema.safeParse(dataToValidate);
       
       if (!validation.success) {
         console.error(`[UPDATE_LEAD] Validation failed:`, JSON.stringify(validation.error.errors, null, 2));

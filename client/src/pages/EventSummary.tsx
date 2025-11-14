@@ -468,9 +468,9 @@ export default function EventSummary() {
 
       const baseData: Record<string, any> = {
         "№": index + 1,
-        "Статус лида": p.lead ? LEAD_STATUS_LABELS[p.lead.status] || p.lead.status : "—",
         "ФИО": p.contact?.name || "—",
         "Данные": completenessText,
+        "Статус лида": p.lead ? LEAD_STATUS_LABELS[p.lead.status] || p.lead.status : "—",
         "Email": p.contact?.email || "",
         "Телефон": p.contact?.phone || "",
         "Паспорт": p.contact?.passport || "",
@@ -521,10 +521,10 @@ export default function EventSummary() {
     // Create merges for lead status column
     groupRows.forEach(({ start, end }) => {
       if (end > start) {
-        // Merge "Статус лида" column (column 1)
+        // Merge "Статус лида" column (column 3 - after №, ФИО, Данные)
         merges.push({
-          s: { r: start, c: 1 },
-          e: { r: end, c: 1 }
+          s: { r: start, c: 3 },
+          e: { r: end, c: 3 }
         });
       }
     });
@@ -532,7 +532,7 @@ export default function EventSummary() {
     // Create merges for hotel and transport columns (for groups)
     groupRows.forEach(({ start, end, type }) => {
       if (end > start) {
-        const baseColumns = 9; // № + Статус лида + ФИО + Данные туриста + Email + Телефон + Паспорт + ДР + Сумма
+        const baseColumns = 9; // № + ФИО + Данные + Статус лида + Email + Телефон + Паспорт + ДР + Сумма
         
         event.cities.forEach((city, cityIndex) => {
           const cityBaseCol = baseColumns + (cityIndex * 8); // 8 columns per city

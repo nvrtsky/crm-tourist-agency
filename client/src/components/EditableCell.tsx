@@ -17,6 +17,8 @@ interface EditableCellProps {
   className?: string;
   displayFormat?: (value: string) => string;
   selectOptions?: { value: string; label: string }[];
+  triggerTestId?: string;
+  inputTestId?: string;
 }
 
 export function EditableCell({
@@ -27,6 +29,8 @@ export function EditableCell({
   className,
   displayFormat,
   selectOptions = [],
+  triggerTestId,
+  inputTestId,
 }: EditableCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
@@ -92,7 +96,7 @@ export function EditableCell({
               !value && "text-muted-foreground italic",
               className
             )}
-            data-testid="editable-select-trigger"
+            data-testid={triggerTestId || "editable-select-trigger"}
           >
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
@@ -119,7 +123,7 @@ export function EditableCell({
               !value && "text-muted-foreground italic",
               className
             )}
-            data-testid="editable-date-trigger"
+            data-testid={triggerTestId || "editable-date-trigger"}
           >
             {value ? (
               <>
@@ -161,7 +165,7 @@ export function EditableCell({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className={cn("h-7 text-xs", className)}
-        data-testid="editable-input"
+        data-testid={inputTestId || "editable-input"}
       />
     );
   }
@@ -174,7 +178,7 @@ export function EditableCell({
         className
       )}
       onClick={() => setIsEditing(true)}
-      data-testid="editable-text-trigger"
+      data-testid={triggerTestId || "editable-text-trigger"}
     >
       {value ? (
         <>

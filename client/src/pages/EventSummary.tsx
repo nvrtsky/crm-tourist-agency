@@ -103,20 +103,57 @@ export default function EventSummary() {
     enabled: !!eventId,
   });
 
-  // Sort participants so that groups are contiguous and primary members come first
+  // Sort participants by composite key: (leadId, isPrimary, groupId, isPrimaryInGroup)
+  // This allows unrelated leads and non-lead members to interleave based on group relationships
   const participants = rawParticipants.slice().sort((a, b) => {
-    // First, group by groupId (nulls last)
-    if (a.deal.groupId && !b.deal.groupId) return -1;
-    if (!a.deal.groupId && b.deal.groupId) return 1;
-    if (a.deal.groupId && b.deal.groupId) {
-      if (a.deal.groupId !== b.deal.groupId) {
-        return a.deal.groupId.localeCompare(b.deal.groupId);
-      }
-      // Within same group, primary members first
-      if (a.deal.isPrimaryInGroup && !b.deal.isPrimaryInGroup) return -1;
-      if (!a.deal.isPrimaryInGroup && b.deal.isPrimaryInGroup) return 1;
+    const aLeadId = a.contact?.leadId ?? '';
+    const bLeadId = b.contact?.leadId ?? '';
+    const aGroupId = a.deal.groupId ?? '';
+    const bGroupId = b.deal.groupId ?? '';
+    const aIsPrimary = a.leadTourist?.isPrimary || false;
+    const bIsPrimary = b.leadTourist?.isPrimary || false;
+    const aIsPrimaryInGroup = a.deal.isPrimaryInGroup || false;
+    const bIsPrimaryInGroup = b.deal.isPrimaryInGroup || false;
+    
+    // Compare by leadId (empty string sorts equally with other empty strings)
+    if (aLeadId !== bLeadId) {
+      return aLeadId.localeCompare(bLeadId);
     }
+    
+    // Same leadId (including both empty) - compare by isPrimary
+    if (aIsPrimary !== bIsPrimary) {
+      return aIsPrimary ? -1 : 1;
+    }
+    
+    // Same leadId and primary status - compare by groupId
+    if (aGroupId !== bGroupId) {
+      return aGroupId.localeCompare(bGroupId);
+    }
+    
+    // Same groupId - compare by isPrimaryInGroup
+    if (aIsPrimaryInGroup !== bIsPrimaryInGroup) {
+      return aIsPrimaryInGroup ? -1 : 1;
+    }
+    
     return 0;
+  });
+
+  // Pre-compute first participant indices for each lead and group
+  // This ensures rowSpan merging works even when isPrimary/isPrimaryInGroup flags are missing
+  const leadFirstIndexMap = new Map<string, number>();
+  const groupFirstIndexMap = new Map<string, number>();
+  
+  participants.forEach((p, index) => {
+    const leadId = p.contact?.leadId;
+    const groupId = p.deal.groupId;
+    
+    if (leadId && !leadFirstIndexMap.has(leadId)) {
+      leadFirstIndexMap.set(leadId, index);
+    }
+    
+    if (groupId && !groupFirstIndexMap.has(groupId)) {
+      groupFirstIndexMap.set(groupId, index);
+    }
   });
 
   // Create viewer map for quick guide name lookups
@@ -130,6 +167,84 @@ export default function EventSummary() {
     const cityGuides = event.cityGuides as Record<string, string>;
     const guideId = cityGuides[city];
     return guideId ? viewerMap.get(guideId) || null : null;
+  };
+
+  // Helper to build display metadata for each participant's city columns
+  // Determines which columns to show and with what rowSpan based on lead/mini-group membership
+  const buildCityColumnsMeta = (participant: Participant, leadId: string | null | undefined, leadSize: number, isFirstInLead: boolean, isMiniGroup: boolean, isFirstInMiniGroup: boolean, groupSize: number) => {
+    // Priority: Lead merge > Mini-group hotel merge > Individual rendering
+    
+    // Scenario 1: Participant is part of a lead (family)
+    // Merge ALL 4 columns (Arrival, Transport, Hotel, Departure)
+    if (leadId && leadSize > 1) {
+      if (isFirstInLead) {
+        // First tourist in lead - show all columns with rowSpan
+        return {
+          showArrival: true,
+          arrivalRowSpan: leadSize,
+          showTransport: true,
+          transportRowSpan: leadSize,
+          showHotel: true,
+          hotelRowSpan: leadSize,
+          showDeparture: true,
+          departureRowSpan: leadSize,
+        };
+      } else {
+        // Not first tourist in lead - hide all columns (already shown in first row)
+        return {
+          showArrival: false,
+          arrivalRowSpan: 1,
+          showTransport: false,
+          transportRowSpan: 1,
+          showHotel: false,
+          hotelRowSpan: 1,
+          showDeparture: false,
+          departureRowSpan: 1,
+        };
+      }
+    }
+    
+    // Scenario 2: Participant is in mini-group (but NOT in lead, or lead has only 1 member)
+    // Merge ONLY Hotel column
+    if (isMiniGroup && groupSize > 1) {
+      if (isFirstInMiniGroup) {
+        // First participant in mini-group - show all columns, Hotel with rowSpan
+        return {
+          showArrival: true,
+          arrivalRowSpan: 1,
+          showTransport: true,
+          transportRowSpan: 1,
+          showHotel: true,
+          hotelRowSpan: groupSize,
+          showDeparture: true,
+          departureRowSpan: 1,
+        };
+      } else {
+        // Not first in mini-group - show all except Hotel
+        return {
+          showArrival: true,
+          arrivalRowSpan: 1,
+          showTransport: true,
+          transportRowSpan: 1,
+          showHotel: false,
+          hotelRowSpan: 1,
+          showDeparture: true,
+          departureRowSpan: 1,
+        };
+      }
+    }
+    
+    // Default: Individual rendering (no merging)
+    return {
+      showArrival: true,
+      arrivalRowSpan: 1,
+      showTransport: true,
+      transportRowSpan: 1,
+      showHotel: true,
+      hotelRowSpan: 1,
+      showDeparture: true,
+      departureRowSpan: 1,
+    };
   };
 
   const updateVisitMutation = useMutation({
@@ -273,63 +388,40 @@ export default function EventSummary() {
   };
 
   const handleVisitUpdate = (visitId: string | undefined, dealId: string, city: string, field: string, value: string) => {
-    // Find the participant and their group
+    // Find the participant
     const participant = participants.find(p => p.deal.id === dealId);
-    const groupId = participant?.deal.groupId;
-    
-    if (!groupId) {
-      // No group - update only this participant
-      if (visitId) {
-        updateVisitMutation.mutate({ visitId, updates: { [field]: value || null } });
-      } else {
-        createVisitMutation.mutate({
-          dealId,
-          visitData: {
-            city,
-            [field]: value,
-          },
-        });
-      }
-      return;
-    }
+    if (!participant) return;
 
-    // Participant is in a group - determine which fields are shared
+    const leadId = participant.contact?.leadId;
+    const groupId = participant.deal.groupId;
     const group = participant.group;
-    const groupType = group?.type;
     
-    // Define shared fields based on group type
-    const hotelFields = ['hotelName', 'roomType'];
-    const transportFields = ['transportType', 'flightNumber', 'departureTransportType', 'departureFlightNumber'];
+    // Determine if we need to apply updates to multiple participants
+    let targetMembers: typeof participants = [];
+    let isLeadUpdate = false;
     
-    let shouldApplyToGroup = false;
-    if (groupType === 'family') {
-      // Families share both hotel and transport
-      shouldApplyToGroup = hotelFields.includes(field) || transportFields.includes(field);
-    } else if (groupType === 'mini_group') {
-      // Mini-groups share only hotel
-      shouldApplyToGroup = hotelFields.includes(field);
-    }
-
-    if (!shouldApplyToGroup) {
-      // Field is not shared - update only this participant
-      if (visitId) {
-        updateVisitMutation.mutate({ visitId, updates: { [field]: value || null } });
-      } else {
-        createVisitMutation.mutate({
-          dealId,
-          visitData: {
-            city,
-            [field]: value,
-          },
-        });
+    // Priority 1: If participant is from a multi-member lead (family), update ALL fields for ALL tourists
+    if (leadId) {
+      const leadMembers = participants.filter(p => p.contact?.leadId === leadId);
+      if (leadMembers.length > 1) {
+        targetMembers = leadMembers;
+        isLeadUpdate = true;
       }
-      return;
     }
-
-    // Field is shared - update all group members
-    const groupMembers = participants.filter(p => p.deal.groupId === groupId);
     
-    groupMembers.forEach(member => {
+    // Priority 2: If no multi-member lead, check mini-group hotel sharing
+    const hotelFields = ['hotelName', 'roomType'];
+    if (!isLeadUpdate && groupId && group?.type === 'mini_group' && hotelFields.includes(field)) {
+      const groupMembers = participants.filter(p => p.deal.groupId === groupId);
+      if (groupMembers.length > 1) {
+        targetMembers = groupMembers;
+      }
+    }
+    
+    // Apply update to target members (or just this participant if no group sharing)
+    const membersToUpdate = targetMembers.length > 0 ? targetMembers : [participant];
+    
+    membersToUpdate.forEach(member => {
       const memberVisit = member.visits?.find(v => v.city === city);
       
       if (memberVisit?.id) {
@@ -338,11 +430,20 @@ export default function EventSummary() {
           updates: { [field]: value || null } 
         });
       } else {
+        // Create new visit with defaults
         createVisitMutation.mutate({
           dealId: member.deal.id,
           visitData: {
             city,
-            [field]: value,
+            [field]: value || null,
+            arrivalDate: null,
+            arrivalTime: null,
+            transportType: null,
+            flightNumber: null,
+            hotelName: null,
+            roomType: null,
+            departureDate: null,
+            departureTime: null,
           },
         });
       }
@@ -721,6 +822,21 @@ export default function EventSummary() {
                       : participant.group?.type === "mini_group" 
                         ? UsersRound
                         : null;
+                    
+                    // Determine if this is the first row from the same lead (family)
+                    const leadId = participant.contact?.leadId;
+                    const leadMembers = leadId 
+                      ? participants.filter(p => p.contact?.leadId === leadId)
+                      : [];
+                    const leadSize = leadMembers.length;
+                    // Use pre-computed first index map - works even without isPrimary flag
+                    const isFirstInLead = leadId ? leadFirstIndexMap.get(leadId) === index : false;
+                    
+                    // Determine if this is a mini-group (not a family group)
+                    const isMiniGroup = participant.group?.type === "mini_group";
+                    const groupId = participant.deal.groupId;
+                    // Use pre-computed first index map - works even without isPrimaryInGroup flag
+                    const isFirstInMiniGroup = isMiniGroup && groupId ? groupFirstIndexMap.get(groupId) === index : false;
 
                     return (
                       <tr
@@ -861,89 +977,114 @@ export default function EventSummary() {
                         </td>
                         {event.cities.map((city) => {
                           const visit = participant.visits?.find((v) => v.city === city);
+                          const cityMeta = buildCityColumnsMeta(participant, leadId, leadSize, isFirstInLead, isMiniGroup, isFirstInMiniGroup, groupSize);
+                          
                           return (
-                            <>
-                              <td key={`${city}-arrival`} className="p-1 border-r">
-                                <div className="space-y-1">
-                                  <EditableCell
-                                    type="date"
-                                    value={visit?.arrivalDate}
-                                    placeholder="Дата"
-                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalDate", value)}
-                                    className="text-xs"
-                                  />
-                                  <EditableCell
-                                    type="time"
-                                    value={visit?.arrivalTime}
-                                    placeholder="Время"
-                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalTime", value)}
-                                    className="text-xs"
-                                  />
-                                </div>
-                              </td>
-                              <td key={`${city}-transport`} className="p-1 border-r">
-                                <div className="space-y-1">
-                                  <EditableCell
-                                    type="select"
-                                    value={visit?.transportType}
-                                    placeholder="Тип"
-                                    selectOptions={[
-                                      { value: "plane", label: "Самолет" },
-                                      { value: "train", label: "Поезд" },
-                                    ]}
-                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transportType", value)}
-                                    className="text-xs"
-                                  />
-                                  <EditableCell
-                                    type="text"
-                                    value={visit?.flightNumber}
-                                    placeholder="№ рейса"
-                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "flightNumber", value)}
-                                    className="text-xs"
-                                  />
-                                </div>
-                              </td>
-                              <td key={`${city}-hotel`} className="p-1 border-r min-w-[120px]">
-                                <div className="space-y-1">
-                                  <EditableCell
-                                    type="text"
-                                    value={visit?.hotelName}
-                                    placeholder="Отель"
-                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "hotelName", value)}
-                                    className="text-xs"
-                                  />
-                                  <EditableCell
-                                    type="select"
-                                    value={visit?.roomType}
-                                    placeholder="Тип номера"
-                                    selectOptions={[
-                                      { value: "twin", label: "Twin" },
-                                      { value: "double", label: "Double" },
-                                    ]}
-                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "roomType", value)}
-                                    className="text-xs"
-                                  />
-                                </div>
-                              </td>
-                              <td key={`${city}-departure`} className="p-1 border-r">
-                                <div className="space-y-1">
-                                  <EditableCell
-                                    type="date"
-                                    value={visit?.departureDate}
-                                    placeholder="Дата"
-                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureDate", value)}
-                                    className="text-xs"
-                                  />
-                                  <EditableCell
-                                    type="time"
-                                    value={visit?.departureTime}
-                                    placeholder="Время"
-                                    onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
-                                    className="text-xs"
-                                  />
-                                </div>
-                              </td>
-                            </>
+                            <Fragment key={city}>
+                              {cityMeta.showArrival && (
+                                <td 
+                                  className="p-1 border-r align-top" 
+                                  {...(cityMeta.arrivalRowSpan > 1 && { rowSpan: cityMeta.arrivalRowSpan })}
+                                >
+                                  <div className="space-y-1">
+                                    <EditableCell
+                                      type="date"
+                                      value={visit?.arrivalDate}
+                                      placeholder="Дата"
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalDate", value)}
+                                      className="text-xs"
+                                    />
+                                    <EditableCell
+                                      type="time"
+                                      value={visit?.arrivalTime}
+                                      placeholder="Время"
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalTime", value)}
+                                      className="text-xs"
+                                    />
+                                  </div>
+                                </td>
+                              )}
+                              {cityMeta.showTransport && (
+                                <td 
+                                  className="p-1 border-r align-top" 
+                                  {...(cityMeta.transportRowSpan > 1 && { rowSpan: cityMeta.transportRowSpan })}
+                                >
+                                  <div className="space-y-1">
+                                    <EditableCell
+                                      type="select"
+                                      value={visit?.transportType}
+                                      placeholder="Тип"
+                                      selectOptions={[
+                                        { value: "plane", label: "Самолет" },
+                                        { value: "train", label: "Поезд" },
+                                      ]}
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transportType", value)}
+                                      className="text-xs"
+                                    />
+                                    <EditableCell
+                                      type="text"
+                                      value={visit?.flightNumber}
+                                      placeholder="№ рейса"
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "flightNumber", value)}
+                                      className="text-xs"
+                                    />
+                                  </div>
+                                </td>
+                              )}
+                              {cityMeta.showHotel && (
+                                <td 
+                                  className="p-1 border-r min-w-[120px] align-top" 
+                                  {...(cityMeta.hotelRowSpan > 1 && { rowSpan: cityMeta.hotelRowSpan })}
+                                >
+                                  <div className="space-y-1">
+                                    <EditableCell
+                                      type="text"
+                                      value={visit?.hotelName}
+                                      placeholder="Отель"
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "hotelName", value)}
+                                      className="text-xs"
+                                      triggerTestId={`editable-hotelName-${city}-${participant.deal.id}`}
+                                      inputTestId={`input-hotelName-${city}-${participant.deal.id}`}
+                                    />
+                                    <EditableCell
+                                      type="select"
+                                      value={visit?.roomType}
+                                      placeholder="Тип номера"
+                                      selectOptions={[
+                                        { value: "twin", label: "Twin" },
+                                        { value: "double", label: "Double" },
+                                      ]}
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "roomType", value)}
+                                      className="text-xs"
+                                      triggerTestId={`editable-roomType-${city}-${participant.deal.id}`}
+                                    />
+                                  </div>
+                                </td>
+                              )}
+                              {cityMeta.showDeparture && (
+                                <td 
+                                  className="p-1 border-r align-top" 
+                                  {...(cityMeta.departureRowSpan > 1 && { rowSpan: cityMeta.departureRowSpan })}
+                                >
+                                  <div className="space-y-1">
+                                    <EditableCell
+                                      type="date"
+                                      value={visit?.departureDate}
+                                      placeholder="Дата"
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureDate", value)}
+                                      className="text-xs"
+                                    />
+                                    <EditableCell
+                                      type="time"
+                                      value={visit?.departureTime}
+                                      placeholder="Время"
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
+                                      className="text-xs"
+                                    />
+                                  </div>
+                                </td>
+                              )}
+                            </Fragment>
                           );
                         })}
                       </tr>

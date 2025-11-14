@@ -364,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Assemble participants using lookups
-      const participants = deals
+      let participants = deals
         .map((deal) => {
           const contact = contactMap.get(deal.contactId);
           if (!contact) {
@@ -392,6 +392,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
         .filter((p) => p !== null);
+      
+      // Filter participants by status for viewer role - only show confirmed
+      // Participants without lead data are treated as non-confirmed for security
+      if (user.role === "viewer") {
+        participants = participants.filter(p => p.lead?.status === "confirmed");
+      }
       
       res.json(participants);
     } catch (error) {

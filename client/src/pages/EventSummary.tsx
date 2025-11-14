@@ -468,7 +468,7 @@ export default function EventSummary() {
 
       const baseData: Record<string, any> = {
         "№": index + 1,
-        "Группа": p.group?.name || "—",
+        "Статус лида": p.lead ? LEAD_STATUS_LABELS[p.lead.status] || p.lead.status : "—",
         "ФИО": p.contact?.name || "—",
         "Данные": completenessText,
         "Email": p.contact?.email || "",
@@ -519,10 +519,10 @@ export default function EventSummary() {
       }
     });
 
-    // Create merges for group column
+    // Create merges for lead status column
     groupRows.forEach(({ start, end }) => {
       if (end > start) {
-        // Merge "Группа" column (column 1)
+        // Merge "Статус лида" column (column 1)
         merges.push({
           s: { r: start, c: 1 },
           e: { r: end, c: 1 }
@@ -533,7 +533,7 @@ export default function EventSummary() {
     // Create merges for hotel and transport columns (for groups)
     groupRows.forEach(({ start, end, type }) => {
       if (end > start) {
-        const baseColumns = 10; // № + Группа + ФИО + Данные туриста + Email + Телефон + Паспорт + ДР + Статус + Сумма
+        const baseColumns = 10; // № + Статус лида + ФИО + Данные туриста + Email + Телефон + Паспорт + ДР + Статус + Сумма
         
         event.cities.forEach((city, cityIndex) => {
           const cityBaseCol = baseColumns + (cityIndex * 8); // 8 columns per city
@@ -776,7 +776,7 @@ export default function EventSummary() {
                 <thead>
                   <tr className="border-b">
                     <th className="sticky left-0 bg-background z-10 text-center p-2 font-medium border-r w-12" rowSpan={2}>№</th>
-                    <th className="sticky left-12 bg-background z-10 text-center p-2 font-medium border-r w-16" rowSpan={2}>Группа</th>
+                    <th className="sticky left-12 bg-background z-10 text-center p-2 font-medium border-r w-16" rowSpan={2}>Лид</th>
                     <th className="sticky left-28 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Данные туриста</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Статус</th>
@@ -816,13 +816,6 @@ export default function EventSummary() {
                       : [];
                     const groupSize = groupMembers.length;
                     
-                    // Determine group icon component
-                    const GroupIcon = participant.group?.type === "family" 
-                      ? Users
-                      : participant.group?.type === "mini_group" 
-                        ? UsersRound
-                        : null;
-                    
                     // Determine if this is the first row from the same lead (family)
                     const leadId = participant.contact?.leadId;
                     const leadMembers = leadId 
@@ -849,40 +842,45 @@ export default function EventSummary() {
                           {index + 1}
                         </td>
                         
-                        {/* Group indicator column with rowSpan for grouped participants */}
+                        {/* Lead status column with rowSpan for grouped participants */}
                         {isFirstInGroup ? (
                           <td 
                             className="sticky left-12 bg-background z-10 p-2 border-r text-center align-top"
                             rowSpan={groupSize}
                           >
-                            <div className="flex flex-col items-center gap-1">
-                              {GroupIcon && (
-                                <GroupIcon className="h-5 w-5 text-primary" />
-                              )}
-                              <div className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
-                                {participant.group?.name}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground">
-                                {groupSize} чел.
-                              </div>
-                              {participant.lead && (() => {
-                                const style = getLeadStatusStyle(participant.lead.status);
-                                return (
-                                  <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
-                                    <Badge 
-                                      variant={style.variant}
-                                      className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
-                                    >
-                                      {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
-                                    </Badge>
-                                  </Link>
-                                );
-                              })()}
-                            </div>
+                            {participant.lead ? (() => {
+                              const style = getLeadStatusStyle(participant.lead.status);
+                              return (
+                                <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
+                                  <Badge 
+                                    variant={style.variant}
+                                    className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
+                                  >
+                                    {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
+                                  </Badge>
+                                </Link>
+                              );
+                            })() : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </td>
                         ) : !participant.group && (
                           <td className="sticky left-12 bg-background z-10 p-2 border-r text-center">
-                            —
+                            {participant.lead ? (() => {
+                              const style = getLeadStatusStyle(participant.lead.status);
+                              return (
+                                <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
+                                  <Badge 
+                                    variant={style.variant}
+                                    className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
+                                  >
+                                    {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
+                                  </Badge>
+                                </Link>
+                              );
+                            })() : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </td>
                         )}
                         

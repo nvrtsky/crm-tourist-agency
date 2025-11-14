@@ -776,7 +776,7 @@ export default function EventSummary() {
                   <tr className="border-b">
                     <th className="sticky left-0 bg-background z-10 text-center p-2 font-medium border-r w-12" rowSpan={2}>№</th>
                     <th className="sticky left-12 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
-                    <th className="text-left py-2 px-3 font-medium border-r" rowSpan={2}>Данные туриста</th>
+                    <th className="text-left p-2 font-medium border-r" rowSpan={2}>Данные туриста</th>
                     <th className="text-center p-2 font-medium border-r w-16" rowSpan={2}>Лид</th>
                     {event.cities.map((city) => {
                       const guideName = getGuideName(city);
@@ -922,7 +922,7 @@ export default function EventSummary() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-2 px-3 border-r">
+                        <td className="p-2 border-r">
                           {participant.leadTourist ? (
                             <DataCompletenessIndicator 
                               completeness={calculateTouristDataCompleteness(participant.leadTourist)} 

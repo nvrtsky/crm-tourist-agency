@@ -775,9 +775,9 @@ export default function EventSummary() {
                 <thead>
                   <tr className="border-b">
                     <th className="sticky left-0 bg-background z-10 text-center p-2 font-medium border-r w-12" rowSpan={2}>№</th>
-                    <th className="sticky left-12 bg-background z-10 text-center p-2 font-medium border-r w-16" rowSpan={2}>Лид</th>
-                    <th className="sticky left-28 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
+                    <th className="sticky left-12 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Данные туриста</th>
+                    <th className="text-center p-2 font-medium border-r w-16" rowSpan={2}>Лид</th>
                     {event.cities.map((city) => {
                       const guideName = getGuideName(city);
                       return (
@@ -842,49 +842,8 @@ export default function EventSummary() {
                           {index + 1}
                         </td>
                         
-                        {/* Lead status column with rowSpan for grouped participants */}
-                        {isFirstInGroup ? (
-                          <td 
-                            className="sticky left-12 bg-background z-10 p-2 border-r text-center align-top"
-                            rowSpan={groupSize}
-                          >
-                            {participant.lead ? (() => {
-                              const style = getLeadStatusStyle(participant.lead.status);
-                              return (
-                                <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
-                                  <Badge 
-                                    variant={style.variant}
-                                    className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
-                                  >
-                                    {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
-                                  </Badge>
-                                </Link>
-                              );
-                            })() : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
-                        ) : !participant.group && (
-                          <td className="sticky left-12 bg-background z-10 p-2 border-r text-center">
-                            {participant.lead ? (() => {
-                              const style = getLeadStatusStyle(participant.lead.status);
-                              return (
-                                <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
-                                  <Badge 
-                                    variant={style.variant}
-                                    className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
-                                  >
-                                    {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
-                                  </Badge>
-                                </Link>
-                              );
-                            })() : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
-                        )}
-                        
-                        <td className="sticky left-28 bg-background z-10 p-2 font-medium border-r min-w-[150px]" data-testid={`text-name-${participant.deal.id}`}>
+                        {/* Name column - sticky */}
+                        <td className="sticky left-12 bg-background z-10 p-2 font-medium border-r min-w-[150px]" data-testid={`text-name-${participant.deal.id}`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <span>{participant.contact?.name || "—"}</span>
@@ -964,6 +923,49 @@ export default function EventSummary() {
                             <span className="text-muted-foreground text-xs">—</span>
                           )}
                         </td>
+                        
+                        {/* Lead status column with rowSpan for grouped participants - now non-sticky */}
+                        {isFirstInGroup ? (
+                          <td 
+                            className="p-2 border-r text-center align-top w-16"
+                            rowSpan={groupSize}
+                          >
+                            {participant.lead ? (() => {
+                              const style = getLeadStatusStyle(participant.lead.status);
+                              return (
+                                <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
+                                  <Badge 
+                                    variant={style.variant}
+                                    className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
+                                  >
+                                    {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
+                                  </Badge>
+                                </Link>
+                              );
+                            })() : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        ) : !participant.group && (
+                          <td className="p-2 border-r text-center w-16">
+                            {participant.lead ? (() => {
+                              const style = getLeadStatusStyle(participant.lead.status);
+                              return (
+                                <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
+                                  <Badge 
+                                    variant={style.variant}
+                                    className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
+                                  >
+                                    {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
+                                  </Badge>
+                                </Link>
+                              );
+                            })() : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        )}
+                        
                         {event.cities.map((city) => {
                           const visit = participant.visits?.find((v) => v.city === city);
                           const cityMeta = buildCityColumnsMeta(participant, leadId, leadSize, isFirstInLead, isMiniGroup, isFirstInMiniGroup, groupSize);

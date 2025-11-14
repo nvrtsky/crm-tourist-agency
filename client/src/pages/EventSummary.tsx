@@ -138,36 +138,23 @@ export default function EventSummary() {
     return 0;
   });
 
-  // Split participants into confirmed (by DEAL status) and other sections
-  // Backend availability logic counts confirmed deals, so frontend must match
-  // Note: Lead status uses English enums ("won", "qualified"), while deal.status uses "confirmed"
-  const confirmedParticipants = participants.filter(p => p.deal.status === "confirmed");
-  const otherParticipants = participants.filter(p => p.deal.status !== "confirmed");
-
-  // Helper to compute index maps for a section (enables scoped rowSpan merging)
-  const computeIndexMaps = (sectionParticipants: Participant[]) => {
-    const leadFirstIndexMap = new Map<string, number>();
-    const groupFirstIndexMap = new Map<string, number>();
+  // Backend returns only confirmed participants for all roles
+  // Compute index maps for smart column merging (rowSpan for families and mini-groups)
+  const leadFirstIndexMap = new Map<string, number>();
+  const groupFirstIndexMap = new Map<string, number>();
+  
+  participants.forEach((p, index) => {
+    const leadId = p.contact?.leadId;
+    const groupId = p.deal.groupId;
     
-    sectionParticipants.forEach((p, index) => {
-      const leadId = p.contact?.leadId;
-      const groupId = p.deal.groupId;
-      
-      if (leadId && !leadFirstIndexMap.has(leadId)) {
-        leadFirstIndexMap.set(leadId, index);
-      }
-      
-      if (groupId && !groupFirstIndexMap.has(groupId)) {
-        groupFirstIndexMap.set(groupId, index);
-      }
-    });
+    if (leadId && !leadFirstIndexMap.has(leadId)) {
+      leadFirstIndexMap.set(leadId, index);
+    }
     
-    return { leadFirstIndexMap, groupFirstIndexMap };
-  };
-
-  // Compute index maps per section for scoped smart merging
-  const confirmedMaps = computeIndexMaps(confirmedParticipants);
-  const otherMaps = computeIndexMaps(otherParticipants);
+    if (groupId && !groupFirstIndexMap.has(groupId)) {
+      groupFirstIndexMap.set(groupId, index);
+    }
+  });
 
   // Create viewer map for quick guide name lookups
   const viewerMap = new Map(
@@ -821,14 +808,11 @@ export default function EventSummary() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Confirmed participants section */}
-                  {confirmedParticipants.map((participant, sectionIndex) => {
-                    const absoluteIndex = sectionIndex;
-                    
+                  {participants.map((participant, index) => {
                     // Determine if this is the first row in a group
                     const isFirstInGroup = participant.group && participant.deal.isPrimaryInGroup;
                     const groupMembers = participant.group 
-                      ? confirmedParticipants.filter(p => p.group?.id === participant.group?.id)
+                      ? participants.filter(p => p.group?.id === participant.group?.id)
                       : [];
                     const groupSize = groupMembers.length;
                     
@@ -842,17 +826,15 @@ export default function EventSummary() {
                     // Determine if this is the first row from the same lead (family)
                     const leadId = participant.contact?.leadId;
                     const leadMembers = leadId 
-                      ? confirmedParticipants.filter(p => p.contact?.leadId === leadId)
+                      ? participants.filter(p => p.contact?.leadId === leadId)
                       : [];
                     const leadSize = leadMembers.length;
-                    // Use section-scoped first index map
-                    const isFirstInLead = leadId ? confirmedMaps.leadFirstIndexMap.get(leadId) === sectionIndex : false;
+                    const isFirstInLead = leadId ? leadFirstIndexMap.get(leadId) === index : false;
                     
                     // Determine if this is a mini-group (not a family group)
                     const isMiniGroup = participant.group?.type === "mini_group";
                     const groupId = participant.deal.groupId;
-                    // Use section-scoped first index map
-                    const isFirstInMiniGroup = isMiniGroup && groupId ? confirmedMaps.groupFirstIndexMap.get(groupId) === sectionIndex : false;
+                    const isFirstInMiniGroup = isMiniGroup && groupId ? groupFirstIndexMap.get(groupId) === index : false;
 
                     return (
                       <tr
@@ -860,304 +842,9 @@ export default function EventSummary() {
                         className={`border-b hover-elevate ${participant.group ? 'bg-muted/5' : ''}`}
                         data-testid={`row-participant-${participant.deal.id}`}
                       >
-                        {/* Number column - always present */}
+                        {/* Row number column */}
                         <td className="sticky left-0 bg-background z-10 p-2 border-r text-center">
-                          {absoluteIndex + 1}
-                        </td>
-                        
-                        {/* Group indicator column with rowSpan for grouped participants */}
-                        {isFirstInGroup ? (
-                          <td 
-                            className="sticky left-12 bg-background z-10 p-2 border-r text-center align-top"
-                            rowSpan={groupSize}
-                          >
-                            <div className="flex flex-col items-center gap-1">
-                              {GroupIcon && (
-                                <GroupIcon className="h-5 w-5 text-primary" />
-                              )}
-                              <div className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
-                                {participant.group?.name}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground">
-                                {groupSize} чел.
-                              </div>
-                              {participant.lead && (() => {
-                                const style = getLeadStatusStyle(participant.lead.status);
-                                return (
-                                  <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
-                                    <Badge 
-                                      variant={style.variant}
-                                      className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
-                                    >
-                                      {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
-                                    </Badge>
-                                  </Link>
-                                );
-                              })()}
-                            </div>
-                          </td>
-                        ) : !participant.group && (
-                          <td className="sticky left-12 bg-background z-10 p-2 border-r text-center">
-                            —
-                          </td>
-                        )}
-                        
-                        <td className="sticky left-28 bg-background z-10 p-2 font-medium border-r min-w-[150px]" data-testid={`text-name-${participant.deal.id}`}>
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span>{participant.contact?.name || "—"}</span>
-                              {participant.leadTourist && (
-                                <div className="flex items-center gap-1">
-                                  <Tooltip>
-                                    <TooltipTrigger 
-                                      type="button" 
-                                      className="inline-flex items-center rounded-md border border-input bg-background px-2.5 py-1.5 text-[10px] font-semibold transition-colors cursor-default hover-elevate"
-                                      data-testid={`badge-tourist-type-${participant.deal.id}`}
-                                    >
-                                      {participant.leadTourist.touristType === "adult" ? (
-                                        <UserIcon className="h-3 w-3 text-muted-foreground" />
-                                      ) : (
-                                        <Baby className="h-3 w-3 text-muted-foreground" />
-                                      )}
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>{participant.leadTourist.touristType === "adult" ? "Взрослый" : participant.leadTourist.touristType === "child" ? "Ребенок" : "Младенец"}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                  {participant.leadTourist.isPrimary && (
-                                    <Tooltip>
-                                      <TooltipTrigger 
-                                        type="button"
-                                        className="inline-flex items-center rounded-md bg-primary px-2.5 py-1.5 text-[10px] font-semibold text-primary-foreground transition-colors cursor-default hover-elevate"
-                                        data-testid={`badge-primary-tourist-${participant.deal.id}`}
-                                      >
-                                        <Star className="h-3 w-3" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Основной турист</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-6 w-6 opacity-50 hover:opacity-100"
-                                onClick={() => handleEditTourist(participant.contact?.id)}
-                                data-testid={`button-edit-tourist-${participant.deal.id}`}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              {participant.deal.groupId && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-6 w-6 opacity-50 hover:opacity-100"
-                                  onClick={() => {
-                                    if (confirm(`Удалить ${participant.contact?.name} из группы?`)) {
-                                      removeFromGroupMutation.mutate({
-                                        groupId: participant.deal.groupId!,
-                                        dealId: participant.deal.id,
-                                      });
-                                    }
-                                  }}
-                                  disabled={removeFromGroupMutation.isPending}
-                                  data-testid={`button-remove-from-group-${participant.deal.id}`}
-                                >
-                                  <UserMinus className="h-3 w-3" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-2 border-r">
-                          {participant.leadTourist ? (
-                            <DataCompletenessIndicator 
-                              completeness={calculateTouristDataCompleteness(participant.leadTourist)} 
-                            />
-                          ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
-                        </td>
-                        <td className="p-2 border-r">
-                          {participant.lead ? (
-                            <Badge className={getStatusColor(participant.lead.status)} data-testid={`badge-status-${participant.deal.id}`}>
-                              {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
-                        </td>
-                        {event.cities.map((city) => {
-                          const visit = participant.visits?.find((v) => v.city === city);
-                          const cityMeta = buildCityColumnsMeta(participant, leadId, leadSize, isFirstInLead, isMiniGroup, isFirstInMiniGroup, groupSize);
-                          
-                          return (
-                            <Fragment key={city}>
-                              {cityMeta.showArrival && (
-                                <td 
-                                  className="p-1 border-r align-top" 
-                                  {...(cityMeta.arrivalRowSpan > 1 && { rowSpan: cityMeta.arrivalRowSpan })}
-                                >
-                                  <div className="space-y-1">
-                                    <EditableCell
-                                      type="date"
-                                      value={visit?.arrivalDate}
-                                      placeholder="Дата"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalDate", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="time"
-                                      value={visit?.arrivalTime}
-                                      placeholder="Время"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalTime", value)}
-                                      className="text-xs"
-                                    />
-                                  </div>
-                                </td>
-                              )}
-                              {cityMeta.showTransport && (
-                                <td 
-                                  className="p-1 border-r align-top" 
-                                  {...(cityMeta.transportRowSpan > 1 && { rowSpan: cityMeta.transportRowSpan })}
-                                >
-                                  <div className="space-y-1">
-                                    <EditableCell
-                                      type="select"
-                                      value={visit?.transportType}
-                                      placeholder="Тип"
-                                      selectOptions={[
-                                        { value: "plane", label: "Самолет" },
-                                        { value: "train", label: "Поезд" },
-                                      ]}
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transportType", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="text"
-                                      value={visit?.flightNumber}
-                                      placeholder="№ рейса"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "flightNumber", value)}
-                                      className="text-xs"
-                                    />
-                                  </div>
-                                </td>
-                              )}
-                              {cityMeta.showHotel && (
-                                <td 
-                                  className="p-1 border-r min-w-[120px] align-top" 
-                                  {...(cityMeta.hotelRowSpan > 1 && { rowSpan: cityMeta.hotelRowSpan })}
-                                >
-                                  <div className="space-y-1">
-                                    <EditableCell
-                                      type="text"
-                                      value={visit?.hotelName}
-                                      placeholder="Отель"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "hotelName", value)}
-                                      className="text-xs"
-                                      triggerTestId={`editable-hotelName-${city}-${participant.deal.id}`}
-                                      inputTestId={`input-hotelName-${city}-${participant.deal.id}`}
-                                    />
-                                    <EditableCell
-                                      type="select"
-                                      value={visit?.roomType}
-                                      placeholder="Тип номера"
-                                      selectOptions={[
-                                        { value: "twin", label: "Twin" },
-                                        { value: "double", label: "Double" },
-                                      ]}
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "roomType", value)}
-                                      className="text-xs"
-                                      triggerTestId={`editable-roomType-${city}-${participant.deal.id}`}
-                                    />
-                                  </div>
-                                </td>
-                              )}
-                              {cityMeta.showDeparture && (
-                                <td 
-                                  className="p-1 border-r align-top" 
-                                  {...(cityMeta.departureRowSpan > 1 && { rowSpan: cityMeta.departureRowSpan })}
-                                >
-                                  <div className="space-y-1">
-                                    <EditableCell
-                                      type="date"
-                                      value={visit?.departureDate}
-                                      placeholder="Дата"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureDate", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="time"
-                                      value={visit?.departureTime}
-                                      placeholder="Время"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
-                                      className="text-xs"
-                                    />
-                                  </div>
-                                </td>
-                              )}
-                            </Fragment>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                  
-                  {/* Separator row between confirmed and other participants */}
-                  {otherParticipants.length > 0 && (
-                    <tr className="bg-muted/20" data-testid="row-section-separator">
-                      <td colSpan={999} className="p-3 text-center text-sm text-muted-foreground font-medium border-y-2">
-                        Неподтвержденные участники
-                      </td>
-                    </tr>
-                  )}
-                  
-                  {/* Other participants section */}
-                  {otherParticipants.map((participant, sectionIndex) => {
-                    const absoluteIndex = confirmedParticipants.length + sectionIndex;
-                    
-                    // Determine if this is the first row in a group
-                    const isFirstInGroup = participant.group && participant.deal.isPrimaryInGroup;
-                    const groupMembers = participant.group 
-                      ? otherParticipants.filter(p => p.group?.id === participant.group?.id)
-                      : [];
-                    const groupSize = groupMembers.length;
-                    
-                    // Determine group icon component
-                    const GroupIcon = participant.group?.type === "family" 
-                      ? Users
-                      : participant.group?.type === "mini_group" 
-                        ? UsersRound
-                        : null;
-                    
-                    // Determine if this is the first row from the same lead (family)
-                    const leadId = participant.contact?.leadId;
-                    const leadMembers = leadId 
-                      ? otherParticipants.filter(p => p.contact?.leadId === leadId)
-                      : [];
-                    const leadSize = leadMembers.length;
-                    // Use section-scoped first index map
-                    const isFirstInLead = leadId ? otherMaps.leadFirstIndexMap.get(leadId) === sectionIndex : false;
-                    
-                    // Determine if this is a mini-group (not a family group)
-                    const isMiniGroup = participant.group?.type === "mini_group";
-                    const groupId = participant.deal.groupId;
-                    // Use section-scoped first index map
-                    const isFirstInMiniGroup = isMiniGroup && groupId ? otherMaps.groupFirstIndexMap.get(groupId) === sectionIndex : false;
-
-                    return (
-                      <tr
-                        key={participant.deal.id}
-                        className={`border-b hover-elevate ${participant.group ? 'bg-muted/5' : ''}`}
-                        data-testid={`row-participant-${participant.deal.id}`}
-                      >
-                        {/* Number column - always present */}
-                        <td className="sticky left-0 bg-background z-10 p-2 border-r text-center">
-                          {absoluteIndex + 1}
+                          {index + 1}
                         </td>
                         
                         {/* Group indicator column with rowSpan for grouped participants */}

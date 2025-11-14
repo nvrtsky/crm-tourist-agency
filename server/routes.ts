@@ -398,12 +398,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .filter((p) => p !== null);
       
-      // Filter participants by status for viewer role - only show confirmed (by DEAL status)
+      // Filter to show only confirmed participants (by DEAL status) for ALL roles
+      // This ensures EventSummary table only displays confirmed tourists
       // Backend availability logic counts confirmed deals, so filtering must match
-      // Note: Lead status uses English enums ("won", etc.), deal.status uses "confirmed"
-      if (user.role === "viewer") {
-        participants = participants.filter(p => p.deal.status === "confirmed");
-      }
+      participants = participants.filter(p => p.deal.status === "confirmed");
       
       res.json(participants);
     } catch (error) {

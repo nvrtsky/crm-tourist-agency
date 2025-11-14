@@ -4,7 +4,7 @@ import { useState, Fragment } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, Train } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, Train, ChevronDown } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -45,9 +45,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const LEAD_STATUS_LABELS: Record<string, string> = {
   new: "Новый",
@@ -83,9 +90,10 @@ interface TransportTypeSelectorProps {
   value: string | null | undefined;
   onSave: (value: string | null) => void;
   className?: string;
+  testIdSuffix?: string;
 }
 
-function TransportTypeSelector({ value, onSave, className }: TransportTypeSelectorProps) {
+function TransportTypeSelector({ value, onSave, className, testIdSuffix = '' }: TransportTypeSelectorProps) {
   return (
     <div className={`flex gap-1 ${className || ''}`}>
       <Button
@@ -94,7 +102,7 @@ function TransportTypeSelector({ value, onSave, className }: TransportTypeSelect
         variant={value === "plane" ? "default" : "ghost"}
         onClick={() => onSave(value === "plane" ? null : "plane")}
         aria-label="Самолет"
-        data-testid="button-transport-plane"
+        data-testid={`button-transport-plane${testIdSuffix}`}
       >
         <Plane className="h-3 w-3" />
       </Button>
@@ -104,11 +112,300 @@ function TransportTypeSelector({ value, onSave, className }: TransportTypeSelect
         variant={value === "train" ? "default" : "ghost"}
         onClick={() => onSave(value === "train" ? null : "train")}
         aria-label="Поезд"
-        data-testid="button-transport-train"
+        data-testid={`button-transport-train${testIdSuffix}`}
       >
         <Train className="h-3 w-3" />
       </Button>
     </div>
+  );
+}
+
+interface ParticipantCardProps {
+  participant: Participant;
+  index: number;
+  cities: string[];
+  getGuideName: (city: string) => string | null;
+  handleVisitUpdate: (visitId: string | undefined, dealId: string, city: string, field: string, value: string | null) => void;
+  handleEditTourist: (contactId: string | undefined) => void;
+  handleRemoveFromGroup: (groupId: string, dealId: string) => void;
+  removeFromGroupPending: boolean;
+  lead: Lead | null;
+  getLeadStatusStyle: (status: string) => { variant: any; customClass?: string };
+  groupInfo?: { type: 'family' | 'mini_group'; name?: string; memberCount: number };
+  sharedFields?: { arrival: boolean; hotel: boolean; departure: boolean };
+}
+
+function ParticipantCard({
+  participant,
+  index,
+  cities,
+  getGuideName,
+  handleVisitUpdate,
+  handleEditTourist,
+  handleRemoveFromGroup,
+  removeFromGroupPending,
+  lead,
+  getLeadStatusStyle,
+  groupInfo,
+  sharedFields,
+}: ParticipantCardProps) {
+  return (
+    <Card className={`mb-4 ${groupInfo ? 'border-l-4 border-l-primary/30' : ''}`} data-testid={`card-participant-${participant.deal.id}`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant="outline" className="text-xs">#{index + 1}</Badge>
+              <CardTitle className="text-base">
+                {participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}
+              </CardTitle>
+              {groupInfo && (
+                <Badge variant="secondary" className="text-xs">
+                  <UsersRound className="h-3 w-3 mr-1" />
+                  {groupInfo.type === 'family' ? `Семья (${groupInfo.memberCount})` : groupInfo.name || `Группа (${groupInfo.memberCount})`}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {participant.leadTourist && (
+                <>
+                  <Badge variant="outline" className="text-xs" data-testid={`badge-tourist-type-${participant.deal.id}`}>
+                    {participant.leadTourist.touristType === "adult" ? (
+                      <><UserIcon className="h-3 w-3 mr-1" />Взрослый</>
+                    ) : (
+                      <><Baby className="h-3 w-3 mr-1" />Ребенок</>
+                    )}
+                  </Badge>
+                  {participant.leadTourist.isPrimary && (
+                    <Badge variant="default" className="text-xs" data-testid={`badge-primary-tourist-${participant.deal.id}`}>
+                      <Star className="h-3 w-3 mr-1" />Основной
+                    </Badge>
+                  )}
+                </>
+              )}
+              {participant.leadTourist && (
+                <DataCompletenessIndicator 
+                  completeness={calculateTouristDataCompleteness(participant.leadTourist)} 
+                />
+              )}
+              {lead && (() => {
+                const style = getLeadStatusStyle(lead.status);
+                return (
+                  <Link href="/leads" data-testid={`link-lead-${lead.id}`}>
+                    <Badge 
+                      variant={style.variant}
+                      className={`text-xs cursor-pointer hover-elevate ${style.customClass || ''}`}
+                    >
+                      {LEAD_STATUS_LABELS[lead.status] || lead.status}
+                    </Badge>
+                  </Link>
+                );
+              })()}
+            </div>
+          </div>
+          <div className="flex gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => handleEditTourist(participant.contact?.id)}
+              data-testid={`button-edit-tourist-${participant.deal.id}`}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            {participant.deal.groupId && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => {
+                  const displayName = participant.leadTourist?.foreignPassportName || participant.contact?.name || "участника";
+                  if (confirm(`Удалить ${displayName} из группы?`)) {
+                    handleRemoveFromGroup(participant.deal.groupId!, participant.deal.id);
+                  }
+                }}
+                disabled={removeFromGroupPending}
+                data-testid={`button-remove-from-group-${participant.deal.id}`}
+              >
+                <UserMinus className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <Accordion type="multiple" className="w-full">
+          {cities.map((city) => {
+            const visit = participant.visits?.find((v) => v.city === city);
+            const guideName = getGuideName(city);
+            
+            return (
+              <AccordionItem key={city} value={city} data-testid={`accordion-city-${city}-${participant.deal.id}`}>
+                <AccordionTrigger className="text-sm font-medium hover-elevate">
+                  <div className="flex items-center justify-between w-full pr-2">
+                    <span>{city}</span>
+                    {guideName && (
+                      <span className="text-xs text-muted-foreground font-normal">
+                        Гид: {guideName}
+                      </span>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4 pt-2">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-xs font-semibold text-muted-foreground">Прибытие</h4>
+                        {sharedFields?.arrival && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+                            <UsersRound className="h-2.5 w-2.5 mr-1" />
+                            Общее
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <EditableCell
+                            type="date"
+                            value={visit?.arrivalDate}
+                            placeholder="Дата"
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalDate", value)}
+                            className="text-sm flex-1"
+                          />
+                          <EditableCell
+                            type="time"
+                            value={visit?.arrivalTime}
+                            placeholder="Время"
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalTime", value)}
+                            className="text-sm flex-1"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <TransportTypeSelector
+                            value={visit?.transportType}
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transportType", value)}
+                            testIdSuffix={`-${participant.deal.id}-${city}-arrival`}
+                          />
+                          <EditableCell
+                            type="text"
+                            value={visit?.flightNumber}
+                            placeholder="№ рейса"
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "flightNumber", value)}
+                            className="text-sm flex-1"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <EditableCell
+                            type="text"
+                            value={visit?.airport}
+                            placeholder={visit?.transportType === "plane" ? "Аэропорт" : "Вокзал"}
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "airport", value)}
+                            className="text-sm flex-1"
+                          />
+                          <EditableCell
+                            type="text"
+                            value={visit?.transfer}
+                            placeholder="Трансфер"
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transfer", value)}
+                            className="text-sm flex-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-xs font-semibold text-muted-foreground">Отель</h4>
+                        {sharedFields?.hotel && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+                            <UsersRound className="h-2.5 w-2.5 mr-1" />
+                            Общее
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <EditableCell
+                          type="text"
+                          value={visit?.hotelName}
+                          placeholder="Название отеля"
+                          onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "hotelName", value)}
+                          className="text-sm w-full"
+                        />
+                        <EditableCell
+                          type="text"
+                          value={visit?.roomType}
+                          placeholder="Тип номера"
+                          onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "roomType", value)}
+                          className="text-sm w-full"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-xs font-semibold text-muted-foreground">Отъезд</h4>
+                        {sharedFields?.departure && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+                            <UsersRound className="h-2.5 w-2.5 mr-1" />
+                            Общее
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <EditableCell
+                            type="date"
+                            value={visit?.departureDate}
+                            placeholder="Дата"
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureDate", value)}
+                            className="text-sm flex-1"
+                          />
+                          <EditableCell
+                            type="time"
+                            value={visit?.departureTime}
+                            placeholder="Время"
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
+                            className="text-sm flex-1"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <TransportTypeSelector
+                            value={visit?.departureTransportType}
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransportType", value)}
+                            testIdSuffix={`-${participant.deal.id}-${city}-departure`}
+                          />
+                          <EditableCell
+                            type="text"
+                            value={visit?.departureFlightNumber}
+                            placeholder="№ рейса"
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureFlightNumber", value)}
+                            className="text-sm flex-1"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <EditableCell
+                            type="text"
+                            value={visit?.departureAirport}
+                            placeholder={visit?.departureTransportType === "plane" ? "Аэропорт" : "Вокзал"}
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureAirport", value)}
+                            className="text-sm flex-1"
+                          />
+                          <EditableCell
+                            type="text"
+                            value={visit?.departureTransfer}
+                            placeholder="Трансфер"
+                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransfer", value)}
+                            className="text-sm flex-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -119,6 +416,7 @@ export default function EventSummary() {
   const { toast } = useToast();
   const [showCreateMiniGroupDialog, setShowCreateMiniGroupDialog] = useState(false);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const { data: event, isLoading: eventLoading } = useQuery<EventWithStats>({
     queryKey: [`/api/events/${eventId}`],
@@ -816,6 +1114,69 @@ export default function EventSummary() {
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Нет участников</p>
             </div>
+          ) : isMobile ? (
+            <div className="space-y-0">
+              {participants.map((participant, index) => {
+                const leadId = participant.contact?.leadId;
+                const groupId = participant.deal.groupId;
+                const isMiniGroup = participant.group?.type === 'mini_group';
+                
+                let groupInfo: ParticipantCardProps['groupInfo'] = undefined;
+                let sharedFields: ParticipantCardProps['sharedFields'] = undefined;
+                
+                // Priority 1: Lead (family) - shares ALL fields
+                if (leadId) {
+                  const leadMembers = participants.filter(p => p.contact?.leadId === leadId);
+                  if (leadMembers.length > 1) {
+                    groupInfo = {
+                      type: 'family',
+                      memberCount: leadMembers.length,
+                    };
+                    sharedFields = {
+                      arrival: true,
+                      hotel: true,
+                      departure: true,
+                    };
+                  }
+                }
+                // Priority 2: Mini-group (not in lead, or lead has only 1 member) - shares HOTEL only
+                else if (groupId && isMiniGroup && participant.group) {
+                  const groupMembers = participants.filter(p => p.deal.groupId === groupId);
+                  if (groupMembers.length > 1) {
+                    groupInfo = {
+                      type: 'mini_group',
+                      name: participant.group.name,
+                      memberCount: groupMembers.length,
+                    };
+                    sharedFields = {
+                      arrival: false,
+                      hotel: true,
+                      departure: false,
+                    };
+                  }
+                }
+                
+                return (
+                  <ParticipantCard
+                    key={participant.deal.id}
+                    participant={participant}
+                    index={index}
+                    cities={event.cities}
+                    getGuideName={getGuideName}
+                    handleVisitUpdate={handleVisitUpdate}
+                    handleEditTourist={handleEditTourist}
+                    handleRemoveFromGroup={(groupId, dealId) => {
+                      removeFromGroupMutation.mutate({ groupId, dealId });
+                    }}
+                    removeFromGroupPending={removeFromGroupMutation.isPending}
+                    lead={participant.lead}
+                    getLeadStatusStyle={getLeadStatusStyle}
+                    groupInfo={groupInfo}
+                    sharedFields={sharedFields}
+                  />
+                );
+              })}
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse" data-testid="table-participants">
@@ -1034,6 +1395,7 @@ export default function EventSummary() {
                                       <TransportTypeSelector
                                         value={visit?.transportType}
                                         onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transportType", value)}
+                                        testIdSuffix={`-${participant.deal.id}-${city}-arrival`}
                                       />
                                       <EditableCell
                                         type="text"
@@ -1118,6 +1480,7 @@ export default function EventSummary() {
                                       <TransportTypeSelector
                                         value={visit?.departureTransportType}
                                         onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransportType", value)}
+                                        testIdSuffix={`-${participant.deal.id}-${city}-departure`}
                                       />
                                       <EditableCell
                                         type="text"

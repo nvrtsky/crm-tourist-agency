@@ -530,16 +530,27 @@ export default function EventSummary() {
     }
   };
 
-  const getLeadStatusBadgeClass = (status: string) => {
+  const getLeadStatusStyle = (status: string): { 
+    variant: "default" | "secondary" | "outline" | "destructive"; 
+    customClass?: string 
+  } => {
     switch (status) {
       case "qualified":
-        return "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white border-[#d89420]";
+        return { 
+          variant: "outline", 
+          customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420]" 
+        };
       case "converted":
-        return "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900";
+        return { 
+          variant: "default", 
+          customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" 
+        };
       case "lost":
-        return "bg-destructive text-destructive-foreground border-destructive";
+        return { variant: "destructive" };
+      case "new":
+      case "contacted":
       default:
-        return "bg-secondary text-secondary-foreground border-secondary";
+        return { variant: "secondary" };
     }
   };
 
@@ -758,15 +769,19 @@ export default function EventSummary() {
                               <div className="text-[10px] text-muted-foreground">
                                 {groupSize} чел.
                               </div>
-                              {participant.lead && (
-                                <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
-                                  <Badge 
-                                    className={`text-[10px] cursor-pointer hover-elevate ${getLeadStatusBadgeClass(participant.lead.status)}`}
-                                  >
-                                    {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
-                                  </Badge>
-                                </Link>
-                              )}
+                              {participant.lead && (() => {
+                                const style = getLeadStatusStyle(participant.lead.status);
+                                return (
+                                  <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
+                                    <Badge 
+                                      variant={style.variant}
+                                      className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
+                                    >
+                                      {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
+                                    </Badge>
+                                  </Link>
+                                );
+                              })()}
                               {participant.group && (
                                 <Button
                                   size="sm"

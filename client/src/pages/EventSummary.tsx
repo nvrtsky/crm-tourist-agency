@@ -49,6 +49,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+const LEAD_STATUS_LABELS: Record<string, string> = {
+  new: "Новый",
+  contacted: "Квалифицирован",
+  qualified: "Забронирован",
+  converted: "Подтвержден",
+  lost: "Отложен",
+};
+
 interface EventWithStats extends Event {
   bookedCount: number;
   availableSpots: number;
@@ -845,7 +853,7 @@ export default function EventSummary() {
                         <td className="p-2 border-r">
                           {participant.lead ? (
                             <Badge className={getStatusColor(participant.lead.status)} data-testid={`badge-status-${participant.deal.id}`}>
-                              {participant.lead.status}
+                              {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
                             </Badge>
                           ) : (
                             <span className="text-muted-foreground text-xs">—</span>

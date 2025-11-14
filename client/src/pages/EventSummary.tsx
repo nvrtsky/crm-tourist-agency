@@ -81,7 +81,7 @@ type CreateMiniGroupFormData = z.infer<typeof createMiniGroupSchema>;
 
 interface TransportTypeSelectorProps {
   value: string | null | undefined;
-  onSave: (value: string) => void;
+  onSave: (value: string | null) => void;
   className?: string;
 }
 
@@ -92,7 +92,7 @@ function TransportTypeSelector({ value, onSave, className }: TransportTypeSelect
         type="button"
         size="icon"
         variant={value === "plane" ? "default" : "ghost"}
-        onClick={() => onSave(value === "plane" ? "" : "plane")}
+        onClick={() => onSave(value === "plane" ? null : "plane")}
         aria-label="Самолет"
         data-testid="button-transport-plane"
       >
@@ -102,7 +102,7 @@ function TransportTypeSelector({ value, onSave, className }: TransportTypeSelect
         type="button"
         size="icon"
         variant={value === "train" ? "default" : "ghost"}
-        onClick={() => onSave(value === "train" ? "" : "train")}
+        onClick={() => onSave(value === "train" ? null : "train")}
         aria-label="Поезд"
         data-testid="button-transport-train"
       >
@@ -434,7 +434,7 @@ export default function EventSummary() {
     setEditingContactId(contactId);
   };
 
-  const handleVisitUpdate = (visitId: string | undefined, dealId: string, city: string, field: string, value: string) => {
+  const handleVisitUpdate = (visitId: string | undefined, dealId: string, city: string, field: string, value: string | null) => {
     // Find the participant
     const participant = participants.find(p => p.deal.id === dealId);
     if (!participant) return;

@@ -171,15 +171,19 @@ function ParticipantCard({
               {groupInfo && groupMembers && groupMembers.length > 0 && (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Badge 
-                      variant="secondary" 
-                      className="text-xs cursor-pointer hover-elevate"
+                    <button
+                      className="inline-flex"
                       data-testid={`button-group-members-${participant.deal.id}`}
                     >
-                      <UsersRound className="h-3 w-3 mr-1" />
-                      {groupInfo.type === 'family' ? `Семья (${groupInfo.memberCount})` : groupInfo.name || `Группа (${groupInfo.memberCount})`}
-                      <ChevronDown className="h-3 w-3 ml-1" />
-                    </Badge>
+                      <Badge 
+                        variant="secondary" 
+                        className="text-xs cursor-pointer hover-elevate"
+                      >
+                        <UsersRound className="h-3 w-3 mr-1" />
+                        {groupInfo.type === 'family' ? `Семья (${groupInfo.memberCount})` : groupInfo.name || `Группа (${groupInfo.memberCount})`}
+                        <ChevronDown className="h-3 w-3 ml-1" />
+                      </Badge>
+                    </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-80" data-testid={`popover-group-members-${participant.deal.id}`}>
                     <div className="space-y-3">

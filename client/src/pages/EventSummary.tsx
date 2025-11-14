@@ -807,12 +807,15 @@ export default function EventSummary() {
                 </thead>
                 <tbody>
                   {participants.map((participant, index) => {
-                    // Determine if this is the first row in a group
-                    const isFirstInGroup = participant.group && participant.deal.isPrimaryInGroup;
+                    // Determine group membership
+                    const groupId = participant.deal.groupId;
                     const groupMembers = participant.group 
                       ? participants.filter(p => p.group?.id === participant.group?.id)
                       : [];
                     const groupSize = groupMembers.length;
+                    
+                    // Use pre-computed first index map - works even without isPrimaryInGroup flag
+                    const isFirstInGroup = groupId ? groupFirstIndexMap.get(groupId) === index : false;
                     
                     // Determine if this is the first row from the same lead (family)
                     const leadId = participant.contact?.leadId;
@@ -825,7 +828,6 @@ export default function EventSummary() {
                     
                     // Determine if this is a mini-group (not a family group)
                     const isMiniGroup = participant.group?.type === "mini_group";
-                    const groupId = participant.deal.groupId;
                     // Use pre-computed first index map - works even without isPrimaryInGroup flag
                     const isFirstInMiniGroup = isMiniGroup && groupId ? groupFirstIndexMap.get(groupId) === index : false;
 

@@ -133,6 +133,7 @@ interface ParticipantCardProps {
   getLeadStatusStyle: (status: string) => { variant: any; customClass?: string };
   groupInfo?: { type: 'family' | 'mini_group'; name?: string; memberCount: number };
   sharedFields?: { arrival: boolean; hotel: boolean; departure: boolean };
+  sharedVisits?: CityVisit[];
 }
 
 function ParticipantCard({
@@ -148,6 +149,7 @@ function ParticipantCard({
   getLeadStatusStyle,
   groupInfo,
   sharedFields,
+  sharedVisits,
 }: ParticipantCardProps) {
   return (
     <Card className={`mb-4 ${groupInfo ? 'border-l-4 border-l-primary/30' : ''}`} data-testid={`card-participant-${participant.deal.id}`}>
@@ -234,7 +236,15 @@ function ParticipantCard({
       <CardContent className="pt-0">
         <Accordion type="multiple" className="w-full">
           {cities.map((city) => {
-            const visit = participant.visits?.find((v) => v.city === city);
+            // For each section, determine the visit source based on shared field flags
+            const arrivalVisitsSource = (sharedFields?.arrival ? sharedVisits : participant.visits) || [];
+            const hotelVisitsSource = (sharedFields?.hotel ? sharedVisits : participant.visits) || [];
+            const departureVisitsSource = (sharedFields?.departure ? sharedVisits : participant.visits) || [];
+            
+            const arrivalVisit = arrivalVisitsSource.find((v) => v.city === city);
+            const hotelVisit = hotelVisitsSource.find((v) => v.city === city);
+            const departureVisit = departureVisitsSource.find((v) => v.city === city);
+            
             const guideName = getGuideName(city);
             
             return (
@@ -265,46 +275,46 @@ function ParticipantCard({
                         <div className="flex gap-2">
                           <EditableCell
                             type="date"
-                            value={visit?.arrivalDate}
+                            value={arrivalVisit?.arrivalDate}
                             placeholder="Дата"
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalDate", value)}
+                            onSave={(value) => handleVisitUpdate(arrivalVisit?.id, participant.deal.id, city, "arrivalDate", value)}
                             className="text-sm flex-1"
                           />
                           <EditableCell
                             type="time"
-                            value={visit?.arrivalTime}
+                            value={arrivalVisit?.arrivalTime}
                             placeholder="Время"
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalTime", value)}
+                            onSave={(value) => handleVisitUpdate(arrivalVisit?.id, participant.deal.id, city, "arrivalTime", value)}
                             className="text-sm flex-1"
                           />
                         </div>
                         <div className="flex gap-2">
                           <TransportTypeSelector
-                            value={visit?.transportType}
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transportType", value)}
+                            value={arrivalVisit?.transportType}
+                            onSave={(value) => handleVisitUpdate(arrivalVisit?.id, participant.deal.id, city, "transportType", value)}
                             testIdSuffix={`-${participant.deal.id}-${city}-arrival`}
                           />
                           <EditableCell
                             type="text"
-                            value={visit?.flightNumber}
+                            value={arrivalVisit?.flightNumber}
                             placeholder="№ рейса"
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "flightNumber", value)}
+                            onSave={(value) => handleVisitUpdate(arrivalVisit?.id, participant.deal.id, city, "flightNumber", value)}
                             className="text-sm flex-1"
                           />
                         </div>
                         <div className="flex gap-2">
                           <EditableCell
                             type="text"
-                            value={visit?.airport}
-                            placeholder={visit?.transportType === "plane" ? "Аэропорт" : "Вокзал"}
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "airport", value)}
+                            value={arrivalVisit?.airport}
+                            placeholder={arrivalVisit?.transportType === "plane" ? "Аэропорт" : "Вокзал"}
+                            onSave={(value) => handleVisitUpdate(arrivalVisit?.id, participant.deal.id, city, "airport", value)}
                             className="text-sm flex-1"
                           />
                           <EditableCell
                             type="text"
-                            value={visit?.transfer}
+                            value={arrivalVisit?.transfer}
                             placeholder="Трансфер"
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transfer", value)}
+                            onSave={(value) => handleVisitUpdate(arrivalVisit?.id, participant.deal.id, city, "transfer", value)}
                             className="text-sm flex-1"
                           />
                         </div>
@@ -324,16 +334,16 @@ function ParticipantCard({
                       <div className="space-y-2">
                         <EditableCell
                           type="text"
-                          value={visit?.hotelName}
+                          value={hotelVisit?.hotelName}
                           placeholder="Название отеля"
-                          onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "hotelName", value)}
+                          onSave={(value) => handleVisitUpdate(hotelVisit?.id, participant.deal.id, city, "hotelName", value)}
                           className="text-sm w-full"
                         />
                         <EditableCell
                           type="text"
-                          value={visit?.roomType}
+                          value={hotelVisit?.roomType}
                           placeholder="Тип номера"
-                          onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "roomType", value)}
+                          onSave={(value) => handleVisitUpdate(hotelVisit?.id, participant.deal.id, city, "roomType", value)}
                           className="text-sm w-full"
                         />
                       </div>
@@ -353,46 +363,46 @@ function ParticipantCard({
                         <div className="flex gap-2">
                           <EditableCell
                             type="date"
-                            value={visit?.departureDate}
+                            value={departureVisit?.departureDate}
                             placeholder="Дата"
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureDate", value)}
+                            onSave={(value) => handleVisitUpdate(departureVisit?.id, participant.deal.id, city, "departureDate", value)}
                             className="text-sm flex-1"
                           />
                           <EditableCell
                             type="time"
-                            value={visit?.departureTime}
+                            value={departureVisit?.departureTime}
                             placeholder="Время"
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
+                            onSave={(value) => handleVisitUpdate(departureVisit?.id, participant.deal.id, city, "departureTime", value)}
                             className="text-sm flex-1"
                           />
                         </div>
                         <div className="flex gap-2">
                           <TransportTypeSelector
-                            value={visit?.departureTransportType}
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransportType", value)}
+                            value={departureVisit?.departureTransportType}
+                            onSave={(value) => handleVisitUpdate(departureVisit?.id, participant.deal.id, city, "departureTransportType", value)}
                             testIdSuffix={`-${participant.deal.id}-${city}-departure`}
                           />
                           <EditableCell
                             type="text"
-                            value={visit?.departureFlightNumber}
+                            value={departureVisit?.departureFlightNumber}
                             placeholder="№ рейса"
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureFlightNumber", value)}
+                            onSave={(value) => handleVisitUpdate(departureVisit?.id, participant.deal.id, city, "departureFlightNumber", value)}
                             className="text-sm flex-1"
                           />
                         </div>
                         <div className="flex gap-2">
                           <EditableCell
                             type="text"
-                            value={visit?.departureAirport}
-                            placeholder={visit?.departureTransportType === "plane" ? "Аэропорт" : "Вокзал"}
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureAirport", value)}
+                            value={departureVisit?.departureAirport}
+                            placeholder={departureVisit?.departureTransportType === "plane" ? "Аэропорт" : "Вокзал"}
+                            onSave={(value) => handleVisitUpdate(departureVisit?.id, participant.deal.id, city, "departureAirport", value)}
                             className="text-sm flex-1"
                           />
                           <EditableCell
                             type="text"
-                            value={visit?.departureTransfer}
+                            value={departureVisit?.departureTransfer}
                             placeholder="Трансфер"
-                            onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransfer", value)}
+                            onSave={(value) => handleVisitUpdate(departureVisit?.id, participant.deal.id, city, "departureTransfer", value)}
                             className="text-sm flex-1"
                           />
                         </div>
@@ -1123,6 +1133,7 @@ export default function EventSummary() {
                 
                 let groupInfo: ParticipantCardProps['groupInfo'] = undefined;
                 let sharedFields: ParticipantCardProps['sharedFields'] = undefined;
+                let sharedVisits: CityVisit[] | undefined = undefined;
                 
                 // Priority 1: Lead (family) - shares ALL fields
                 if (leadId) {
@@ -1137,6 +1148,9 @@ export default function EventSummary() {
                       hotel: true,
                       departure: true,
                     };
+                    // Use first member's visits as source for all shared fields
+                    const primaryMember = leadMembers[0];
+                    sharedVisits = primaryMember.visits || [];
                   }
                 }
                 // Priority 2: Mini-group (not in lead, or lead has only 1 member) - shares HOTEL only
@@ -1153,6 +1167,9 @@ export default function EventSummary() {
                       hotel: true,
                       departure: false,
                     };
+                    // Use first member's visits as source for shared hotel field
+                    const primaryMember = groupMembers[0];
+                    sharedVisits = primaryMember.visits || [];
                   }
                 }
                 
@@ -1173,6 +1190,7 @@ export default function EventSummary() {
                     getLeadStatusStyle={getLeadStatusStyle}
                     groupInfo={groupInfo}
                     sharedFields={sharedFields}
+                    sharedVisits={sharedVisits}
                   />
                 );
               })}

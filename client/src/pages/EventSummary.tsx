@@ -165,10 +165,75 @@ function ParticipantCard({
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="outline" className="text-xs">#{index + 1}</Badge>
-              <CardTitle className="text-base">
-                {participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}
-              </CardTitle>
-              {groupInfo && groupMembers && groupMembers.length > 0 && (
+              {groupInfo && groupInfo.type === 'family' && groupMembers && groupMembers.length > 1 ? (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="inline-flex"
+                      data-testid={`button-family-header-${participant.deal.id}`}
+                    >
+                      <CardTitle className="text-base flex items-center gap-2 cursor-pointer hover-elevate rounded px-2 py-1">
+                        <UsersRound className="h-4 w-4" />
+                        Семья ({groupInfo.memberCount} чел.)
+                        <ChevronDown className="h-3 w-3" />
+                      </CardTitle>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" data-testid={`popover-family-members-${participant.deal.id}`}>
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm">Члены семьи</h4>
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {groupMembers.map((member) => (
+                          <div 
+                            key={member.deal.id} 
+                            className="flex items-center justify-between gap-2 p-2 rounded-md border hover-elevate"
+                            data-testid={`family-member-${member.deal.id}`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium truncate">
+                                  {member.leadTourist?.foreignPassportName || member.contact?.name || "—"}
+                                </span>
+                                {member.leadTourist?.isPrimary && (
+                                  <Badge variant="default" className="text-[10px] px-1.5 py-0.5">
+                                    <Star className="h-2.5 w-2.5 mr-0.5" />
+                                    Основной
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 mt-1">
+                                {member.leadTourist && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+                                    {member.leadTourist.touristType === "adult" ? (
+                                      <><UserIcon className="h-2.5 w-2.5 mr-0.5" />Взрослый</>
+                                    ) : (
+                                      <><Baby className="h-2.5 w-2.5 mr-0.5" />Ребенок</>
+                                    )}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 shrink-0"
+                              onClick={() => handleEditTourist(member.contact?.id)}
+                              data-testid={`button-edit-family-member-${member.deal.id}`}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <CardTitle className="text-base">
+                  {participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}
+                </CardTitle>
+              )}
+              {groupInfo && groupInfo.type === 'mini_group' && groupMembers && groupMembers.length > 0 && (
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
@@ -180,7 +245,7 @@ function ParticipantCard({
                         className="text-xs cursor-pointer hover-elevate"
                       >
                         <UsersRound className="h-3 w-3 mr-1" />
-                        {groupInfo.type === 'family' ? `Семья (${groupInfo.memberCount})` : groupInfo.name || `Группа (${groupInfo.memberCount})`}
+                        {groupInfo.name || `Группа (${groupInfo.memberCount})`}
                         <ChevronDown className="h-3 w-3 ml-1" />
                       </Badge>
                     </button>
@@ -188,7 +253,7 @@ function ParticipantCard({
                   <PopoverContent className="w-80" data-testid={`popover-group-members-${participant.deal.id}`}>
                     <div className="space-y-3">
                       <h4 className="font-medium text-sm">
-                        {groupInfo.type === 'family' ? 'Члены семьи' : `Группа: ${groupInfo.name || 'Мини-группа'}`}
+                        Группа: {groupInfo.name || 'Мини-группа'}
                       </h4>
                       <div className="space-y-2 max-h-[300px] overflow-y-auto">
                         {groupMembers.map((member, idx) => (
@@ -1196,78 +1261,121 @@ export default function EventSummary() {
             </div>
           ) : isMobile ? (
             <div className="space-y-0">
-              {participants.map((participant, index) => {
-                const leadId = participant.contact?.leadId;
-                const groupId = participant.deal.groupId;
-                const isMiniGroup = participant.group?.type === 'mini_group';
+              {(() => {
+                // For mobile: show only ONE card per family (leadId group)
+                // Build map of leadId -> representative participant (primary member)
+                const familyRepresentatives = new Map<string, Participant>();
+                const seenLeadIds = new Set<string>();
                 
-                let groupInfo: ParticipantCardProps['groupInfo'] = undefined;
-                let sharedFields: ParticipantCardProps['sharedFields'] = undefined;
-                let sharedVisits: CityVisit[] | undefined = undefined;
-                let groupMembers: Participant[] | undefined = undefined;
-                
-                // Priority 1: Lead (family) - shares ALL fields
-                if (leadId) {
-                  const leadMembers = participants.filter(p => p.contact?.leadId === leadId);
-                  if (leadMembers.length > 1) {
-                    groupInfo = {
-                      type: 'family',
-                      memberCount: leadMembers.length,
-                    };
-                    sharedFields = {
-                      arrival: true,
-                      hotel: true,
-                      departure: true,
-                    };
-                    // Use first member's visits as source for all shared fields
-                    const primaryMember = leadMembers[0];
-                    sharedVisits = primaryMember.visits || [];
-                    groupMembers = leadMembers;
+                // First pass: identify families and their primary representatives
+                participants.forEach((p) => {
+                  const leadId = p.contact?.leadId;
+                  if (leadId) {
+                    const leadMembers = participants.filter(m => m.contact?.leadId === leadId);
+                    if (leadMembers.length > 1 && !familyRepresentatives.has(leadId)) {
+                      // Find primary member or use first member as fallback
+                      const primaryMember = leadMembers.find(m => m.leadTourist?.isPrimary) || leadMembers[0];
+                      familyRepresentatives.set(leadId, primaryMember);
+                    }
                   }
-                }
-                // Priority 2: Mini-group (not in lead, or lead has only 1 member) - shares HOTEL only
-                else if (groupId && isMiniGroup && participant.group) {
-                  const miniGroupMembers = participants.filter(p => p.deal.groupId === groupId);
-                  if (miniGroupMembers.length > 1) {
-                    groupInfo = {
-                      type: 'mini_group',
-                      name: participant.group.name,
-                      memberCount: miniGroupMembers.length,
-                    };
-                    sharedFields = {
-                      arrival: false,
-                      hotel: true,
-                      departure: false,
-                    };
-                    // Use first member's visits as source for shared hotel field
-                    const primaryMember = miniGroupMembers[0];
-                    sharedVisits = primaryMember.visits || [];
-                    groupMembers = miniGroupMembers;
-                  }
-                }
+                });
                 
-                return (
-                  <ParticipantCard
-                    key={participant.deal.id}
-                    participant={participant}
-                    index={index}
-                    cities={event.cities}
-                    getGuideName={getGuideName}
-                    handleVisitUpdate={handleVisitUpdate}
-                    handleEditTourist={handleEditTourist}
-                    handleRemoveFromGroup={(groupId, dealId) => {
-                      removeFromGroupMutation.mutate({ groupId, dealId });
-                    }}
-                    removeFromGroupPending={removeFromGroupMutation.isPending}
-                    lead={participant.lead}
-                    getLeadStatusStyle={getLeadStatusStyle}
-                    groupInfo={groupInfo}
-                    sharedFields={sharedFields}
-                    sharedVisits={sharedVisits}
-                    groupMembers={groupMembers}
-                  />
-                );
-              })}
+                // Second pass: filter participants for display
+                const filteredParticipants = participants.filter((participant) => {
+                  const leadId = participant.contact?.leadId;
+                  
+                  // If part of a family (leadId exists)
+                  if (leadId && familyRepresentatives.has(leadId)) {
+                    // Skip if we've already shown this family
+                    if (seenLeadIds.has(leadId)) {
+                      return false;
+                    }
+                    // Only show if this participant is the designated representative
+                    const representative = familyRepresentatives.get(leadId);
+                    if (participant.deal.id === representative?.deal.id) {
+                      seenLeadIds.add(leadId);
+                      return true;
+                    }
+                    return false;
+                  }
+                  
+                  // Show all non-family participants (mini-groups and individuals)
+                  return true;
+                });
+                
+                return filteredParticipants.map((participant, displayIndex) => {
+                  const leadId = participant.contact?.leadId;
+                  const groupId = participant.deal.groupId;
+                  const isMiniGroup = participant.group?.type === 'mini_group';
+                  
+                  let groupInfo: ParticipantCardProps['groupInfo'] = undefined;
+                  let sharedFields: ParticipantCardProps['sharedFields'] = undefined;
+                  let sharedVisits: CityVisit[] | undefined = undefined;
+                  let groupMembers: Participant[] | undefined = undefined;
+                  
+                  // Priority 1: Lead (family) - shares ALL fields
+                  if (leadId) {
+                    const leadMembers = participants.filter(p => p.contact?.leadId === leadId);
+                    if (leadMembers.length > 1) {
+                      groupInfo = {
+                        type: 'family',
+                        memberCount: leadMembers.length,
+                      };
+                      sharedFields = {
+                        arrival: true,
+                        hotel: true,
+                        departure: true,
+                      };
+                      // Use primary member or first member's visits as source for all shared fields
+                      const primaryMember = leadMembers.find(m => m.leadTourist?.isPrimary) || leadMembers[0];
+                      sharedVisits = primaryMember.visits || [];
+                      groupMembers = leadMembers;
+                    }
+                  }
+                  // Priority 2: Mini-group (not in lead, or lead has only 1 member) - shares HOTEL only
+                  else if (groupId && isMiniGroup && participant.group) {
+                    const miniGroupMembers = participants.filter(p => p.deal.groupId === groupId);
+                    if (miniGroupMembers.length > 1) {
+                      groupInfo = {
+                        type: 'mini_group',
+                        name: participant.group.name,
+                        memberCount: miniGroupMembers.length,
+                      };
+                      sharedFields = {
+                        arrival: false,
+                        hotel: true,
+                        departure: false,
+                      };
+                      // Use first member's visits as source for shared hotel field
+                      const primaryMember = miniGroupMembers[0];
+                      sharedVisits = primaryMember.visits || [];
+                      groupMembers = miniGroupMembers;
+                    }
+                  }
+                  
+                  return (
+                    <ParticipantCard
+                      key={participant.deal.id}
+                      participant={participant}
+                      index={displayIndex}
+                      cities={event.cities}
+                      getGuideName={getGuideName}
+                      handleVisitUpdate={handleVisitUpdate}
+                      handleEditTourist={handleEditTourist}
+                      handleRemoveFromGroup={(groupId, dealId) => {
+                        removeFromGroupMutation.mutate({ groupId, dealId });
+                      }}
+                      removeFromGroupPending={removeFromGroupMutation.isPending}
+                      lead={participant.lead}
+                      getLeadStatusStyle={getLeadStatusStyle}
+                      groupInfo={groupInfo}
+                      sharedFields={sharedFields}
+                      sharedVisits={sharedVisits}
+                      groupMembers={groupMembers}
+                    />
+                  );
+                });
+              })()}
             </div>
           ) : (
             <div className="overflow-x-auto">

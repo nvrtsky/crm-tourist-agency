@@ -1010,7 +1010,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
       return;
     }
 
-    const fullName = `${tourist.lastName} ${tourist.firstName}`;
+    const fullName = tourist.foreignPassportName || `${tourist.lastName} ${tourist.firstName}`;
     if (confirm(`Вы уверены, что хотите удалить туриста ${fullName}?`)) {
       deleteTouristMutation.mutate(tourist.id);
     }
@@ -1420,7 +1420,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-medium">
-                              {tourist.lastName} {tourist.firstName} {tourist.middleName || ""}
+                              {tourist.foreignPassportName || `${tourist.lastName} ${tourist.firstName} ${tourist.middleName || ""}`.trim()}
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <Tooltip>

@@ -468,7 +468,7 @@ export default function EventSummary() {
 
       const baseData: Record<string, any> = {
         "№": index + 1,
-        "ФИО": p.contact?.name || "—",
+        "ФИО": p.leadTourist?.foreignPassportName || p.contact?.name || "—",
         "Данные": completenessText,
         "Статус лида": p.lead ? LEAD_STATUS_LABELS[p.lead.status] || p.lead.status : "—",
         "Email": p.contact?.email || "",
@@ -853,7 +853,7 @@ export default function EventSummary() {
                         <td className="sticky left-12 bg-background z-10 p-2 font-medium border-r min-w-[150px]" data-testid={`text-name-${participant.deal.id}`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <span>{participant.contact?.name || "—"}</span>
+                              <span>{participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}</span>
                               {participant.leadTourist && (
                                 <div className="flex items-center gap-1">
                                   <Tooltip>
@@ -905,7 +905,8 @@ export default function EventSummary() {
                                   variant="ghost"
                                   className="h-6 w-6 opacity-50 hover:opacity-100"
                                   onClick={() => {
-                                    if (confirm(`Удалить ${participant.contact?.name} из группы?`)) {
+                                    const displayName = participant.leadTourist?.foreignPassportName || participant.contact?.name || "участника";
+                                    if (confirm(`Удалить ${displayName} из группы?`)) {
                                       removeFromGroupMutation.mutate({
                                         groupId: participant.deal.groupId!,
                                         dealId: participant.deal.id,
@@ -1137,7 +1138,7 @@ export default function EventSummary() {
                           className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                         >
                           <div className="flex justify-between items-center">
-                            <span>{participant.contact?.name || "—"}</span>
+                            <span>{participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}</span>
                             <span className="text-xs text-muted-foreground">{participant.contact?.passport || "—"}</span>
                           </div>
                         </label>
@@ -1167,7 +1168,7 @@ export default function EventSummary() {
                           const participant = participants.find(p => p.deal.id === dealId);
                           return (
                             <option key={dealId} value={dealId}>
-                              {participant?.contact?.name || "—"}
+                              {participant?.leadTourist?.foreignPassportName || participant?.contact?.name || "—"}
                             </option>
                           );
                         })}

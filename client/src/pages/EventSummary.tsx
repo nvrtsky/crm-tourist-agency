@@ -982,6 +982,20 @@ export default function EventSummary() {
                                       onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalTime", value)}
                                       className="text-xs"
                                     />
+                                    <EditableCell
+                                      type="text"
+                                      value={visit?.airport}
+                                      placeholder={visit?.transportType === "plane" ? "Аэропорт" : "Вокзал"}
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "airport", value)}
+                                      className="text-xs"
+                                    />
+                                    <EditableCell
+                                      type="text"
+                                      value={visit?.transfer}
+                                      placeholder="Трансфер"
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transfer", value)}
+                                      className="text-xs"
+                                    />
                                   </div>
                                 </td>
                               )}
@@ -1060,6 +1074,20 @@ export default function EventSummary() {
                                       value={visit?.departureTime}
                                       placeholder="Время"
                                       onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
+                                      className="text-xs"
+                                    />
+                                    <EditableCell
+                                      type="text"
+                                      value={visit?.departureAirport}
+                                      placeholder={visit?.departureTransportType === "plane" ? "Аэропорт" : "Вокзал"}
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureAirport", value)}
+                                      className="text-xs"
+                                    />
+                                    <EditableCell
+                                      type="text"
+                                      value={visit?.departureTransfer}
+                                      placeholder="Трансфер"
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransfer", value)}
                                       className="text-xs"
                                     />
                                   </div>

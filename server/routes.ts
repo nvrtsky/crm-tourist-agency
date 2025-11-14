@@ -289,12 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         event.cities = assignedCities;
       }
       
-      // Count confirmed participants (by DEAL status, matching availability logic)
-      // Each confirmed deal = 1 participant (1 deal = 1 contact = 1 tourist)
-      const deals = await storage.getDealsByEvent(id);
-      const confirmedParticipantCount = deals.filter(d => d.status === "confirmed").length;
-      
-      res.json({ ...event, confirmedParticipantCount });
+      res.json(event);
     } catch (error) {
       console.error("Error fetching event:", error);
       res.status(500).json({ error: "Failed to fetch event" });
@@ -369,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Assemble participants using lookups
-      let participants = deals
+      const participants = deals
         .map((deal) => {
           const contact = contactMap.get(deal.contactId);
           if (!contact) {
@@ -397,11 +392,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
         .filter((p) => p !== null);
-      
-      // Filter to show only confirmed participants (by DEAL status) for ALL roles
-      // This ensures EventSummary table only displays confirmed tourists
-      // Backend availability logic counts confirmed deals, so filtering must match
-      participants = participants.filter(p => p.deal.status === "confirmed");
       
       res.json(participants);
     } catch (error) {

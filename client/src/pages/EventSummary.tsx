@@ -138,8 +138,8 @@ export default function EventSummary() {
     return 0;
   });
 
-  // Backend returns only confirmed participants for all roles
-  // Compute index maps for smart column merging (rowSpan for families and mini-groups)
+  // Pre-compute first participant indices for each lead and group
+  // This ensures rowSpan merging works even when isPrimary/isPrimaryInGroup flags are missing
   const leadFirstIndexMap = new Map<string, number>();
   const groupFirstIndexMap = new Map<string, number>();
   
@@ -829,11 +829,13 @@ export default function EventSummary() {
                       ? participants.filter(p => p.contact?.leadId === leadId)
                       : [];
                     const leadSize = leadMembers.length;
+                    // Use pre-computed first index map - works even without isPrimary flag
                     const isFirstInLead = leadId ? leadFirstIndexMap.get(leadId) === index : false;
                     
                     // Determine if this is a mini-group (not a family group)
                     const isMiniGroup = participant.group?.type === "mini_group";
                     const groupId = participant.deal.groupId;
+                    // Use pre-computed first index map - works even without isPrimaryInGroup flag
                     const isFirstInMiniGroup = isMiniGroup && groupId ? groupFirstIndexMap.get(groupId) === index : false;
 
                     return (
@@ -842,7 +844,7 @@ export default function EventSummary() {
                         className={`border-b hover-elevate ${participant.group ? 'bg-muted/5' : ''}`}
                         data-testid={`row-participant-${participant.deal.id}`}
                       >
-                        {/* Row number column */}
+                        {/* Number column - always present */}
                         <td className="sticky left-0 bg-background z-10 p-2 border-r text-center">
                           {index + 1}
                         </td>

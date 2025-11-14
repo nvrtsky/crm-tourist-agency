@@ -783,9 +783,9 @@ export default function EventSummary() {
                                       data-testid={`badge-tourist-type-${participant.deal.id}`}
                                     >
                                       {participant.leadTourist.touristType === "adult" ? (
-                                        <UserIcon className="h-4 w-4 text-muted-foreground" />
+                                        <UserIcon className="h-3 w-3 text-muted-foreground" />
                                       ) : (
-                                        <Baby className="h-4 w-4 text-muted-foreground" />
+                                        <Baby className="h-3 w-3 text-muted-foreground" />
                                       )}
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -799,7 +799,7 @@ export default function EventSummary() {
                                         className="inline-flex items-center rounded-md bg-primary px-2.5 py-1.5 text-[10px] font-semibold text-primary-foreground transition-colors cursor-default hover-elevate"
                                         data-testid={`badge-primary-tourist-${participant.deal.id}`}
                                       >
-                                        <Star className="h-4 w-4" />
+                                        <Star className="h-3 w-3" />
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p>Основной турист</p>

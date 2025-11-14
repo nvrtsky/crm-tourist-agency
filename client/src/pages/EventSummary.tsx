@@ -475,7 +475,6 @@ export default function EventSummary() {
         "Телефон": p.contact?.phone || "",
         "Паспорт": p.contact?.passport || "",
         "Дата рождения": p.contact?.birthDate ? format(new Date(p.contact.birthDate), "dd.MM.yyyy") : "",
-        "Статус сделки": p.deal.status,
         "Сумма": Number(p.deal.amount || 0),
       };
 
@@ -533,7 +532,7 @@ export default function EventSummary() {
     // Create merges for hotel and transport columns (for groups)
     groupRows.forEach(({ start, end, type }) => {
       if (end > start) {
-        const baseColumns = 10; // № + Статус лида + ФИО + Данные туриста + Email + Телефон + Паспорт + ДР + Статус + Сумма
+        const baseColumns = 9; // № + Статус лида + ФИО + Данные туриста + Email + Телефон + Паспорт + ДР + Сумма
         
         event.cities.forEach((city, cityIndex) => {
           const cityBaseCol = baseColumns + (cityIndex * 8); // 8 columns per city
@@ -779,7 +778,6 @@ export default function EventSummary() {
                     <th className="sticky left-12 bg-background z-10 text-center p-2 font-medium border-r w-16" rowSpan={2}>Лид</th>
                     <th className="sticky left-28 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Данные туриста</th>
-                    <th className="text-left p-2 font-medium border-r" rowSpan={2}>Статус</th>
                     {event.cities.map((city) => {
                       const guideName = getGuideName(city);
                       return (
@@ -960,15 +958,6 @@ export default function EventSummary() {
                             <DataCompletenessIndicator 
                               completeness={calculateTouristDataCompleteness(participant.leadTourist)} 
                             />
-                          ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
-                        </td>
-                        <td className="p-2 border-r">
-                          {participant.lead ? (
-                            <Badge className={getStatusColor(participant.lead.status)} data-testid={`badge-status-${participant.deal.id}`}>
-                              {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
-                            </Badge>
                           ) : (
                             <span className="text-muted-foreground text-xs">—</span>
                           )}

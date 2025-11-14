@@ -4,7 +4,7 @@ import { useState, Fragment } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, Train } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -78,6 +78,39 @@ const createMiniGroupSchema = z.object({
 });
 
 type CreateMiniGroupFormData = z.infer<typeof createMiniGroupSchema>;
+
+interface TransportTypeSelectorProps {
+  value: string | null | undefined;
+  onSave: (value: string) => void;
+  className?: string;
+}
+
+function TransportTypeSelector({ value, onSave, className }: TransportTypeSelectorProps) {
+  return (
+    <div className={`flex gap-1 ${className || ''}`}>
+      <Button
+        type="button"
+        size="icon"
+        variant={value === "plane" ? "default" : "ghost"}
+        onClick={() => onSave(value === "plane" ? "" : "plane")}
+        aria-label="Самолет"
+        data-testid="button-transport-plane"
+      >
+        <Plane className="h-3 w-3" />
+      </Button>
+      <Button
+        type="button"
+        size="icon"
+        variant={value === "train" ? "default" : "ghost"}
+        onClick={() => onSave(value === "train" ? "" : "train")}
+        aria-label="Поезд"
+        data-testid="button-transport-train"
+      >
+        <Train className="h-3 w-3" />
+      </Button>
+    </div>
+  );
+}
 
 export default function EventSummary() {
   const [, params] = useRoute("/events/:id/summary");
@@ -241,18 +274,42 @@ export default function EventSummary() {
     mutationFn: async ({ visitId, updates }: { visitId: string; updates: Partial<CityVisit> }) => {
       return apiRequest("PATCH", `/api/visits/${visitId}`, updates);
     },
+    onMutate: async ({ visitId, updates }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+      
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData([`/api/events/${eventId}/participants`]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData([`/api/events/${eventId}/participants`], (old: any) => {
+        if (!old) return old;
+        return old.map((participant: any) => ({
+          ...participant,
+          visits: participant.visits?.map((visit: any) => 
+            visit.id === visitId ? { ...visit, ...updates } : visit
+          )
+        }));
+      });
+      
+      return { previousData };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        queryClient.setQueryData([`/api/events/${eventId}/participants`], context.previousData);
+      }
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить изменения",
+        variant: "destructive",
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
       toast({
         title: "Сохранено",
         description: "Данные обновлены",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось сохранить изменения",
-        variant: "destructive",
       });
     },
   });
@@ -957,52 +1014,51 @@ export default function EventSummary() {
                                   {...(cityMeta.arrivalRowSpan > 1 && { rowSpan: cityMeta.arrivalRowSpan })}
                                 >
                                   <div className="space-y-1">
-                                    <EditableCell
-                                      type="date"
-                                      value={visit?.arrivalDate}
-                                      placeholder="Дата"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalDate", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="time"
-                                      value={visit?.arrivalTime}
-                                      placeholder="Время"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalTime", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="select"
-                                      value={visit?.transportType}
-                                      placeholder="Тип"
-                                      selectOptions={[
-                                        { value: "plane", label: "Самолет" },
-                                        { value: "train", label: "Поезд" },
-                                      ]}
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transportType", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="text"
-                                      value={visit?.flightNumber}
-                                      placeholder="№ рейса"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "flightNumber", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="text"
-                                      value={visit?.airport}
-                                      placeholder={visit?.transportType === "plane" ? "Аэропорт" : "Вокзал"}
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "airport", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="text"
-                                      value={visit?.transfer}
-                                      placeholder="Трансфер"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transfer", value)}
-                                      className="text-xs"
-                                    />
+                                    <div className="flex gap-1">
+                                      <EditableCell
+                                        type="date"
+                                        value={visit?.arrivalDate}
+                                        placeholder="Дата"
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalDate", value)}
+                                        className="text-xs flex-1"
+                                      />
+                                      <EditableCell
+                                        type="time"
+                                        value={visit?.arrivalTime}
+                                        placeholder="Время"
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "arrivalTime", value)}
+                                        className="text-xs flex-1"
+                                      />
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <TransportTypeSelector
+                                        value={visit?.transportType}
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transportType", value)}
+                                      />
+                                      <EditableCell
+                                        type="text"
+                                        value={visit?.flightNumber}
+                                        placeholder="№ рейса"
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "flightNumber", value)}
+                                        className="text-xs flex-1"
+                                      />
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <EditableCell
+                                        type="text"
+                                        value={visit?.airport}
+                                        placeholder={visit?.transportType === "plane" ? "Аэропорт" : "Вокзал"}
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "airport", value)}
+                                        className="text-xs flex-1"
+                                      />
+                                      <EditableCell
+                                        type="text"
+                                        value={visit?.transfer}
+                                        placeholder="Трансфер"
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transfer", value)}
+                                        className="text-xs flex-1"
+                                      />
+                                    </div>
                                   </div>
                                 </td>
                               )}
@@ -1042,52 +1098,51 @@ export default function EventSummary() {
                                   {...(cityMeta.departureRowSpan > 1 && { rowSpan: cityMeta.departureRowSpan })}
                                 >
                                   <div className="space-y-1">
-                                    <EditableCell
-                                      type="date"
-                                      value={visit?.departureDate}
-                                      placeholder="Дата"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureDate", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="time"
-                                      value={visit?.departureTime}
-                                      placeholder="Время"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="select"
-                                      value={visit?.departureTransportType}
-                                      placeholder="Тип"
-                                      selectOptions={[
-                                        { value: "plane", label: "Самолет" },
-                                        { value: "train", label: "Поезд" },
-                                      ]}
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransportType", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="text"
-                                      value={visit?.departureFlightNumber}
-                                      placeholder="№ рейса"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureFlightNumber", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="text"
-                                      value={visit?.departureAirport}
-                                      placeholder={visit?.departureTransportType === "plane" ? "Аэропорт" : "Вокзал"}
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureAirport", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="text"
-                                      value={visit?.departureTransfer}
-                                      placeholder="Трансфер"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransfer", value)}
-                                      className="text-xs"
-                                    />
+                                    <div className="flex gap-1">
+                                      <EditableCell
+                                        type="date"
+                                        value={visit?.departureDate}
+                                        placeholder="Дата"
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureDate", value)}
+                                        className="text-xs flex-1"
+                                      />
+                                      <EditableCell
+                                        type="time"
+                                        value={visit?.departureTime}
+                                        placeholder="Время"
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
+                                        className="text-xs flex-1"
+                                      />
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <TransportTypeSelector
+                                        value={visit?.departureTransportType}
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransportType", value)}
+                                      />
+                                      <EditableCell
+                                        type="text"
+                                        value={visit?.departureFlightNumber}
+                                        placeholder="№ рейса"
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureFlightNumber", value)}
+                                        className="text-xs flex-1"
+                                      />
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <EditableCell
+                                        type="text"
+                                        value={visit?.departureAirport}
+                                        placeholder={visit?.departureTransportType === "plane" ? "Аэропорт" : "Вокзал"}
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureAirport", value)}
+                                        className="text-xs flex-1"
+                                      />
+                                      <EditableCell
+                                        type="text"
+                                        value={visit?.departureTransfer}
+                                        placeholder="Трансфер"
+                                        onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransfer", value)}
+                                        className="text-xs flex-1"
+                                      />
+                                    </div>
                                   </div>
                                 </td>
                               )}

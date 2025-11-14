@@ -157,7 +157,7 @@ export const cityVisits = pgTable("city_visits", {
   arrivalTime: text("arrival_time"), // Time string HH:MM (optional)
   departureDate: text("departure_date"), // ISO date string (optional)
   departureTime: text("departure_time"), // Time string HH:MM (optional)
-  transportType: text("transport_type").notNull(), // 'train' or 'plane' for arrival
+  transportType: text("transport_type"), // 'train' or 'plane' for arrival (optional)
   departureTransportType: text("departure_transport_type"), // 'train' or 'plane' for departure
   flightNumber: text("flight_number"), // Flight/train number for arrival
   airport: text("airport"), // Airport/station name for arrival

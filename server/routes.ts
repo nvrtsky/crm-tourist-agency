@@ -289,7 +289,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         event.cities = assignedCities;
       }
       
-      res.json(event);
+      // Batch fetch to compute confirmedParticipantCount
+      // Reuse same pattern as /participants to avoid N+1 queries
+      const deals = await storage.getDealsByEvent(id);
+      const contactIds = Array.from(new Set(deals.map(d => d.contactId)));
+      
+      // Fetch all contacts in parallel
+      const allContacts = await Promise.all(contactIds.map(cId => storage.getContact(cId)));
+      
+      // Fetch lead data for contacts that have leadId
+      const leadIds = Array.from(new Set(allContacts.filter(c => c?.leadId).map(c => c!.leadId!)));
+      const allLeads = leadIds.length > 0
+        ? await Promise.all(leadIds.map(lId => storage.getLead(lId)))
+        : [];
+      
+      // Create lookup maps for efficient counting
+      const leadMap = new Map(allLeads.filter(Boolean).map(l => [l!.id, l!]));
+      
+      // Count confirmed participants (each unique contact with confirmed lead = 1)
+      // Participants without lead data are treated as non-confirmed
+      let confirmedParticipantCount = 0;
+      for (const contact of allContacts) {
+        if (!contact?.leadId) continue;
+        const lead = leadMap.get(contact.leadId);
+        if (lead?.status === "confirmed") {
+          confirmedParticipantCount++;
+        }
+      }
+      
+      res.json({ ...event, confirmedParticipantCount });
     } catch (error) {
       console.error("Error fetching event:", error);
       res.status(500).json({ error: "Failed to fetch event" });

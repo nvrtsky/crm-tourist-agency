@@ -831,6 +831,13 @@ export default function EventSummary() {
                     // Use pre-computed first index map - works even without isPrimaryInGroup flag
                     const isFirstInMiniGroup = isMiniGroup && groupId ? groupFirstIndexMap.get(groupId) === index : false;
 
+                    // Unified rowSpan logic for "Лид" column - merge for both families AND mini-groups
+                    const hasMiniGroup = groupId && groupSize > 1;
+                    const hasLeadFamily = !hasMiniGroup && leadId && leadSize > 1;
+                    const shouldMergeLeadColumn = hasMiniGroup || hasLeadFamily;
+                    const leadColumnRowSpan = hasMiniGroup ? groupSize : hasLeadFamily ? leadSize : 1;
+                    const isLeadColumnAnchor = hasMiniGroup ? isFirstInGroup : hasLeadFamily ? isFirstInLead : true;
+
                     return (
                       <tr
                         key={participant.deal.id}
@@ -924,30 +931,12 @@ export default function EventSummary() {
                           )}
                         </td>
                         
-                        {/* Lead status column with rowSpan for grouped participants - now non-sticky */}
-                        {isFirstInGroup ? (
+                        {/* Lead status column with rowSpan - merges for both families AND mini-groups */}
+                        {isLeadColumnAnchor && (
                           <td 
                             className="p-2 border-r text-center align-top w-16"
-                            rowSpan={groupSize}
+                            rowSpan={leadColumnRowSpan}
                           >
-                            {participant.lead ? (() => {
-                              const style = getLeadStatusStyle(participant.lead.status);
-                              return (
-                                <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
-                                  <Badge 
-                                    variant={style.variant}
-                                    className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
-                                  >
-                                    {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
-                                  </Badge>
-                                </Link>
-                              );
-                            })() : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
-                        ) : !participant.group && (
-                          <td className="p-2 border-r text-center w-16">
                             {participant.lead ? (() => {
                               const style = getLeadStatusStyle(participant.lead.status);
                               return (

@@ -338,11 +338,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? await Promise.all(leadTouristIds.map(ltId => storage.getTourist(ltId)))
         : [];
       
+      // Fetch lead data for all contacts
+      const leadIds = Array.from(new Set(allContacts.filter(c => c?.leadId).map(c => c!.leadId!)));
+      const allLeads = leadIds.length > 0
+        ? await Promise.all(leadIds.map(lId => storage.getLead(lId)))
+        : [];
+      
       // Create lookup maps
       const contactMap = new Map(allContacts.filter(Boolean).map(c => [c!.id, c!]));
       const visitsMap = new Map(dealIds.map((dId, idx) => [dId, allVisits[idx]]));
       const groupMap = new Map(allGroups.filter(Boolean).map(g => [g!.id, g!]));
       const leadTouristMap = new Map(allLeadTourists.filter((lt): lt is LeadTourist => lt !== undefined).map(lt => [lt.id, lt]));
+      const leadMap = new Map(allLeads.filter(Boolean).map(l => [l!.id, l!]));
       
       // For viewers, get their assigned cities
       let assignedCities: string[] = [];
@@ -373,11 +380,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           const leadTourist = contact.leadTouristId ? leadTouristMap.get(contact.leadTouristId) || null : null;
+          const lead = contact.leadId ? leadMap.get(contact.leadId) || null : null;
           
           return {
             deal,
             contact,
             leadTourist,
+            lead,
             visits,
             group: deal.groupId ? (groupMap.get(deal.groupId) || null) : null,
           };

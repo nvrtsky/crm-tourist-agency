@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import type { Event, Contact, Deal, CityVisit, Group, User, LeadTourist } from "@shared/schema";
+import type { Event, Contact, Deal, CityVisit, Group, User, LeadTourist, Lead } from "@shared/schema";
 import { updateLeadTouristSchema } from "@shared/schema";
 import { EditableCell } from "@/components/EditableCell";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -58,6 +58,7 @@ interface Participant {
   deal: Deal;
   contact: Contact;
   leadTourist: LeadTourist | null;
+  lead: Lead | null;
   visits: CityVisit[];
   group: Group | null;
 }
@@ -373,7 +374,7 @@ export default function EventSummary() {
       if (p.leadTourist) {
         const completeness = calculateTouristDataCompleteness(p.leadTourist);
         const statusSymbol = (status: string) => status === "complete" ? "✓" : status === "partial" ? "◐" : "—";
-        completenessText = `${statusSymbol(completeness.personalData)} ${statusSymbol(completeness.rfPassport)} ${statusSymbol(completeness.foreignPassport)}`;
+        completenessText = `${statusSymbol(completeness.personal)} ${statusSymbol(completeness.russianPassport)} ${statusSymbol(completeness.foreignPassport)}`;
       }
 
       const baseData: Record<string, any> = {
@@ -665,9 +666,6 @@ export default function EventSummary() {
                     <th className="sticky left-12 bg-background z-10 text-center p-2 font-medium border-r w-16" rowSpan={2}>Группа</th>
                     <th className="sticky left-28 bg-background z-10 text-left p-2 font-medium border-r min-w-[150px]" rowSpan={2}>ФИО</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Данные туриста</th>
-                    <th className="text-left p-2 font-medium border-r" rowSpan={2}>Email</th>
-                    <th className="text-left p-2 font-medium border-r" rowSpan={2}>Телефон</th>
-                    <th className="text-left p-2 font-medium border-r" rowSpan={2}>Паспорт</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Статус</th>
                     {event.cities.map((city) => {
                       const guideName = getGuideName(city);
@@ -844,19 +842,14 @@ export default function EventSummary() {
                             <span className="text-muted-foreground text-xs">—</span>
                           )}
                         </td>
-                        <td className="p-2 border-r text-muted-foreground text-xs">
-                          {participant.contact?.email || "—"}
-                        </td>
-                        <td className="p-2 border-r text-muted-foreground text-xs">
-                          {participant.contact?.phone || "—"}
-                        </td>
-                        <td className="p-2 border-r text-muted-foreground">
-                          {participant.contact?.passport || "—"}
-                        </td>
                         <td className="p-2 border-r">
-                          <Badge className={getStatusColor(participant.deal.status)} data-testid={`badge-status-${participant.deal.id}`}>
-                            {participant.deal.status}
-                          </Badge>
+                          {participant.lead ? (
+                            <Badge className={getStatusColor(participant.lead.status)} data-testid={`badge-status-${participant.deal.id}`}>
+                              {participant.lead.status}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
                         </td>
                         {event.cities.map((city) => {
                           const visit = participant.visits?.find((v) => v.city === city);

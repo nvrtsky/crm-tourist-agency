@@ -51,6 +51,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -134,6 +139,7 @@ interface ParticipantCardProps {
   groupInfo?: { type: 'family' | 'mini_group'; name?: string; memberCount: number };
   sharedFields?: { arrival: boolean; hotel: boolean; departure: boolean };
   sharedVisits?: CityVisit[];
+  groupMembers?: Participant[];
 }
 
 function ParticipantCard({
@@ -150,6 +156,7 @@ function ParticipantCard({
   groupInfo,
   sharedFields,
   sharedVisits,
+  groupMembers,
 }: ParticipantCardProps) {
   return (
     <Card className={`mb-4 ${groupInfo ? 'border-l-4 border-l-primary/30' : ''}`} data-testid={`card-participant-${participant.deal.id}`}>
@@ -161,11 +168,70 @@ function ParticipantCard({
               <CardTitle className="text-base">
                 {participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}
               </CardTitle>
-              {groupInfo && (
-                <Badge variant="secondary" className="text-xs">
-                  <UsersRound className="h-3 w-3 mr-1" />
-                  {groupInfo.type === 'family' ? `Семья (${groupInfo.memberCount})` : groupInfo.name || `Группа (${groupInfo.memberCount})`}
-                </Badge>
+              {groupInfo && groupMembers && groupMembers.length > 0 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Badge 
+                      variant="secondary" 
+                      className="text-xs cursor-pointer hover-elevate"
+                      data-testid={`button-group-members-${participant.deal.id}`}
+                    >
+                      <UsersRound className="h-3 w-3 mr-1" />
+                      {groupInfo.type === 'family' ? `Семья (${groupInfo.memberCount})` : groupInfo.name || `Группа (${groupInfo.memberCount})`}
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Badge>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" data-testid={`popover-group-members-${participant.deal.id}`}>
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm">
+                        {groupInfo.type === 'family' ? 'Члены семьи' : `Группа: ${groupInfo.name || 'Мини-группа'}`}
+                      </h4>
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {groupMembers.map((member, idx) => (
+                          <div 
+                            key={member.deal.id} 
+                            className={`flex items-center justify-between gap-2 p-2 rounded-md border ${member.deal.id === participant.deal.id ? 'bg-muted border-primary' : 'border-border'}`}
+                            data-testid={`group-member-${member.deal.id}`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium truncate">
+                                  {member.leadTourist?.foreignPassportName || member.contact?.name || "—"}
+                                </span>
+                                {member.leadTourist?.isPrimary && (
+                                  <Badge variant="default" className="text-[10px] px-1.5 py-0.5">
+                                    <Star className="h-2.5 w-2.5 mr-0.5" />
+                                    Основной
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 mt-1">
+                                {member.leadTourist && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+                                    {member.leadTourist.touristType === "adult" ? (
+                                      <><UserIcon className="h-2.5 w-2.5 mr-0.5" />Взрослый</>
+                                    ) : (
+                                      <><Baby className="h-2.5 w-2.5 mr-0.5" />Ребенок</>
+                                    )}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 shrink-0"
+                              onClick={() => handleEditTourist(member.contact?.id)}
+                              data-testid={`button-edit-member-${member.deal.id}`}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               )}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -1134,6 +1200,7 @@ export default function EventSummary() {
                 let groupInfo: ParticipantCardProps['groupInfo'] = undefined;
                 let sharedFields: ParticipantCardProps['sharedFields'] = undefined;
                 let sharedVisits: CityVisit[] | undefined = undefined;
+                let groupMembers: Participant[] | undefined = undefined;
                 
                 // Priority 1: Lead (family) - shares ALL fields
                 if (leadId) {
@@ -1151,16 +1218,17 @@ export default function EventSummary() {
                     // Use first member's visits as source for all shared fields
                     const primaryMember = leadMembers[0];
                     sharedVisits = primaryMember.visits || [];
+                    groupMembers = leadMembers;
                   }
                 }
                 // Priority 2: Mini-group (not in lead, or lead has only 1 member) - shares HOTEL only
                 else if (groupId && isMiniGroup && participant.group) {
-                  const groupMembers = participants.filter(p => p.deal.groupId === groupId);
-                  if (groupMembers.length > 1) {
+                  const miniGroupMembers = participants.filter(p => p.deal.groupId === groupId);
+                  if (miniGroupMembers.length > 1) {
                     groupInfo = {
                       type: 'mini_group',
                       name: participant.group.name,
-                      memberCount: groupMembers.length,
+                      memberCount: miniGroupMembers.length,
                     };
                     sharedFields = {
                       arrival: false,
@@ -1168,8 +1236,9 @@ export default function EventSummary() {
                       departure: false,
                     };
                     // Use first member's visits as source for shared hotel field
-                    const primaryMember = groupMembers[0];
+                    const primaryMember = miniGroupMembers[0];
                     sharedVisits = primaryMember.visits || [];
+                    groupMembers = miniGroupMembers;
                   }
                 }
                 
@@ -1191,6 +1260,7 @@ export default function EventSummary() {
                     groupInfo={groupInfo}
                     sharedFields={sharedFields}
                     sharedVisits={sharedVisits}
+                    groupMembers={groupMembers}
                   />
                 );
               })}

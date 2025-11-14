@@ -4,7 +4,7 @@ import { useState, Fragment } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, Ungroup, UserPlus, Edit, Star, Baby, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -255,26 +255,6 @@ export default function EventSummary() {
       toast({
         title: "Ошибка",
         description: error instanceof Error ? error.message : "Не удалось удалить участника из группы",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteGroupMutation = useMutation({
-    mutationFn: async (groupId: string) => {
-      return apiRequest("DELETE", `/api/groups/${groupId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
-      toast({
-        title: "Успешно",
-        description: "Группа расформирована",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Ошибка",
-        description: error instanceof Error ? error.message : "Не удалось удалить группу",
         variant: "destructive",
       });
     },
@@ -782,23 +762,6 @@ export default function EventSummary() {
                                   </Link>
                                 );
                               })()}
-                              {participant.group && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 px-2 text-[10px] mt-1"
-                                  onClick={() => {
-                                    if (confirm(`Расформировать группу "${participant.group?.name}"?`)) {
-                                      deleteGroupMutation.mutate(participant.group!.id);
-                                    }
-                                  }}
-                                  disabled={deleteGroupMutation.isPending || removeFromGroupMutation.isPending}
-                                  data-testid={`button-ungroup-${participant.group.id}`}
-                                >
-                                  <Ungroup className="h-3 w-3 mr-1" />
-                                  Расформ.
-                                </Button>
-                              )}
                             </div>
                           </td>
                         ) : !participant.group && (
@@ -869,7 +832,7 @@ export default function EventSummary() {
                                       });
                                     }
                                   }}
-                                  disabled={deleteGroupMutation.isPending || removeFromGroupMutation.isPending}
+                                  disabled={removeFromGroupMutation.isPending}
                                   data-testid={`button-remove-from-group-${participant.deal.id}`}
                                 >
                                   <UserMinus className="h-3 w-3" />

@@ -175,15 +175,13 @@ export default function EventSummary() {
     // Priority: Lead merge > Mini-group hotel merge > Individual rendering
     
     // Scenario 1: Participant is part of a lead (family)
-    // Merge ALL 4 columns (Arrival, Transport, Hotel, Departure)
+    // Merge ALL 3 columns (Arrival, Hotel, Departure)
     if (leadId && leadSize > 1) {
       if (isFirstInLead) {
         // First tourist in lead - show all columns with rowSpan
         return {
           showArrival: true,
           arrivalRowSpan: leadSize,
-          showTransport: true,
-          transportRowSpan: leadSize,
           showHotel: true,
           hotelRowSpan: leadSize,
           showDeparture: true,
@@ -194,8 +192,6 @@ export default function EventSummary() {
         return {
           showArrival: false,
           arrivalRowSpan: 1,
-          showTransport: false,
-          transportRowSpan: 1,
           showHotel: false,
           hotelRowSpan: 1,
           showDeparture: false,
@@ -212,8 +208,6 @@ export default function EventSummary() {
         return {
           showArrival: true,
           arrivalRowSpan: 1,
-          showTransport: true,
-          transportRowSpan: 1,
           showHotel: true,
           hotelRowSpan: groupSize,
           showDeparture: true,
@@ -224,8 +218,6 @@ export default function EventSummary() {
         return {
           showArrival: true,
           arrivalRowSpan: 1,
-          showTransport: true,
-          transportRowSpan: 1,
           showHotel: false,
           hotelRowSpan: 1,
           showDeparture: true,
@@ -238,8 +230,6 @@ export default function EventSummary() {
     return {
       showArrival: true,
       arrivalRowSpan: 1,
-      showTransport: true,
-      transportRowSpan: 1,
       showHotel: true,
       hotelRowSpan: 1,
       showDeparture: true,
@@ -781,7 +771,7 @@ export default function EventSummary() {
                     {event.cities.map((city) => {
                       const guideName = getGuideName(city);
                       return (
-                        <th key={city} className="text-center p-2 font-medium border-r bg-muted/30" colSpan={4}>
+                        <th key={city} className="text-center p-2 font-medium border-r bg-muted/30" colSpan={3}>
                           <div className="flex flex-col gap-1">
                             <span>{city}</span>
                             {guideName && (
@@ -798,7 +788,6 @@ export default function EventSummary() {
                     {event.cities.map((city) => (
                       <Fragment key={city}>
                         <th className="text-left p-2 border-r bg-muted/10">Прибытие</th>
-                        <th className="text-left p-2 border-r bg-muted/10">Транспорт</th>
                         <th className="text-left p-2 border-r bg-muted/10">Отель</th>
                         <th className="text-left p-2 border-r bg-muted/10">Отъезд</th>
                       </Fragment>
@@ -983,29 +972,6 @@ export default function EventSummary() {
                                       className="text-xs"
                                     />
                                     <EditableCell
-                                      type="text"
-                                      value={visit?.airport}
-                                      placeholder={visit?.transportType === "plane" ? "Аэропорт" : "Вокзал"}
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "airport", value)}
-                                      className="text-xs"
-                                    />
-                                    <EditableCell
-                                      type="text"
-                                      value={visit?.transfer}
-                                      placeholder="Трансфер"
-                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transfer", value)}
-                                      className="text-xs"
-                                    />
-                                  </div>
-                                </td>
-                              )}
-                              {cityMeta.showTransport && (
-                                <td 
-                                  className="p-1 border-r align-top" 
-                                  {...(cityMeta.transportRowSpan > 1 && { rowSpan: cityMeta.transportRowSpan })}
-                                >
-                                  <div className="space-y-1">
-                                    <EditableCell
                                       type="select"
                                       value={visit?.transportType}
                                       placeholder="Тип"
@@ -1021,6 +987,20 @@ export default function EventSummary() {
                                       value={visit?.flightNumber}
                                       placeholder="№ рейса"
                                       onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "flightNumber", value)}
+                                      className="text-xs"
+                                    />
+                                    <EditableCell
+                                      type="text"
+                                      value={visit?.airport}
+                                      placeholder={visit?.transportType === "plane" ? "Аэропорт" : "Вокзал"}
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "airport", value)}
+                                      className="text-xs"
+                                    />
+                                    <EditableCell
+                                      type="text"
+                                      value={visit?.transfer}
+                                      placeholder="Трансфер"
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "transfer", value)}
                                       className="text-xs"
                                     />
                                   </div>
@@ -1074,6 +1054,24 @@ export default function EventSummary() {
                                       value={visit?.departureTime}
                                       placeholder="Время"
                                       onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTime", value)}
+                                      className="text-xs"
+                                    />
+                                    <EditableCell
+                                      type="select"
+                                      value={visit?.departureTransportType}
+                                      placeholder="Тип"
+                                      selectOptions={[
+                                        { value: "plane", label: "Самолет" },
+                                        { value: "train", label: "Поезд" },
+                                      ]}
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureTransportType", value)}
+                                      className="text-xs"
+                                    />
+                                    <EditableCell
+                                      type="text"
+                                      value={visit?.departureFlightNumber}
+                                      placeholder="№ рейса"
+                                      onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureFlightNumber", value)}
                                       className="text-xs"
                                     />
                                     <EditableCell

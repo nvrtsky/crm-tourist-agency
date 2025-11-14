@@ -138,10 +138,11 @@ export default function EventSummary() {
     return 0;
   });
 
-  // Split participants into confirmed and other status sections
-  // Confirmed participants shown first, others shown below with separator
-  const confirmedParticipants = participants.filter(p => p.lead?.status === "confirmed");
-  const otherParticipants = participants.filter(p => p.lead?.status !== "confirmed");
+  // Split participants into confirmed (by DEAL status) and other sections
+  // Backend availability logic counts confirmed deals, so frontend must match
+  // Note: Lead status uses English enums ("won", "qualified"), while deal.status uses "confirmed"
+  const confirmedParticipants = participants.filter(p => p.deal.status === "confirmed");
+  const otherParticipants = participants.filter(p => p.deal.status !== "confirmed");
 
   // Helper to compute index maps for a section (enables scoped rowSpan merging)
   const computeIndexMaps = (sectionParticipants: Participant[]) => {

@@ -289,33 +289,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         event.cities = assignedCities;
       }
       
-      // Batch fetch to compute confirmedParticipantCount
-      // Reuse same pattern as /participants to avoid N+1 queries
+      // Count confirmed participants (by DEAL status, matching availability logic)
+      // Each confirmed deal = 1 participant (1 deal = 1 contact = 1 tourist)
       const deals = await storage.getDealsByEvent(id);
-      const contactIds = Array.from(new Set(deals.map(d => d.contactId)));
-      
-      // Fetch all contacts in parallel
-      const allContacts = await Promise.all(contactIds.map(cId => storage.getContact(cId)));
-      
-      // Fetch lead data for contacts that have leadId
-      const leadIds = Array.from(new Set(allContacts.filter(c => c?.leadId).map(c => c!.leadId!)));
-      const allLeads = leadIds.length > 0
-        ? await Promise.all(leadIds.map(lId => storage.getLead(lId)))
-        : [];
-      
-      // Create lookup maps for efficient counting
-      const leadMap = new Map(allLeads.filter(Boolean).map(l => [l!.id, l!]));
-      
-      // Count confirmed participants (each unique contact with confirmed lead = 1)
-      // Participants without lead data are treated as non-confirmed
-      let confirmedParticipantCount = 0;
-      for (const contact of allContacts) {
-        if (!contact?.leadId) continue;
-        const lead = leadMap.get(contact.leadId);
-        if (lead?.status === "confirmed") {
-          confirmedParticipantCount++;
-        }
-      }
+      const confirmedParticipantCount = deals.filter(d => d.status === "confirmed").length;
       
       res.json({ ...event, confirmedParticipantCount });
     } catch (error) {
@@ -421,10 +398,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .filter((p) => p !== null);
       
-      // Filter participants by status for viewer role - only show confirmed
-      // Participants without lead data are treated as non-confirmed for security
+      // Filter participants by status for viewer role - only show confirmed (by DEAL status)
+      // Backend availability logic counts confirmed deals, so filtering must match
+      // Note: Lead status uses English enums ("won", etc.), deal.status uses "confirmed"
       if (user.role === "viewer") {
-        participants = participants.filter(p => p.lead?.status === "confirmed");
+        participants = participants.filter(p => p.deal.status === "confirmed");
       }
       
       res.json(participants);

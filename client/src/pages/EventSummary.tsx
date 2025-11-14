@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRoute } from "wouter";
+import { useRoute, Link } from "wouter";
 import { useState, Fragment } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -530,6 +530,19 @@ export default function EventSummary() {
     }
   };
 
+  const getLeadStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case "qualified":
+        return "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white border-[#d89420]";
+      case "converted":
+        return "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900";
+      case "lost":
+        return "bg-destructive text-destructive-foreground border-destructive";
+      default:
+        return "bg-secondary text-secondary-foreground border-secondary";
+    }
+  };
+
   if (eventLoading || participantsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -745,6 +758,15 @@ export default function EventSummary() {
                               <div className="text-[10px] text-muted-foreground">
                                 {groupSize} чел.
                               </div>
+                              {participant.lead && (
+                                <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
+                                  <Badge 
+                                    className={`text-[10px] cursor-pointer hover-elevate ${getLeadStatusBadgeClass(participant.lead.status)}`}
+                                  >
+                                    {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
+                                  </Badge>
+                                </Link>
+                              )}
                               {participant.group && (
                                 <Button
                                   size="sm"

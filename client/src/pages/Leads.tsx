@@ -1461,6 +1461,8 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                                 <TooltipTrigger type="button" className="inline-flex items-center rounded-md border border-input bg-background px-2 py-1 text-[10px] font-semibold transition-colors cursor-default hover-elevate" onClick={(e) => e.stopPropagation()}>
                                   {tourist.touristType === "adult" ? (
                                     <UserIcon className="h-3 w-3" />
+                                  ) : tourist.touristType === "child" ? (
+                                    <UserRound className="h-3 w-3" />
                                   ) : (
                                     <Baby className="h-3 w-3" />
                                   )}

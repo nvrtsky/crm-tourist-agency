@@ -5,6 +5,8 @@ import { requireAuth, requireAdmin } from "./auth";
 import passport from "passport";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import multer from "multer";
+import { ObjectStorageService } from "./objectStorage";
 import {
   insertEventSchema,
   updateEventSchema,
@@ -37,6 +39,23 @@ function sanitizeUser(user: User) {
   const { passwordHash, ...sanitized } = user;
   return sanitized;
 }
+
+// Configure multer for file uploads (store in memory)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max file size
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow only images and PDFs
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and PDF files are allowed.'));
+    }
+  },
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== AUTHENTICATION ROUTES ====================
@@ -1151,6 +1170,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting tourist:", error);
       res.status(500).json({ error: "Failed to delete tourist" });
+    }
+  });
+
+  // Upload passport scan file
+  app.post("/api/tourists/:id/passport-scans", requireAuth, upload.single('file'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      // Check if tourist exists
+      const tourist = await storage.getTourist(id);
+      if (!tourist) {
+        return res.status(404).json({ error: "Tourist not found" });
+      }
+
+      // Upload file to object storage
+      const objectStorageService = new ObjectStorageService();
+      const fileUrl = await objectStorageService.uploadFile(req.file, "passport-scans");
+
+      // Add file URL to tourist's passportScans array
+      const currentScans = tourist.passportScans || [];
+      const updatedScans = [...currentScans, fileUrl];
+      
+      const updatedTourist = await storage.updateTourist(id, {
+        passportScans: updatedScans,
+      });
+
+      res.json({ 
+        success: true, 
+        fileUrl,
+        tourist: updatedTourist,
+      });
+    } catch (error) {
+      console.error("Error uploading passport scan:", error);
+      res.status(500).json({ error: "Failed to upload passport scan" });
+    }
+  });
+
+  // Delete passport scan file
+  app.delete("/api/tourists/:id/passport-scans/:filename", requireAuth, async (req, res) => {
+    try {
+      const { id, filename } = req.params;
+      
+      // Check if tourist exists
+      const tourist = await storage.getTourist(id);
+      if (!tourist) {
+        return res.status(404).json({ error: "Tourist not found" });
+      }
+
+      // Find the file path in passportScans array
+      const currentScans = tourist.passportScans || [];
+      const fileToDelete = currentScans.find(scan => scan.includes(filename));
+      
+      if (!fileToDelete) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      // Delete file from object storage
+      const objectStorageService = new ObjectStorageService();
+      await objectStorageService.deleteFile(fileToDelete);
+
+      // Remove file URL from tourist's passportScans array
+      const updatedScans = currentScans.filter(scan => scan !== fileToDelete);
+      
+      const updatedTourist = await storage.updateTourist(id, {
+        passportScans: updatedScans,
+      });
+
+      res.json({ 
+        success: true,
+        tourist: updatedTourist,
+      });
+    } catch (error) {
+      console.error("Error deleting passport scan:", error);
+      res.status(500).json({ error: "Failed to delete passport scan" });
+    }
+  });
+
+  // Get signed URL for viewing passport scan
+  app.get("/api/tourists/:id/passport-scans/:filename/view", requireAuth, async (req, res) => {
+    try {
+      const { id, filename } = req.params;
+      
+      // Check if tourist exists
+      const tourist = await storage.getTourist(id);
+      if (!tourist) {
+        return res.status(404).json({ error: "Tourist not found" });
+      }
+
+      // Find the file path in passportScans array
+      const currentScans = tourist.passportScans || [];
+      const filePath = currentScans.find(scan => scan.includes(filename));
+      
+      if (!filePath) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      // Get signed URL for viewing
+      const objectStorageService = new ObjectStorageService();
+      const signedUrl = await objectStorageService.getFileUrl(filePath, 3600); // 1 hour TTL
+
+      res.json({ url: signedUrl });
+    } catch (error) {
+      console.error("Error getting passport scan URL:", error);
+      res.status(500).json({ error: "Failed to get file URL" });
     }
   });
 

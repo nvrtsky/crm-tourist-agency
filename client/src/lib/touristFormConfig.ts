@@ -13,14 +13,16 @@ export type TouristFieldKey =
   | "foreignPassportName"
   | "foreignPassportNumber"
   | "foreignPassportValidUntil"
+  | "passportScans"
   | "touristType"
-  | "notes";
+  | "notes"
+  | "guideComment";
 
 export interface TouristFieldDescriptor {
   key: TouristFieldKey;
   label: string;
   placeholder?: string;
-  type?: "text" | "email" | "date" | "select" | "textarea";
+  type?: "text" | "email" | "date" | "select" | "textarea" | "file";
   testId: string;
   section: "personal" | "passport" | "foreign" | "additional";
   selectOptions?: { value: string; label: string }[];
@@ -127,6 +129,13 @@ export const TOURIST_FIELD_DESCRIPTORS: readonly TouristFieldDescriptor[] = [
     testId: "input-tourist-foreignValidUntil",
     section: "foreign",
   },
+  {
+    key: "passportScans",
+    label: "Скан загранпаспорта",
+    type: "file",
+    testId: "file-tourist-passportScans",
+    section: "foreign",
+  },
   // Additional section
   {
     key: "touristType",
@@ -146,6 +155,14 @@ export const TOURIST_FIELD_DESCRIPTORS: readonly TouristFieldDescriptor[] = [
     placeholder: "Дополнительная информация",
     type: "textarea",
     testId: "textarea-tourist-notes",
+    section: "additional",
+  },
+  {
+    key: "guideComment",
+    label: "Комментарий для гида",
+    placeholder: "Особые требования, пожелания, важная информация для гида",
+    type: "textarea",
+    testId: "textarea-tourist-guideComment",
     section: "additional",
   },
 ] as const;

@@ -12,6 +12,7 @@ import { ru } from "date-fns/locale";
 import type { Event, Contact, Deal, CityVisit, Group, User, LeadTourist, Lead } from "@shared/schema";
 import { updateLeadTouristSchema } from "@shared/schema";
 import { EditableCell } from "@/components/EditableCell";
+import { PassportScansField } from "@/components/PassportScansField";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { TOURIST_FIELD_DESCRIPTORS, SECTION_TITLES } from "@/lib/touristFormConfig";
@@ -1943,55 +1944,76 @@ function TouristDetailsDialog({ contactId, onClose, onSuccess }: TouristDetailsD
                       {SECTION_TITLES[section]}
                     </h4>
                     <div className="grid grid-cols-2 gap-4">
-                      {fields.map((field) => (
-                        <FormField
-                          key={field.key}
-                          control={form.control}
-                          name={field.key as any}
-                          render={({ field: formField }) => (
-                            <FormItem className={field.type === "textarea" ? "col-span-2" : ""}>
+                      {fields.map((field) => {
+                        // Special rendering for file upload field
+                        if (field.type === "file" && field.key === "passportScans") {
+                          return (
+                            <div key={field.key} className="col-span-2">
                               <FormLabel>
                                 {field.label} {field.required && "*"}
                               </FormLabel>
-                              <FormControl>
-                                {field.type === "select" ? (
-                                  <Select
-                                    onValueChange={formField.onChange}
-                                    value={formField.value || ""}
-                                  >
-                                    <SelectTrigger data-testid={field.testId}>
-                                      <SelectValue placeholder="Выберите" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {field.selectOptions?.map((opt) => (
-                                        <SelectItem key={opt.value} value={opt.value}>
-                                          {opt.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                ) : field.type === "textarea" ? (
-                                  <Textarea
-                                    placeholder={field.placeholder}
-                                    {...formField}
-                                    value={formField.value || ""}
-                                    data-testid={field.testId}
-                                  />
-                                ) : (
-                                  <Input
-                                    type={field.type || "text"}
-                                    placeholder={field.placeholder}
-                                    {...formField}
-                                    value={formField.value || ""}
-                                    data-testid={field.testId}
-                                  />
-                                )}
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      ))}
+                              <PassportScansField
+                                touristId={editingContactId || ""}
+                                initialScans={details?.leadTourist?.passportScans || []}
+                                onUpdate={(scans) => {
+                                  form.setValue("passportScans", scans);
+                                }}
+                              />
+                            </div>
+                          );
+                        }
+
+                        // Regular field rendering
+                        return (
+                          <FormField
+                            key={field.key}
+                            control={form.control}
+                            name={field.key as any}
+                            render={({ field: formField }) => (
+                              <FormItem className={field.type === "textarea" ? "col-span-2" : ""}>
+                                <FormLabel>
+                                  {field.label} {field.required && "*"}
+                                </FormLabel>
+                                <FormControl>
+                                  {field.type === "select" ? (
+                                    <Select
+                                      onValueChange={formField.onChange}
+                                      value={formField.value || ""}
+                                    >
+                                      <SelectTrigger data-testid={field.testId}>
+                                        <SelectValue placeholder="Выберите" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {field.selectOptions?.map((opt) => (
+                                          <SelectItem key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  ) : field.type === "textarea" ? (
+                                    <Textarea
+                                      placeholder={field.placeholder}
+                                      {...formField}
+                                      value={formField.value || ""}
+                                      data-testid={field.testId}
+                                    />
+                                  ) : (
+                                    <Input
+                                      type={field.type || "text"}
+                                      placeholder={field.placeholder}
+                                      {...formField}
+                                      value={formField.value || ""}
+                                      data-testid={field.testId}
+                                    />
+                                  )}
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 );

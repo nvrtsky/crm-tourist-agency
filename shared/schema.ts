@@ -268,6 +268,8 @@ export const leadTourists = pgTable("lead_tourists", {
   foreignPassportName: text("foreign_passport_name"), // ФИО Загранпаспорт (Латиница)
   foreignPassportNumber: text("foreign_passport_number"), // Номер загранпаспорта
   foreignPassportValidUntil: date("foreign_passport_valid_until"), // Годен до (загран)
+  passportScans: text("passport_scans").array(), // URLs файлов сканов загранпаспорта
+  guideComment: text("guide_comment"), // Комментарий для гида
   touristType: text("tourist_type").notNull().default("adult"), // 'adult', 'child', or 'infant'
   isPrimary: boolean("is_primary").notNull().default(false), // One tourist must be primary
   isAutoCreated: boolean("is_auto_created").notNull().default(false), // Created automatically from lead data

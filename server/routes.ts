@@ -934,10 +934,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== LEAD ROUTES ====================
 
-  // Get all leads
-  app.get("/api/leads", async (req, res) => {
+  // Get all leads (with role-based filtering)
+  app.get("/api/leads", requireAuth, async (req, res) => {
     try {
-      const leads = await storage.getAllLeads();
+      const user = req.user as any;
+      const leads = await storage.getAllLeads(user?.id, user?.role);
       res.json(leads);
     } catch (error) {
       console.error("Error fetching leads:", error);

@@ -127,7 +127,7 @@ export interface IStorage {
 
   // Lead operations
   getLead(id: string): Promise<Lead | undefined>;
-  getAllLeads(): Promise<LeadWithTouristCount[]>;
+  getAllLeads(userId?: string, userRole?: string): Promise<LeadWithTouristCount[]>;
   getLeadsByUser(userId: string): Promise<Lead[]>;
   getLeadsByStatus(status: LeadStatus): Promise<Lead[]>;
   createLead(lead: InsertLead): Promise<Lead>;
@@ -735,7 +735,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getAllLeads(): Promise<LeadWithTouristCount[]> {
+  async getAllLeads(userId?: string, userRole?: string): Promise<LeadWithTouristCount[]> {
     // Auto-reactivate postponed leads whose date has passed
     const now = new Date();
     await db
@@ -753,7 +753,8 @@ export class DatabaseStorage implements IStorage {
         )
       );
     
-    const result = await db
+    // Build query with optional filtering for managers
+    let query = db
       .select({
         id: leads.id,
         lastName: leads.lastName,
@@ -781,8 +782,14 @@ export class DatabaseStorage implements IStorage {
         touristCount: sql<number>`cast(count(${leadTourists.id}) as int)`.as('touristCount')
       })
       .from(leads)
-      .leftJoin(leadTourists, eq(leads.id, leadTourists.leadId))
-      .groupBy(leads.id);
+      .leftJoin(leadTourists, eq(leads.id, leadTourists.leadId));
+    
+    // Apply role-based filtering: managers see only their assigned leads
+    if (userRole === 'manager' && userId) {
+      query = query.where(eq(leads.assignedUserId, userId)) as typeof query;
+    }
+    
+    const result = await query.groupBy(leads.id);
     
     return result;
   }

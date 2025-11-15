@@ -2034,7 +2034,7 @@ function TouristDetailsDialog({ contactId, onClose, onSuccess, userRole }: Touri
                                 {field.label} {field.required && "*"}
                               </FormLabel>
                               <PassportScansField
-                                touristId={contactId || ""}
+                                touristId={details?.leadTourist?.id || ""}
                                 initialScans={details?.leadTourist?.passportScans || []}
                                 onUpdate={(scans) => {
                                   form.setValue("passportScans", scans);

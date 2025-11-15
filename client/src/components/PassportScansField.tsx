@@ -139,9 +139,17 @@ export function PassportScansField({
       // Get file as blob
       const blob = await response.blob();
       
-      // Create blob URL and open in new tab
+      // Create blob URL
       const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
+      
+      // Create temporary link element and click it
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
       // Clean up blob URL after a delay
       setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);

@@ -14,8 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User, Baby, RotateCcw } from "lucide-react";
-import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event } from "@shared/schema";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, Baby, RotateCcw } from "lucide-react";
+import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -899,6 +899,11 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
     queryKey: ["/api/events"],
   });
 
+  // Fetch managers and admins for assignee selection
+  const { data: managersAndAdmins = [] } = useQuery<User[]>({
+    queryKey: ["/api/users/managers-and-admins"],
+  });
+
   // Fetch tourists only if editing an existing lead
   const { data: tourists = [], isLoading: isLoadingTourists } = useQuery<LeadTourist[]>({
     queryKey: ["/api/leads", lead?.id, "tourists"],
@@ -1328,6 +1333,35 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
 
               <FormField
                 control={form.control}
+                name="assignedUserId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ответственный</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || undefined} 
+                      data-testid="select-assignedUserId"
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите ответственного" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {managersAndAdmins.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.firstName} {user.lastName} ({user.role === "admin" ? "Админ" : "Менеджер"})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="color"
                 render={({ field }) => (
                   <FormItem className="col-span-2">
@@ -1426,7 +1460,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                               <Tooltip>
                                 <TooltipTrigger type="button" className="inline-flex items-center rounded-md border border-input bg-background px-2 py-1 text-[10px] font-semibold transition-colors cursor-default hover-elevate" onClick={(e) => e.stopPropagation()}>
                                   {tourist.touristType === "adult" ? (
-                                    <User className="h-3 w-3" />
+                                    <UserIcon className="h-3 w-3" />
                                   ) : (
                                     <Baby className="h-3 w-3" />
                                   )}

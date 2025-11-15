@@ -172,6 +172,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get managers and admins (authenticated users only)
+  app.get("/api/users/managers-and-admins", requireAuth, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const managersAndAdmins = allUsers.filter(user => user.role === "admin" || user.role === "manager");
+      const sanitized = managersAndAdmins.map(sanitizeUser);
+      res.json(sanitized);
+    } catch (error) {
+      console.error("Error fetching managers and admins:", error);
+      res.status(500).json({ error: "Failed to fetch managers and admins" });
+    }
+  });
+  
   // Create user (admin only)
   app.post("/api/users", requireAdmin, async (req, res) => {
     try {

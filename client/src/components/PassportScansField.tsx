@@ -6,12 +6,14 @@ import { queryClient } from "@/lib/queryClient";
 
 interface PassportScansFieldProps {
   touristId: string;
+  contactId?: string;
   initialScans?: string[];
   onUpdate?: (scans: string[]) => void;
 }
 
 export function PassportScansField({
   touristId,
+  contactId,
   initialScans = [],
   onUpdate,
 }: PassportScansFieldProps) {
@@ -56,8 +58,11 @@ export function PassportScansField({
         description: `Загружено файлов: ${files.length}`,
       });
 
-      // Invalidate tourist cache
+      // Invalidate caches
       queryClient.invalidateQueries({ queryKey: [`/api/tourists/${touristId}`] });
+      if (contactId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/contacts", contactId, "details"] });
+      }
     } catch (error) {
       console.error("Error uploading files:", error);
       toast({
@@ -100,8 +105,11 @@ export function PassportScansField({
         title: "Файл удален",
       });
 
-      // Invalidate tourist cache
+      // Invalidate caches
       queryClient.invalidateQueries({ queryKey: [`/api/tourists/${touristId}`] });
+      if (contactId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/contacts", contactId, "details"] });
+      }
     } catch (error) {
       console.error("Error deleting file:", error);
       toast({

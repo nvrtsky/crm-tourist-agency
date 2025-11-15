@@ -1251,7 +1251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get signed URL for viewing passport scan
+  // Proxy endpoint for viewing passport scan
   app.get("/api/tourists/:id/passport-scans/:filename/view", requireAuth, async (req, res) => {
     try {
       const { id, filename } = req.params;
@@ -1270,14 +1270,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "File not found" });
       }
 
-      // Get signed URL for viewing
+      // Get file buffer and content type
       const objectStorageService = new ObjectStorageService();
-      const signedUrl = await objectStorageService.getFileUrl(filePath, 3600); // 1 hour TTL
+      const { buffer, contentType } = await objectStorageService.getFileBuffer(filePath);
 
-      res.json({ url: signedUrl });
+      // Set appropriate headers
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      res.send(buffer);
     } catch (error) {
       console.error("Error getting passport scan URL:", error);
-      res.status(500).json({ error: "Failed to get file URL" });
+      res.status(500).json({ error: "Failed to get file" });
     }
   });
 

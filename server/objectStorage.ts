@@ -84,7 +84,7 @@ export class ObjectStorageService {
     }
   }
 
-  async getFileUrl(relativePath: string, ttlSeconds: number = 3600): Promise<string> {
+  async getFileBuffer(relativePath: string): Promise<{ buffer: Buffer; contentType: string }> {
     const privateDir = this.getPrivateObjectDir();
     const fullPath = `${privateDir}${relativePath}`;
 
@@ -92,11 +92,10 @@ export class ObjectStorageService {
     const bucket = objectStorageClient.bucket(bucketName);
     const file = bucket.file(objectName);
 
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + ttlSeconds * 1000,
-    });
+    const [buffer] = await file.download();
+    const [metadata] = await file.getMetadata();
+    const contentType = metadata.contentType || 'application/octet-stream';
 
-    return url;
+    return { buffer, contentType };
   }
 }

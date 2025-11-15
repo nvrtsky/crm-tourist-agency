@@ -128,11 +128,15 @@ export function PassportScansField({
         throw new Error('View failed');
       }
 
-      const data = await response.json();
-
-      if (data.url) {
-        window.open(data.url, '_blank');
-      }
+      // Get file as blob
+      const blob = await response.blob();
+      
+      // Create blob URL and open in new tab
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      
+      // Clean up blob URL after a delay
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
     } catch (error) {
       console.error("Error viewing file:", error);
       toast({

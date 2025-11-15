@@ -133,7 +133,8 @@ interface ParticipantCardProps {
   cities: string[];
   getGuideName: (city: string) => string | null;
   handleVisitUpdate: (visitId: string | undefined, dealId: string, city: string, field: string, value: string | null) => void;
-  handleEditTourist: (contactId: string | undefined) => void;
+  handleEditTourist: (contactId: string | undefined, participant?: Participant) => void;
+  canEditTourist: (participant: Participant) => boolean;
   handleRemoveFromGroup: (groupId: string, dealId: string) => void;
   removeFromGroupPending: boolean;
   lead: Lead | null;
@@ -152,6 +153,7 @@ function ParticipantCard({
   getGuideName,
   handleVisitUpdate,
   handleEditTourist,
+  canEditTourist,
   handleRemoveFromGroup,
   removeFromGroupPending,
   lead,
@@ -218,15 +220,17 @@ function ParticipantCard({
                                 )}
                               </div>
                             </div>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 shrink-0"
-                              onClick={() => handleEditTourist(member.contact?.id)}
-                              data-testid={`button-edit-family-member-${member.deal.id}`}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
+                            {canEditTourist(member) && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 shrink-0"
+                                onClick={() => handleEditTourist(member.contact?.id, member)}
+                                data-testid={`button-edit-family-member-${member.deal.id}`}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -292,15 +296,17 @@ function ParticipantCard({
                                 )}
                               </div>
                             </div>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 shrink-0"
-                              onClick={() => handleEditTourist(member.contact?.id)}
-                              data-testid={`button-edit-member-${member.deal.id}`}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
+                            {canEditTourist(member) && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 shrink-0"
+                                onClick={() => handleEditTourist(member.contact?.id, member)}
+                                data-testid={`button-edit-member-${member.deal.id}`}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -347,14 +353,16 @@ function ParticipantCard({
             </div>
           </div>
           <div className="flex gap-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => handleEditTourist(participant.contact?.id)}
-              data-testid={`button-edit-tourist-${participant.deal.id}`}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
+            {canEditTourist(participant) && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleEditTourist(participant.contact?.id, participant)}
+                data-testid={`button-edit-tourist-${participant.deal.id}`}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
             {participant.deal.groupId && (
               <Button
                 size="icon"
@@ -925,7 +933,8 @@ export default function EventSummary() {
     // Managers can only edit tourists from their assigned leads
     if (user.role === 'manager') {
       const lead = participant.lead;
-      if (!lead) return true; // No lead = can edit (safety fallback)
+      // If no lead or lead assignment is missing, deny access for security
+      if (!lead) return false;
       return lead.assignedUserId === user.id;
     }
     
@@ -1445,6 +1454,7 @@ export default function EventSummary() {
                       getGuideName={getGuideName}
                       handleVisitUpdate={handleVisitUpdate}
                       handleEditTourist={handleEditTourist}
+                      canEditTourist={canEditTourist}
                       handleRemoveFromGroup={(groupId, dealId) => {
                         removeFromGroupMutation.mutate({ groupId, dealId });
                       }}
@@ -1600,15 +1610,17 @@ export default function EventSummary() {
                               )}
                             </div>
                             <div className="flex gap-1">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-6 w-6 opacity-50 hover:opacity-100"
-                                onClick={() => handleEditTourist(participant.contact?.id)}
-                                data-testid={`button-edit-tourist-${participant.deal.id}`}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
+                              {canEditTourist(participant) && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 opacity-50 hover:opacity-100"
+                                  onClick={() => handleEditTourist(participant.contact?.id, participant)}
+                                  data-testid={`button-edit-tourist-${participant.deal.id}`}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                              )}
                               {participant.deal.groupId && (
                                 <Button
                                   size="icon"

@@ -664,6 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/contacts/:id/details", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const user = req.user as User;
       const validation = updateLeadTouristSchema.safeParse(req.body);
       
       if (!validation.success) {
@@ -671,6 +672,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: "Validation error",
           details: validation.error.errors,
         });
+      }
+
+      // Check edit permissions for managers
+      if (user.role === 'manager') {
+        // Get contact details to check lead assignment
+        const contactDetails = await storage.getContactDetails(id);
+        
+        if (!contactDetails) {
+          return res.status(404).json({ error: "Contact not found" });
+        }
+        
+        // Managers can only edit tourists from their assigned leads
+        // If no lead or lead cannot be loaded, deny access for security
+        if (!contactDetails.contact.leadId) {
+          return res.status(403).json({ 
+            error: "Access denied",
+            message: "You can only edit tourists from your assigned leads"
+          });
+        }
+        
+        const lead = await storage.getLead(contactDetails.contact.leadId);
+        
+        if (!lead || lead.assignedUserId !== user.id) {
+          return res.status(403).json({ 
+            error: "Access denied",
+            message: "You can only edit tourists from your assigned leads"
+          });
+        }
       }
 
       await storage.updateContactDetails(id, validation.data);

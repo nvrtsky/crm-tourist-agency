@@ -4,7 +4,7 @@ import { useState, Fragment } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, Train, ChevronDown } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, Train, ChevronDown, Cake } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -142,6 +142,7 @@ interface ParticipantCardProps {
   sharedFields?: { arrival: boolean; hotel: boolean; departure: boolean };
   sharedVisits?: CityVisit[];
   groupMembers?: Participant[];
+  hasBirthday?: boolean;
 }
 
 function ParticipantCard({
@@ -159,9 +160,10 @@ function ParticipantCard({
   sharedFields,
   sharedVisits,
   groupMembers,
+  hasBirthday,
 }: ParticipantCardProps) {
   return (
-    <Card className={`mb-4 ${groupInfo ? 'border-l-4 border-l-primary/30' : ''}`} data-testid={`card-participant-${participant.deal.id}`}>
+    <Card className={`mb-4 ${groupInfo ? 'border-l-4 border-l-primary/30' : ''} ${hasBirthday ? 'bg-pink-50 dark:bg-pink-950/20 border-pink-200 dark:border-pink-800' : ''}`} data-testid={`card-participant-${participant.deal.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
@@ -176,6 +178,7 @@ function ParticipantCard({
                     >
                       <CardTitle className="text-base flex items-center gap-2 cursor-pointer hover-elevate rounded px-2 py-1">
                         <UsersRound className="h-4 w-4" />
+                        {hasBirthday && <Cake className="h-4 w-4 text-pink-500" />}
                         Семья ({groupInfo.memberCount} чел.)
                         <ChevronDown className="h-3 w-3" />
                       </CardTitle>
@@ -231,7 +234,8 @@ function ParticipantCard({
                   </PopoverContent>
                 </Popover>
               ) : (
-                <CardTitle className="text-base">
+                <CardTitle className="text-base flex items-center gap-2">
+                  {hasBirthday && <Cake className="h-4 w-4 text-pink-500" />}
                   {participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}
                 </CardTitle>
               )}
@@ -554,6 +558,47 @@ function ParticipantCard({
       </CardContent>
     </Card>
   );
+}
+
+// Helper function to check if birthday falls within tour dates
+function hasBirthdayDuringTour(dateOfBirth: string | null | undefined, tourStartDate: string | null | undefined, tourEndDate: string | null | undefined): boolean {
+  // Guard against missing data
+  if (!dateOfBirth || !tourStartDate || !tourEndDate) {
+    return false;
+  }
+  
+  try {
+    const dob = new Date(dateOfBirth);
+    const tourStart = new Date(tourStartDate);
+    const tourEnd = new Date(tourEndDate);
+    
+    // Validate dates
+    if (isNaN(dob.getTime()) || isNaN(tourStart.getTime()) || isNaN(tourEnd.getTime())) {
+      return false;
+    }
+    
+    // Get the birth month and day
+    const birthMonth = dob.getMonth();
+    const birthDay = dob.getDate();
+    
+    // Check each year that could overlap with the tour
+    const tourStartYear = tourStart.getFullYear();
+    const tourEndYear = tourEnd.getFullYear();
+    
+    for (let year = tourStartYear; year <= tourEndYear; year++) {
+      const birthdayThisYear = new Date(year, birthMonth, birthDay);
+      
+      // Check if birthday falls within tour dates
+      if (birthdayThisYear >= tourStart && birthdayThisYear <= tourEnd) {
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking birthday during tour:', error);
+    return false;
+  }
 }
 
 export default function EventSummary() {
@@ -1356,6 +1401,11 @@ export default function EventSummary() {
                     }
                   }
                   
+                  // Check if tourist has birthday during tour
+                  const hasBirthday = participant.leadTourist?.dateOfBirth && event
+                    ? hasBirthdayDuringTour(participant.leadTourist.dateOfBirth, event.startDate, event.endDate)
+                    : false;
+                  
                   return (
                     <ParticipantCard
                       key={participant.deal.id}
@@ -1375,6 +1425,7 @@ export default function EventSummary() {
                       sharedFields={sharedFields}
                       sharedVisits={sharedVisits}
                       groupMembers={groupMembers}
+                      hasBirthday={hasBirthday}
                     />
                   );
                 });
@@ -1448,10 +1499,15 @@ export default function EventSummary() {
                     const leadColumnRowSpan = hasMiniGroup ? groupSize : hasLeadFamily ? leadSize : 1;
                     const isLeadColumnAnchor = hasMiniGroup ? isFirstInGroup : hasLeadFamily ? isFirstInLead : true;
 
+                    // Check if tourist has birthday during tour
+                    const hasBirthday = participant.leadTourist?.dateOfBirth && event
+                      ? hasBirthdayDuringTour(participant.leadTourist.dateOfBirth, event.startDate, event.endDate)
+                      : false;
+
                     return (
                       <tr
                         key={participant.deal.id}
-                        className={`border-b hover-elevate ${participant.group ? 'bg-muted/5' : ''}`}
+                        className={`border-b hover-elevate ${participant.group ? 'bg-muted/5' : ''} ${hasBirthday ? 'bg-pink-50 dark:bg-pink-950/20' : ''}`}
                         data-testid={`row-participant-${participant.deal.id}`}
                       >
                         {/* Number column - always present */}
@@ -1493,6 +1549,20 @@ export default function EventSummary() {
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p>Основной турист</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {hasBirthday && (
+                                    <Tooltip>
+                                      <TooltipTrigger 
+                                        type="button"
+                                        className="inline-flex items-center rounded-md bg-pink-100 dark:bg-pink-900 px-2.5 py-1.5 text-[10px] font-semibold text-pink-700 dark:text-pink-200 transition-colors cursor-default hover-elevate"
+                                        data-testid={`badge-birthday-${participant.deal.id}`}
+                                      >
+                                        <Cake className="h-3 w-3" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>День рождения в период тура</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   )}

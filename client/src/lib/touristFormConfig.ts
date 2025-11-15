@@ -27,6 +27,7 @@ export interface TouristFieldDescriptor {
   section: "personal" | "passport" | "foreign" | "additional";
   selectOptions?: { value: string; label: string }[];
   required?: boolean;
+  visibleForViewer?: boolean; // Видно для роли "Наблюдатель" (гид)
 }
 
 export const TOURIST_FIELD_DESCRIPTORS: readonly TouristFieldDescriptor[] = [
@@ -79,6 +80,7 @@ export const TOURIST_FIELD_DESCRIPTORS: readonly TouristFieldDescriptor[] = [
     type: "text",
     testId: "input-tourist-phone",
     section: "personal",
+    visibleForViewer: true,
   },
   // Passport section
   {
@@ -113,6 +115,7 @@ export const TOURIST_FIELD_DESCRIPTORS: readonly TouristFieldDescriptor[] = [
     type: "text",
     testId: "input-tourist-foreignName",
     section: "foreign",
+    visibleForViewer: true,
   },
   {
     key: "foreignPassportNumber",
@@ -121,6 +124,7 @@ export const TOURIST_FIELD_DESCRIPTORS: readonly TouristFieldDescriptor[] = [
     type: "text",
     testId: "input-tourist-foreignPassport",
     section: "foreign",
+    visibleForViewer: true,
   },
   {
     key: "foreignPassportValidUntil",
@@ -135,6 +139,7 @@ export const TOURIST_FIELD_DESCRIPTORS: readonly TouristFieldDescriptor[] = [
     type: "file",
     testId: "file-tourist-passportScans",
     section: "foreign",
+    visibleForViewer: true,
   },
   // Additional section
   {
@@ -143,6 +148,7 @@ export const TOURIST_FIELD_DESCRIPTORS: readonly TouristFieldDescriptor[] = [
     type: "select",
     testId: "select-tourist-type",
     section: "additional",
+    visibleForViewer: true,
     selectOptions: [
       { value: "adult", label: "Взрослый" },
       { value: "child", label: "Ребенок" },
@@ -164,6 +170,7 @@ export const TOURIST_FIELD_DESCRIPTORS: readonly TouristFieldDescriptor[] = [
     type: "textarea",
     testId: "textarea-tourist-guideComment",
     section: "additional",
+    visibleForViewer: true,
   },
 ] as const;
 

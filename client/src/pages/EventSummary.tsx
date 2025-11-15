@@ -15,6 +15,7 @@ import { EditableCell } from "@/components/EditableCell";
 import { PassportScansField } from "@/components/PassportScansField";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { TOURIST_FIELD_DESCRIPTORS, SECTION_TITLES } from "@/lib/touristFormConfig";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
 import { calculateTouristDataCompleteness } from "@/lib/utils";
@@ -560,6 +561,7 @@ export default function EventSummary() {
   const [, setLocation] = useLocation();
   const eventId = params?.id;
   const { toast } = useToast();
+  const { user } = useAuth();
   const [showCreateMiniGroupDialog, setShowCreateMiniGroupDialog] = useState(false);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const isMobile = useIsMobile();
@@ -1856,6 +1858,7 @@ export default function EventSummary() {
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
         }}
+        userRole={user?.role}
       />
     </div>
   );
@@ -1866,6 +1869,7 @@ interface TouristDetailsDialogProps {
   contactId: string | null;
   onClose: () => void;
   onSuccess: () => void;
+  userRole?: string;
 }
 
 interface ContactDetails {
@@ -1873,7 +1877,7 @@ interface ContactDetails {
   leadTourist: LeadTourist | null;
 }
 
-function TouristDetailsDialog({ contactId, onClose, onSuccess }: TouristDetailsDialogProps) {
+function TouristDetailsDialog({ contactId, onClose, onSuccess, userRole }: TouristDetailsDialogProps) {
   const { toast } = useToast();
   
   const { data: details, isLoading } = useQuery<ContactDetails>({
@@ -1935,7 +1939,14 @@ function TouristDetailsDialog({ contactId, onClose, onSuccess }: TouristDetailsD
           <Form {...form}>
             <form onSubmit={form.handleSubmit((data) => updateMutation.mutate(data))} className="space-y-4">
               {(["personal", "passport", "foreign", "additional"] as const).map((section) => {
-                const fields = TOURIST_FIELD_DESCRIPTORS.filter((f) => f.section === section);
+                // Фильтруем поля по секции и по роли пользователя
+                let fields = TOURIST_FIELD_DESCRIPTORS.filter((f) => f.section === section);
+                
+                // Если роль viewer (наблюдатель/гид), показываем только разрешенные поля
+                if (userRole === "viewer") {
+                  fields = fields.filter((f) => f.visibleForViewer === true);
+                }
+                
                 if (fields.length === 0) return null;
 
                 return (

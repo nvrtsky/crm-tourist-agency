@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const login = async (username: string, password: string) => {
-    await loginMutation.mutateAsync({ username, password }, { throwOnError: true });
+    await loginMutation.mutateAsync({ username, password });
   };
 
   const logout = async () => {

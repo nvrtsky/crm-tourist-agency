@@ -213,8 +213,10 @@ function ParticipantCard({
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
                                     {member.leadTourist.touristType === "adult" ? (
                                       <><UserIcon className="h-2.5 w-2.5 mr-0.5" />Взрослый</>
+                                    ) : member.leadTourist.touristType === "child" ? (
+                                      <><UserRound className="h-2.5 w-2.5 mr-0.5" />Ребенок</>
                                     ) : (
-                                      <><Baby className="h-2.5 w-2.5 mr-0.5" />Ребенок</>
+                                      <><Baby className="h-2.5 w-2.5 mr-0.5" />Младенец</>
                                     )}
                                   </Badge>
                                 )}
@@ -289,8 +291,10 @@ function ParticipantCard({
                                   <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
                                     {member.leadTourist.touristType === "adult" ? (
                                       <><UserIcon className="h-2.5 w-2.5 mr-0.5" />Взрослый</>
+                                    ) : member.leadTourist.touristType === "child" ? (
+                                      <><UserRound className="h-2.5 w-2.5 mr-0.5" />Ребенок</>
                                     ) : (
-                                      <><Baby className="h-2.5 w-2.5 mr-0.5" />Ребенок</>
+                                      <><Baby className="h-2.5 w-2.5 mr-0.5" />Младенец</>
                                     )}
                                   </Badge>
                                 )}
@@ -321,8 +325,10 @@ function ParticipantCard({
                   <Badge variant="outline" className="text-xs" data-testid={`badge-tourist-type-${participant.deal.id}`}>
                     {participant.leadTourist.touristType === "adult" ? (
                       <><UserIcon className="h-3 w-3 mr-1" />Взрослый</>
+                    ) : participant.leadTourist.touristType === "child" ? (
+                      <><UserRound className="h-3 w-3 mr-1" />Ребенок</>
                     ) : (
-                      <><Baby className="h-3 w-3 mr-1" />Ребенок</>
+                      <><Baby className="h-3 w-3 mr-1" />Младенец</>
                     )}
                   </Badge>
                   {participant.leadTourist.isPrimary && (
@@ -1570,6 +1576,8 @@ export default function EventSummary() {
                                     >
                                       {participant.leadTourist.touristType === "adult" ? (
                                         <UserIcon className="h-3 w-3 text-muted-foreground" />
+                                      ) : participant.leadTourist.touristType === "child" ? (
+                                        <UserRound className="h-3 w-3 text-muted-foreground" />
                                       ) : (
                                         <Baby className="h-3 w-3 text-muted-foreground" />
                                       )}

@@ -10,13 +10,21 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "@shared/schema";
 import { z } from "zod";
+import { useEffect } from "react";
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation("/events");
+    }
+  }, [isAuthenticated, setLocation]);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -33,8 +41,7 @@ export default function Login() {
         title: "Успешный вход",
         description: "Добро пожаловать!",
       });
-      // Use setTimeout to avoid setState during render warning
-      setTimeout(() => setLocation("/"), 0);
+      // Redirect will happen automatically via useEffect when isAuthenticated becomes true
     } catch (error: any) {
       toast({
         title: "Ошибка входа",

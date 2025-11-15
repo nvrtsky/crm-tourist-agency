@@ -913,7 +913,26 @@ export default function EventSummary() {
     },
   });
 
-  const handleEditTourist = (contactId: string | undefined) => {
+  // Check if current user can edit a tourist from this lead
+  const canEditTourist = (participant: Participant): boolean => {
+    if (!user) return false;
+    
+    // Admins and viewers can edit all tourists
+    if (user.role === 'admin' || user.role === 'viewer') {
+      return true;
+    }
+    
+    // Managers can only edit tourists from their assigned leads
+    if (user.role === 'manager') {
+      const lead = participant.lead;
+      if (!lead) return true; // No lead = can edit (safety fallback)
+      return lead.assignedUserId === user.id;
+    }
+    
+    return false;
+  };
+
+  const handleEditTourist = (contactId: string | undefined, participant?: Participant) => {
     if (!contactId) {
       toast({
         title: "Ошибка",
@@ -922,6 +941,17 @@ export default function EventSummary() {
       });
       return;
     }
+    
+    // Check edit permissions if participant is provided
+    if (participant && !canEditTourist(participant)) {
+      toast({
+        title: "Нет доступа",
+        description: "У вас нет прав для редактирования этого туриста",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setEditingContactId(contactId);
   };
 

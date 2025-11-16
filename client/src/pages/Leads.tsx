@@ -487,7 +487,7 @@ export default function Leads() {
             </div>
 
             {/* Clear Filters */}
-            {(searchQuery || statusFilter.length > 0 || sourceFilter || categoryFilter || tourFilter || colorFilter) && (
+            {(searchQuery || statusFilter.length > 0 || sourceFilter || categoryFilter || tourFilter || colorFilter || dateRange.from || dateRange.to) && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -498,6 +498,7 @@ export default function Leads() {
                   setCategoryFilter('');
                   setTourFilter('');
                   setColorFilter('');
+                  setDateRange({});
                 }}
                 data-testid="button-clear-filters"
               >

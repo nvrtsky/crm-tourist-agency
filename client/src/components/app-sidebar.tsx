@@ -60,6 +60,8 @@ export function AppSidebar() {
   // Filter menu items based on user role
   const menuItems = user?.role === "viewer"
     ? allMenuItems.filter(item => item.testId === "nav-events")
+    : user?.role === "manager"
+    ? allMenuItems.filter(item => item.testId === "nav-leads" || item.testId === "nav-events")
     : allMenuItems;
 
   return (

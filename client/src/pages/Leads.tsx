@@ -870,6 +870,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
   const { toast } = useToast();
   const [isTouristDialogOpen, setIsTouristDialogOpen] = useState(false);
   const [editingTourist, setEditingTourist] = useState<LeadTourist | null>(null);
+  const [prefillData, setPrefillData] = useState<Partial<InsertLeadTourist> | null>(null);
 
   // Helper function to get lead display name
   const getLeadName = (lead: Lead) => {
@@ -1439,19 +1440,45 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Туристы</h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setEditingTourist(null);
-                    setIsTouristDialogOpen(true);
-                  }}
-                  data-testid="button-add-tourist"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Добавить туриста
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const leadData: Partial<InsertLeadTourist> = {
+                        leadId: lead.id,
+                        lastName: lead.lastName || "",
+                        firstName: lead.firstName || "",
+                        middleName: lead.middleName || null,
+                        phone: lead.phone || null,
+                        email: lead.email || null,
+                        isPrimary: tourists.length === 0,
+                      };
+                      setPrefillData(leadData);
+                      setEditingTourist(null);
+                      setIsTouristDialogOpen(true);
+                    }}
+                    data-testid="button-add-from-lead"
+                  >
+                    <UserIcon className="h-4 w-4 mr-2" />
+                    Добавить из лида
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setPrefillData(null);
+                      setEditingTourist(null);
+                      setIsTouristDialogOpen(true);
+                    }}
+                    data-testid="button-add-tourist"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Добавить туриста
+                  </Button>
+                </div>
               </div>
 
               {isLoadingTourists ? (
@@ -1609,8 +1636,14 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
       {lead?.id && (
         <TouristDialog
           open={isTouristDialogOpen}
-          onOpenChange={setIsTouristDialogOpen}
+          onOpenChange={(open) => {
+            setIsTouristDialogOpen(open);
+            if (!open) {
+              setPrefillData(null);
+            }
+          }}
           tourist={editingTourist}
+          prefillData={prefillData}
           leadId={lead.id}
           tourists={tourists}
           onSubmit={(data) => {
@@ -1631,6 +1664,7 @@ interface TouristDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tourist: LeadTourist | null;
+  prefillData?: Partial<InsertLeadTourist> | null;
   leadId: string;
   tourists: LeadTourist[];
   onSubmit: (data: InsertLeadTourist) => void;
@@ -1641,6 +1675,7 @@ function TouristDialog({
   open,
   onOpenChange,
   tourist,
+  prefillData,
   leadId,
   tourists,
   onSubmit,
@@ -1669,7 +1704,7 @@ function TouristDialog({
     },
   });
 
-  // Reset form when tourist changes
+  // Reset form when tourist or prefillData changes
   useEffect(() => {
     if (tourist) {
       form.reset({
@@ -1690,6 +1725,26 @@ function TouristDialog({
         isPrimary: tourist.isPrimary,
         notes: tourist.notes,
         order: tourist.order,
+      });
+    } else if (prefillData) {
+      form.reset({
+        leadId,
+        lastName: prefillData.lastName || "",
+        firstName: prefillData.firstName || "",
+        middleName: prefillData.middleName || null,
+        email: prefillData.email || null,
+        phone: prefillData.phone || null,
+        dateOfBirth: null,
+        passportSeries: null,
+        passportIssuedBy: null,
+        registrationAddress: null,
+        foreignPassportName: null,
+        foreignPassportNumber: null,
+        foreignPassportValidUntil: null,
+        touristType: "adult",
+        isPrimary: prefillData.isPrimary ?? tourists.length === 0,
+        notes: null,
+        order: tourists.length,
       });
     } else {
       form.reset({
@@ -1712,7 +1767,7 @@ function TouristDialog({
         order: tourists.length,
       });
     }
-  }, [tourist, leadId, tourists.length, form]);
+  }, [tourist, prefillData, leadId, tourists.length, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

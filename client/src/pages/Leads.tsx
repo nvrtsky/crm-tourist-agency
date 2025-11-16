@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search } from "lucide-react";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -91,6 +91,7 @@ export default function Leads() {
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>(() => {
     return (localStorage.getItem('leadsViewMode') as 'table' | 'kanban') || 'kanban';
   });
+  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
@@ -177,6 +178,21 @@ export default function Leads() {
   // Filter leads
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          (lead.firstName?.toLowerCase() || '').includes(query) ||
+          (lead.lastName?.toLowerCase() || '').includes(query) ||
+          (lead.middleName?.toLowerCase() || '').includes(query) ||
+          (lead.email?.toLowerCase() || '').includes(query) ||
+          (lead.phone?.toLowerCase() || '').includes(query);
+        
+        if (!matchesSearch) {
+          return false;
+        }
+      }
+      
       // Status filter
       if (statusFilter.length > 0 && !statusFilter.includes(lead.status)) {
         return false;
@@ -218,7 +234,7 @@ export default function Leads() {
       
       return true;
     });
-  }, [leads, statusFilter, sourceFilter, categoryFilter, tourFilter, colorFilter, dateRange]);
+  }, [leads, searchQuery, statusFilter, sourceFilter, categoryFilter, tourFilter, colorFilter, dateRange]);
 
   // Calculate stats from filtered leads
   const stats = {
@@ -308,6 +324,18 @@ export default function Leads() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap items-center gap-4">
+            {/* Search */}
+            <div className="relative min-w-[250px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск по имени, email, телефону..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-8"
+                data-testid="input-search"
+              />
+            </div>
+
             {/* View Toggle */}
             <div className="flex items-center gap-2">
               <Button
@@ -459,11 +487,12 @@ export default function Leads() {
             </div>
 
             {/* Clear Filters */}
-            {(statusFilter.length > 0 || sourceFilter || categoryFilter || tourFilter || colorFilter) && (
+            {(searchQuery || statusFilter.length > 0 || sourceFilter || categoryFilter || tourFilter || colorFilter) && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
+                  setSearchQuery('');
                   setStatusFilter([]);
                   setSourceFilter('');
                   setCategoryFilter('');
@@ -472,7 +501,7 @@ export default function Leads() {
                 }}
                 data-testid="button-clear-filters"
               >
-                Сбросить фильтры
+                Сбросить
               </Button>
             )}
           </div>

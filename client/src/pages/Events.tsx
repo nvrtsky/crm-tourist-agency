@@ -425,21 +425,23 @@ export default function Events() {
               </Select>
             </div>
 
-            <div className="flex items-end">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setSearchQuery("");
-                  setCountryFilter("all");
-                  setTourTypeFilter("all");
-                  setSortBy("startDate");
-                }}
-                data-testid="button-reset-filters"
-              >
-                Сбросить
-              </Button>
-            </div>
+            {(searchQuery || countryFilter !== "all" || tourTypeFilter !== "all") && (
+              <div className="flex items-end">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCountryFilter("all");
+                    setTourTypeFilter("all");
+                    setSortBy("startDate");
+                  }}
+                  data-testid="button-reset-filters"
+                >
+                  Сбросить
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

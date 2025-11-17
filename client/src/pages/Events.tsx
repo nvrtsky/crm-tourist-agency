@@ -51,13 +51,10 @@ interface EventWithStats extends Event {
 // Helper function to translate tour type to Russian
 function getTourTypeLabel(tourType: string): string {
   const labels: Record<string, string> = {
-    group: "Групповой тур",
-    individual: "Индивидуальный тур",
+    group: "Групповой",
+    individual: "Индивидуальный",
     excursion: "Экскурсия",
     transfer: "Трансфер",
-    adventure: "Приключенческий",
-    cultural: "Культурный",
-    other: "Другое",
   };
   return labels[tourType] || tourType;
 }

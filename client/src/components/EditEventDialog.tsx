@@ -244,13 +244,10 @@ export function EditEventDialog({
                         {event?.tourType && !TOUR_TYPES.includes(event.tourType as any) && (
                           <SelectItem value={event.tourType}>{event.tourType} (существующее значение)</SelectItem>
                         )}
-                        <SelectItem value="group">Групповой тур</SelectItem>
-                        <SelectItem value="individual">Индивидуальный тур</SelectItem>
+                        <SelectItem value="group">Групповой</SelectItem>
+                        <SelectItem value="individual">Индивидуальный</SelectItem>
                         <SelectItem value="excursion">Экскурсия</SelectItem>
                         <SelectItem value="transfer">Трансфер</SelectItem>
-                        <SelectItem value="adventure">Приключенческий</SelectItem>
-                        <SelectItem value="cultural">Культурный</SelectItem>
-                        <SelectItem value="other">Другое</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

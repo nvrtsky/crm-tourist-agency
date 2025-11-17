@@ -48,7 +48,7 @@ export const DEAL_STATUSES = ["pending", "confirmed", "cancelled", "completed"] 
 export type DealStatus = typeof DEAL_STATUSES[number];
 
 // Tour types
-export const TOUR_TYPES = ["group", "individual", "excursion", "transfer", "adventure", "cultural", "other"] as const;
+export const TOUR_TYPES = ["group", "individual", "excursion", "transfer"] as const;
 export type TourType = typeof TOUR_TYPES[number];
 
 // Notification types

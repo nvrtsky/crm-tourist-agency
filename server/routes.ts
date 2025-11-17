@@ -1218,17 +1218,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const tourist = await storage.createTourist(validation.data);
+      console.log(`[CREATE_TOURIST] Tourist created:`, tourist);
       
       // Auto-convert tourist to contact+deal if lead has an event selected
       const lead = await storage.getLead(id);
+      console.log(`[CREATE_TOURIST] Lead:`, lead);
+      
       if (lead && lead.eventId) {
         console.log(`[CREATE_TOURIST] Lead has eventId ${lead.eventId}, triggering auto-conversion for tourist ${tourist.id}`);
         // Pass the tourist object directly to avoid race conditions
-        await autoConvertLeadToEvent(id, lead.eventId, tourist);
+        const conversionResult = await autoConvertLeadToEvent(id, lead.eventId, tourist);
+        console.log(`[CREATE_TOURIST] Auto-conversion result:`, conversionResult);
+      } else {
+        console.log(`[CREATE_TOURIST] No auto-conversion: lead exists=${!!lead}, eventId=${lead?.eventId}`);
       }
       
       // Return tourist and leadEventId for cache invalidation
-      res.json({ tourist, leadEventId: lead?.eventId || null });
+      const response = { tourist, leadEventId: lead?.eventId || null };
+      console.log(`[CREATE_TOURIST] Responding with:`, response);
+      res.json(response);
     } catch (error) {
       console.error("Error creating tourist:", error);
       res.status(500).json({ error: "Failed to create tourist" });

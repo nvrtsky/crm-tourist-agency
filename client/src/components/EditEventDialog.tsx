@@ -33,7 +33,8 @@ import {
 import { ColorPicker, type ColorOption } from "@/components/ColorPicker";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Archive, ArchiveRestore } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { CalendarIcon, Archive, ArchiveRestore, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -395,7 +396,17 @@ export function EditEventDialog({
                 name="endDate"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Дата окончания</FormLabel>
+                    <div className="flex items-center gap-1.5">
+                      <FormLabel>Дата окончания</FormLabel>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Тур автоматически заархивируется по истечении этой даты</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>

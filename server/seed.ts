@@ -399,7 +399,7 @@ async function seed() {
         airport: isFirstCity ? "Sheremetyevo" : undefined,
         departureFlightNumber: isLastCity ? "SU222" : (j % 2 === 0 ? `G${300 + j}` : `CA${400 + j}`),
         hotelName: `Hotel ${city} ${i + 1}`,
-        roomType: i % 2 === 0 ? "twin" : "double",
+        roomType: i % 3 === 0 ? "single" : (i % 3 === 1 ? "twin" : "double"),
       });
     }
   }

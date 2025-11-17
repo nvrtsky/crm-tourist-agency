@@ -84,6 +84,7 @@
     "train": "火车"
   },
   "roomTypes": {
+    "single": "单人房",
     "twin": "双床房",
     "double": "大床房"
   },
@@ -170,6 +171,7 @@
     "citiesOnRoute": "路线城市",
     "touristDistribution": "游客城市分布",
     "hotelRoomSummary": "酒店房型汇总",
+    "single": "单人房",
     "twin": "双床房",
     "double": "大床房",
     "dataLoaded": "测试数据已加载",

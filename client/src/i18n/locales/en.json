@@ -84,6 +84,7 @@
     "train": "Train"
   },
   "roomTypes": {
+    "single": "Single",
     "twin": "Twin",
     "double": "Double"
   },
@@ -170,6 +171,7 @@
     "citiesOnRoute": "Cities on Route",
     "touristDistribution": "Tourist Distribution by Cities",
     "hotelRoomSummary": "Hotel Room Type Summary",
+    "single": "Single",
     "twin": "Twin",
     "double": "Double",
     "dataLoaded": "Test data loaded",

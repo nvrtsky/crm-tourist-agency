@@ -1767,6 +1767,7 @@ export default function EventSummary() {
                                       value={visit?.roomType}
                                       placeholder="Тип номера"
                                       selectOptions={[
+                                        { value: "single", label: "Single" },
                                         { value: "twin", label: "Twin" },
                                         { value: "double", label: "Double" },
                                       ]}

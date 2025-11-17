@@ -84,6 +84,7 @@
     "train": "Поезд"
   },
   "roomTypes": {
+    "single": "Single",
     "twin": "Twin",
     "double": "Double"
   },
@@ -170,6 +171,7 @@
     "citiesOnRoute": "Города на маршруте",
     "touristDistribution": "Распределение туристов по городам",
     "hotelRoomSummary": "Сводка по типам номеров в отелях",
+    "single": "Single",
     "twin": "Twin",
     "double": "Double",
     "dataLoaded": "Тестовые данные загружены",

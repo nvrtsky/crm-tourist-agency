@@ -970,6 +970,7 @@ export default function DevTest() {
                                           type="select"
                                           placeholder={t("placeholders.selectType")}
                                           selectOptions={[
+                                            { value: "single", label: t("roomTypes.single") },
                                             { value: "twin", label: t("roomTypes.twin") },
                                             { value: "double", label: t("roomTypes.double") }
                                           ]}

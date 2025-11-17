@@ -136,6 +136,7 @@ export interface IStorage {
   createLead(lead: InsertLead): Promise<Lead>;
   updateLead(id: string, lead: Partial<InsertLead>): Promise<Lead | undefined>;
   deleteLead(id: string): Promise<boolean>;
+  updateLeadCostsByEventPrice(eventId: string, newPrice: string): Promise<void>;
 
   // Lead status history operations
   getHistoryByLead(leadId: string): Promise<LeadStatusHistoryEntry[]>;
@@ -924,6 +925,35 @@ export class DatabaseStorage implements IStorage {
     await db.delete(leadStatusHistory).where(eq(leadStatusHistory.leadId, id));
     const result = await db.delete(leads).where(eq(leads.id, id)).returning();
     return result.length > 0;
+  }
+
+  async updateLeadCostsByEventPrice(eventId: string, newPrice: string): Promise<void> {
+    // Find all leads linked to this event
+    const affectedLeads = await db
+      .select()
+      .from(leads)
+      .where(eq(leads.eventId, eventId));
+
+    // Update each lead's tourCost based on tourist count
+    for (const lead of affectedLeads) {
+      // Count tourists for this lead
+      const touristCount = await db
+        .select({ count: count() })
+        .from(leadTourists)
+        .where(eq(leadTourists.leadId, lead.id));
+
+      const numberOfTourists = touristCount[0]?.count || 1; // Minimum 1 tourist
+      const calculatedCost = String(Number(newPrice) * numberOfTourists);
+
+      // Update lead tourCost
+      await db
+        .update(leads)
+        .set({
+          tourCost: calculatedCost,
+          updatedAt: new Date(),
+        })
+        .where(eq(leads.id, lead.id));
+    }
   }
 
   // ==================== LEAD STATUS HISTORY OPERATIONS ====================

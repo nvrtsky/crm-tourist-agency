@@ -521,10 +521,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Get old event to compare price
+      const oldEvent = await storage.getEvent(id);
+      if (!oldEvent) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
       const event = await storage.updateEvent(id, validation.data);
       
       if (!event) {
         return res.status(404).json({ error: "Event not found" });
+      }
+      
+      // If price changed (compare updated event price with old price), update all related leads' tourCost
+      if (event.price !== oldEvent.price) {
+        console.log(`[EVENT_UPDATE] Price changed from ${oldEvent.price} to ${event.price}, recalculating lead costs`);
+        await storage.updateLeadCostsByEventPrice(id, event.price);
       }
       
       res.json(event);

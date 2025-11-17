@@ -175,9 +175,9 @@ export default function Leads() {
     localStorage.setItem('leadsViewMode', viewMode);
   }, [viewMode]);
 
-  // Filter leads
+  // Filter and sort leads
   const filteredLeads = useMemo(() => {
-    return leads.filter(lead => {
+    const filtered = leads.filter(lead => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -233,6 +233,12 @@ export default function Leads() {
       }
       
       return true;
+    });
+    
+    // Sort by createdAt DESC (newest first) for table view
+    // Clone array before sorting to avoid mutating react-query cache
+    return [...filtered].sort((a, b) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [leads, searchQuery, statusFilter, sourceFilter, categoryFilter, tourFilter, colorFilter, dateRange]);
 
@@ -762,7 +768,17 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4" data-testid="kanban-board">
       {columns.map((column) => {
-        const columnLeads = leads.filter((lead) => lead.status === column.status);
+        const columnLeads = leads
+          .filter((lead) => lead.status === column.status)
+          .sort((a, b) => {
+            // For "new" status: sort by createdAt DESC (newest first)
+            // For other statuses: sort by updatedAt DESC (recently moved first)
+            if (column.status === 'new') {
+              return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            } else {
+              return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+            }
+          });
         
         return (
           <div

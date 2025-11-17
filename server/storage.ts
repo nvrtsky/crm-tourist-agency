@@ -789,7 +789,9 @@ export class DatabaseStorage implements IStorage {
       query = query.where(eq(leads.assignedUserId, userId)) as typeof query;
     }
     
-    const result = await query.groupBy(leads.id);
+    const result = await query
+      .groupBy(leads.id, leads.createdAt, leads.updatedAt)
+      .orderBy(desc(leads.createdAt));
     
     return result;
   }

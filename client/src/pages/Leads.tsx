@@ -1331,85 +1331,187 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
               <FormField
                 control={form.control}
                 name="tourCost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Стоимость тура</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          const tourCost = parseFloat(e.target.value) || 0;
-                          const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
-                          form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
-                          
-                          // Mark that user manually edited tourCost
-                          hasManualCostOverrideRef.current = true;
-                        }}
-                        data-testid="input-tourCost"
-                      />
-                    </FormControl>
-                    {costCalculation && (
-                      <FormDescription className="text-xs text-muted-foreground">
-                        Рассчитано: {formatCurrency(costCalculation.pricePerPerson)} руб × {costCalculation.touristCount} {costCalculation.touristCount === 1 ? 'турист' : costCalculation.touristCount > 4 ? 'туристов' : 'туриста'} = {formatCurrency(parseFloat(costCalculation.pricePerPerson) * costCalculation.touristCount)} руб
-                      </FormDescription>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Format number with thousand separators for display
+                  const formatNumberInput = (value: string) => {
+                    if (!value) return "";
+                    // Handle both comma and dot as decimal separator
+                    const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
+                    const num = parseFloat(cleanValue);
+                    if (isNaN(num)) return "";
+                    return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  };
+                  
+                  // Parse formatted string back to plain number string (with dot as decimal separator)
+                  const parseNumberInput = (value: string) => {
+                    if (!value) return "";
+                    
+                    // Remove all spaces first
+                    let cleanValue = value.replace(/\s/g, '');
+                    
+                    // Smart decimal separator detection:
+                    // If both comma and dot exist, the rightmost one is the decimal separator
+                    const lastCommaIndex = cleanValue.lastIndexOf(',');
+                    const lastDotIndex = cleanValue.lastIndexOf('.');
+                    
+                    if (lastCommaIndex > lastDotIndex) {
+                      // Comma is decimal separator (European format: 1.234.567,89)
+                      cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+                    } else if (lastDotIndex > lastCommaIndex) {
+                      // Dot is decimal separator (US format: 1,234,567.89)
+                      cleanValue = cleanValue.replace(/,/g, '');
+                    } else if (lastCommaIndex !== -1 && lastDotIndex === -1) {
+                      // Only comma exists (Russian format: 123456,78)
+                      cleanValue = cleanValue.replace(',', '.');
+                    }
+                    // else: only dot or no separators - keep as is
+                    
+                    // Keep only digits, dot, and minus sign
+                    const sanitized = cleanValue.replace(/[^\d.-]/g, '');
+                    
+                    // Validate format: optional minus, digits, optional decimal part
+                    if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "" || sanitized === "-") {
+                      return field.value || "";  // Preserve previous valid value
+                    }
+                    
+                    return sanitized;
+                  };
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel>Стоимость тура</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder="0,00"
+                          value={formatNumberInput(field.value || "")}
+                          onChange={(e) => {
+                            const rawValue = parseNumberInput(e.target.value);
+                            field.onChange(rawValue);
+                            const tourCost = parseFloat(rawValue) || 0;
+                            const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
+                            form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
+                            
+                            // Mark that user manually edited tourCost
+                            hasManualCostOverrideRef.current = true;
+                          }}
+                          data-testid="input-tourCost"
+                        />
+                      </FormControl>
+                      {costCalculation && (
+                        <FormDescription className="text-xs text-muted-foreground">
+                          Рассчитано: {formatCurrency(costCalculation.pricePerPerson)} руб × {costCalculation.touristCount} {costCalculation.touristCount === 1 ? 'турист' : costCalculation.touristCount > 4 ? 'туристов' : 'туриста'} = {formatCurrency(parseFloat(costCalculation.pricePerPerson) * costCalculation.touristCount)} руб
+                        </FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
                 control={form.control}
                 name="advancePayment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Аванс</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          const tourCost = parseFloat(form.getValues("tourCost") || "0") || 0;
-                          const advancePayment = parseFloat(e.target.value) || 0;
-                          form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
-                        }}
-                        data-testid="input-advancePayment"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Format number with thousand separators for display
+                  const formatNumberInput = (value: string) => {
+                    if (!value) return "";
+                    // Handle both comma and dot as decimal separator
+                    const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
+                    const num = parseFloat(cleanValue);
+                    if (isNaN(num)) return "";
+                    return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  };
+                  
+                  // Parse formatted string back to plain number string (with dot as decimal separator)
+                  const parseNumberInput = (value: string) => {
+                    if (!value) return "";
+                    
+                    // Remove all spaces first
+                    let cleanValue = value.replace(/\s/g, '');
+                    
+                    // Smart decimal separator detection:
+                    // If both comma and dot exist, the rightmost one is the decimal separator
+                    const lastCommaIndex = cleanValue.lastIndexOf(',');
+                    const lastDotIndex = cleanValue.lastIndexOf('.');
+                    
+                    if (lastCommaIndex > lastDotIndex) {
+                      // Comma is decimal separator (European format: 1.234.567,89)
+                      cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+                    } else if (lastDotIndex > lastCommaIndex) {
+                      // Dot is decimal separator (US format: 1,234,567.89)
+                      cleanValue = cleanValue.replace(/,/g, '');
+                    } else if (lastCommaIndex !== -1 && lastDotIndex === -1) {
+                      // Only comma exists (Russian format: 123456,78)
+                      cleanValue = cleanValue.replace(',', '.');
+                    }
+                    // else: only dot or no separators - keep as is
+                    
+                    // Keep only digits, dot, and minus sign
+                    const sanitized = cleanValue.replace(/[^\d.-]/g, '');
+                    
+                    // Validate format: optional minus, digits, optional decimal part
+                    if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "" || sanitized === "-") {
+                      return field.value || "";  // Preserve previous valid value
+                    }
+                    
+                    return sanitized;
+                  };
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel>Аванс</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder="0,00"
+                          value={formatNumberInput(field.value || "")}
+                          onChange={(e) => {
+                            const rawValue = parseNumberInput(e.target.value);
+                            field.onChange(rawValue);
+                            const tourCost = parseFloat(form.getValues("tourCost") || "0") || 0;
+                            const advancePayment = parseFloat(rawValue) || 0;
+                            form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
+                          }}
+                          data-testid="input-advancePayment"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
                 control={form.control}
                 name="remainingPayment"
-                render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>Остаток</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-remainingPayment"
-                        disabled
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Format number with thousand separators for display
+                  const formatNumberInput = (value: string) => {
+                    if (!value) return "";
+                    // Clean value: remove spaces and replace commas with dots
+                    const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
+                    const num = parseFloat(cleanValue);
+                    if (isNaN(num)) return "";
+                    return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  };
+                  
+                  return (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Остаток</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder="0,00"
+                          value={formatNumberInput(field.value || "")}
+                          data-testid="input-remainingPayment"
+                          disabled
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -894,6 +894,12 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
   const [editingTourist, setEditingTourist] = useState<LeadTourist | null>(null);
   const [prefillData, setPrefillData] = useState<Partial<InsertLeadTourist> | null>(null);
   const [costCalculation, setCostCalculation] = useState<{ pricePerPerson: string; touristCount: number } | null>(null);
+  
+  // Track if initial load is complete to avoid overwriting DB values
+  const isInitializedRef = useRef(false);
+  
+  // Track if user manually edited tourCost to prevent auto-recalculation
+  const hasManualCostOverrideRef = useRef(false);
 
   // Helper function to get lead display name
   const getLeadName = (lead: Lead) => {
@@ -961,10 +967,17 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
         assignedUserId: lead.assignedUserId || null,
         createdByUserId: lead.createdByUserId || null,
       });
+      // Reset flags when editing a different lead
+      isInitializedRef.current = false;
+      hasManualCostOverrideRef.current = false;
+    } else {
+      // For new leads, mark as initialized immediately since there's no DB value to preserve
+      isInitializedRef.current = true;
+      hasManualCostOverrideRef.current = false;
     }
   }, [lead, form]);
 
-  // Auto-update cost calculation display when form changes
+  // Auto-update cost calculation when event selection changes
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (value.eventId && events.length > 0) {
@@ -972,8 +985,21 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
         if (selectedEvent) {
           const touristCount = tourists.length || 1;
           const pricePerPerson = parseFloat(selectedEvent.price);
+          const totalCost = pricePerPerson * touristCount;
           
-          // Update calculation info for display
+          // Update tourCost field only when event changes (not when user manually edits tourCost)
+          if (name === "eventId") {
+            form.setValue("tourCost", totalCost.toFixed(2));
+            
+            // Recalculate remaining payment
+            const advancePayment = parseFloat(value.advancePayment || "0") || 0;
+            form.setValue("remainingPayment", (totalCost - advancePayment).toFixed(2));
+            
+            // Reset manual override flag when event changes
+            hasManualCostOverrideRef.current = false;
+          }
+          
+          // Always update calculation info for display
           setCostCalculation({
             pricePerPerson: pricePerPerson.toFixed(2),
             touristCount
@@ -987,15 +1013,30 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
   // Update cost calculation when tourist count changes (after adding/deleting tourists)
   useEffect(() => {
     const eventId = form.getValues("eventId");
-    if (eventId && events.length > 0 && tourists.length > 0) {
+    if (eventId && events.length > 0) {
       const selectedEvent = events.find(e => e.id === eventId);
       if (selectedEvent) {
+        const touristCount = tourists.length || 1; // Minimum 1 tourist for calculation
         const pricePerPerson = parseFloat(selectedEvent.price);
+        const totalCost = pricePerPerson * touristCount;
         
-        // Update calculation display
+        // Only update tourCost after initial load AND if user hasn't manually overridden it
+        if (isInitializedRef.current && !hasManualCostOverrideRef.current) {
+          // Update the tourCost field value with proper precision
+          form.setValue("tourCost", totalCost.toFixed(2));
+          
+          // Recalculate remaining payment
+          const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
+          form.setValue("remainingPayment", (totalCost - advancePayment).toFixed(2));
+        } else if (!isInitializedRef.current) {
+          // Mark as initialized after first render
+          isInitializedRef.current = true;
+        }
+        
+        // Always update calculation display
         setCostCalculation({
           pricePerPerson: pricePerPerson.toFixed(2),
-          touristCount: tourists.length
+          touristCount
         });
       }
     }
@@ -1247,7 +1288,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                           const pricePerPerson = parseFloat(selectedEvent.price);
                           const totalCost = pricePerPerson * touristCount;
                           
-                          // Set the calculated cost
+                          // Set the calculated cost with proper precision
                           form.setValue("tourCost", totalCost.toFixed(2));
                           
                           // Update calculation info for display
@@ -1259,6 +1300,9 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                           // Recalculate remaining payment
                           const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
                           form.setValue("remainingPayment", (totalCost - advancePayment).toFixed(2));
+                          
+                          // Reset manual override flag when event changes
+                          hasManualCostOverrideRef.current = false;
                         } else {
                           setCostCalculation(null);
                         }
@@ -1302,6 +1346,9 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                           const tourCost = parseFloat(e.target.value) || 0;
                           const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
                           form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
+                          
+                          // Mark that user manually edited tourCost
+                          hasManualCostOverrideRef.current = true;
                         }}
                         data-testid="input-tourCost"
                       />

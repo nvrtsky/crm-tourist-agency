@@ -130,45 +130,45 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
             </span>
           </div>
           
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-sm flex-wrap">
             <Users className="h-4 w-4 text-muted-foreground" />
             <span data-testid={`text-participants-${event.id}`}>
               {event.bookedCount} / {event.participantLimit} участников
             </span>
+            
+            {/* Status badges inline */}
+            {event.statusCounts && (event.statusCounts.pending > 0 || event.statusCounts.confirmed > 0 || event.statusCounts.cancelled > 0) && (
+              <>
+                {event.statusCounts.confirmed > 0 && (
+                  <Badge 
+                    variant="default" 
+                    className="bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900 text-xs"
+                    data-testid={`badge-confirmed-${event.id}`}
+                  >
+                    {event.statusCounts.confirmed} Подтверждено
+                  </Badge>
+                )}
+                {event.statusCounts.pending > 0 && (
+                  <Badge 
+                    variant="outline" 
+                    className="bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420] text-xs"
+                    data-testid={`badge-pending-${event.id}`}
+                  >
+                    {event.statusCounts.pending} Ожидание
+                  </Badge>
+                )}
+                {event.statusCounts.cancelled > 0 && (
+                  <Badge 
+                    variant="destructive"
+                    className="text-xs"
+                    data-testid={`badge-cancelled-${event.id}`}
+                  >
+                    {event.statusCounts.cancelled} Отменён
+                  </Badge>
+                )}
+              </>
+            )}
           </div>
-          
-          {/* Status badges */}
-          {event.statusCounts && (event.statusCounts.pending > 0 || event.statusCounts.confirmed > 0 || event.statusCounts.cancelled > 0) && (
-            <div className="flex items-center gap-2 flex-wrap ml-6">
-              {event.statusCounts.confirmed > 0 && (
-                <Badge 
-                  variant="default" 
-                  className="bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900 text-xs"
-                  data-testid={`badge-confirmed-${event.id}`}
-                >
-                  {event.statusCounts.confirmed} Подтверждено
-                </Badge>
-              )}
-              {event.statusCounts.pending > 0 && (
-                <Badge 
-                  variant="outline" 
-                  className="bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420] text-xs"
-                  data-testid={`badge-pending-${event.id}`}
-                >
-                  {event.statusCounts.pending} Ожидание
-                </Badge>
-              )}
-              {event.statusCounts.cancelled > 0 && (
-                <Badge 
-                  variant="destructive"
-                  className="text-xs"
-                  data-testid={`badge-cancelled-${event.id}`}
-                >
-                  {event.statusCounts.cancelled} Отменён
-                </Badge>
-              )}
-            </div>
-          )}
           
           <div className="flex items-center gap-2 text-sm">
             <DollarSign className="h-4 w-4 text-muted-foreground" />

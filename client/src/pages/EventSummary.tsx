@@ -637,7 +637,7 @@ export default function EventSummary() {
   });
 
   const { data: rawParticipants = [], isLoading: participantsLoading } = useQuery<Participant[]>({
-    queryKey: [`/api/events/${eventId}/participants`],
+    queryKey: ['/api/events', eventId, 'participants'],
     enabled: !!eventId,
   });
 
@@ -781,13 +781,13 @@ export default function EventSummary() {
     },
     onMutate: async ({ visitId, updates }) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+      await queryClient.cancelQueries({ queryKey: ['/api/events', eventId, 'participants'] });
       
       // Snapshot the previous value
-      const previousData = queryClient.getQueryData([`/api/events/${eventId}/participants`]);
+      const previousData = queryClient.getQueryData(['/api/events', eventId, 'participants']);
       
       // Optimistically update to the new value
-      queryClient.setQueryData([`/api/events/${eventId}/participants`], (old: any) => {
+      queryClient.setQueryData(['/api/events', eventId, 'participants'], (old: any) => {
         if (!old) return old;
         return old.map((participant: any) => ({
           ...participant,
@@ -802,7 +802,7 @@ export default function EventSummary() {
     onError: (_err, _variables, context) => {
       // Rollback on error
       if (context?.previousData) {
-        queryClient.setQueryData([`/api/events/${eventId}/participants`], context.previousData);
+        queryClient.setQueryData(['/api/events', eventId, 'participants'], context.previousData);
       }
       toast({
         title: "Ошибка",
@@ -811,7 +811,7 @@ export default function EventSummary() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/events', eventId, 'participants'] });
       toast({
         title: "Сохранено",
         description: "Данные обновлены",
@@ -830,7 +830,7 @@ export default function EventSummary() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/events', eventId, 'participants'] });
       toast({
         title: "Создано",
         description: "Новое посещение добавлено",
@@ -881,7 +881,7 @@ export default function EventSummary() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/events', eventId, 'participants'] });
       setShowCreateMiniGroupDialog(false);
       miniGroupForm.reset();
       toast({
@@ -912,7 +912,7 @@ export default function EventSummary() {
       return apiRequest("DELETE", `/api/groups/${groupId}/members/${dealId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/events', eventId, 'participants'] });
       toast({
         title: "Успешно",
         description: "Участник удален из группы",
@@ -1977,7 +1977,7 @@ export default function EventSummary() {
         contactId={editingContactId}
         onClose={() => setEditingContactId(null)}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+          queryClient.invalidateQueries({ queryKey: ['/api/events', eventId, 'participants'] });
         }}
         userRole={user?.role}
       />

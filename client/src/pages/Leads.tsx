@@ -1057,8 +1057,20 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
     },
     onSuccess: async () => {
       console.log("[TOURIST] onSuccess - invalidating queries");
+      
+      // Capture eventId BEFORE invalidating (lead prop is closure)
+      const eventIdToInvalidate = lead?.eventId;
+      
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      
+      // Invalidate event participants cache if lead has an event assigned
+      // Use captured eventId from closure before invalidation
+      if (eventIdToInvalidate) {
+        console.log("[TOURIST] Invalidating participants cache for event:", eventIdToInvalidate);
+        await queryClient.invalidateQueries({ queryKey: ['/api/events', eventIdToInvalidate, 'participants'] });
+      }
+      
       setIsTouristDialogOpen(false);
       setEditingTourist(null);
       toast({
@@ -1082,8 +1094,19 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       return await apiRequest("PATCH", `/api/tourists/${id}`, data);
     },
     onSuccess: async () => {
+      // Capture eventId BEFORE invalidating (lead prop is closure)
+      const eventIdToInvalidate = lead?.eventId;
+      
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      
+      // Invalidate event participants cache if lead has an event assigned
+      // Use captured eventId from closure before invalidation
+      if (eventIdToInvalidate) {
+        console.log("[TOURIST] Invalidating participants cache for event:", eventIdToInvalidate);
+        await queryClient.invalidateQueries({ queryKey: ['/api/events', eventIdToInvalidate, 'participants'] });
+      }
+      
       setIsTouristDialogOpen(false);
       setEditingTourist(null);
       toast({
@@ -1124,8 +1147,19 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       return await apiRequest("DELETE", `/api/tourists/${id}`);
     },
     onSuccess: async () => {
+      // Capture eventId BEFORE invalidating (lead prop is closure)
+      const eventIdToInvalidate = lead?.eventId;
+      
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      
+      // Invalidate event participants cache if lead has an event assigned
+      // Use captured eventId from closure before invalidation
+      if (eventIdToInvalidate) {
+        console.log("[TOURIST] Invalidating participants cache for event:", eventIdToInvalidate);
+        await queryClient.invalidateQueries({ queryKey: ['/api/events', eventIdToInvalidate, 'participants'] });
+      }
+      
       toast({
         title: "Успешно",
         description: "Турист удален",

@@ -1539,12 +1539,11 @@ export default function EventSummary() {
                     // Use pre-computed first index map - works even without isPrimaryInGroup flag
                     const isFirstInMiniGroup = isMiniGroup && groupId ? groupFirstIndexMap.get(groupId) === index : false;
 
-                    // Unified rowSpan logic for "Лид" column - merge for both families AND mini-groups
-                    const hasMiniGroup = groupId && groupSize > 1;
-                    const hasLeadFamily = !hasMiniGroup && leadId && leadSize > 1;
-                    const shouldMergeLeadColumn = hasMiniGroup || hasLeadFamily;
-                    const leadColumnRowSpan = hasMiniGroup ? groupSize : hasLeadFamily ? leadSize : 1;
-                    const isLeadColumnAnchor = hasMiniGroup ? isFirstInGroup : hasLeadFamily ? isFirstInLead : true;
+                    // Lead column merging: ONLY for families (same leadId), NOT for mini-groups
+                    // Mini-groups may have participants from different leads with different statuses
+                    const hasLeadFamily = leadId && leadSize > 1;
+                    const leadColumnRowSpan = hasLeadFamily ? leadSize : 1;
+                    const isLeadColumnAnchor = hasLeadFamily ? isFirstInLead : true;
 
                     // Check if tourist has birthday during tour
                     const hasBirthday = participant.leadTourist?.dateOfBirth && event

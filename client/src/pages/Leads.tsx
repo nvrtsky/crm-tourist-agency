@@ -948,6 +948,43 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
     }
   }, [lead, form]);
 
+  // Auto-update cost calculation display when form changes
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (value.eventId && events.length > 0) {
+        const selectedEvent = events.find(e => e.id === value.eventId);
+        if (selectedEvent) {
+          const touristCount = tourists.length || 1;
+          const pricePerPerson = parseFloat(selectedEvent.price);
+          
+          // Update calculation info for display
+          setCostCalculation({
+            pricePerPerson: pricePerPerson.toFixed(2),
+            touristCount
+          });
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, events, tourists.length]);
+
+  // Update cost calculation when tourist count changes (after adding/deleting tourists)
+  useEffect(() => {
+    const eventId = form.getValues("eventId");
+    if (eventId && events.length > 0 && tourists.length > 0) {
+      const selectedEvent = events.find(e => e.id === eventId);
+      if (selectedEvent) {
+        const pricePerPerson = parseFloat(selectedEvent.price);
+        
+        // Update calculation display
+        setCostCalculation({
+          pricePerPerson: pricePerPerson.toFixed(2),
+          touristCount: tourists.length
+        });
+      }
+    }
+  }, [tourists.length, events, form]);
+
   // Fetch events for tour selection
   const { data: events = [] } = useQuery<Event[]>({
     queryKey: ["/api/events"],

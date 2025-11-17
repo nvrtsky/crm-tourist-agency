@@ -1066,6 +1066,13 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       console.log("[TOURIST] onSuccess - invalidating queries");
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      
+      // Invalidate event participants cache if lead has an event assigned
+      if (lead?.eventId) {
+        console.log("[TOURIST] Invalidating event participants for event:", lead.eventId);
+        await queryClient.invalidateQueries({ queryKey: ["/api/events", lead.eventId, "participants"] });
+      }
+      
       setIsTouristDialogOpen(false);
       setEditingTourist(null);
       toast({

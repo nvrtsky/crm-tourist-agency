@@ -1218,25 +1218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const tourist = await storage.createTourist(validation.data);
-      console.log(`[CREATE_TOURIST] Tourist created:`, tourist);
-      
-      // Auto-convert tourist to contact+deal if lead has an event selected
-      const lead = await storage.getLead(id);
-      console.log(`[CREATE_TOURIST] Lead:`, lead);
-      
-      if (lead && lead.eventId) {
-        console.log(`[CREATE_TOURIST] Lead has eventId ${lead.eventId}, triggering auto-conversion for tourist ${tourist.id}`);
-        // Pass the tourist object directly to avoid race conditions
-        const conversionResult = await autoConvertLeadToEvent(id, lead.eventId, tourist);
-        console.log(`[CREATE_TOURIST] Auto-conversion result:`, conversionResult);
-      } else {
-        console.log(`[CREATE_TOURIST] No auto-conversion: lead exists=${!!lead}, eventId=${lead?.eventId}`);
-      }
-      
-      // Return tourist and leadEventId for cache invalidation
-      const response = { tourist, leadEventId: lead?.eventId || null };
-      console.log(`[CREATE_TOURIST] Responding with:`, response);
-      res.json(response);
+      res.json(tourist);
     } catch (error) {
       console.error("Error creating tourist:", error);
       res.status(500).json({ error: "Failed to create tourist" });
@@ -1259,34 +1241,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Separate isPrimary from other updates
       const { isPrimary, ...otherUpdates } = validation.data;
       
-      // Get tourist to retrieve leadId
-      const existingTourist = await storage.getTourist(id);
-      if (!existingTourist) {
-        return res.status(404).json({ error: "Tourist not found" });
-      }
-      
       // If updating isPrimary to true, toggle primary status first
       if (isPrimary === true) {
+        const existingTourist = await storage.getTourist(id);
+        if (!existingTourist) {
+          return res.status(404).json({ error: "Tourist not found" });
+        }
+        
         await storage.togglePrimaryTourist(existingTourist.leadId, id);
       }
       
       // Apply other field updates if any
-      let finalTourist;
       if (Object.keys(otherUpdates).length > 0) {
-        finalTourist = await storage.updateTourist(id, otherUpdates);
-        if (!finalTourist) {
+        const tourist = await storage.updateTourist(id, otherUpdates);
+        
+        if (!tourist) {
           return res.status(404).json({ error: "Tourist not found" });
         }
+        
+        res.json(tourist);
       } else {
         // If only isPrimary was updated, fetch and return the updated tourist
-        finalTourist = await storage.getTourist(id);
+        const updatedTourist = await storage.getTourist(id);
+        res.json(updatedTourist);
       }
-      
-      // Get lead to return eventId for cache invalidation
-      // Use finalTourist.leadId in case the tourist was reassigned to another lead
-      const leadId = finalTourist?.leadId || existingTourist.leadId;
-      const lead = await storage.getLead(leadId);
-      res.json({ tourist: finalTourist, leadEventId: lead?.eventId || null });
     } catch (error) {
       console.error("Error updating tourist:", error);
       res.status(500).json({ error: "Failed to update tourist" });
@@ -1297,22 +1275,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/tourists/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
+      const success = await storage.deleteTourist(id);
       
-      // Get tourist before deletion to retrieve leadId for cache invalidation
-      const tourist = await storage.getTourist(id);
-      if (!tourist) {
+      if (!success) {
         return res.status(404).json({ error: "Tourist not found" });
       }
       
-      // Get lead to return eventId
-      const lead = await storage.getLead(tourist.leadId);
-      
-      const success = await storage.deleteTourist(id);
-      if (!success) {
-        return res.status(500).json({ error: "Failed to delete tourist" });
-      }
-      
-      res.json({ success: true, leadEventId: lead?.eventId || null });
+      res.json({ success: true });
     } catch (error) {
       console.error("Error deleting tourist:", error);
       res.status(500).json({ error: "Failed to delete tourist" });
@@ -1434,15 +1403,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   /**
    * Auto-convert lead to contacts and deals when eventId is set
-   * INCREMENTAL LOGIC: Only creates contacts for tourists that don't have them yet
-   * @param leadId - The lead ID
-   * @param eventId - The event ID
-   * @param specificTourist - Optional: If provided, only convert this specific tourist (passed directly to avoid race conditions)
-   * Returns true if any conversion happened, false if nothing was created
+   * Does NOT change lead status (unlike manual convert endpoint)
+   * Returns true if conversion happened, false if skipped (already converted)
    */
-  async function autoConvertLeadToEvent(leadId: string, eventId: string, specificTourist?: LeadTourist): Promise<boolean> {
+  async function autoConvertLeadToEvent(leadId: string, eventId: string): Promise<boolean> {
     try {
-      console.log(`[AUTO_CONVERT] Checking auto-conversion for lead ${leadId} to event ${eventId}${specificTourist ? ` (specific tourist ${specificTourist.id})` : ''}`);
+      console.log(`[AUTO_CONVERT] Checking auto-conversion for lead ${leadId} to event ${eventId}`);
 
       // Get lead
       const lead = await storage.getLead(leadId);
@@ -1458,116 +1424,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return false;
       }
 
-      // SHORT-CIRCUIT: If specific tourist is provided, handle it directly
-      if (specificTourist) {
-        console.log(`[AUTO_CONVERT] Short-circuit mode for specific tourist ${specificTourist.id}`);
-        
-        // Check if this tourist already has a contact
-        const existingContacts = await storage.getContactsByLead(leadId);
-        const existingContact = existingContacts.find(c => c.leadTouristId === specificTourist.id);
-        
-        if (existingContact) {
-          console.log(`[AUTO_CONVERT] Tourist ${specificTourist.id} already has contact ${existingContact.id}, skipping`);
-          return false;
-        }
-        
-        // Get all tourists for this lead to determine group status
-        const allTourists = await storage.getTouristsByLead(leadId);
-        
-        // Find or create family group (SAME LOGIC AS BATCH PATH)
-        let group = null;
-        if (existingContacts.length > 0) {
-          // Try to find existing group from existing contacts' deals
-          for (const contact of existingContacts) {
-            const contactDeals = await storage.getDealsByContact(contact.id);
-            const eventDeal = contactDeals.find(d => d.eventId === eventId);
-            if (eventDeal && eventDeal.groupId) {
-              group = await storage.getGroup(eventDeal.groupId);
-              console.log(`[AUTO_CONVERT] Found existing group ${group.id}: ${group.name}`);
-              break;
-            }
-          }
-        }
-        
-        // If no group exists but we have/will have multiple tourists, create one
-        if (!group && allTourists.length > 1) {
-          const primaryTourist = allTourists.find(p => p.isPrimary) || allTourists[0];
-          console.log(`[AUTO_CONVERT] Creating family group for ${allTourists.length} tourists`);
-          group = await storage.createGroup({
-            eventId,
-            name: `Семья ${primaryTourist.lastName}`,
-            type: 'family',
-          });
-          console.log(`[AUTO_CONVERT] Created group ${group.id}: ${group.name}`);
-          
-          // Update existing deals to include this group
-          if (existingContacts.length > 0) {
-            for (const contact of existingContacts) {
-              const contactDeals = await storage.getDealsByContact(contact.id);
-              const eventDeal = contactDeals.find(d => d.eventId === eventId);
-              if (eventDeal && !eventDeal.groupId) {
-                await storage.updateDeal(eventDeal.id, { groupId: group.id });
-                console.log(`[AUTO_CONVERT] Updated existing deal ${eventDeal.id} with group ${group.id}`);
-              }
-            }
-          }
-        }
-        
-        // Create contact for specific tourist
-        const touristFullName = `${specificTourist.firstName} ${specificTourist.lastName}${specificTourist.middleName ? ' ' + specificTourist.middleName : ''}`.trim();
-        const contact = await storage.createContact({
-          name: touristFullName,
-          email: specificTourist.email || undefined,
-          phone: specificTourist.phone || undefined,
-          birthDate: specificTourist.dateOfBirth || undefined,
-          leadId: lead.id,
-          leadTouristId: specificTourist.id,
-          notes: specificTourist.notes || undefined,
-        });
-        console.log(`[AUTO_CONVERT] Created contact ${contact.id} for specific tourist ${specificTourist.id}`);
-        
-        // Create deal with proper group assignment
-        const deal = await storage.createDeal({
-          contactId: contact.id,
-          eventId: eventId,
-          status: 'pending',
-          amount: event.price,
-          groupId: group?.id,
-          isPrimaryInGroup: specificTourist.isPrimary,
-        });
-        console.log(`[AUTO_CONVERT] Created deal ${deal.id} for contact ${contact.id} (group: ${group?.id || 'none'})`);
-        
-        // Auto-create city visits
-        if (event.cities && event.cities.length > 0) {
-          for (const city of event.cities) {
-            await storage.createCityVisit({
-              dealId: deal.id,
-              city,
-              arrivalDate: event.startDate,
-              transportType: "plane",
-              hotelName: `Hotel ${city}`,
-            });
-          }
-        }
-        
-        console.log(`[AUTO_CONVERT] SUCCESS: Specific tourist conversion complete`);
-        return true;
-      }
-      
-      // BATCH MODE: Get all tourists and existing contacts for this lead
-      const tourists = await storage.getTouristsByLead(leadId);
+      // Check if already converted: look for existing contacts with this leadId
       const existingContacts = await storage.getContactsByLead(leadId);
-      
-      console.log(`[AUTO_CONVERT] Found ${tourists.length} tourist(s) and ${existingContacts.length} existing contacts`);
+      if (existingContacts.length > 0) {
+        // Check if any of these contacts have deals for this event
+        for (const contact of existingContacts) {
+          const contactDeals = await storage.getDealsByContact(contact.id);
+          const hasEventDeal = contactDeals.some(d => d.eventId === eventId);
+          if (hasEventDeal) {
+            console.log(`[AUTO_CONVERT] Lead ${leadId} already converted to event ${eventId}, skipping`);
+            return false;
+          }
+        }
+      }
+
+      // Get tourists for this lead
+      const tourists = await storage.getTouristsByLead(leadId);
+      console.log(`[AUTO_CONVERT] Found ${tourists.length} tourists for lead ${leadId}`);
 
       // If no tourists, fallback to creating from lead data
       if (tourists.length === 0) {
-        // Check if we already have a contact for this lead
-        if (existingContacts.length > 0) {
-          console.log("[AUTO_CONVERT] No tourists but contacts exist, skipping fallback");
-          return false;
-        }
-        
         console.log("[AUTO_CONVERT] No tourists found, using fallback logic");
 
         const contact = await storage.createContact({
@@ -1602,43 +1478,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return true;
       }
 
-      // INCREMENTAL LOGIC: Find tourists without contacts
-      // Create a map of leadTouristId -> contact for quick lookup
-      const contactByTouristId = new Map(
-        existingContacts
-          .filter(c => c.leadTouristId)
-          .map(c => [c.leadTouristId!, c])
-      );
-
-      // Find tourists that don't have contacts yet
-      const touristsNeedingConversion = tourists.filter(
-        tourist => !contactByTouristId.has(tourist.id)
-      );
-
-      console.log(`[AUTO_CONVERT] ${touristsNeedingConversion.length} tourist(s) need conversion`);
-
-      if (touristsNeedingConversion.length === 0) {
-        console.log("[AUTO_CONVERT] All tourists already have contacts, skipping");
-        return false;
-      }
-
-      // Check if a family group already exists for this lead+event
+      // If tourists exist, create contacts from all tourists
+      console.log("[AUTO_CONVERT] Using tourists logic");
       let group = null;
-      if (existingContacts.length > 0) {
-        // Try to find existing group from existing contacts' deals
-        for (const contact of existingContacts) {
-          const contactDeals = await storage.getDealsByContact(contact.id);
-          const eventDeal = contactDeals.find(d => d.eventId === eventId);
-          if (eventDeal && eventDeal.groupId) {
-            group = await storage.getGroup(eventDeal.groupId);
-            console.log(`[AUTO_CONVERT] Found existing group ${group.id}: ${group.name}`);
-            break;
-          }
-        }
-      }
+      const contacts = [];
+      const deals = [];
 
-      // If no group exists but we have/will have multiple tourists, create one
-      if (!group && tourists.length > 1) {
+      // If multiple tourists, create a family group
+      if (tourists.length > 1) {
         const primaryTourist = tourists.find(p => p.isPrimary) || tourists[0];
         console.log(`[AUTO_CONVERT] Creating family group for ${tourists.length} tourists`);
         group = await storage.createGroup({
@@ -1647,28 +1494,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'family',
         });
         console.log(`[AUTO_CONVERT] Created group ${group.id}: ${group.name}`);
-        
-        // If group was just created, update existing deals to include this group
-        if (existingContacts.length > 0) {
-          for (const contact of existingContacts) {
-            const contactDeals = await storage.getDealsByContact(contact.id);
-            const eventDeal = contactDeals.find(d => d.eventId === eventId);
-            if (eventDeal && !eventDeal.groupId) {
-              await storage.updateDeal(eventDeal.id, { groupId: group.id });
-              console.log(`[AUTO_CONVERT] Updated existing deal ${eventDeal.id} with group ${group.id}`);
-            }
-          }
-        }
       }
 
-      // Create contacts and deals for tourists that need conversion
-      const newContacts = [];
-      const newDeals = [];
-
-      for (const tourist of touristsNeedingConversion) {
+      // Create contacts and deals for each tourist
+      for (const tourist of tourists) {
         const touristFullName = `${tourist.firstName} ${tourist.lastName}${tourist.middleName ? ' ' + tourist.middleName : ''}`.trim();
         console.log(`[AUTO_CONVERT] Creating contact for tourist ${touristFullName}`);
-        
         const contact = await storage.createContact({
           name: touristFullName,
           email: tourist.email || undefined,
@@ -1678,7 +1509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           leadTouristId: tourist.id, // Link to detailed tourist data
           notes: tourist.notes || undefined,
         });
-        newContacts.push(contact);
+        contacts.push(contact);
         console.log(`[AUTO_CONVERT] Created contact ${contact.id} linked to tourist ${tourist.id}`);
 
         const deal = await storage.createDeal({
@@ -1689,7 +1520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           groupId: group?.id,
           isPrimaryInGroup: tourist.isPrimary,
         });
-        newDeals.push(deal);
+        deals.push(deal);
         console.log(`[AUTO_CONVERT] Created deal ${deal.id} for contact ${contact.id}`);
 
         // Auto-create city visits for each deal
@@ -1706,7 +1537,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      console.log(`[AUTO_CONVERT] SUCCESS: Created ${newContacts.length} new contacts and deals`);
+      const successMessage = tourists.length > 1 
+        ? `Created ${contacts.length} contacts and family group` 
+        : 'Lead auto-converted successfully';
+      
+      console.log(`[AUTO_CONVERT] SUCCESS: ${successMessage}`);
       return true;
     } catch (error) {
       console.error("[AUTO_CONVERT] Error during auto-conversion:", error);

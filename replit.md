@@ -36,8 +36,6 @@ A normalized PostgreSQL schema supports core CRM entities (`events`, `contacts`,
 ### Technical Decisions
 The system employs dynamic geography for event city tracking, a standalone design (no external CRM integrations), backend-automated notification strategy, and a refined lead data separation architecture. Initial tourist entries are auto-created, and comprehensive tourist data completeness is indicated.
 
-**Incremental Tourist Auto-Conversion**: The `autoConvertLeadToEvent` function supports both batch and incremental conversion modes. When a lead has an assigned event, adding new tourists triggers a short-circuit path that immediately creates dedicated contacts (with `leadTouristId` linkage) and deals for the new tourist. Group management logic reuses existing family groups for multi-tourist leads or creates new groups as needed, ensuring consistent family grouping across batch and incremental conversions. This eliminates race conditions and guarantees that all tourists appear in EventSummary immediately after creation.
-
 ## External Dependencies
 -   **Frontend**: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS
 -   **Backend**: Express.js, TypeScript, Drizzle ORM, Passport.js, bcrypt

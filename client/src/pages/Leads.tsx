@@ -1055,18 +1055,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       console.log("[TOURIST] Tourist created:", result);
       return result;
     },
-    onSuccess: async (result: any) => {
+    onSuccess: async () => {
       console.log("[TOURIST] onSuccess - invalidating queries");
-      
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
-      
-      // Invalidate event participants cache using leadEventId from server response
-      if (result.leadEventId) {
-        console.log("[TOURIST] Invalidating participants cache for event:", result.leadEventId);
-        await queryClient.invalidateQueries({ queryKey: ['/api/events', result.leadEventId, 'participants'] });
-      }
-      
       setIsTouristDialogOpen(false);
       setEditingTourist(null);
       toast({
@@ -1089,16 +1081,9 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertLeadTourist> }) => {
       return await apiRequest("PATCH", `/api/tourists/${id}`, data);
     },
-    onSuccess: async (result: any) => {
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
-      
-      // Invalidate event participants cache using leadEventId from server response
-      if (result.leadEventId) {
-        console.log("[TOURIST] Invalidating participants cache for event:", result.leadEventId);
-        await queryClient.invalidateQueries({ queryKey: ['/api/events', result.leadEventId, 'participants'] });
-      }
-      
       setIsTouristDialogOpen(false);
       setEditingTourist(null);
       toast({
@@ -1138,16 +1123,9 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
     mutationFn: async (id: string) => {
       return await apiRequest("DELETE", `/api/tourists/${id}`);
     },
-    onSuccess: async (result: any) => {
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
-      
-      // Invalidate event participants cache using leadEventId from server response
-      if (result.leadEventId) {
-        console.log("[TOURIST] Invalidating participants cache for event:", result.leadEventId);
-        await queryClient.invalidateQueries({ queryKey: ['/api/events', result.leadEventId, 'participants'] });
-      }
-      
       toast({
         title: "Успешно",
         description: "Турист удален",

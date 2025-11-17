@@ -38,14 +38,14 @@ interface EventWithStats extends Event {
 interface EventCardProps {
   event: EventWithStats;
   onViewSummary: (eventId: string) => void;
-  onEdit: (event: Event) => void;
-  onCopy: (event: Event) => void;
-  onDelete: (eventId: string) => void;
+  onEdit?: (event: Event) => void;
+  onCopy?: (event: Event) => void;
+  onDelete?: (eventId: string) => void;
 }
 
 export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: EventCardProps) {
   const { user } = useAuth();
-  const canModify = user?.role === "admin"; // Only admins can modify/delete events
+  const canModify = (user?.role === "admin" || user?.role === "manager") && (onEdit || onCopy || onDelete); // Admins and managers can modify/delete events if handlers provided
   const availablePercentage = (event.availableSpots / event.participantLimit) * 100;
   
   const getStatusClasses = () => {
@@ -95,7 +95,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => onCopy(event)}
+                  onClick={() => onCopy?.(event)}
                   data-testid={`button-copy-event-${event.id}`}
                 >
                   <Copy className="h-4 w-4" />
@@ -103,7 +103,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => onEdit(event)}
+                  onClick={() => onEdit?.(event)}
                   data-testid={`button-edit-event-${event.id}`}
                 >
                   <Pencil className="h-4 w-4" />
@@ -193,7 +193,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
                 <AlertDialogFooter>
                   <AlertDialogCancel data-testid="button-cancel-delete">Отмена</AlertDialogCancel>
                   <AlertDialogAction 
-                    onClick={() => onDelete(event.id)}
+                    onClick={() => onDelete?.(event.id)}
                     className="bg-destructive hover:bg-destructive/90"
                     data-testid="button-confirm-delete"
                   >

@@ -44,6 +44,7 @@ import type { Event, InsertEvent } from "@shared/schema";
 import { updateEventSchema, COUNTRIES, TOUR_TYPES } from "@shared/schema";
 import { ZodError } from "zod";
 import { format as formatDate } from "date-fns";
+import { useAuth } from "@/lib/auth";
 
 interface EventWithStats extends Event {
   bookedCount: number;
@@ -174,6 +175,10 @@ export default function Events() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, isLoading: isAuthLoading } = useAuth();
+  
+  // Only admin and manager can create/edit events
+  const canManageEvents = !isAuthLoading && (user?.role === "admin" || user?.role === "manager");
   const [searchQuery, setSearchQuery] = useState("");
   const [countryFilter, setCountryFilter] = useState<string>("all");
   const [tourTypeFilter, setTourTypeFilter] = useState<string>("all");
@@ -391,49 +396,53 @@ export default function Events() {
             Управление туристическими турами и группами
           </p>
         </div>
-        <Button 
-          data-testid="button-create-event"
-          onClick={() => setIsCreateDialogOpen(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Создать тур
-        </Button>
+        {canManageEvents && (
+          <Button 
+            data-testid="button-create-event"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Создать тур
+          </Button>
+        )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card data-testid="stat-total-events">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Всего туров</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">В системе</p>
-          </CardContent>
-        </Card>
+      {canManageEvents && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card data-testid="stat-total-events">
+            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Всего туров</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+              <p className="text-xs text-muted-foreground">В системе</p>
+            </CardContent>
+          </Card>
 
-        <Card data-testid="stat-upcoming-events">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Предстоящие</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.upcoming}</div>
-            <p className="text-xs text-muted-foreground">Еще не началось</p>
-          </CardContent>
-        </Card>
+          <Card data-testid="stat-upcoming-events">
+            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Предстоящие</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.upcoming}</div>
+              <p className="text-xs text-muted-foreground">Еще не началось</p>
+            </CardContent>
+          </Card>
 
-        <Card data-testid="stat-full-events">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Почти заполнены</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.fullOrAlmostFull}</div>
-            <p className="text-xs text-muted-foreground">≥90% занято</p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card data-testid="stat-full-events">
+            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Почти заполнены</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.fullOrAlmostFull}</div>
+              <p className="text-xs text-muted-foreground">≥90% занято</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Card data-testid="card-filters">
         <CardHeader>
@@ -550,16 +559,17 @@ export default function Events() {
               key={event.id}
               event={event}
               onViewSummary={(eventId) => setLocation(`/events/${eventId}/summary`)}
-              onEdit={handleEditEvent}
-              onCopy={handleCopyEvent}
-              onDelete={handleDeleteEvent}
+              onEdit={canManageEvents ? handleEditEvent : undefined}
+              onCopy={canManageEvents ? handleCopyEvent : undefined}
+              onDelete={canManageEvents ? handleDeleteEvent : undefined}
             />
           ))}
         </div>
       )}
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      {canManageEvents && (
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Создать новый тур</DialogTitle>
             <DialogDescription>
@@ -779,8 +789,9 @@ export default function Events() {
               </div>
             </form>
           </Form>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {editingEvent && (
         <EditEventDialog

@@ -1078,6 +1078,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create lead with auto-created tourist in a single transaction
       const lead = await storage.createLeadWithAutoTourist(validation.data);
       
+      // Auto-convert if eventId is set during creation
+      if (lead.eventId) {
+        console.log(`[CREATE_LEAD] EventId ${lead.eventId} set on creation, triggering auto-conversion`);
+        await autoConvertLeadToEvent(lead.id, lead.eventId);
+      }
+      
       res.json(lead);
     } catch (error) {
       console.error("Error creating lead:", error);

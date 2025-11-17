@@ -109,16 +109,23 @@ export default function Leads() {
     queryKey: ["/api/events"],
   });
 
-  const createMutation = useMutation({
+  const createMutation = useMutation<Lead, Error, InsertLead>({
     mutationFn: async (data: InsertLead) => {
-      return await apiRequest("POST", "/api/leads", data);
+      const res = await apiRequest("POST", "/api/leads", data);
+      return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newLead: Lead) => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      
+      // If lead was created with eventId, invalidate participants cache for that event
+      if (newLead.eventId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/events", newLead.eventId, "participants"] });
+      }
+      
       setIsCreateDialogOpen(false);
       toast({
         title: "Успешно",
-        description: "Лид создан",
+        description: newLead.eventId ? "Лид создан и туристы добавлены в тур" : "Лид создан",
       });
     },
     onError: (error: Error) => {

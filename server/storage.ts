@@ -181,12 +181,15 @@ export class DatabaseStorage implements IStorage {
     const event = await this.getEvent(id);
     if (!event) return undefined;
 
+    // Count only deals where lead status is 'converted' (confirmed leads)
     const dealsCount = await db
       .select({ count: count() })
       .from(deals)
+      .innerJoin(contacts, eq(deals.contactId, contacts.id))
+      .innerJoin(leads, eq(contacts.leadId, leads.id))
       .where(and(
         eq(deals.eventId, id),
-        eq(deals.status, 'confirmed')
+        eq(leads.status, 'converted')
       ));
 
     const bookedCount = dealsCount[0]?.count || 0;

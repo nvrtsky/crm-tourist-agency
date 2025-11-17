@@ -1449,8 +1449,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return false;
         }
         
-        // Create contact for specific tourist WITHOUT group assignment
-        // This guarantees isolation and prevents group reuse issues
+        // Get all tourists for this lead to determine group status
+        const allTourists = await storage.getTouristsByLead(leadId);
+        
+        // Find or create family group (SAME LOGIC AS BATCH PATH)
+        let group = null;
+        if (existingContacts.length > 0) {
+          // Try to find existing group from existing contacts' deals
+          for (const contact of existingContacts) {
+            const contactDeals = await storage.getDealsByContact(contact.id);
+            const eventDeal = contactDeals.find(d => d.eventId === eventId);
+            if (eventDeal && eventDeal.groupId) {
+              group = await storage.getGroup(eventDeal.groupId);
+              console.log(`[AUTO_CONVERT] Found existing group ${group.id}: ${group.name}`);
+              break;
+            }
+          }
+        }
+        
+        // If no group exists but we have/will have multiple tourists, create one
+        if (!group && allTourists.length > 1) {
+          const primaryTourist = allTourists.find(p => p.isPrimary) || allTourists[0];
+          console.log(`[AUTO_CONVERT] Creating family group for ${allTourists.length} tourists`);
+          group = await storage.createGroup({
+            eventId,
+            name: `Семья ${primaryTourist.lastName}`,
+            type: 'family',
+          });
+          console.log(`[AUTO_CONVERT] Created group ${group.id}: ${group.name}`);
+          
+          // Update existing deals to include this group
+          if (existingContacts.length > 0) {
+            for (const contact of existingContacts) {
+              const contactDeals = await storage.getDealsByContact(contact.id);
+              const eventDeal = contactDeals.find(d => d.eventId === eventId);
+              if (eventDeal && !eventDeal.groupId) {
+                await storage.updateDeal(eventDeal.id, { groupId: group.id });
+                console.log(`[AUTO_CONVERT] Updated existing deal ${eventDeal.id} with group ${group.id}`);
+              }
+            }
+          }
+        }
+        
+        // Create contact for specific tourist
         const touristFullName = `${specificTourist.firstName} ${specificTourist.lastName}${specificTourist.middleName ? ' ' + specificTourist.middleName : ''}`.trim();
         const contact = await storage.createContact({
           name: touristFullName,
@@ -1461,18 +1502,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           leadTouristId: specificTourist.id,
           notes: specificTourist.notes || undefined,
         });
-        console.log(`[AUTO_CONVERT] Created isolated contact ${contact.id} for specific tourist ${specificTourist.id}`);
+        console.log(`[AUTO_CONVERT] Created contact ${contact.id} for specific tourist ${specificTourist.id}`);
         
-        // Create deal WITHOUT group assignment for complete isolation
+        // Create deal with proper group assignment
         const deal = await storage.createDeal({
           contactId: contact.id,
           eventId: eventId,
           status: 'pending',
           amount: event.price,
-          groupId: null, // No group assignment for specific tourists
+          groupId: group?.id,
           isPrimaryInGroup: specificTourist.isPrimary,
         });
-        console.log(`[AUTO_CONVERT] Created isolated deal ${deal.id} for contact ${contact.id}`);
+        console.log(`[AUTO_CONVERT] Created deal ${deal.id} for contact ${contact.id} (group: ${group?.id || 'none'})`);
         
         // Auto-create city visits
         if (event.cities && event.cities.length > 0) {
@@ -1487,7 +1528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
-        console.log(`[AUTO_CONVERT] SUCCESS: Specific tourist conversion complete (isolated)`);
+        console.log(`[AUTO_CONVERT] SUCCESS: Specific tourist conversion complete`);
         return true;
       }
       

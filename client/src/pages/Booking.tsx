@@ -28,6 +28,7 @@ import { Loader2, CheckCircle, Calendar, MapPin, Users, DollarSign, X } from "lu
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Event } from "@shared/schema";
+import { formatCurrency } from "@/lib/utils";
 
 // Helper function to translate tour type to Russian
 function getTourTypeLabel(tourType: string): string {
@@ -353,7 +354,7 @@ export default function Booking() {
 
                       <div className="flex items-center gap-2 text-lg font-bold">
                         <DollarSign className="h-5 w-5" />
-                        <span>{event.price} ₽</span>
+                        <span>{formatCurrency(event.price)} ₽</span>
                       </div>
 
                       <AvailabilityIndicator eventId={event.id} />
@@ -391,7 +392,7 @@ export default function Booking() {
                       </div>
                       <div className="flex items-center gap-2 font-semibold text-lg">
                         <DollarSign className="h-5 w-5" />
-                        <span>{selectedEvent.price} ₽</span>
+                        <span>{formatCurrency(selectedEvent.price)} ₽</span>
                       </div>
                     </CardDescription>
                   </div>

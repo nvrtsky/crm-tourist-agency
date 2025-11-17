@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { TOURIST_FIELD_DESCRIPTORS, SECTION_TITLES } from "@/lib/touristFormConfig";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
-import { calculateTouristDataCompleteness } from "@/lib/utils";
+import { calculateTouristDataCompleteness, formatCurrency } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -1331,10 +1331,9 @@ export default function EventSummary() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {participants
+              {formatCurrency(participants
                 .filter(p => p.deal.status === "confirmed")
-                .reduce((sum, p) => sum + Number(p.deal.amount || 0), 0)
-                .toLocaleString()} ₽
+                .reduce((sum, p) => sum + Number(p.deal.amount || 0), 0))} ₽
             </div>
             <p className="text-xs text-muted-foreground">От подтвержденных</p>
           </CardContent>

@@ -50,3 +50,20 @@ export function calculateTouristDataCompleteness(tourist: LeadTourist): TouristD
     foreignPassport,
   };
 }
+
+export function formatCurrency(value: string | number | null | undefined): string {
+  if (value === null || value === undefined || value === "") {
+    return "0";
+  }
+  
+  const numValue = typeof value === "string" ? parseFloat(value) : value;
+  
+  if (isNaN(numValue)) {
+    return "0";
+  }
+  
+  return new Intl.NumberFormat("ru-RU", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(numValue);
+}

@@ -23,7 +23,7 @@ import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
-import { calculateTouristDataCompleteness } from "@/lib/utils";
+import { calculateTouristDataCompleteness, formatCurrency } from "@/lib/utils";
 import { ColorPicker, ColorIndicator, type ColorOption } from "@/components/ColorPicker";
 import { DeferLeadDialog } from "@/components/DeferLeadDialog";
 import { z } from "zod";
@@ -1308,7 +1308,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                     </FormControl>
                     {costCalculation && (
                       <FormDescription className="text-xs text-muted-foreground">
-                        Рассчитано: {costCalculation.pricePerPerson} руб × {costCalculation.touristCount} {costCalculation.touristCount === 1 ? 'турист' : costCalculation.touristCount > 4 ? 'туристов' : 'туриста'} = {parseFloat(costCalculation.pricePerPerson) * costCalculation.touristCount} руб
+                        Рассчитано: {formatCurrency(costCalculation.pricePerPerson)} руб × {costCalculation.touristCount} {costCalculation.touristCount === 1 ? 'турист' : costCalculation.touristCount > 4 ? 'туристов' : 'туриста'} = {formatCurrency(parseFloat(costCalculation.pricePerPerson) * costCalculation.touristCount)} руб
                       </FormDescription>
                     )}
                     <FormMessage />

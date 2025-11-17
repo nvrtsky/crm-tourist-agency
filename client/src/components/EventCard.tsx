@@ -18,6 +18,7 @@ import { ru } from "date-fns/locale";
 import { ColorIndicator, type ColorOption } from "@/components/ColorPicker";
 import type { Event } from "@shared/schema";
 import { useAuth } from "@/lib/auth";
+import { formatCurrency } from "@/lib/utils";
 
 // Helper function to translate tour type to Russian
 function getTourTypeLabel(tourType: string): string {
@@ -144,7 +145,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
           <div className="flex items-center gap-2 text-sm">
             <DollarSign className="h-4 w-4 text-muted-foreground" />
             <span className="font-semibold" data-testid={`text-price-${event.id}`}>
-              {Number(event.price).toLocaleString()} ₽
+              {formatCurrency(event.price)} ₽
             </span>
           </div>
         </div>

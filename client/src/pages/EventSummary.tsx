@@ -641,11 +641,31 @@ export default function EventSummary() {
     enabled: !!eventId,
   });
 
-  // Sort participants by composite key: (leadId, isPrimary, groupId, isPrimaryInGroup)
-  // This allows unrelated leads and non-lead members to interleave based on group relationships
+  // Build a map of leadId -> isConfirmed status
+  // This ensures all family members share the same confirmation status
+  const leadStatusMap = new Map<string, boolean>();
+  rawParticipants.forEach((p) => {
+    if (p.lead && p.contact?.leadId) {
+      leadStatusMap.set(p.contact.leadId, p.lead.status === "converted");
+    }
+  });
+
+  // Sort participants by composite key: (leadStatus, leadId, isPrimary, groupId, isPrimaryInGroup)
+  // Primary sort: "converted" (Подтвержден) status participants first
+  // This allows confirmed participants to appear at the top of the table
   const participants = rawParticipants.slice().sort((a, b) => {
+    // Determine confirmation status for each participant
+    // Use leadStatusMap to ensure all family members share the same status
     const aLeadId = a.contact?.leadId ?? '';
     const bLeadId = b.contact?.leadId ?? '';
+    const aIsConfirmed = aLeadId ? (leadStatusMap.get(aLeadId) || false) : (a.lead?.status === "converted" || false);
+    const bIsConfirmed = bLeadId ? (leadStatusMap.get(bLeadId) || false) : (b.lead?.status === "converted" || false);
+    
+    // First priority: Sort by confirmed status (converted/Подтвержден first)
+    if (aIsConfirmed !== bIsConfirmed) {
+      return aIsConfirmed ? -1 : 1;
+    }
+    
     const aGroupId = a.deal.groupId ?? '';
     const bGroupId = b.deal.groupId ?? '';
     const aIsPrimary = a.leadTourist?.isPrimary || false;

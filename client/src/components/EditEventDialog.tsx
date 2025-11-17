@@ -402,7 +402,7 @@ export function EditEventDialog({
                         <TooltipTrigger asChild>
                           <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent>
+                        <TooltipContent className="max-w-xs text-pretty break-words">
                           <p>Тур автоматически заархивируется по истечении этой даты</p>
                         </TooltipContent>
                       </Tooltip>

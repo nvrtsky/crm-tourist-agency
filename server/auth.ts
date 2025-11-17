@@ -13,7 +13,13 @@ export function setupAuth(storage: IStorage) {
       },
       async (username, password, done) => {
         try {
-          const user = await storage.getUserByUsername(username);
+          // Try to find user by username first, then by email
+          let user = await storage.getUserByUsername(username);
+          
+          if (!user && username.includes('@')) {
+            // If username looks like an email, try to find by email
+            user = await storage.getUserByEmail(username);
+          }
           
           if (!user) {
             return done(null, false, { message: "Incorrect username or password" });

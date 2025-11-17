@@ -1098,6 +1098,12 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      
+      // Invalidate event participants cache if lead has an event assigned
+      if (lead?.eventId) {
+        await queryClient.invalidateQueries({ queryKey: ["/api/events", lead.eventId, "participants"] });
+      }
+      
       setIsTouristDialogOpen(false);
       setEditingTourist(null);
       toast({
@@ -1122,6 +1128,11 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       // Note: deliberately not invalidating "/api/leads" to avoid closing parent dialog
+      
+      // Invalidate event participants cache if lead has an event assigned
+      if (lead?.eventId) {
+        await queryClient.invalidateQueries({ queryKey: ["/api/events", lead.eventId, "participants"] });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -1140,6 +1151,12 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      
+      // Invalidate event participants cache if lead has an event assigned
+      if (lead?.eventId) {
+        await queryClient.invalidateQueries({ queryKey: ["/api/events", lead.eventId, "participants"] });
+      }
+      
       toast({
         title: "Успешно",
         description: "Турист удален",

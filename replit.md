@@ -36,6 +36,9 @@ A normalized PostgreSQL schema supports core CRM entities (`events`, `contacts`,
 ### Technical Decisions
 The system employs dynamic geography for event city tracking, a standalone design (no external CRM integrations), backend-automated notification strategy, and a refined lead data separation architecture. Initial tourist entries are auto-created, and comprehensive tourist data completeness is indicated.
 
+### Recent Changes
+-   **EventSummary Cache Invalidation Fix (Nov 2025)**: Fixed frontend cache synchronization for event participants. All tourist mutations (create, update, toggle primary, delete) in Leads.tsx now properly invalidate `/api/events/:eventId/participants` query cache when the lead has an assigned event, ensuring EventSummary participant list updates in real-time without requiring manual page refresh.
+
 ## External Dependencies
 -   **Frontend**: React, TypeScript, Wouter, TanStack Query, Shadcn UI, Tailwind CSS
 -   **Backend**: Express.js, TypeScript, Drizzle ORM, Passport.js, bcrypt

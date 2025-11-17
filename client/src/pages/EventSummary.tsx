@@ -1293,7 +1293,7 @@ export default function EventSummary() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {event.bookedCount + participants.filter(p => p.lead?.status === "converted").length} / {event.participantLimit}
+              {participants.filter(p => p.lead?.status === "converted").length} / {event.participantLimit}
             </div>
             <p className="text-xs text-muted-foreground">
               {event.availableSpots} мест доступно

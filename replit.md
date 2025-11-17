@@ -37,6 +37,7 @@ A normalized PostgreSQL schema supports core CRM entities (`events`, `contacts`,
 The system employs dynamic geography for event city tracking, a standalone design (no external CRM integrations), backend-automated notification strategy, and a refined lead data separation architecture. Initial tourist entries are auto-created, and comprehensive tourist data completeness is indicated.
 
 ### Recent Changes
+-   **Real-Time Event Status Badges (Nov 2025)**: Added status breakdown badges to EventCard displaying participant counts by lead status in real-time. Backend (server/storage.ts) calculates `statusCounts` (pending/confirmed/cancelled) via SQL joins on deals→contacts→leads, supporting both English and Russian status values for backward compatibility. Frontend displays color-coded badges (yellow/green/red) that auto-update without page refresh when lead status or eventId changes via TanStack Query refetchQueries in Leads.tsx mutations. All consumers (Leads.tsx, Events.tsx) consistently use EventWithStats type for enriched event data.
 -   **EventSummary Cache Invalidation Fix (Nov 2025)**: Fixed frontend cache synchronization for event participants. All tourist mutations (create, update, toggle primary, delete) in Leads.tsx now properly invalidate `/api/events/:eventId/participants` query cache when the lead has an assigned event, ensuring EventSummary participant list updates in real-time without requiring manual page refresh.
 
 ## External Dependencies

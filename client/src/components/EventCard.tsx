@@ -16,7 +16,7 @@ import { Calendar, MapPin, Users, DollarSign, ArrowRight, Pencil, Copy, Trash2, 
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ColorIndicator, type ColorOption } from "@/components/ColorPicker";
-import type { Event } from "@shared/schema";
+import type { Event, EventWithStats } from "@shared/schema";
 import { useAuth } from "@/lib/auth";
 import { formatCurrency } from "@/lib/utils";
 
@@ -29,11 +29,6 @@ function getTourTypeLabel(tourType: string): string {
     transfer: "Трансфер",
   };
   return labels[tourType] || tourType;
-}
-
-interface EventWithStats extends Event {
-  bookedCount: number;
-  availableSpots: number;
 }
 
 interface EventCardProps {

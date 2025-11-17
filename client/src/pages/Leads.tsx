@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search } from "lucide-react";
-import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, User } from "@shared/schema";
+import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -105,7 +105,7 @@ export default function Leads() {
     queryKey: ["/api/leads"],
   });
 
-  const { data: events = [] } = useQuery<Event[]>({
+  const { data: events = [] } = useQuery<EventWithStats[]>({
     queryKey: ["/api/events"],
   });
 
@@ -145,8 +145,8 @@ export default function Leads() {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       await queryClient.refetchQueries({ queryKey: ["/api/leads"] });
       
-      // Invalidate events cache to update status counters in EventCard
-      await queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      // Refetch events to update status counters in EventCard
+      await queryClient.refetchQueries({ queryKey: ["/api/events"] });
       
       setEditingLead(null);
       toast({
@@ -170,8 +170,8 @@ export default function Leads() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       
-      // Invalidate events cache to update status counters in EventCard
-      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      // Refetch events to update status counters in EventCard
+      queryClient.refetchQueries({ queryKey: ["/api/events"] });
       
       toast({
         title: "Успешно",
@@ -949,7 +949,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
   });
 
   // Fetch events for tour selection
-  const { data: events = [] } = useQuery<Event[]>({
+  const { data: events = [] } = useQuery<EventWithStats[]>({
     queryKey: ["/api/events"],
   });
 

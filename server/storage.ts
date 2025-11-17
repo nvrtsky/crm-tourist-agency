@@ -193,10 +193,17 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(leads, eq(contacts.leadId, leads.id))
       .where(eq(deals.eventId, id));
 
-    // Count by status categories
-    const confirmedCount = allDeals.filter(d => d.leadStatus === 'converted').length;
-    const cancelledCount = allDeals.filter(d => d.leadStatus === 'lost').length;
-    const pendingCount = allDeals.filter(d => d.leadStatus !== 'converted' && d.leadStatus !== 'lost').length;
+    // Count by status categories (support both English and Russian values for backward compatibility)
+    const confirmedCount = allDeals.filter(d => 
+      d.leadStatus === 'converted' || d.leadStatus === 'Подтвержден'
+    ).length;
+    const cancelledCount = allDeals.filter(d => 
+      d.leadStatus === 'lost' || d.leadStatus === 'Потерян' || d.leadStatus === 'Отменён'
+    ).length;
+    const pendingCount = allDeals.filter(d => 
+      d.leadStatus !== 'converted' && d.leadStatus !== 'Подтвержден' &&
+      d.leadStatus !== 'lost' && d.leadStatus !== 'Потерян' && d.leadStatus !== 'Отменён'
+    ).length;
 
     const bookedCount = confirmedCount; // Only confirmed participants count as booked
     const availableSpots = event.participantLimit - bookedCount;

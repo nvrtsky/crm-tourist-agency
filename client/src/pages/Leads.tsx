@@ -144,6 +144,10 @@ export default function Leads() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       await queryClient.refetchQueries({ queryKey: ["/api/leads"] });
+      
+      // Invalidate events cache to update status counters in EventCard
+      await queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      
       setEditingLead(null);
       toast({
         title: "Успешно",
@@ -165,6 +169,10 @@ export default function Leads() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      
+      // Invalidate events cache to update status counters in EventCard
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      
       toast({
         title: "Успешно",
         description: "Лид удален",

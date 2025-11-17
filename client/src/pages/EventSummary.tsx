@@ -824,7 +824,7 @@ export default function EventSummary() {
       return apiRequest("POST", `/api/deals/${dealId}/visits`, {
         ...visitData,
         // Set required fields with defaults
-        arrivalDate: visitData.arrivalDate || new Date().toISOString().split("T")[0],
+        arrivalDate: visitData.arrivalDate || format(new Date(), 'yyyy-MM-dd'),
         transportType: visitData.transportType || "plane",
         hotelName: visitData.hotelName || "Hotel",
       });

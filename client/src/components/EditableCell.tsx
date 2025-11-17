@@ -54,7 +54,7 @@ export function EditableCell({
 
   const handleSave = () => {
     if (type === "date" && dateValue) {
-      const isoDate = dateValue.toISOString().split('T')[0];
+      const isoDate = format(dateValue, 'yyyy-MM-dd');
       onSave(isoDate);
     } else if (editValue !== value) {
       onSave(editValue);
@@ -142,7 +142,7 @@ export function EditableCell({
             onSelect={(date) => {
               setDateValue(date);
               if (date) {
-                const isoDate = date.toISOString().split('T')[0];
+                const isoDate = format(date, 'yyyy-MM-dd');
                 onSave(isoDate);
                 setIsEditing(false);
               }

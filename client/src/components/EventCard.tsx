@@ -7,6 +7,20 @@ import { ru } from "date-fns/locale";
 import { ColorIndicator, type ColorOption } from "@/components/ColorPicker";
 import type { Event } from "@shared/schema";
 
+// Helper function to translate tour type to Russian
+function getTourTypeLabel(tourType: string): string {
+  const labels: Record<string, string> = {
+    group: "Групповой тур",
+    individual: "Индивидуальный тур",
+    excursion: "Экскурсия",
+    transfer: "Трансфер",
+    adventure: "Приключенческий",
+    cultural: "Культурный",
+    other: "Другое",
+  };
+  return labels[tourType] || tourType;
+}
+
 interface EventWithStats extends Event {
   bookedCount: number;
   availableSpots: number;
@@ -45,11 +59,16 @@ export function EventCard({ event, onViewSummary, onEdit }: EventCardProps) {
     <Card className="overflow-hidden hover-elevate" data-testid={`card-event-${event.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 flex-1">
+          <div className="flex items-center gap-2 flex-1 flex-wrap">
             <ColorIndicator color={event.color as ColorOption} />
             <CardTitle className="text-lg" data-testid={`text-event-name-${event.id}`}>
               {event.name}
             </CardTitle>
+            {event.tourType && (
+              <Badge variant="secondary" data-testid={`badge-tour-type-${event.id}`}>
+                {getTourTypeLabel(event.tourType)}
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button

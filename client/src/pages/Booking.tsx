@@ -29,6 +29,20 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Event } from "@shared/schema";
 
+// Helper function to translate tour type to Russian
+function getTourTypeLabel(tourType: string): string {
+  const labels: Record<string, string> = {
+    group: "Групповой тур",
+    individual: "Индивидуальный тур",
+    excursion: "Экскурсия",
+    transfer: "Трансфер",
+    adventure: "Приключенческий",
+    cultural: "Культурный",
+    other: "Другое",
+  };
+  return labels[tourType] || tourType;
+}
+
 interface EventWithStats extends Event {
   bookedCount: number;
   availableSpots: number;
@@ -257,7 +271,7 @@ export default function Booking() {
                       <SelectItem value="all">Все типы</SelectItem>
                       {tourTypes.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type}
+                          {getTourTypeLabel(type)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -327,7 +341,7 @@ export default function Booking() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4" />
-                          <span>{event.tourType}</span>
+                          <span>{getTourTypeLabel(event.tourType)}</span>
                         </div>
                       </CardDescription>
                     </CardHeader>
@@ -369,7 +383,7 @@ export default function Booking() {
                     <CardDescription className="mt-2 space-y-1">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        <span>{selectedEvent.country} • {selectedEvent.tourType}</span>
+                        <span>{selectedEvent.country} • {getTourTypeLabel(selectedEvent.tourType)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useEffect } from "react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
-import { updateEventSchema, type Event, type User } from "@shared/schema";
+import { updateEventSchema, type Event, type User, COUNTRIES, TOUR_TYPES } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -204,9 +204,24 @@ export function EditEventDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Страна</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Страна" data-testid="input-event-country" />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-event-country">
+                          <SelectValue placeholder="Выберите страну" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {/* Include event's current country if not in predefined list (backward compatibility) */}
+                        {event?.country && !COUNTRIES.includes(event.country as any) && (
+                          <SelectItem value={event.country}>{event.country} (существующее значение)</SelectItem>
+                        )}
+                        {COUNTRIES.map((country) => (
+                          <SelectItem key={country} value={country}>
+                            {country}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -218,16 +233,24 @@ export function EditEventDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Тип тура</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "group"}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-tour-type">
                           <SelectValue placeholder="Выберите тип" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="group">Групповой</SelectItem>
-                        <SelectItem value="individual">Индивидуальный</SelectItem>
+                        {/* Include event's current tourType if not in predefined list (backward compatibility) */}
+                        {event?.tourType && !TOUR_TYPES.includes(event.tourType as any) && (
+                          <SelectItem value={event.tourType}>{event.tourType} (существующее значение)</SelectItem>
+                        )}
+                        <SelectItem value="group">Групповой тур</SelectItem>
+                        <SelectItem value="individual">Индивидуальный тур</SelectItem>
                         <SelectItem value="excursion">Экскурсия</SelectItem>
+                        <SelectItem value="transfer">Трансфер</SelectItem>
+                        <SelectItem value="adventure">Приключенческий</SelectItem>
+                        <SelectItem value="cultural">Культурный</SelectItem>
+                        <SelectItem value="other">Другое</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

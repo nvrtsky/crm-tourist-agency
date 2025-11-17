@@ -39,13 +39,27 @@ import { ColorPicker, type ColorOption } from "@/components/ColorPicker";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Event, InsertEvent } from "@shared/schema";
-import { updateEventSchema } from "@shared/schema";
+import { updateEventSchema, COUNTRIES, TOUR_TYPES } from "@shared/schema";
 import { ZodError } from "zod";
 import { format as formatDate } from "date-fns";
 
 interface EventWithStats extends Event {
   bookedCount: number;
   availableSpots: number;
+}
+
+// Helper function to translate tour type to Russian
+function getTourTypeLabel(tourType: string): string {
+  const labels: Record<string, string> = {
+    group: "Групповой тур",
+    individual: "Индивидуальный тур",
+    excursion: "Экскурсия",
+    transfer: "Трансфер",
+    adventure: "Приключенческий",
+    cultural: "Культурный",
+    other: "Другое",
+  };
+  return labels[tourType] || tourType;
 }
 
 const createEventFormSchema = z.object({
@@ -146,6 +160,9 @@ function normalizeEventUpdatePayload(data: unknown): unknown {
   }
   if (typeof payload.country === "string") {
     normalized.country = payload.country.trim();
+  }
+  if (typeof payload.tourType === "string") {
+    normalized.tourType = payload.tourType.trim();
   }
   if (typeof payload.description === "string") {
     normalized.description = payload.description.trim() || null;
@@ -405,7 +422,7 @@ export default function Events() {
                 <SelectContent>
                   <SelectItem value="all">Все типы</SelectItem>
                   {tourTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                    <SelectItem key={type} value={type}>{getTourTypeLabel(type)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -543,9 +560,20 @@ export default function Events() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Страна</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Например: Китай" {...field} data-testid="input-event-country" />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-event-country">
+                            <SelectValue placeholder="Выберите страну" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {COUNTRIES.map((country) => (
+                            <SelectItem key={country} value={country}>
+                              {country}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -557,9 +585,20 @@ export default function Events() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Тип тура</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Например: Групповой" {...field} data-testid="input-event-tour-type" />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-event-tour-type">
+                            <SelectValue placeholder="Выберите тип" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TOUR_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {getTourTypeLabel(type)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -16,6 +16,10 @@ export type TransportType = typeof TRANSPORT_TYPES[number];
 export const ROOM_TYPES = ["twin", "double"] as const;
 export type RoomType = typeof ROOM_TYPES[number];
 
+// Countries
+export const COUNTRIES = ["Китай", "Марокко"] as const;
+export type Country = typeof COUNTRIES[number];
+
 // User roles
 export const USER_ROLES = ["admin", "manager", "viewer"] as const;
 export type UserRole = typeof USER_ROLES[number];
@@ -44,7 +48,7 @@ export const DEAL_STATUSES = ["pending", "confirmed", "cancelled", "completed"] 
 export type DealStatus = typeof DEAL_STATUSES[number];
 
 // Tour types
-export const TOUR_TYPES = ["group", "individual", "excursion", "adventure", "cultural", "other"] as const;
+export const TOUR_TYPES = ["group", "individual", "excursion", "transfer", "adventure", "cultural", "other"] as const;
 export type TourType = typeof TOUR_TYPES[number];
 
 // Notification types

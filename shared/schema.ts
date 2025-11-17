@@ -418,6 +418,11 @@ export type UpdateLeadTourist = z.infer<typeof updateLeadTouristSchema>;
 export type EventWithStats = Event & {
   bookedCount: number;
   availableSpots: number;
+  statusCounts: {
+    pending: number;      // Ожидание (все кроме converted и lost)
+    confirmed: number;    // Подтверждено (converted)
+    cancelled: number;    // Отменён (lost)
+  };
 };
 
 export type DealWithDetails = Deal & {

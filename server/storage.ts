@@ -183,24 +183,33 @@ export class DatabaseStorage implements IStorage {
     const event = await this.getEvent(id);
     if (!event) return undefined;
 
-    // Count only deals where lead status is 'converted' (confirmed leads)
-    const dealsCount = await db
-      .select({ count: count() })
+    // Get all deals with their lead statuses
+    const allDeals = await db
+      .select({
+        leadStatus: leads.status,
+      })
       .from(deals)
       .innerJoin(contacts, eq(deals.contactId, contacts.id))
       .innerJoin(leads, eq(contacts.leadId, leads.id))
-      .where(and(
-        eq(deals.eventId, id),
-        eq(leads.status, 'converted')
-      ));
+      .where(eq(deals.eventId, id));
 
-    const bookedCount = dealsCount[0]?.count || 0;
-    const availableSpots = event.participantLimit - Number(bookedCount);
+    // Count by status categories
+    const confirmedCount = allDeals.filter(d => d.leadStatus === 'converted').length;
+    const cancelledCount = allDeals.filter(d => d.leadStatus === 'lost').length;
+    const pendingCount = allDeals.filter(d => d.leadStatus !== 'converted' && d.leadStatus !== 'lost').length;
+
+    const bookedCount = confirmedCount; // Only confirmed participants count as booked
+    const availableSpots = event.participantLimit - bookedCount;
 
     return {
       ...event,
-      bookedCount: Number(bookedCount),
+      bookedCount,
       availableSpots,
+      statusCounts: {
+        pending: pendingCount,
+        confirmed: confirmedCount,
+        cancelled: cancelledCount,
+      },
     };
   }
 

@@ -2103,23 +2103,32 @@ function TouristDialog({
               <FormField
                 control={form.control}
                 name="isPrimary"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        data-testid="checkbox-tourist-primary"
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Основной турист</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        Должен быть только один основной турист
-                      </p>
-                    </div>
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const hasPrimaryTourist = tourists.some(t => t.isPrimary && (!tourist || t.id !== tourist.id));
+                  const isDisabled = hasPrimaryTourist;
+                  
+                  return (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isDisabled}
+                          data-testid="checkbox-tourist-primary"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Основной турист</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          {hasPrimaryTourist 
+                            ? "Основной турист уже выбран для этого лида" 
+                            : "Должен быть только один основной турист"
+                          }
+                        </p>
+                      </div>
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField

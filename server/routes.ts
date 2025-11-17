@@ -1193,6 +1193,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Check if trying to create a primary tourist when one already exists
+      if (validation.data.isPrimary) {
+        const existingTourists = await storage.getTouristsByLead(id);
+        const hasPrimaryTourist = existingTourists.some(t => t.isPrimary);
+        
+        if (hasPrimaryTourist) {
+          return res.status(400).json({
+            error: "Основной турист уже существует для этого лида. Может быть только один основной турист.",
+          });
+        }
+      }
+      
       const tourist = await storage.createTourist(validation.data);
       res.json(tourist);
     } catch (error) {

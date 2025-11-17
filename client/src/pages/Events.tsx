@@ -327,7 +327,7 @@ export default function Events() {
     form.reset({
       name: `${event.name} (копия)`,
       description: event.description || "",
-      color: event.color,
+      color: event.color ?? undefined,
       country: event.country,
       cities: event.cities.join(", "),
       tourType: event.tourType,
@@ -441,20 +441,19 @@ export default function Events() {
           <CardDescription>Найдите нужный тур</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Поиск по названию или городу..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-              data-testid="input-search"
-            />
-          </div>
+          <div className="flex flex-wrap gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск по названию или городу..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+                data-testid="input-search"
+              />
+            </div>
 
-          <div className="grid gap-4 md:grid-cols-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Страна</label>
+            <div className="w-[180px]">
               <Select value={countryFilter} onValueChange={setCountryFilter}>
                 <SelectTrigger data-testid="select-country">
                   <SelectValue placeholder="Все страны" />
@@ -468,8 +467,7 @@ export default function Events() {
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Тип тура</label>
+            <div className="w-[180px]">
               <Select value={tourTypeFilter} onValueChange={setTourTypeFilter}>
                 <SelectTrigger data-testid="select-tour-type">
                   <SelectValue placeholder="Все типы" />
@@ -483,8 +481,7 @@ export default function Events() {
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Сортировка</label>
+            <div className="w-[180px]">
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger data-testid="select-sort">
                   <SelectValue />
@@ -498,21 +495,18 @@ export default function Events() {
             </div>
 
             {(searchQuery || countryFilter !== "all" || tourTypeFilter !== "all") && (
-              <div className="flex items-end">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setCountryFilter("all");
-                    setTourTypeFilter("all");
-                    setSortBy("startDate");
-                  }}
-                  data-testid="button-reset-filters"
-                >
-                  Сбросить
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchQuery("");
+                  setCountryFilter("all");
+                  setTourTypeFilter("all");
+                  setSortBy("startDate");
+                }}
+                data-testid="button-reset-filters"
+              >
+                Сбросить
+              </Button>
             )}
           </div>
 

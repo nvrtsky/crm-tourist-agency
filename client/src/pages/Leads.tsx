@@ -895,6 +895,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
   const [prefillData, setPrefillData] = useState<Partial<InsertLeadTourist> | null>(null);
   const [costCalculation, setCostCalculation] = useState<{ pricePerPerson: string; touristCount: number } | null>(null);
   
+  // Track focus state for number fields to control formatting
+  const [isTourCostFocused, setIsTourCostFocused] = useState(false);
+  const [isAdvanceFocused, setIsAdvanceFocused] = useState(false);
+  
   // Track if initial load is complete to avoid overwriting DB values
   const isInitializedRef = useRef(false);
   
@@ -1344,7 +1348,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                   
                   // Parse formatted string back to plain number string (with dot as decimal separator)
                   const parseNumberInput = (value: string) => {
-                    if (!value) return "";
+                    if (!value || value.trim() === "") return null;
                     
                     // Remove all spaces first
                     let cleanValue = value.replace(/\s/g, '');
@@ -1370,12 +1374,17 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                     const sanitized = cleanValue.replace(/[^\d.-]/g, '');
                     
                     // Validate format: optional minus, digits, optional decimal part
-                    if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "" || sanitized === "-") {
-                      return field.value || "";  // Preserve previous valid value
+                    if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "-") {
+                      return field.value;  // Preserve previous valid value
                     }
                     
                     return sanitized;
                   };
+                  
+                  // Display formatted value when not focused, raw value when focused
+                  const displayValue = isTourCostFocused 
+                    ? (field.value || "") 
+                    : formatNumberInput(field.value || "");
                   
                   return (
                     <FormItem>
@@ -1384,11 +1393,13 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         <Input
                           type="text"
                           placeholder="0,00"
-                          value={formatNumberInput(field.value || "")}
+                          value={displayValue}
+                          onFocus={() => setIsTourCostFocused(true)}
+                          onBlur={() => setIsTourCostFocused(false)}
                           onChange={(e) => {
                             const rawValue = parseNumberInput(e.target.value);
                             field.onChange(rawValue);
-                            const tourCost = parseFloat(rawValue) || 0;
+                            const tourCost = parseFloat(rawValue || "0") || 0;
                             const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
                             form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
                             
@@ -1425,7 +1436,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                   
                   // Parse formatted string back to plain number string (with dot as decimal separator)
                   const parseNumberInput = (value: string) => {
-                    if (!value) return "";
+                    if (!value || value.trim() === "") return null;
                     
                     // Remove all spaces first
                     let cleanValue = value.replace(/\s/g, '');
@@ -1451,12 +1462,17 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                     const sanitized = cleanValue.replace(/[^\d.-]/g, '');
                     
                     // Validate format: optional minus, digits, optional decimal part
-                    if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "" || sanitized === "-") {
-                      return field.value || "";  // Preserve previous valid value
+                    if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "-") {
+                      return field.value;  // Preserve previous valid value
                     }
                     
                     return sanitized;
                   };
+                  
+                  // Display formatted value when not focused, raw value when focused
+                  const displayValue = isAdvanceFocused 
+                    ? (field.value || "") 
+                    : formatNumberInput(field.value || "");
                   
                   return (
                     <FormItem>
@@ -1465,12 +1481,14 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         <Input
                           type="text"
                           placeholder="0,00"
-                          value={formatNumberInput(field.value || "")}
+                          value={displayValue}
+                          onFocus={() => setIsAdvanceFocused(true)}
+                          onBlur={() => setIsAdvanceFocused(false)}
                           onChange={(e) => {
                             const rawValue = parseNumberInput(e.target.value);
                             field.onChange(rawValue);
                             const tourCost = parseFloat(form.getValues("tourCost") || "0") || 0;
-                            const advancePayment = parseFloat(rawValue) || 0;
+                            const advancePayment = parseFloat(rawValue || "0") || 0;
                             form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
                           }}
                           data-testid="input-advancePayment"

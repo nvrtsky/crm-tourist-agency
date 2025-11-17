@@ -439,7 +439,7 @@ export default function Leads() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Все туры</SelectItem>
-                  {events.map((event) => (
+                  {events.filter(event => !event.isArchived).map((event) => (
                     <SelectItem key={event.id} value={event.id}>
                       {event.name}
                     </SelectItem>
@@ -1210,7 +1210,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {events.map((event) => (
+                        {events.filter(event => !event.isArchived).map((event) => (
                           <SelectItem key={event.id} value={event.id}>
                             {event.name} ({format(new Date(event.startDate), "dd.MM.yyyy", { locale: ru })} - {format(new Date(event.endDate), "dd.MM.yyyy", { locale: ru })})
                           </SelectItem>

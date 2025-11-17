@@ -923,6 +923,22 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
     },
   });
 
+  // Fetch events for tour selection
+  const { data: events = [] } = useQuery<Event[]>({
+    queryKey: ["/api/events"],
+  });
+
+  // Fetch managers and admins for assignee selection
+  const { data: managersAndAdmins = [] } = useQuery<User[]>({
+    queryKey: ["/api/users/managers-and-admins"],
+  });
+
+  // Fetch tourists only if editing an existing lead
+  const { data: tourists = [], isLoading: isLoadingTourists } = useQuery<LeadTourist[]>({
+    queryKey: ["/api/leads", lead?.id, "tourists"],
+    enabled: !!lead?.id,
+  });
+
   // Reset form when lead changes (for edit mode)
   useEffect(() => {
     if (lead) {
@@ -984,22 +1000,6 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       }
     }
   }, [tourists.length, events, form]);
-
-  // Fetch events for tour selection
-  const { data: events = [] } = useQuery<Event[]>({
-    queryKey: ["/api/events"],
-  });
-
-  // Fetch managers and admins for assignee selection
-  const { data: managersAndAdmins = [] } = useQuery<User[]>({
-    queryKey: ["/api/users/managers-and-admins"],
-  });
-
-  // Fetch tourists only if editing an existing lead
-  const { data: tourists = [], isLoading: isLoadingTourists } = useQuery<LeadTourist[]>({
-    queryKey: ["/api/leads", lead?.id, "tourists"],
-    enabled: !!lead?.id,
-  });
 
   // Create tourist mutation
   const createTouristMutation = useMutation({

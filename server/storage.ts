@@ -71,6 +71,7 @@ export interface IStorage {
   getContact(id: string): Promise<Contact | undefined>;
   getAllContacts(): Promise<Contact[]>;
   getContactsByLead(leadId: string): Promise<Contact[]>;
+  getContactByLeadTourist(leadTouristId: string): Promise<Contact | undefined>;
   getContactWithDeals(id: string): Promise<ContactWithDeals | undefined>;
   getContactDetails(id: string): Promise<{ contact: Contact; leadTourist: LeadTourist } | undefined>;
   createContact(contact: InsertContact): Promise<Contact>;
@@ -277,6 +278,11 @@ export class DatabaseStorage implements IStorage {
 
   async getContactsByLead(leadId: string): Promise<Contact[]> {
     return await db.select().from(contacts).where(eq(contacts.leadId, leadId));
+  }
+
+  async getContactByLeadTourist(leadTouristId: string): Promise<Contact | undefined> {
+    const result = await db.select().from(contacts).where(eq(contacts.leadTouristId, leadTouristId));
+    return result[0];
   }
 
   async getContactWithDeals(id: string): Promise<ContactWithDeals | undefined> {

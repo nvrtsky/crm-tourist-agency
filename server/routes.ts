@@ -1132,8 +1132,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const eventIdIsSet = lead.eventId !== null && lead.eventId !== undefined;
       
       if (eventIdChanged && eventIdIsSet && lead.eventId) {
-        console.log(`[UPDATE_LEAD] EventId changed to ${lead.eventId}, triggering auto-conversion`);
-        await autoConvertLeadToEvent(id, lead.eventId);
+        console.log(`[UPDATE_LEAD] EventId changed from ${currentLead.eventId} to ${lead.eventId}, triggering auto-conversion`);
+        await autoConvertLeadToEvent(id, lead.eventId, currentLead.eventId);
       }
       
       // Sync auto-created tourist if contact fields changed
@@ -1224,6 +1224,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const tourist = await storage.createTourist(validation.data);
+      console.log(`[CREATE_TOURIST] Created tourist ${tourist.id} for lead ${id}`);
+      
+      // Auto-convert tourist to contact + deal if lead has eventId set
+      const lead = await storage.getLead(id);
+      if (lead && lead.eventId) {
+        console.log(`[CREATE_TOURIST] Lead ${id} has eventId ${lead.eventId}, triggering auto-conversion`);
+        await autoConvertLeadToEvent(id, lead.eventId);
+      }
+      
       res.json(tourist);
     } catch (error) {
       console.error("Error creating tourist:", error);
@@ -1410,11 +1419,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   /**
    * Auto-convert lead to contacts and deals when eventId is set
    * Does NOT change lead status (unlike manual convert endpoint)
+   * @param previousEventId - The previous eventId (if lead is changing events). Used to locate correct deals to update.
    * Returns true if conversion happened, false if skipped (already converted)
    */
-  async function autoConvertLeadToEvent(leadId: string, eventId: string): Promise<boolean> {
+  async function autoConvertLeadToEvent(leadId: string, eventId: string, previousEventId?: string | null): Promise<boolean> {
     try {
-      console.log(`[AUTO_CONVERT] Checking auto-conversion for lead ${leadId} to event ${eventId}`);
+      // Guard against null/undefined eventId
+      if (!eventId) {
+        console.log(`[AUTO_CONVERT] EventId is null/undefined, skipping auto-conversion`);
+        return false;
+      }
+      
+      console.log(`[AUTO_CONVERT] Checking auto-conversion for lead ${leadId} to event ${eventId}${previousEventId ? ` (from ${previousEventId})` : ''}`);
 
       // Get lead
       const lead = await storage.getLead(leadId);
@@ -1428,20 +1444,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!event) {
         console.log(`[AUTO_CONVERT] Event ${eventId} not found, skipping`);
         return false;
-      }
-
-      // Check if already converted: look for existing contacts with this leadId
-      const existingContacts = await storage.getContactsByLead(leadId);
-      if (existingContacts.length > 0) {
-        // Check if any of these contacts have deals for this event
-        for (const contact of existingContacts) {
-          const contactDeals = await storage.getDealsByContact(contact.id);
-          const hasEventDeal = contactDeals.some(d => d.eventId === eventId);
-          if (hasEventDeal) {
-            console.log(`[AUTO_CONVERT] Lead ${leadId} already converted to event ${eventId}, skipping`);
-            return false;
-          }
-        }
       }
 
       // Get tourists for this lead
@@ -1505,19 +1507,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create contacts and deals for each tourist
       for (const tourist of tourists) {
         const touristFullName = `${tourist.firstName} ${tourist.lastName}${tourist.middleName ? ' ' + tourist.middleName : ''}`.trim();
-        console.log(`[AUTO_CONVERT] Creating contact for tourist ${touristFullName}`);
-        const contact = await storage.createContact({
-          name: touristFullName,
-          email: tourist.email || undefined,
-          phone: tourist.phone || undefined,
-          birthDate: tourist.dateOfBirth || undefined,
-          leadId: lead.id,
-          leadTouristId: tourist.id, // Link to detailed tourist data
-          notes: tourist.notes || undefined,
-        });
+        
+        // Check if contact already exists for this tourist
+        let contact = await storage.getContactByLeadTourist(tourist.id);
+        
+        if (contact) {
+          console.log(`[AUTO_CONVERT] Contact ${contact.id} already exists for tourist ${tourist.id}`);
+          
+          // Check if deal already exists for this event
+          const existingDeals = await storage.getDealsByContact(contact.id);
+          const dealForThisEvent = existingDeals.find(d => d.eventId === eventId);
+          
+          if (dealForThisEvent) {
+            console.log(`[AUTO_CONVERT] Deal ${dealForThisEvent.id} already exists for contact ${contact.id} on event ${eventId}, skipping`);
+            contacts.push(contact);
+            deals.push(dealForThisEvent);
+            continue; // Skip to next tourist
+          }
+          
+          // If contact has deals for OTHER events, handle based on whether we're migrating or adding new
+          if (existingDeals.length > 0) {
+            // Only update an existing deal if we're explicitly migrating from previousEventId
+            if (previousEventId) {
+              const dealToUpdate = existingDeals.find(d => d.eventId === previousEventId);
+              
+              if (dealToUpdate) {
+                console.log(`[AUTO_CONVERT] Found deal ${dealToUpdate.id} for previousEventId ${previousEventId}`);
+                console.log(`[AUTO_CONVERT] Updating existing deal ${dealToUpdate.id} from event ${dealToUpdate.eventId} to event ${eventId}`);
+                const updatedDeal = await storage.updateDeal(dealToUpdate.id, { 
+                  eventId: eventId,
+                  groupId: group?.id,
+                  isPrimaryInGroup: tourist.isPrimary,
+                });
+                contacts.push(contact);
+                deals.push(updatedDeal!);
+                continue; // Skip to next tourist
+              } else {
+                console.log(`[AUTO_CONVERT] WARNING: No deal found for previousEventId ${previousEventId}, will create new deal`);
+              }
+            } else {
+              // No previousEventId means this is a new tourist joining existing contact
+              // Fall through to create a new deal (don't update existing deals)
+              console.log(`[AUTO_CONVERT] Contact ${contact.id} has existing deals but no previousEventId - creating new deal for this tourist`);
+            }
+          }
+        } else {
+          // Create new contact if it doesn't exist
+          console.log(`[AUTO_CONVERT] Creating new contact for tourist ${touristFullName}`);
+          contact = await storage.createContact({
+            name: touristFullName,
+            email: tourist.email || undefined,
+            phone: tourist.phone || undefined,
+            birthDate: tourist.dateOfBirth || undefined,
+            leadId: lead.id,
+            leadTouristId: tourist.id, // Link to detailed tourist data
+            notes: tourist.notes || undefined,
+          });
+          console.log(`[AUTO_CONVERT] Created contact ${contact.id} linked to tourist ${tourist.id}`);
+        }
+        
         contacts.push(contact);
-        console.log(`[AUTO_CONVERT] Created contact ${contact.id} linked to tourist ${tourist.id}`);
 
+        // Create new deal for this contact and event
         const deal = await storage.createDeal({
           contactId: contact.id,
           eventId: eventId,

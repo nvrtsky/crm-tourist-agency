@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -893,6 +893,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
   const [isTouristDialogOpen, setIsTouristDialogOpen] = useState(false);
   const [editingTourist, setEditingTourist] = useState<LeadTourist | null>(null);
   const [prefillData, setPrefillData] = useState<Partial<InsertLeadTourist> | null>(null);
+  const [costCalculation, setCostCalculation] = useState<{ pricePerPerson: string; touristCount: number } | null>(null);
 
   // Helper function to get lead display name
   const getLeadName = (lead: Lead) => {
@@ -1200,7 +1201,31 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                   <FormItem className="col-span-2">
                     <FormLabel>Тур</FormLabel>
                     <Select 
-                      onValueChange={field.onChange} 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Auto-calculate tour cost based on selected event
+                        const selectedEvent = events.find(e => e.id === value);
+                        if (selectedEvent) {
+                          const touristCount = tourists.length || 1; // Minimum 1 tourist
+                          const pricePerPerson = parseFloat(selectedEvent.price);
+                          const totalCost = pricePerPerson * touristCount;
+                          
+                          // Set the calculated cost
+                          form.setValue("tourCost", totalCost.toFixed(2));
+                          
+                          // Update calculation info for display
+                          setCostCalculation({
+                            pricePerPerson: pricePerPerson.toFixed(2),
+                            touristCount
+                          });
+                          
+                          // Recalculate remaining payment
+                          const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
+                          form.setValue("remainingPayment", (totalCost - advancePayment).toFixed(2));
+                        } else {
+                          setCostCalculation(null);
+                        }
+                      }}
                       value={field.value || undefined}
                       data-testid="select-eventId"
                     >
@@ -1244,6 +1269,11 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         data-testid="input-tourCost"
                       />
                     </FormControl>
+                    {costCalculation && (
+                      <FormDescription className="text-xs text-muted-foreground">
+                        Рассчитано: {costCalculation.pricePerPerson} руб × {costCalculation.touristCount} {costCalculation.touristCount === 1 ? 'турист' : costCalculation.touristCount > 4 ? 'туристов' : 'туриста'} = {parseFloat(costCalculation.pricePerPerson) * costCalculation.touristCount} руб
+                      </FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

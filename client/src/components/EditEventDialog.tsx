@@ -71,8 +71,8 @@ export function EditEventDialog({
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Only admins and managers can archive events
-  const canArchive = user?.role === "admin" || user?.role === "manager";
+  // Only admins can archive events
+  const canArchive = user?.role === "admin";
   
   // Load viewer users for guide assignment
   const { data: viewers = [] } = useQuery<User[]>({

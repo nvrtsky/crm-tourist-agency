@@ -534,16 +534,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete event
-  app.delete("/api/events/:id", requireAuth, async (req, res) => {
+  // Delete event (admin only)
+  app.delete("/api/events/:id", requireAdmin, async (req, res) => {
     try {
-      const user = req.user as User;
-      
-      // Only admin and manager can delete events
-      if (user.role === "viewer") {
-        return res.status(403).json({ error: "Access denied" });
-      }
-      
       const { id } = req.params;
       const success = await storage.deleteEvent(id);
       
@@ -681,8 +674,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete contact
-  app.delete("/api/contacts/:id", async (req, res) => {
+  // Delete contact (admin only)
+  app.delete("/api/contacts/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteContact(id);
@@ -862,8 +855,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete deal
-  app.delete("/api/deals/:id", async (req, res) => {
+  // Delete deal (admin only)
+  app.delete("/api/deals/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteDeal(id);
@@ -941,8 +934,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete city visit
-  app.delete("/api/visits/:id", async (req, res) => {
+  // Delete city visit (admin only)
+  app.delete("/api/visits/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteCityVisit(id);
@@ -999,8 +992,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete notification
-  app.delete("/api/notifications/:id", async (req, res) => {
+  // Delete notification (admin only)
+  app.delete("/api/notifications/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteNotification(id);
@@ -1156,8 +1149,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete lead
-  app.delete("/api/leads/:id", async (req, res) => {
+  // Delete lead (admin only)
+  app.delete("/api/leads/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteLead(id);
@@ -1254,8 +1247,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete a tourist
-  app.delete("/api/tourists/:id", async (req, res) => {
+  // Delete a tourist (admin only)
+  app.delete("/api/tourists/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteTourist(id);
@@ -2270,8 +2263,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete group
-  app.delete("/api/groups/:id", async (req, res) => {
+  // Delete group (admin only)
+  app.delete("/api/groups/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteGroup(id);
@@ -2315,8 +2308,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Remove deal from group
-  app.delete("/api/groups/:groupId/members/:dealId", async (req, res) => {
+  // Remove deal from group (admin only)
+  app.delete("/api/groups/:groupId/members/:dealId", requireAdmin, async (req, res) => {
     try {
       const { dealId } = req.params;
 

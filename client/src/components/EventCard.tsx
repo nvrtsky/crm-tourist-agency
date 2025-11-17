@@ -45,7 +45,7 @@ interface EventCardProps {
 
 export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: EventCardProps) {
   const { user } = useAuth();
-  const canModify = user?.role === "admin" || user?.role === "manager";
+  const canModify = user?.role === "admin"; // Only admins can modify/delete events
   const availablePercentage = (event.availableSpots / event.participantLimit) * 100;
   
   const getStatusClasses = () => {

@@ -19,6 +19,7 @@ import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTou
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
@@ -79,6 +80,7 @@ const createLeadFormSchema = insertLeadSchema.extend({
 export default function Leads() {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { isAdmin } = useAuth(); // Only admins can delete leads
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   
@@ -617,18 +619,20 @@ export default function Leads() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (confirm("Вы уверены, что хотите удалить этот лид?")) {
-                              deleteMutation.mutate(lead.id);
-                            }
-                          }}
-                          data-testid={`button-delete-${lead.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm("Вы уверены, что хотите удалить этот лид?")) {
+                                deleteMutation.mutate(lead.id);
+                              }
+                            }}
+                            data-testid={`button-delete-${lead.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -661,6 +665,7 @@ export default function Leads() {
               }}
               isPending={updateMutation.isPending}
               onDelete={(id) => deleteMutation.mutate(id)}
+              isAdmin={isAdmin}
             />
           )}
         </DialogContent>
@@ -880,9 +885,10 @@ interface LeadFormProps {
   onSubmit: (data: InsertLead) => void;
   isPending: boolean;
   onDelete?: (id: string) => void;
+  isAdmin?: boolean; // Only admins can delete leads
 }
 
-function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
+function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: LeadFormProps) {
   const { toast } = useToast();
   const [isTouristDialogOpen, setIsTouristDialogOpen] = useState(false);
   const [editingTourist, setEditingTourist] = useState<LeadTourist | null>(null);
@@ -1604,16 +1610,18 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteTourist(tourist)}
-                              disabled={tourists.length <= 1 || togglePrimaryMutation.isPending || deleteTouristMutation.isPending}
-                              data-testid={`button-delete-tourist-${tourist.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {isAdmin && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteTourist(tourist)}
+                                disabled={tourists.length <= 1 || togglePrimaryMutation.isPending || deleteTouristMutation.isPending}
+                                data-testid={`button-delete-tourist-${tourist.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1626,7 +1634,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete }: LeadFormProps) {
           )}
 
           <DialogFooter className="flex justify-between items-center">
-            {lead && onDelete && (
+            {lead && onDelete && isAdmin && (
               <Button
                 type="button"
                 variant="destructive"

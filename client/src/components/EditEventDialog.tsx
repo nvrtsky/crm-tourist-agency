@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useEffect } from "react";
 import { format } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { updateEventSchema, type Event, type User, COUNTRIES, TOUR_TYPES } from "@shared/schema";
 import {
   Dialog,
@@ -33,8 +33,11 @@ import {
 import { ColorPicker, type ColorOption } from "@/components/ColorPicker";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Archive, ArchiveRestore } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 
 const formSchema = z.object({
   name: z.string().trim().min(1, "Название обязательно"),
@@ -65,10 +68,45 @@ export function EditEventDialog({
   onOpenChange,
   onSave,
 }: EditEventDialogProps) {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Only admins and managers can archive events
+  const canArchive = user?.role === "admin" || user?.role === "manager";
+  
   // Load viewer users for guide assignment
   const { data: viewers = [] } = useQuery<User[]>({
     queryKey: ["/api/users/viewers"],
     enabled: open,
+  });
+
+  // Archive/Unarchive mutation
+  const archiveMutation = useMutation({
+    mutationFn: async ({ id, archive }: { id: string; archive: boolean }) => {
+      const endpoint = archive ? `/api/events/${id}/archive` : `/api/events/${id}/unarchive`;
+      const response = await apiRequest("PATCH", endpoint);
+      if (!response.ok) {
+        throw new Error(archive ? "Не удалось заархивировать тур" : "Не удалось разархивировать тур");
+      }
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({
+        title: variables.archive ? "Тур заархивирован" : "Тур разархивирован",
+        description: variables.archive 
+          ? "Тур перемещён в архив" 
+          : "Тур восстановлен из архива",
+      });
+      onOpenChange(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const form = useForm<FormValues>({
@@ -451,17 +489,42 @@ export function EditEventDialog({
             />
 
             <DialogFooter className="gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                data-testid="button-cancel"
-              >
-                Отмена
-              </Button>
-              <Button type="submit" data-testid="button-save">
-                Сохранить
-              </Button>
+              <div className="flex items-center justify-between w-full gap-2">
+                {event && canArchive && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => archiveMutation.mutate({ id: event.id, archive: !event.isArchived })}
+                    disabled={archiveMutation.isPending}
+                    data-testid={event.isArchived ? "button-unarchive" : "button-archive"}
+                  >
+                    {event.isArchived ? (
+                      <>
+                        <ArchiveRestore className="h-4 w-4 mr-2" />
+                        Разархивировать
+                      </>
+                    ) : (
+                      <>
+                        <Archive className="h-4 w-4 mr-2" />
+                        Архивировать
+                      </>
+                    )}
+                  </Button>
+                )}
+                <div className="flex gap-2 ml-auto">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    data-testid="button-cancel"
+                  >
+                    Отмена
+                  </Button>
+                  <Button type="submit" data-testid="button-save">
+                    Сохранить
+                  </Button>
+                </div>
+              </div>
             </DialogFooter>
           </form>
         </Form>

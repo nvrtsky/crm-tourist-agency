@@ -102,6 +102,7 @@ export const events = pgTable("events", {
   participantLimit: integer("participant_limit").notNull(), // Maximum number of participants
   price: numeric("price", { precision: 10, scale: 2 }).notNull(), // Tour price
   isFull: boolean("is_full").notNull().default(false), // Auto-updated when event is full
+  isArchived: boolean("is_archived").notNull().default(false), // Manual or auto-archived when tour ends
   color: text("color"), // Color indicator: 'red', 'blue', 'green', 'yellow', 'purple'
   cityGuides: jsonb("city_guides"), // City to guide mapping: { "cityName": "userId" }
   createdAt: timestamp("created_at").notNull().defaultNow(),

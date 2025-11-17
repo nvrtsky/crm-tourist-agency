@@ -63,6 +63,9 @@ export interface IStorage {
   createEvent(event: InsertEvent): Promise<Event>;
   updateEvent(id: string, event: Partial<UpdateEvent>): Promise<Event | undefined>;
   deleteEvent(id: string): Promise<boolean>;
+  archiveExpiredEvents(): Promise<void>;
+  archiveEvent(id: string): Promise<Event | undefined>;
+  unarchiveEvent(id: string): Promise<Event | undefined>;
 
   // Contact operations
   getContact(id: string): Promise<Contact | undefined>;
@@ -227,6 +230,34 @@ export class DatabaseStorage implements IStorage {
   async deleteEvent(id: string): Promise<boolean> {
     const result = await db.delete(events).where(eq(events.id, id)).returning();
     return result.length > 0;
+  }
+
+  async archiveExpiredEvents(): Promise<void> {
+    await db
+      .update(events)
+      .set({ isArchived: true, updatedAt: new Date() })
+      .where(and(
+        sql`${events.endDate} < CURRENT_DATE`,
+        eq(events.isArchived, false)
+      ));
+  }
+
+  async archiveEvent(id: string): Promise<Event | undefined> {
+    const result = await db
+      .update(events)
+      .set({ isArchived: true, updatedAt: new Date() })
+      .where(eq(events.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async unarchiveEvent(id: string): Promise<Event | undefined> {
+    const result = await db
+      .update(events)
+      .set({ isArchived: false, updatedAt: new Date() })
+      .where(eq(events.id, id))
+      .returning();
+    return result[0];
   }
 
   // ==================== CONTACT OPERATIONS ====================

@@ -32,7 +32,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, Plus, Search, Filter, X } from "lucide-react";
+import { Calendar, Plus, Search, Filter, X, Archive } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { EventCard } from "@/components/EventCard";
 import { EditEventDialog } from "@/components/EditEventDialog";
 import { ColorPicker, type ColorOption } from "@/components/ColorPicker";
@@ -176,6 +178,7 @@ export default function Events() {
   const [countryFilter, setCountryFilter] = useState<string>("all");
   const [tourTypeFilter, setTourTypeFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("startDate");
+  const [showArchived, setShowArchived] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
@@ -277,6 +280,30 @@ export default function Events() {
     },
   });
 
+  const deleteEventMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/events/${id}`);
+      if (!response.ok) {
+        throw new Error("Не удалось удалить тур");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({
+        title: "Тур удалён",
+        description: "Тур успешно удалён из системы",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось удалить тур",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: CreateEventForm) => {
     createEventMutation.mutate(data);
   };
@@ -292,6 +319,36 @@ export default function Events() {
     }
   };
 
+  const handleCopyEvent = (event: Event) => {
+    // Clear any editing state first
+    setEditingEvent(null);
+    
+    // Pre-fill create dialog with copied event data
+    form.reset({
+      name: `${event.name} (копия)`,
+      description: event.description || "",
+      color: event.color,
+      country: event.country,
+      cities: event.cities.join(", "),
+      tourType: event.tourType,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      participantLimit: String(event.participantLimit) as any,
+      price: String(event.price) as any,
+    });
+    setIsCreateDialogOpen(true);
+    
+    // Note: User should verify dates are still valid for new tour
+    toast({
+      title: "Тур скопирован",
+      description: "Проверьте даты и другие параметры перед сохранением",
+    });
+  };
+
+  const handleDeleteEvent = (id: string) => {
+    deleteEventMutation.mutate(id);
+  };
+
   // Backend now filters events for viewer role, so we only need to apply UI filters
   const filteredEvents = events
     .filter(event => {
@@ -300,7 +357,8 @@ export default function Events() {
         event.cities.some(city => city.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesCountry = countryFilter === "all" || event.country === countryFilter;
       const matchesTourType = tourTypeFilter === "all" || event.tourType === tourTypeFilter;
-      return matchesSearch && matchesCountry && matchesTourType;
+      const matchesArchived = showArchived || !event.isArchived; // Show only active by default
+      return matchesSearch && matchesCountry && matchesTourType && matchesArchived;
     })
     .sort((a, b) => {
       if (sortBy === "startDate") {
@@ -457,6 +515,19 @@ export default function Events() {
               </div>
             )}
           </div>
+
+          <div className="flex items-center gap-2 pt-2">
+            <Switch
+              id="show-archived"
+              checked={showArchived}
+              onCheckedChange={setShowArchived}
+              data-testid="switch-show-archived"
+            />
+            <Label htmlFor="show-archived" className="flex items-center gap-2 cursor-pointer">
+              <Archive className="h-4 w-4" />
+              Показать архив
+            </Label>
+          </div>
         </CardContent>
       </Card>
 
@@ -486,6 +557,8 @@ export default function Events() {
               event={event}
               onViewSummary={(eventId) => setLocation(`/events/${eventId}/summary`)}
               onEdit={handleEditEvent}
+              onCopy={handleCopyEvent}
+              onDelete={handleDeleteEvent}
             />
           ))}
         </div>

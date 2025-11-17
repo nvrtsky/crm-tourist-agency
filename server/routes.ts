@@ -274,6 +274,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all events
   app.get("/api/events", requireAuth, async (req, res) => {
     try {
+      // Auto-archive expired events before fetching (don't let failures block event list)
+      try {
+        await storage.archiveExpiredEvents();
+      } catch (archiveError) {
+        console.error("Auto-archive failed (non-blocking):", archiveError);
+      }
+      
       const user = req.user as User;
       let events = await storage.getAllEventsWithStats();
       
@@ -548,6 +555,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting event:", error);
       res.status(500).json({ error: "Failed to delete event" });
+    }
+  });
+
+  // Archive event
+  app.patch("/api/events/:id/archive", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      
+      // Only admin and manager can archive events
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const { id } = req.params;
+      const event = await storage.archiveEvent(id);
+      
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      
+      res.json(event);
+    } catch (error) {
+      console.error("Error archiving event:", error);
+      res.status(500).json({ error: "Failed to archive event" });
+    }
+  });
+
+  // Unarchive event
+  app.patch("/api/events/:id/unarchive", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      
+      // Only admin and manager can unarchive events
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const { id } = req.params;
+      const event = await storage.unarchiveEvent(id);
+      
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      
+      res.json(event);
+    } catch (error) {
+      console.error("Error unarchiving event:", error);
+      res.status(500).json({ error: "Failed to unarchive event" });
     }
   });
 

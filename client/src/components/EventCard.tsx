@@ -1,11 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Users, DollarSign, ArrowRight, Pencil } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Calendar, MapPin, Users, DollarSign, ArrowRight, Pencil, Copy, Trash2, Archive } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ColorIndicator, type ColorOption } from "@/components/ColorPicker";
 import type { Event } from "@shared/schema";
+import { useAuth } from "@/lib/auth";
 
 // Helper function to translate tour type to Russian
 function getTourTypeLabel(tourType: string): string {
@@ -27,9 +39,13 @@ interface EventCardProps {
   event: EventWithStats;
   onViewSummary: (eventId: string) => void;
   onEdit: (event: Event) => void;
+  onCopy: (event: Event) => void;
+  onDelete: (eventId: string) => void;
 }
 
-export function EventCard({ event, onViewSummary, onEdit }: EventCardProps) {
+export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: EventCardProps) {
+  const { user } = useAuth();
+  const canModify = user?.role === "admin" || user?.role === "manager";
   const availablePercentage = (event.availableSpots / event.participantLimit) * 100;
   
   const getStatusClasses = () => {
@@ -66,16 +82,34 @@ export function EventCard({ event, onViewSummary, onEdit }: EventCardProps) {
                 {getTourTypeLabel(event.tourType)}
               </Badge>
             )}
+            {event.isArchived && (
+              <Badge variant="outline" className="gap-1" data-testid={`badge-archived-${event.id}`}>
+                <Archive className="h-3 w-3" />
+                Архив
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onEdit(event)}
-              data-testid={`button-edit-event-${event.id}`}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+            {canModify && (
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => onCopy(event)}
+                  data-testid={`button-copy-event-${event.id}`}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => onEdit(event)}
+                  data-testid={`button-edit-event-${event.id}`}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </>
+            )}
             <Badge className={getStatusClasses()} data-testid={`badge-status-${event.id}`}>
               {getStatusText()}
             </Badge>
@@ -121,7 +155,7 @@ export function EventCard({ event, onViewSummary, onEdit }: EventCardProps) {
           </p>
         )}
 
-        <div className="pt-2">
+        <div className="pt-2 space-y-2">
           <Button 
             className="w-full" 
             variant="outline"
@@ -131,6 +165,44 @@ export function EventCard({ event, onViewSummary, onEdit }: EventCardProps) {
             Сводная таблица
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
+          
+          {canModify && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  className="w-full" 
+                  variant="outline"
+                  data-testid={`button-delete-event-${event.id}`}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Удалить
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Удалить тур?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Вы действительно хотите удалить тур "{event.name}"? Это действие нельзя отменить.
+                    {event.bookedCount > 0 && (
+                      <span className="block mt-2 text-destructive font-semibold">
+                        Внимание: В этом туре {event.bookedCount} участников!
+                      </span>
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel data-testid="button-cancel-delete">Отмена</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => onDelete(event.id)}
+                    className="bg-destructive hover:bg-destructive/90"
+                    data-testid="button-confirm-delete"
+                  >
+                    Удалить
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </CardContent>
     </Card>

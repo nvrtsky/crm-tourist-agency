@@ -1227,7 +1227,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await autoConvertLeadToEvent(id, lead.eventId, tourist);
       }
       
-      res.json(tourist);
+      // Return tourist and leadEventId for cache invalidation
+      res.json({ tourist, leadEventId: lead?.eventId || null });
     } catch (error) {
       console.error("Error creating tourist:", error);
       res.status(500).json({ error: "Failed to create tourist" });
@@ -1250,30 +1251,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Separate isPrimary from other updates
       const { isPrimary, ...otherUpdates } = validation.data;
       
+      // Get tourist to retrieve leadId
+      const existingTourist = await storage.getTourist(id);
+      if (!existingTourist) {
+        return res.status(404).json({ error: "Tourist not found" });
+      }
+      
       // If updating isPrimary to true, toggle primary status first
       if (isPrimary === true) {
-        const existingTourist = await storage.getTourist(id);
-        if (!existingTourist) {
-          return res.status(404).json({ error: "Tourist not found" });
-        }
-        
         await storage.togglePrimaryTourist(existingTourist.leadId, id);
       }
       
       // Apply other field updates if any
+      let finalTourist;
       if (Object.keys(otherUpdates).length > 0) {
-        const tourist = await storage.updateTourist(id, otherUpdates);
-        
-        if (!tourist) {
+        finalTourist = await storage.updateTourist(id, otherUpdates);
+        if (!finalTourist) {
           return res.status(404).json({ error: "Tourist not found" });
         }
-        
-        res.json(tourist);
       } else {
         // If only isPrimary was updated, fetch and return the updated tourist
-        const updatedTourist = await storage.getTourist(id);
-        res.json(updatedTourist);
+        finalTourist = await storage.getTourist(id);
       }
+      
+      // Get lead to return eventId for cache invalidation
+      // Use finalTourist.leadId in case the tourist was reassigned to another lead
+      const leadId = finalTourist?.leadId || existingTourist.leadId;
+      const lead = await storage.getLead(leadId);
+      res.json({ tourist: finalTourist, leadEventId: lead?.eventId || null });
     } catch (error) {
       console.error("Error updating tourist:", error);
       res.status(500).json({ error: "Failed to update tourist" });
@@ -1284,13 +1289,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/tourists/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const success = await storage.deleteTourist(id);
       
-      if (!success) {
+      // Get tourist before deletion to retrieve leadId for cache invalidation
+      const tourist = await storage.getTourist(id);
+      if (!tourist) {
         return res.status(404).json({ error: "Tourist not found" });
       }
       
-      res.json({ success: true });
+      // Get lead to return eventId
+      const lead = await storage.getLead(tourist.leadId);
+      
+      const success = await storage.deleteTourist(id);
+      if (!success) {
+        return res.status(500).json({ error: "Failed to delete tourist" });
+      }
+      
+      res.json({ success: true, leadEventId: lead?.eventId || null });
     } catch (error) {
       console.error("Error deleting tourist:", error);
       res.status(500).json({ error: "Failed to delete tourist" });

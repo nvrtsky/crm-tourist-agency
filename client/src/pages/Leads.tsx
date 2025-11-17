@@ -1055,20 +1055,16 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       console.log("[TOURIST] Tourist created:", result);
       return result;
     },
-    onSuccess: async () => {
+    onSuccess: async (result: any) => {
       console.log("[TOURIST] onSuccess - invalidating queries");
-      
-      // Capture eventId BEFORE invalidating (lead prop is closure)
-      const eventIdToInvalidate = lead?.eventId;
       
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       
-      // Invalidate event participants cache if lead has an event assigned
-      // Use captured eventId from closure before invalidation
-      if (eventIdToInvalidate) {
-        console.log("[TOURIST] Invalidating participants cache for event:", eventIdToInvalidate);
-        await queryClient.invalidateQueries({ queryKey: ['/api/events', eventIdToInvalidate, 'participants'] });
+      // Invalidate event participants cache using leadEventId from server response
+      if (result.leadEventId) {
+        console.log("[TOURIST] Invalidating participants cache for event:", result.leadEventId);
+        await queryClient.invalidateQueries({ queryKey: ['/api/events', result.leadEventId, 'participants'] });
       }
       
       setIsTouristDialogOpen(false);
@@ -1093,18 +1089,14 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertLeadTourist> }) => {
       return await apiRequest("PATCH", `/api/tourists/${id}`, data);
     },
-    onSuccess: async () => {
-      // Capture eventId BEFORE invalidating (lead prop is closure)
-      const eventIdToInvalidate = lead?.eventId;
-      
+    onSuccess: async (result: any) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       
-      // Invalidate event participants cache if lead has an event assigned
-      // Use captured eventId from closure before invalidation
-      if (eventIdToInvalidate) {
-        console.log("[TOURIST] Invalidating participants cache for event:", eventIdToInvalidate);
-        await queryClient.invalidateQueries({ queryKey: ['/api/events', eventIdToInvalidate, 'participants'] });
+      // Invalidate event participants cache using leadEventId from server response
+      if (result.leadEventId) {
+        console.log("[TOURIST] Invalidating participants cache for event:", result.leadEventId);
+        await queryClient.invalidateQueries({ queryKey: ['/api/events', result.leadEventId, 'participants'] });
       }
       
       setIsTouristDialogOpen(false);
@@ -1146,18 +1138,14 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
     mutationFn: async (id: string) => {
       return await apiRequest("DELETE", `/api/tourists/${id}`);
     },
-    onSuccess: async () => {
-      // Capture eventId BEFORE invalidating (lead prop is closure)
-      const eventIdToInvalidate = lead?.eventId;
-      
+    onSuccess: async (result: any) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads", lead?.id, "tourists"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       
-      // Invalidate event participants cache if lead has an event assigned
-      // Use captured eventId from closure before invalidation
-      if (eventIdToInvalidate) {
-        console.log("[TOURIST] Invalidating participants cache for event:", eventIdToInvalidate);
-        await queryClient.invalidateQueries({ queryKey: ['/api/events', eventIdToInvalidate, 'participants'] });
+      // Invalidate event participants cache using leadEventId from server response
+      if (result.leadEventId) {
+        console.log("[TOURIST] Invalidating participants cache for event:", result.leadEventId);
+        await queryClient.invalidateQueries({ queryKey: ['/api/events', result.leadEventId, 'participants'] });
       }
       
       toast({

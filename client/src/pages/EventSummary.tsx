@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { TOURIST_FIELD_DESCRIPTORS, SECTION_TITLES } from "@/lib/touristFormConfig";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
-import { calculateTouristDataCompleteness, formatCurrency } from "@/lib/utils";
+import { calculateTouristDataCompleteness, formatCurrency, formatTouristName } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -199,7 +199,7 @@ function ParticipantCard({
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium truncate">
-                                  {member.leadTourist?.foreignPassportName || member.contact?.name || "—"}
+                                  {formatTouristName(member.leadTourist, member.contact?.name)}
                                 </span>
                                 {member.leadTourist?.isPrimary && (
                                   <Badge variant="default" className="text-[10px] px-1.5 py-0.5">
@@ -242,7 +242,7 @@ function ParticipantCard({
               ) : (
                 <CardTitle className="text-base flex items-center gap-2">
                   {hasBirthday && <Cake className="h-4 w-4 text-pink-500" />}
-                  {participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}
+                  {formatTouristName(participant.leadTourist, participant.contact?.name)}
                 </CardTitle>
               )}
               {groupInfo && groupInfo.type === 'mini_group' && groupMembers && groupMembers.length > 0 && (
@@ -277,7 +277,7 @@ function ParticipantCard({
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium truncate">
-                                  {member.leadTourist?.foreignPassportName || member.contact?.name || "—"}
+                                  {formatTouristName(member.leadTourist, member.contact?.name)}
                                 </span>
                                 {member.leadTourist?.isPrimary && (
                                   <Badge variant="default" className="text-[10px] px-1.5 py-0.5">
@@ -374,7 +374,7 @@ function ParticipantCard({
                 size="icon"
                 variant="ghost"
                 onClick={() => {
-                  const displayName = participant.leadTourist?.foreignPassportName || participant.contact?.name || "участника";
+                  const displayName = formatTouristName(participant.leadTourist, participant.contact?.name);
                   if (confirm(`Удалить ${displayName} из группы?`)) {
                     handleRemoveFromGroup(participant.deal.groupId!, participant.deal.id);
                   }
@@ -1079,7 +1079,7 @@ export default function EventSummary() {
 
       const baseData: Record<string, any> = {
         "№": index + 1,
-        "ФИО": p.leadTourist?.foreignPassportName || p.contact?.name || "—",
+        "ФИО": formatTouristName(p.leadTourist, p.contact?.name),
         "Данные": completenessText,
         "Статус лида": p.lead ? LEAD_STATUS_LABELS[p.lead.status] || p.lead.status : "—",
         "Email": p.contact?.email || "",
@@ -1593,7 +1593,7 @@ export default function EventSummary() {
                         <td className="sticky bg-background z-10 p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" style={{ left: `${stickyOffset}px` }} data-testid={`text-name-${participant.deal.id}`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <span>{participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}</span>
+                              <span>{formatTouristName(participant.leadTourist, participant.contact?.name)}</span>
                               {participant.leadTourist && (
                                 <div className="flex items-center gap-1">
                                   <Tooltip>
@@ -1663,7 +1663,7 @@ export default function EventSummary() {
                                   variant="ghost"
                                   className="h-6 w-6 opacity-50 hover:opacity-100"
                                   onClick={() => {
-                                    const displayName = participant.leadTourist?.foreignPassportName || participant.contact?.name || "участника";
+                                    const displayName = formatTouristName(participant.leadTourist, participant.contact?.name);
                                     if (confirm(`Удалить ${displayName} из группы?`)) {
                                       removeFromGroupMutation.mutate({
                                         groupId: participant.deal.groupId!,
@@ -1934,7 +1934,7 @@ export default function EventSummary() {
                           className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                         >
                           <div className="flex justify-between items-center">
-                            <span>{participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}</span>
+                            <span>{formatTouristName(participant.leadTourist, participant.contact?.name)}</span>
                             <span className="text-xs text-muted-foreground">{participant.contact?.passport || "—"}</span>
                           </div>
                         </label>
@@ -1964,7 +1964,7 @@ export default function EventSummary() {
                           const participant = participants.find(p => p.deal.id === dealId);
                           return (
                             <option key={dealId} value={dealId}>
-                              {participant?.leadTourist?.foreignPassportName || participant?.contact?.name || "—"}
+                              {formatTouristName(participant?.leadTourist, participant?.contact?.name)}
                             </option>
                           );
                         })}
@@ -2073,7 +2073,7 @@ function TouristDetailsDialog({ contactId, onClose, onSuccess, userRole }: Touri
         <DialogHeader>
           <DialogTitle>Редактировать данные туриста</DialogTitle>
           <DialogDescription>
-            {details?.contact?.name || "Загрузка..."}
+            {formatTouristName(details?.leadTourist, details?.contact?.name)}
           </DialogDescription>
         </DialogHeader>
 

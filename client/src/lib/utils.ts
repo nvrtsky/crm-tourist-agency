@@ -113,3 +113,27 @@ export function formatCurrency(value: string | number | null | undefined): strin
     maximumFractionDigits: 2,
   }).format(numValue);
 }
+
+export function formatTouristName(
+  leadTourist: LeadTourist | null | undefined, 
+  contactName: string | null | undefined
+): string {
+  if (!leadTourist) {
+    return contactName || "—";
+  }
+
+  if (leadTourist.foreignPassportName) {
+    return leadTourist.foreignPassportName;
+  }
+
+  const parts: string[] = [];
+  if (leadTourist.lastName) parts.push(leadTourist.lastName);
+  if (leadTourist.firstName) parts.push(leadTourist.firstName);
+  if (leadTourist.middleName) parts.push(leadTourist.middleName);
+
+  if (parts.length > 0) {
+    return parts.join(" ");
+  }
+
+  return contactName || "—";
+}

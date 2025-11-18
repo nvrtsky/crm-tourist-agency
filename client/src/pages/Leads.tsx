@@ -23,7 +23,7 @@ import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
-import { calculateTouristDataCompleteness, formatCurrency } from "@/lib/utils";
+import { calculateTouristDataCompleteness, formatCurrency, formatTouristName } from "@/lib/utils";
 import { ColorPicker, ColorIndicator, type ColorOption } from "@/components/ColorPicker";
 import { DeferLeadDialog } from "@/components/DeferLeadDialog";
 import { z } from "zod";
@@ -1205,7 +1205,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       return;
     }
 
-    const fullName = tourist.foreignPassportName || `${tourist.lastName} ${tourist.firstName}`;
+    const fullName = formatTouristName(tourist, null);
     if (confirm(`Вы уверены, что хотите удалить туриста ${fullName}?`)) {
       deleteTouristMutation.mutate(tourist.id);
     }
@@ -1821,7 +1821,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-medium">
-                              {tourist.foreignPassportName || `${tourist.lastName} ${tourist.firstName} ${tourist.middleName || ""}`.trim()}
+                              {formatTouristName(tourist, null)}
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <Tooltip>

@@ -1,5 +1,5 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, XCircle, MinusCircle } from "lucide-react";
 import type { TouristDataCompleteness, CompletenessStatus } from "@/lib/utils";
 
 interface DataCompletenessIndicatorProps {
@@ -26,6 +26,11 @@ const statusConfig: Record<CompletenessStatus, {
     variant: "destructive",
     className: "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white",
   },
+  not_required: {
+    icon: MinusCircle,
+    variant: "outline",
+    className: "bg-gray-400 hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-700 text-white border-gray-400 dark:border-gray-600",
+  },
 };
 
 const categoryLabels = {
@@ -39,16 +44,19 @@ const categoryDescriptions: Record<keyof TouristDataCompleteness, Record<Complet
     complete: "Все личные данные заполнены",
     partial: "Личные данные заполнены частично",
     empty: "Личные данные не заполнены",
+    not_required: "Данные не требуются",
   },
   russianPassport: {
     complete: "Паспорт РФ заполнен полностью",
     partial: "Паспорт РФ заполнен частично",
     empty: "Паспорт РФ не заполнен",
+    not_required: "Данные не требуются",
   },
   foreignPassport: {
     complete: "Загранпаспорт заполнен полностью",
     partial: "Загранпаспорт заполнен частично",
     empty: "Загранпаспорт не заполнен",
+    not_required: "Данные не требуются",
   },
 };
 

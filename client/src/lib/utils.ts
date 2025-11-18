@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export type CompletenessStatus = "complete" | "partial" | "empty";
+export type CompletenessStatus = "complete" | "partial" | "empty" | "not_required";
 
 export interface TouristDataCompleteness {
   personal: CompletenessStatus;
@@ -56,8 +56,14 @@ export function calculateTouristDataCompleteness(tourist: LeadTourist): TouristD
       tourist.registrationAddress,
     ]);
   } else {
-    // Для неосновных туристов паспорт РФ необязателен - всегда complete
-    russianPassport = "complete";
+    // Для неосновных туристов паспорт РФ необязателен
+    // Проверяем заполненность и возвращаем not_required если пусто, или статус заполненности если есть данные
+    const rfPassportStatus = checkFields([
+      tourist.passportSeries,
+      tourist.passportIssuedBy,
+      tourist.registrationAddress,
+    ]);
+    russianPassport = rfPassportStatus === "empty" ? "not_required" : rfPassportStatus;
   }
 
   // Загранпаспорт обязателен для всех туристов (ФИО латиницей + номер + срок + сканы)

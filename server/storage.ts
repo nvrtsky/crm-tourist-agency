@@ -390,9 +390,9 @@ export class DatabaseStorage implements IStorage {
           seedFirstName = nameParts[0];
           seedLastName = nameParts[0];
         } else if (nameParts.length === 2) {
-          // Two names - treat as firstName lastName
-          seedFirstName = nameParts[0];
-          seedLastName = nameParts[1];
+          // Two names - treat as lastName firstName (Russian convention)
+          seedLastName = nameParts[0];
+          seedFirstName = nameParts[1];
         } else if (nameParts.length >= 3) {
           // Three or more - first is lastName (Russian convention)
           seedLastName = nameParts[0];

@@ -1491,7 +1491,7 @@ export default function EventSummary() {
                 <thead>
                   <tr className="border-b">
                     <th className="sticky left-0 bg-background z-10 text-center p-2 font-medium border-r w-[56px]" rowSpan={2}>№</th>
-                    <th className="sticky left-[56px] bg-background z-10 text-left p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" rowSpan={2}>ФИО</th>
+                    <th className="sticky left-[57px] bg-background z-10 text-left p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" rowSpan={2}>ФИО</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Данные туриста</th>
                     <th className="text-center p-2 font-medium border-r w-16" rowSpan={2}>Лид</th>
                     {event.cities.map((city) => {
@@ -1569,7 +1569,7 @@ export default function EventSummary() {
                         </td>
                         
                         {/* Name column - sticky */}
-                        <td className="sticky left-[56px] bg-background z-10 p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" data-testid={`text-name-${participant.deal.id}`}>
+                        <td className="sticky left-[57px] bg-background z-10 p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" data-testid={`text-name-${participant.deal.id}`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <span>{participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}</span>

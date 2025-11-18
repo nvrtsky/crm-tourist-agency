@@ -119,7 +119,7 @@ export default function Leads() {
       
       // If lead was created with eventId, invalidate participants cache for that event
       if (newLead.eventId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/events", newLead.eventId, "participants"] });
+        queryClient.invalidateQueries({ queryKey: [`/api/events/${newLead.eventId}/participants`] });
       }
       
       setIsCreateDialogOpen(false);
@@ -157,10 +157,10 @@ export default function Leads() {
       const newEventId = variables.data.eventId;
       
       if (oldEventId) {
-        await queryClient.invalidateQueries({ queryKey: ["/api/events", oldEventId, "participants"] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/events/${oldEventId}/participants`] });
       }
       if (newEventId && newEventId !== oldEventId) {
-        await queryClient.invalidateQueries({ queryKey: ["/api/events", newEventId, "participants"] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/events/${newEventId}/participants`] });
       }
       
       setEditingLead(null);
@@ -1093,7 +1093,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       // Invalidate event participants cache if lead has an event assigned
       if (lead?.eventId) {
         console.log("[TOURIST] Invalidating event participants for event:", lead.eventId);
-        await queryClient.invalidateQueries({ queryKey: ["/api/events", lead.eventId, "participants"] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/events/${lead.eventId}/participants`] });
       }
       
       setIsTouristDialogOpen(false);
@@ -1124,7 +1124,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       
       // Invalidate event participants cache if lead has an event assigned
       if (lead?.eventId) {
-        await queryClient.invalidateQueries({ queryKey: ["/api/events", lead.eventId, "participants"] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/events/${lead.eventId}/participants`] });
       }
       
       setIsTouristDialogOpen(false);
@@ -1154,7 +1154,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       
       // Invalidate event participants cache if lead has an event assigned
       if (lead?.eventId) {
-        await queryClient.invalidateQueries({ queryKey: ["/api/events", lead.eventId, "participants"] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/events/${lead.eventId}/participants`] });
       }
     },
     onError: (error: Error) => {
@@ -1177,7 +1177,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       
       // Invalidate event participants cache if lead has an event assigned
       if (lead?.eventId) {
-        await queryClient.invalidateQueries({ queryKey: ["/api/events", lead.eventId, "participants"] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/events/${lead.eventId}/participants`] });
       }
       
       toast({

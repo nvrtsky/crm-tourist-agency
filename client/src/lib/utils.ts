@@ -15,8 +15,13 @@ export interface TouristDataCompleteness {
 }
 
 export function calculateTouristDataCompleteness(tourist: LeadTourist): TouristDataCompleteness {
-  const checkFields = (fields: (string | null | undefined)[]): CompletenessStatus => {
-    const nonEmptyCount = fields.filter(f => f !== null && f !== undefined && f.trim() !== "").length;
+  const checkFields = (fields: (string | null | undefined | Date)[]): CompletenessStatus => {
+    const nonEmptyCount = fields.filter(f => {
+      if (f === null || f === undefined) return false;
+      if (f instanceof Date) return true;
+      if (typeof f === "string") return f.trim() !== "";
+      return true;
+    }).length;
     const totalCount = fields.length;
     
     if (nonEmptyCount === 0) return "empty";
@@ -24,31 +29,60 @@ export function calculateTouristDataCompleteness(tourist: LeadTourist): TouristD
     return "partial";
   };
 
-  // Для личных данных: email и телефон обязательны только для основного туриста
-  const personalFields = [
+  const checkArrayField = (arr: string[] | null | undefined): boolean => {
+    return arr !== null && arr !== undefined && arr.length > 0;
+  };
+
+  // Для личных данных: middleName, email и телефон обязательны только для основного туриста
+  const personalFields: (string | null | undefined | Date)[] = [
     tourist.lastName,
     tourist.firstName,
     tourist.dateOfBirth,
   ];
   
-  // Добавляем email и phone только если это основной турист (явная проверка на true)
+  // Добавляем middleName, email и phone только если это основной турист (явная проверка на true)
   if (tourist.isPrimary === true) {
-    personalFields.push(tourist.email, tourist.phone);
+    personalFields.push(tourist.middleName, tourist.email, tourist.phone);
   }
   
   const personal = checkFields(personalFields);
 
-  const russianPassport = checkFields([
-    tourist.passportSeries,
-    tourist.passportIssuedBy,
-    tourist.registrationAddress,
-  ]);
+  // Паспорт РФ обязателен только для основных туристов
+  let russianPassport: CompletenessStatus;
+  if (tourist.isPrimary === true) {
+    russianPassport = checkFields([
+      tourist.passportSeries,
+      tourist.passportIssuedBy,
+      tourist.registrationAddress,
+    ]);
+  } else {
+    // Для неосновных туристов паспорт РФ необязателен - всегда complete
+    russianPassport = "complete";
+  }
 
-  const foreignPassport = checkFields([
+  // Загранпаспорт обязателен для всех туристов (ФИО латиницей + номер + срок + сканы)
+  const foreignPassportFields = [
     tourist.foreignPassportName,
     tourist.foreignPassportNumber,
     tourist.foreignPassportValidUntil,
-  ]);
+  ];
+  
+  // Проверяем наличие сканов загранпаспорта
+  const hasScans = checkArrayField(tourist.passportScans);
+  
+  const foreignPassportStatus = checkFields(foreignPassportFields);
+  
+  // Если все поля заполнены И есть сканы - complete
+  // Если нет ничего И нет сканов - empty
+  // Иначе - partial
+  let foreignPassport: CompletenessStatus;
+  if (foreignPassportStatus === "complete" && hasScans) {
+    foreignPassport = "complete";
+  } else if (foreignPassportStatus === "empty" && !hasScans) {
+    foreignPassport = "empty";
+  } else {
+    foreignPassport = "partial";
+  }
 
   return {
     personal,

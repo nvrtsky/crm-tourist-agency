@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { useState, Fragment } from "react";
+import { useState, Fragment, useRef, useLayoutEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -624,6 +624,10 @@ export default function EventSummary() {
   const [showCreateMiniGroupDialog, setShowCreateMiniGroupDialog] = useState(false);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  
+  // Measure first sticky column width dynamically
+  const firstColumnRef = useRef<HTMLTableCellElement>(null);
+  const [stickyOffset, setStickyOffset] = useState<number>(56);
 
   const { data: event, isLoading: eventLoading } = useQuery<EventWithStats>({
     queryKey: [`/api/events/${eventId}`],
@@ -683,6 +687,23 @@ export default function EventSummary() {
     return 0;
   });
 
+  // Measure the actual width of the first sticky column
+  useLayoutEffect(() => {
+    const measureWidth = () => {
+      if (firstColumnRef.current) {
+        const width = firstColumnRef.current.offsetWidth;
+        setStickyOffset(width);
+      }
+    };
+    
+    measureWidth();
+    window.addEventListener('resize', measureWidth);
+    
+    return () => {
+      window.removeEventListener('resize', measureWidth);
+    };
+  }, [participants.length]); // Re-measure when participants change
+  
   // Pre-compute first participant indices for each lead and group
   // This ensures rowSpan merging works even when isPrimary/isPrimaryInGroup flags are missing
   const leadFirstIndexMap = new Map<string, number>();
@@ -1490,8 +1511,8 @@ export default function EventSummary() {
               <table className="w-full text-sm border-collapse" data-testid="table-participants">
                 <thead>
                   <tr className="border-b">
-                    <th className="sticky left-0 bg-background z-10 text-center p-2 font-medium w-[56px]" rowSpan={2}>№</th>
-                    <th className="sticky left-[56px] bg-background z-10 text-left p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" rowSpan={2}>ФИО</th>
+                    <th ref={firstColumnRef} className="sticky left-0 bg-background z-10 text-center p-2 font-medium w-[56px]" rowSpan={2}>№</th>
+                    <th className="sticky bg-background z-10 text-left p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" style={{ left: `${stickyOffset}px` }} rowSpan={2}>ФИО</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Данные туриста</th>
                     <th className="text-center p-2 font-medium border-r w-16" rowSpan={2}>Лид</th>
                     {event.cities.map((city) => {
@@ -1569,7 +1590,7 @@ export default function EventSummary() {
                         </td>
                         
                         {/* Name column - sticky */}
-                        <td className="sticky left-[56px] bg-background z-10 p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" data-testid={`text-name-${participant.deal.id}`}>
+                        <td className="sticky bg-background z-10 p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" style={{ left: `${stickyOffset}px` }} data-testid={`text-name-${participant.deal.id}`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <span>{participant.leadTourist?.foreignPassportName || participant.contact?.name || "—"}</span>

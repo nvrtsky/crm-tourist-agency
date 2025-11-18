@@ -840,7 +840,6 @@ export default function EventSummary() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
       toast({
         title: "Сохранено",
         description: "Данные обновлены",
@@ -860,7 +859,6 @@ export default function EventSummary() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
       toast({
         title: "Создано",
         description: "Новое посещение добавлено",
@@ -912,7 +910,6 @@ export default function EventSummary() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
       setShowCreateMiniGroupDialog(false);
       miniGroupForm.reset();
       toast({
@@ -944,7 +941,6 @@ export default function EventSummary() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
       toast({
         title: "Успешно",
         description: "Участник удален из группы",
@@ -2010,7 +2006,6 @@ export default function EventSummary() {
         onClose={() => setEditingContactId(null)}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
-          queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
         }}
         userRole={user?.role}
       />
@@ -2044,9 +2039,6 @@ function TouristDetailsDialog({ contactId, onClose, onSuccess, userRole }: Touri
       return apiRequest("PATCH", `/api/contacts/${contactId}/details`, data);
     },
     onSuccess: () => {
-      // Invalidate contact details cache so dialog shows fresh data if reopened
-      queryClient.invalidateQueries({ queryKey: ["/api/contacts", contactId, "details"] });
-      // Call parent's onSuccess to invalidate participants list
       onSuccess();
       toast({
         title: "Успешно",

@@ -70,7 +70,7 @@ export function DataCompletenessIndicator({ completeness }: DataCompletenessIndi
             >
               <Icon className="h-3.5 w-3.5" />
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent side="bottom" collisionPadding={8}>
               <p className="font-semibold">{categoryLabels[category]}</p>
               <p className="text-xs text-muted-foreground">{categoryDescriptions[category][status]}</p>
             </TooltipContent>

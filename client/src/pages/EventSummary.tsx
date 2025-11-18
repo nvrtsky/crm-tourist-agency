@@ -641,9 +641,11 @@ export default function EventSummary() {
     enabled: !!eventId,
   });
 
-  // Sort participants by composite key: (leadId, isPrimary, groupId, isPrimaryInGroup)
-  // This allows unrelated leads and non-lead members to interleave based on group relationships
+  // Sort participants by: (1) confirmed leads first, (2) leadId, (3) isPrimary, (4) groupId, (5) isPrimaryInGroup
+  // This ensures confirmed participants appear at the top while maintaining group relationships
   const participants = rawParticipants.slice().sort((a, b) => {
+    const aIsConfirmed = a.lead?.status === "converted";
+    const bIsConfirmed = b.lead?.status === "converted";
     const aLeadId = a.contact?.leadId ?? '';
     const bLeadId = b.contact?.leadId ?? '';
     const aGroupId = a.deal.groupId ?? '';
@@ -653,22 +655,27 @@ export default function EventSummary() {
     const aIsPrimaryInGroup = a.deal.isPrimaryInGroup || false;
     const bIsPrimaryInGroup = b.deal.isPrimaryInGroup || false;
     
-    // Compare by leadId (empty string sorts equally with other empty strings)
+    // First: sort by confirmed status (confirmed participants first)
+    if (aIsConfirmed !== bIsConfirmed) {
+      return aIsConfirmed ? -1 : 1;
+    }
+    
+    // Second: compare by leadId (empty string sorts equally with other empty strings)
     if (aLeadId !== bLeadId) {
       return aLeadId.localeCompare(bLeadId);
     }
     
-    // Same leadId (including both empty) - compare by isPrimary
+    // Third: same leadId (including both empty) - compare by isPrimary
     if (aIsPrimary !== bIsPrimary) {
       return aIsPrimary ? -1 : 1;
     }
     
-    // Same leadId and primary status - compare by groupId
+    // Fourth: same leadId and primary status - compare by groupId
     if (aGroupId !== bGroupId) {
       return aGroupId.localeCompare(bGroupId);
     }
     
-    // Same groupId - compare by isPrimaryInGroup
+    // Fifth: same groupId - compare by isPrimaryInGroup
     if (aIsPrimaryInGroup !== bIsPrimaryInGroup) {
       return aIsPrimaryInGroup ? -1 : 1;
     }
@@ -1307,7 +1314,7 @@ export default function EventSummary() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {participants.filter(p => p.deal.status === "confirmed").length}
+              {participants.filter(p => p.lead?.status === "converted").length}
             </div>
             <p className="text-xs text-muted-foreground">Готовы к туру</p>
           </CardContent>
@@ -1319,7 +1326,7 @@ export default function EventSummary() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {participants.filter(p => p.deal.status === "pending").length}
+              {participants.filter(p => p.lead?.status && p.lead.status !== "converted" && p.lead.status !== "lost").length}
             </div>
             <p className="text-xs text-muted-foreground">Требуют подтверждения</p>
           </CardContent>
@@ -1332,7 +1339,7 @@ export default function EventSummary() {
           <CardContent>
             <div className="text-2xl font-bold">
               {formatCurrency(participants
-                .filter(p => p.deal.status === "confirmed")
+                .filter(p => p.lead?.status === "converted")
                 .reduce((sum, p) => sum + Number(p.deal.amount || 0), 0))} ₽
             </div>
             <p className="text-xs text-muted-foreground">От подтвержденных</p>

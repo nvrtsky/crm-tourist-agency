@@ -16,11 +16,13 @@ async function seed() {
 
   console.log("✅ Existing data cleared");
 
-  // Create test leads
-  console.log("📝 Creating test leads...");
+  // Create 15 test leads with variety
+  console.log("📝 Creating 15 test leads...");
   const testLeads = await db.insert(leads).values([
     {
-      name: "Иванов Петр Сергеевич",
+      lastName: "Иванов",
+      firstName: "Петр",
+      middleName: "Сергеевич",
       email: "ivanov@example.com",
       phone: "+7 (999) 123-45-67",
       status: "new",
@@ -28,7 +30,9 @@ async function seed() {
       notes: "Интересуется групповым туром в Китай",
     },
     {
-      name: "Сидорова Анна Михайловна",
+      lastName: "Сидорова",
+      firstName: "Анна",
+      middleName: "Михайловна",
       email: "sidorova@example.com",
       phone: "+7 (999) 234-56-78",
       status: "contacted",
@@ -36,7 +40,9 @@ async function seed() {
       notes: "Звонила по телефону, хочет индивидуальный тур",
     },
     {
-      name: "Козлов Дмитрий Александрович",
+      lastName: "Козлов",
+      firstName: "Дмитрий",
+      middleName: "Александрович",
       email: "kozlov@example.com",
       phone: "+7 (999) 345-67-89",
       status: "qualified",
@@ -44,7 +50,9 @@ async function seed() {
       notes: "Готов бронировать, ждет подтверждения дат",
     },
     {
-      name: "Морозова Елена Владимировна",
+      lastName: "Морозова",
+      firstName: "Елена",
+      middleName: "Владимировна",
       email: "morozova@example.com",
       phone: "+7 (999) 456-78-90",
       status: "converted",
@@ -52,19 +60,121 @@ async function seed() {
       notes: "Конвертирована в контакт, забронирован тур в Таиланд",
     },
     {
-      name: "Новиков Сергей Петрович",
+      lastName: "Новиков",
+      firstName: "Сергей",
+      middleName: "Петрович",
       email: "novikov@example.com",
       phone: "+7 (999) 567-89-01",
       status: "lost",
       source: "referral",
       notes: "Решил отложить поездку на следующий год",
     },
+    {
+      lastName: "Попова",
+      firstName: "Наталья",
+      middleName: "Ивановна",
+      email: "popova@example.com",
+      phone: "+7 (999) 678-90-12",
+      status: "new",
+      source: "website",
+      notes: "Интересуется турами в Японию",
+    },
+    {
+      lastName: "Васильев",
+      firstName: "Игорь",
+      middleName: "Викторович",
+      email: "vasiliev@example.com",
+      phone: "+7 (999) 789-01-23",
+      status: "contacted",
+      source: "social_media",
+      notes: "Написал в Instagram, хочет тур на двоих",
+    },
+    {
+      lastName: "Федорова",
+      firstName: "Марина",
+      middleName: "Александровна",
+      email: "fedorova@example.com",
+      phone: "+7 (999) 890-12-34",
+      status: "qualified",
+      source: "website",
+      notes: "Обсудили детали, готова бронировать Вьетнам",
+    },
+    {
+      lastName: "Григорьев",
+      firstName: "Алексей",
+      middleName: "Петрович",
+      email: "grigoriev@example.com",
+      phone: "+7 (999) 901-23-45",
+      status: "converted",
+      source: "direct",
+      notes: "Постоянный клиент, забронирован тур в Корею",
+    },
+    {
+      lastName: "Соколова",
+      firstName: "Ольга",
+      middleName: "Дмитриевна",
+      email: "sokolova@example.com",
+      phone: "+7 (999) 012-34-56",
+      status: "new",
+      source: "referral",
+      notes: "Порекомендовали друзья, интересуется Индией",
+    },
+    {
+      lastName: "Лебедев",
+      firstName: "Владимир",
+      middleName: "Иванович",
+      email: "lebedev@example.com",
+      phone: "+7 (999) 111-22-33",
+      status: "contacted",
+      source: "website",
+      notes: "Звонок запланирован на завтра",
+    },
+    {
+      lastName: "Павлова",
+      firstName: "Татьяна",
+      middleName: "Сергеевна",
+      email: "pavlova@example.com",
+      phone: "+7 (999) 222-33-44",
+      status: "qualified",
+      source: "social_media",
+      notes: "Готова к бронированию, ждет скидку для группы",
+    },
+    {
+      lastName: "Орлов",
+      firstName: "Николай",
+      middleName: "Михайлович",
+      email: "orlov@example.com",
+      phone: "+7 (999) 333-44-55",
+      status: "new",
+      source: "direct",
+      notes: "Пришел в офис, взял каталог туров",
+    },
+    {
+      lastName: "Белова",
+      firstName: "Екатерина",
+      middleName: "Андреевна",
+      email: "belova@example.com",
+      phone: "+7 (999) 444-55-66",
+      status: "contacted",
+      source: "website",
+      notes: "Запросила детальную программу тура",
+    },
+    {
+      lastName: "Захаров",
+      firstName: "Андрей",
+      middleName: "Владимирович",
+      email: "zakharov@example.com",
+      phone: "+7 (999) 555-66-77",
+      status: "lost",
+      source: "referral",
+      notes: "Выбрал другое агентство из-за цены",
+    },
   ]).returning();
 
   console.log(`✅ Created ${testLeads.length} test leads`);
 
-  // Create test events (tours)
-  console.log("🎫 Creating test events...");
+  // Create 5 test events (tours)
+  console.log("🎫 Creating 5 test events...");
   const testEvents = await db.insert(events).values([
     {
       name: "Классический Китай: 5 городов",
@@ -78,7 +188,7 @@ async function seed() {
       price: "125000",
     },
     {
-      name: "Тайланд: Бангкок и острова",
+      name: "Таиланд: Бангкок и острова",
       description: "Экскурсионный тур по Бангкоку с отдыхом на островах Пхукет и Краби",
       country: "Таиланд",
       cities: ["Бангкок", "Пхукет", "Краби"],
@@ -121,22 +231,11 @@ async function seed() {
       participantLimit: 16,
       price: "115000",
     },
-    {
-      name: "Индия: Золотой треугольник",
-      description: "Классический маршрут: Дели, Агра (Тадж-Махал), Джайпур",
-      country: "Индия",
-      cities: ["Дели", "Агра", "Джайпур"],
-      tourType: "group",
-      startDate: "2025-02-01",
-      endDate: "2025-02-08",
-      participantLimit: 10,
-      price: "89000",
-    },
   ]).returning();
 
   console.log(`✅ Created ${testEvents.length} test events`);
 
-  // Create test contacts (converted from leads)
+  // Create test contacts (converted from leads + additional)
   console.log("👥 Creating test contacts...");
   const testContacts = await db.insert(contacts).values([
     {
@@ -149,12 +248,13 @@ async function seed() {
       notes: "Предпочитает отели 4*, аллергия на морепродукты",
     },
     {
-      name: "Петрова Мария Ивановна",
-      email: "petrova@example.com",
-      phone: "+7 (999) 111-22-33",
+      name: "Григорьев Алексей Петрович",
+      email: "grigoriev@example.com",
+      phone: "+7 (999) 901-23-45",
       passport: "2345 678901",
       birthDate: "1990-03-22",
-      notes: "VIP клиент, требует особого внимания",
+      leadId: testLeads[8].id,
+      notes: "Постоянный клиент, требует особого внимания",
     },
     {
       name: "Смирнов Алексей Викторович",
@@ -162,7 +262,7 @@ async function seed() {
       phone: "+7 (999) 222-33-44",
       passport: "3456 789012",
       birthDate: "1978-11-30",
-      notes: "Постоянный клиент, едет с женой",
+      notes: "Едет с женой",
     },
     {
       name: "Смирнова Ольга Петровна",
@@ -181,14 +281,6 @@ async function seed() {
       notes: "Первая поездка, нужна помощь с визой",
     },
     {
-      name: "Соколова Татьяна Андреевна",
-      email: "sokolova@example.com",
-      phone: "+7 (999) 444-55-66",
-      passport: "5678 901234",
-      birthDate: "1988-09-25",
-      notes: "Интересуется дополнительными экскурсиями",
-    },
-    {
       name: "Кузнецов Владимир Михайлович",
       email: "kuznetsov@example.com",
       phone: "+7 (999) 555-66-77",
@@ -204,139 +296,60 @@ async function seed() {
       birthDate: "1992-12-03",
       notes: "Молодая пара, медовый месяц",
     },
+    {
+      name: "Петров Максим Андреевич",
+      email: "petrov@example.com",
+      phone: "+7 (999) 777-88-99",
+      passport: "8901 234567",
+      birthDate: "1988-05-20",
+      notes: "Часто ездит в командировки по Азии",
+    },
+    {
+      name: "Николаева Ирина Владимировна",
+      email: "nikolaeva@example.com",
+      phone: "+7 (999) 888-99-00",
+      passport: "9012 345678",
+      birthDate: "1993-09-14",
+      notes: "VIP клиент, бронирует туры на всю семью",
+    },
+    {
+      name: "Романов Дмитрий Сергеевич",
+      email: "romanov@example.com",
+      phone: "+7 (999) 999-00-11",
+      passport: "0123 456789",
+      birthDate: "1986-02-28",
+      notes: "Интересуется дополнительными экскурсиями",
+    },
   ]).returning();
 
   console.log(`✅ Created ${testContacts.length} test contacts`);
 
-  // Create test deals (bookings)
+  // Create test deals (bookings) for various tours
   console.log("💰 Creating test deals...");
   const testDeals = await db.insert(deals).values([
-    // Китай - почти полная группа (18/20)
-    {
-      contactId: testContacts[0].id,
-      eventId: testEvents[0].id,
-      status: "confirmed",
-      amount: "125000",
-    },
-    {
-      contactId: testContacts[1].id,
-      eventId: testEvents[0].id,
-      status: "confirmed",
-      amount: "125000",
-    },
-    {
-      contactId: testContacts[2].id,
-      eventId: testEvents[0].id,
-      status: "confirmed",
-      amount: "125000",
-    },
-    {
-      contactId: testContacts[3].id,
-      eventId: testEvents[0].id,
-      status: "confirmed",
-      amount: "125000",
-    },
-    {
-      contactId: testContacts[4].id,
-      eventId: testEvents[0].id,
-      status: "pending",
-      amount: "125000",
-    },
-    {
-      contactId: testContacts[5].id,
-      eventId: testEvents[0].id,
-      status: "confirmed",
-      amount: "125000",
-    },
-    {
-      contactId: testContacts[6].id,
-      eventId: testEvents[0].id,
-      status: "confirmed",
-      amount: "125000",
-    },
-    {
-      contactId: testContacts[7].id,
-      eventId: testEvents[0].id,
-      status: "confirmed",
-      amount: "125000",
-    },
-    // Добавим еще 10 для Китая (всего 18)
-    ...Array.from({ length: 10 }, (_, i) => ({
+    // Китай - почти полная группа (16/20)
+    ...Array.from({ length: 16 }, (_, i) => ({
       contactId: testContacts[i % testContacts.length].id,
       eventId: testEvents[0].id,
-      status: "confirmed" as const,
+      status: i < 14 ? ("confirmed" as const) : ("pending" as const),
       amount: "125000",
     })),
 
-    // Таиланд - средняя заполненность (8/15)
-    {
-      contactId: testContacts[0].id,
+    // Таиланд - средняя заполненность (9/15)
+    ...Array.from({ length: 9 }, (_, i) => ({
+      contactId: testContacts[i % testContacts.length].id,
       eventId: testEvents[1].id,
-      status: "confirmed",
+      status: i < 7 ? ("confirmed" as const) : (i === 8 ? ("cancelled" as const) : ("pending" as const)),
       amount: "95000",
-    },
-    {
-      contactId: testContacts[1].id,
-      eventId: testEvents[1].id,
-      status: "confirmed",
-      amount: "95000",
-    },
-    {
-      contactId: testContacts[2].id,
-      eventId: testEvents[1].id,
-      status: "pending",
-      amount: "95000",
-    },
-    {
-      contactId: testContacts[3].id,
-      eventId: testEvents[1].id,
-      status: "confirmed",
-      amount: "95000",
-    },
-    {
-      contactId: testContacts[4].id,
-      eventId: testEvents[1].id,
-      status: "confirmed",
-      amount: "95000",
-    },
-    {
-      contactId: testContacts[5].id,
-      eventId: testEvents[1].id,
-      status: "pending",
-      amount: "95000",
-    },
-    {
-      contactId: testContacts[6].id,
-      eventId: testEvents[1].id,
-      status: "confirmed",
-      amount: "95000",
-    },
-    {
-      contactId: testContacts[7].id,
-      eventId: testEvents[1].id,
-      status: "cancelled",
-      amount: "95000",
-    },
+    })),
 
-    // Вьетнам - мало участников (3/18)
-    {
-      contactId: testContacts[0].id,
+    // Вьетнам - мало участников (4/18)
+    ...Array.from({ length: 4 }, (_, i) => ({
+      contactId: testContacts[i].id,
       eventId: testEvents[2].id,
-      status: "confirmed",
+      status: i < 3 ? ("confirmed" as const) : ("pending" as const),
       amount: "105000",
-    },
-    {
-      contactId: testContacts[1].id,
-      eventId: testEvents[2].id,
-      status: "pending",
-      amount: "105000",
-    },
-    {
-      contactId: testContacts[2].id,
-      eventId: testEvents[2].id,
-      status: "confirmed",
-      amount: "105000",
-    },
+    })),
 
     // Япония - полностью забронирована (12/12)
     ...Array.from({ length: 12 }, (_, i) => ({
@@ -346,27 +359,13 @@ async function seed() {
       amount: "185000",
     })),
 
-    // Корея - средняя (5/16)
-    ...Array.from({ length: 5 }, (_, i) => ({
+    // Корея - средняя (6/16)
+    ...Array.from({ length: 6 }, (_, i) => ({
       contactId: testContacts[i].id,
       eventId: testEvents[4].id,
-      status: i < 4 ? ("confirmed" as const) : ("pending" as const),
+      status: i < 5 ? ("confirmed" as const) : ("pending" as const),
       amount: "115000",
     })),
-
-    // Индия - низкая (2/10)
-    {
-      contactId: testContacts[0].id,
-      eventId: testEvents[5].id,
-      status: "confirmed",
-      amount: "89000",
-    },
-    {
-      contactId: testContacts[1].id,
-      eventId: testEvents[5].id,
-      status: "pending",
-      amount: "89000",
-    },
   ]).returning();
 
   console.log(`✅ Created ${testDeals.length} test deals`);
@@ -389,16 +388,16 @@ async function seed() {
       cityVisitsList.push({
         dealId: deal.id,
         city,
-        arrivalDate: isFirstCity ? "2025-06-01" : `2025-06-0${j + 1}`,
+        arrivalDate: isFirstCity ? "2025-03-15" : `2025-03-${16 + j}`,
         arrivalTime: isFirstCity ? "14:30" : "10:00",
-        departureDate: isLastCity ? "2025-06-10" : `2025-06-0${j + 2}`,
+        departureDate: isLastCity ? "2025-03-25" : `2025-03-${17 + j}`,
         departureTime: isLastCity ? "18:00" : "15:00",
         transportType: isFirstCity ? "plane" : (j % 2 === 0 ? "plane" : "train"),
         departureTransportType: isLastCity ? "plane" : (j % 2 === 0 ? "train" : "plane"),
-        flightNumber: isFirstCity ? "SU221" : (j % 2 === 0 ? `CA${100 + j}` : `G${200 + j}`),
+        flightNumber: isFirstCity ? "SU221" : (j % 2 === 0 ? `CA${100 + j}` : undefined),
         airport: isFirstCity ? "Sheremetyevo" : undefined,
-        departureFlightNumber: isLastCity ? "SU222" : (j % 2 === 0 ? `G${300 + j}` : `CA${400 + j}`),
-        hotelName: `Hotel ${city} ${i + 1}`,
+        departureFlightNumber: isLastCity ? "SU222" : (j % 2 === 0 ? undefined : `CA${400 + j}`),
+        hotelName: `${city} Grand Hotel`,
         roomType: i % 3 === 0 ? "single" : (i % 3 === 1 ? "twin" : "double"),
       });
     }
@@ -412,7 +411,7 @@ async function seed() {
   const testNotifications = await db.insert(notifications).values([
     {
       type: "group_filled",
-      message: `Группа "${testEvents[0].name}" почти заполнена! Осталось только 2 места из 20.`,
+      message: `Группа "${testEvents[0].name}" почти заполнена! Осталось только 4 места из 20.`,
       eventId: testEvents[0].id,
       isRead: false,
     },
@@ -425,14 +424,14 @@ async function seed() {
     },
     {
       type: "upcoming_event",
-      message: `Тур "${testEvents[5].name}" начинается через 5 дней (${testEvents[5].startDate})`,
-      eventId: testEvents[5].id,
+      message: `Тур "${testEvents[1].name}" начинается через 10 дней (${testEvents[1].startDate})`,
+      eventId: testEvents[1].id,
       isRead: false,
     },
     {
       type: "birthday",
-      message: `День рождения участника ${testContacts[7].name} в текущем месяце`,
-      contactId: testContacts[7].id,
+      message: `День рождения участника ${testContacts[6].name} в текущем месяце`,
+      contactId: testContacts[6].id,
       isRead: true,
     },
   ]).returning();

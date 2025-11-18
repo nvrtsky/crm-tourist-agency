@@ -24,13 +24,19 @@ export function calculateTouristDataCompleteness(tourist: LeadTourist): TouristD
     return "partial";
   };
 
-  const personal = checkFields([
+  // Для личных данных: email и телефон обязательны только для основного туриста
+  const personalFields = [
     tourist.lastName,
     tourist.firstName,
     tourist.dateOfBirth,
-    tourist.email,
-    tourist.phone,
-  ]);
+  ];
+  
+  // Добавляем email и phone только если это основной турист (явная проверка на true)
+  if (tourist.isPrimary === true) {
+    personalFields.push(tourist.email, tourist.phone);
+  }
+  
+  const personal = checkFields(personalFields);
 
   const russianPassport = checkFields([
     tourist.passportSeries,

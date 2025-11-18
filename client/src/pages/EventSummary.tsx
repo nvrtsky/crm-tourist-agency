@@ -226,7 +226,7 @@ function ParticipantCard({
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-7 w-7 shrink-0"
+                                className="h-6 w-6 shrink-0"
                                 onClick={() => handleEditTourist(member.contact?.id, member)}
                                 data-testid={`button-edit-family-member-${member.deal.id}`}
                               >
@@ -304,7 +304,7 @@ function ParticipantCard({
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-7 w-7 shrink-0"
+                                className="h-6 w-6 shrink-0"
                                 onClick={() => handleEditTourist(member.contact?.id, member)}
                                 data-testid={`button-edit-member-${member.deal.id}`}
                               >

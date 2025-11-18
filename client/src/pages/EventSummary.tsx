@@ -2039,7 +2039,12 @@ function TouristDetailsDialog({ contactId, onClose, onSuccess, userRole }: Touri
       return apiRequest("PATCH", `/api/contacts/${contactId}/details`, data);
     },
     onSuccess: () => {
+      // Invalidate contact details cache
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts", contactId, "details"] });
+      
+      // Call parent onSuccess callback to invalidate participants cache
       onSuccess();
+      
       toast({
         title: "Успешно",
         description: "Данные туриста обновлены",

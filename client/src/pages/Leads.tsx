@@ -141,12 +141,27 @@ export default function Leads() {
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertLead> }) => {
       return await apiRequest("PATCH", `/api/leads/${id}`, data);
     },
-    onSuccess: async () => {
+    onMutate: async (variables) => {
+      // Capture old eventId at mutation time to avoid race conditions
+      const lead = leads.find(l => l.id === variables.id);
+      return { oldEventId: lead?.eventId };
+    },
+    onSuccess: async (_result, variables, context) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/leads"] });
       
       // Refetch events to update status counters in EventCard
       await queryClient.refetchQueries({ queryKey: ["/api/events"] });
+      
+      // If eventId changed, invalidate participants cache for both old and new events
+      const oldEventId = context?.oldEventId;
+      const newEventId = variables.data.eventId;
+      
+      if (oldEventId) {
+        await queryClient.invalidateQueries({ queryKey: ["/api/events", oldEventId, "participants"] });
+      }
+      if (newEventId && newEventId !== oldEventId) {
+        await queryClient.invalidateQueries({ queryKey: ["/api/events", newEventId, "participants"] });
+      }
       
       setEditingLead(null);
       toast({
@@ -1350,7 +1365,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                           setCostCalculation(null);
                         }
                       }}
-                      value={field.value || undefined}
+                      value={field.value ?? ''}
                       data-testid="select-eventId"
                     >
                       <FormControl>
@@ -1585,7 +1600,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                     <FormLabel>Категория клиента</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      value={field.value || undefined} 
+                      value={field.value ?? ''} 
                       data-testid="select-clientCategory"
                     >
                       <FormControl>
@@ -1665,7 +1680,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                     <FormLabel>Ответственный</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      value={field.value || undefined} 
+                      value={field.value ?? ''} 
                       data-testid="select-assignedUserId"
                     >
                       <FormControl>

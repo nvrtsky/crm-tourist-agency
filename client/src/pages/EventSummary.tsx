@@ -110,6 +110,7 @@ function TransportTypeSelector({ value, onSave, className, testIdSuffix = '' }: 
         onClick={() => onSave(value === "plane" ? null : "plane")}
         aria-label="Самолет"
         data-testid={`button-transport-plane${testIdSuffix}`}
+        className="h-6 w-6"
       >
         <Plane className="h-3 w-3" />
       </Button>
@@ -120,6 +121,7 @@ function TransportTypeSelector({ value, onSave, className, testIdSuffix = '' }: 
         onClick={() => onSave(value === "train" ? null : "train")}
         aria-label="Поезд"
         data-testid={`button-transport-train${testIdSuffix}`}
+        className="h-6 w-6"
       >
         <Train className="h-3 w-3" />
       </Button>
@@ -365,8 +367,9 @@ function ParticipantCard({
                 variant="ghost"
                 onClick={() => handleEditTourist(participant.contact?.id, participant)}
                 data-testid={`button-edit-tourist-${participant.deal.id}`}
+                className="h-6 w-6"
               >
-                <Edit className="h-4 w-4" />
+                <Edit className="h-3 w-3" />
               </Button>
             )}
             {participant.deal.groupId && (
@@ -381,8 +384,9 @@ function ParticipantCard({
                 }}
                 disabled={removeFromGroupPending}
                 data-testid={`button-remove-from-group-${participant.deal.id}`}
+                className="h-6 w-6"
               >
-                <UserMinus className="h-4 w-4" />
+                <UserMinus className="h-3 w-3" />
               </Button>
             )}
           </div>

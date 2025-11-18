@@ -16,8 +16,8 @@ async function seed() {
 
   console.log("✅ Existing data cleared");
 
-  // Create 15 test leads with variety
-  console.log("📝 Creating 15 test leads...");
+  // Create 20 test leads with variety
+  console.log("📝 Creating 20 test leads...");
   const testLeads = await db.insert(leads).values([
     {
       lastName: "Иванов",
@@ -169,12 +169,62 @@ async function seed() {
       source: "referral",
       notes: "Выбрал другое агентство из-за цены",
     },
+    {
+      lastName: "Крылова",
+      firstName: "Светлана",
+      middleName: "Николаевна",
+      email: "krylova@example.com",
+      phone: "+7 (999) 666-77-88",
+      status: "new",
+      source: "website",
+      notes: "Интересуется экскурсионными турами в Индонезию",
+    },
+    {
+      lastName: "Медведев",
+      firstName: "Константин",
+      middleName: "Юрьевич",
+      email: "medvedev@example.com",
+      phone: "+7 (999) 777-88-99",
+      status: "contacted",
+      source: "social_media",
+      notes: "Написал в Telegram, интересуется Индией",
+    },
+    {
+      lastName: "Романова",
+      firstName: "Ирина",
+      middleName: "Сергеевна",
+      email: "romanova@example.com",
+      phone: "+7 (999) 888-99-00",
+      status: "qualified",
+      source: "direct",
+      notes: "Обсудили детали, готова к бронированию Шри-Ланки",
+    },
+    {
+      lastName: "Тихонов",
+      firstName: "Евгений",
+      middleName: "Андреевич",
+      email: "tikhonov@example.com",
+      phone: "+7 (999) 999-00-11",
+      status: "new",
+      source: "website",
+      notes: "Оставил заявку на сайте, ждем звонка",
+    },
+    {
+      lastName: "Кузьмина",
+      firstName: "Валентина",
+      middleName: "Петровна",
+      email: "kuzmina@example.com",
+      phone: "+7 (999) 111-22-33",
+      status: "contacted",
+      source: "referral",
+      notes: "Порекомендовала подруга, хочет семейный тур",
+    },
   ]).returning();
 
   console.log(`✅ Created ${testLeads.length} test leads`);
 
-  // Create 5 test events (tours)
-  console.log("🎫 Creating 5 test events...");
+  // Create 6 test events (tours)
+  console.log("🎫 Creating 6 test events...");
   const testEvents = await db.insert(events).values([
     {
       name: "Классический Китай: 5 городов",
@@ -230,6 +280,17 @@ async function seed() {
       endDate: "2025-05-19",
       participantLimit: 16,
       price: "115000",
+    },
+    {
+      name: "Индия: Золотой треугольник",
+      description: "Классический маршрут: Дели, Агра с Тадж-Махалом, Джайпур",
+      country: "Индия",
+      cities: ["Дели", "Агра", "Джайпур", "Варанаси"],
+      tourType: "group",
+      startDate: "2025-06-01",
+      endDate: "2025-06-10",
+      participantLimit: 14,
+      price: "98000",
     },
   ]).returning();
 

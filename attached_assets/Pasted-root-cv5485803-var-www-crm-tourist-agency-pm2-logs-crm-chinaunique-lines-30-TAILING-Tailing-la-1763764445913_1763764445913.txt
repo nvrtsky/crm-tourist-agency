@@ -1,0 +1,67 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 30
+[TAILING] Tailing last 30 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 30 lines:
+0|crm-chin | }
+0|crm-chin | 
+0|crm-chin | Node.js v20.19.5
+0|crm-chin | node:internal/modules/esm/resolve:215
+0|crm-chin |   const resolvedOption = FSLegacyMainResolve(packageJsonUrlString, packageConfig.main, baseStringified);
+0|crm-chin |                          ^
+0|crm-chin | 
+0|crm-chin | Error: Cannot find package '/var/www/crm-tourist-agency/node_modules/drizzle-orm/index.js' imported from /var/www/crm-tourist-agency/dist/index.js
+0|crm-chin |     at legacyMainResolve (node:internal/modules/esm/resolve:215:26)
+0|crm-chin |     at packageResolve (node:internal/modules/esm/resolve:860:14)
+0|crm-chin |     at moduleResolve (node:internal/modules/esm/resolve:946:18)
+0|crm-chin |     at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+0|crm-chin |     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:708:12)
+0|crm-chin |     at #cachedDefaultResolve (node:internal/modules/esm/loader:657:25)
+0|crm-chin |     at ModuleLoader.resolve (node:internal/modules/esm/loader:640:38)
+0|crm-chin |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:264:38)
+0|crm-chin |     at ModuleJob._link (node:internal/modules/esm/module_job:168:49) {
+0|crm-chin |   code: 'ERR_MODULE_NOT_FOUND'
+0|crm-chin | }
+0|crm-chin | 
+0|crm-chin | Node.js v20.19.5
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+
+/root/.pm2/logs/crm-chinaunique-out.log last 30 lines:
+0|crm-chin | 
+0|crm-chin | 1:28:50 AM [express] serving on port 3000
+0|crm-chin | 
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 1:30:06 AM [express] serving on port 3000
+0|crm-chin | 📥 GET /
+0|crm-chin | 📥 GET /assets/index-Dxd6v5b5.css
+0|crm-chin | 📥 GET /assets/index-DBvLZwQE.js
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 1:31:40 AM [express] GET /api/auth/me 401 in 1ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 GET /
+0|crm-chin | 📥 GET /assets/index-Dxd6v5b5.css
+0|crm-chin | 📥 GET /assets/index-DBvLZwQE.js
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 1:31:45 AM [express] GET /api/auth/me 401 in 0ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 1:33:41 AM [express] serving on port 3000
+
+

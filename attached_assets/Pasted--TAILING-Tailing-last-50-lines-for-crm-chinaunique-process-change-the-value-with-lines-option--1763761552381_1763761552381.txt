@@ -1,0 +1,106 @@
+[TAILING] Tailing last 50 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 50 lines:
+0|crm-chin |     at file:///var/www/crm-tourist-agency/node_modules/@neondatabase/serverless/index.mjs:1345:74
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async NeonPreparedQuery.execute (file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+0|crm-chin |     at async DatabaseStorage.getUserByUsername (file:///var/www/crm-tourist-agency/dist/index.js:916:20)
+0|crm-chin |     at async Strategy._verify (file:///var/www/crm-tourist-agency/dist/index.js:1241:24)
+0|crm-chin | Error: Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:crm.chinaunique.ru
+0|crm-chin |     at file:///var/www/crm-tourist-agency/node_modules/@neondatabase/serverless/index.mjs:1345:74
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async NeonPreparedQuery.execute (file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+0|crm-chin |     at async DatabaseStorage.getUserByUsername (file:///var/www/crm-tourist-agency/dist/index.js:916:20)
+0|crm-chin |     at async Strategy._verify (file:///var/www/crm-tourist-agency/dist/index.js:1241:24)
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Error: Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:crm.chinaunique.ru
+0|crm-chin |     at file:///var/www/crm-tourist-agency/node_modules/@neondatabase/serverless/index.mjs:1345:74
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async NeonPreparedQuery.execute (file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+0|crm-chin |     at async DatabaseStorage.getUserByUsername (file:///var/www/crm-tourist-agency/dist/index.js:916:20)
+0|crm-chin |     at async Strategy._verify (file:///var/www/crm-tourist-agency/dist/index.js:1241:24)
+0|crm-chin | Error: Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:crm.chinaunique.ru
+0|crm-chin |     at file:///var/www/crm-tourist-agency/node_modules/@neondatabase/serverless/index.mjs:1345:74
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async NeonPreparedQuery.execute (file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+0|crm-chin |     at async DatabaseStorage.getUserByUsername (file:///var/www/crm-tourist-agency/dist/index.js:916:20)
+0|crm-chin |     at async Strategy._verify (file:///var/www/crm-tourist-agency/dist/index.js:1241:24)
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Error: Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:crm.chinaunique.ru
+0|crm-chin |     at file:///var/www/crm-tourist-agency/node_modules/@neondatabase/serverless/index.mjs:1345:74
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async NeonPreparedQuery.execute (file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+0|crm-chin |     at async DatabaseStorage.getUserByUsername (file:///var/www/crm-tourist-agency/dist/index.js:916:20)
+0|crm-chin |     at async Strategy._verify (file:///var/www/crm-tourist-agency/dist/index.js:1241:24)
+0|crm-chin | Error: Hostname/IP does not match certificate's altnames: Host: localhost. is not in the cert's altnames: DNS:crm.chinaunique.ru
+0|crm-chin |     at file:///var/www/crm-tourist-agency/node_modules/@neondatabase/serverless/index.mjs:1345:74
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async NeonPreparedQuery.execute (file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+0|crm-chin |     at async DatabaseStorage.getUserByUsername (file:///var/www/crm-tourist-agency/dist/index.js:916:20)
+0|crm-chin |     at async Strategy._verify (file:///var/www/crm-tourist-agency/dist/index.js:1241:24)
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+
+/root/.pm2/logs/crm-chinaunique-out.log last 50 lines:
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 12:28:04 AM [express] serving on port 3000
+0|crm-chin | 📥 GET /
+0|crm-chin | 
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 12:31:39 AM [express] serving on port 3000
+0|crm-chin | 
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 12:34:48 AM [express] serving on port 3000
+0|crm-chin | 📥 GET /login
+0|crm-chin | 📥 GET /assets/index-Dxd6v5b5.css
+0|crm-chin | 📥 GET /assets/index-DBvLZwQE.js
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 12:36:24 AM [express] GET /api/auth/me 401 in 2ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 12:36:31 AM [express] POST /api/auth/login 401 in 53ms :: {"error":"Incorrect username or password"}
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 12:36:48 AM [express] POST /api/auth/login 401 in 22ms :: {"error":"Incorrect username or password"}
+0|crm-chin | 📥 GET /login
+0|crm-chin | 📥 GET /assets/index-Dxd6v5b5.css
+0|crm-chin | 📥 GET /assets/index-DBvLZwQE.js
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 12:37:52 AM [express] GET /api/auth/me 401 in 1ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 12:37:58 AM [express] POST /api/auth/login 401 in 21ms :: {"error":"Incorrect username or password"}
+0|crm-chin | 📥 GET /login
+0|crm-chin | 📥 GET /assets/index-DBvLZwQE.js
+0|crm-chin | 📥 GET /assets/index-Dxd6v5b5.css
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 12:43:10 AM [express] GET /api/auth/me 401 in 0ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 GET /login
+0|crm-chin | 📥 GET /assets/index-Dxd6v5b5.css
+0|crm-chin | 📥 GET /assets/index-DBvLZwQE.js
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 12:43:13 AM [express] GET /api/auth/me 401 in 0ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 12:43:21 AM [express] POST /api/auth/login 401 in 78ms :: {"error":"Incorrect username or password"}
+0|crm-chin | 📥 GET /
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 12:44:09 AM [express] POST /api/auth/login 401 in 79ms :: {"error":"Incorrect username or password"}
+
+

@@ -1,6 +1,18 @@
-import { neon } from "@neondatabase/serverless";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from './shared/schema';
 
-const sql = neon(process.env.DATABASE_URL!);
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+const db = drizzle(pool, { schema });
+
+// Helper to run raw SQL queries
+async function sql(strings: TemplateStringsArray, ...values: any[]) {
+  const query = strings.reduce((acc, str, i) => {
+    return acc + str + (values[i] !== undefined ? `$${i + 1}` : '');
+  }, '');
+  const result = await pool.query(query, values);
+  return result.rows;
+}
 
 // Список туров
 const eventIds = [
@@ -143,4 +155,6 @@ async function main() {
   console.log("Теперь нужно запустить автоконвертацию через API...");
 }
 
-main().catch(console.error);
+main()
+  .catch(console.error)
+  .finally(() => pool.end());

@@ -1,6 +1,15 @@
-import { neon } from "@neondatabase/serverless";
+import { Pool } from 'pg';
 
-const sql = neon(process.env.DATABASE_URL!);
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+
+// Helper to run raw SQL queries
+async function sql(strings: TemplateStringsArray, ...values: any[]) {
+  const query = strings.reduce((acc, str, i) => {
+    return acc + str + (values[i] !== undefined ? `$${i + 1}` : '');
+  }, '');
+  const result = await pool.query(query, values);
+  return result.rows;
+}
 
 // Deterministic test event ID
 const TEST_EVENT_ID = "aaaaaaaa-test-4444-8888-ffffffffffff";
@@ -271,4 +280,6 @@ async function main() {
   console.log("\nТеперь запустите: npx tsx create-mini-groups.ts");
 }
 
-main().catch(console.error);
+main()
+  .catch(console.error)
+  .finally(() => pool.end());

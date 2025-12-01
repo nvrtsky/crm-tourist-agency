@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle } from "lucide-react";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -26,6 +27,7 @@ import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicato
 import { calculateTouristDataCompleteness, formatCurrency, formatTouristName } from "@/lib/utils";
 import { ColorPicker, ColorIndicator, type ColorOption } from "@/components/ColorPicker";
 import { DeferLeadDialog } from "@/components/DeferLeadDialog";
+import { Wazzup24Chat } from "@/components/Wazzup24Chat";
 import { z } from "zod";
 
 const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -678,25 +680,39 @@ export default function Leads() {
       <Dialog open={!!editingLead} onOpenChange={(open) => !open && setEditingLead(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {editingLead && (
-            <LeadForm
-              lead={editingLead}
-              onSubmit={(data) => {
-                // If changing to "lost" status, show defer dialog
-                if (data.status === 'lost' && editingLead.status !== 'lost') {
-                  // Store pending form data to apply after defer dialog confirmation
-                  setPendingFormData(data);
-                  setLeadToDefer({ id: editingLead.id, name: getLeadName(editingLead) });
-                  setIsDeferDialogOpen(true);
-                  setEditingLead(null); // Close the edit dialog
-                } else {
-                  // For other changes, update directly
-                  updateMutation.mutate({ id: editingLead.id, data });
-                }
-              }}
-              isPending={updateMutation.isPending}
-              onDelete={(id) => deleteMutation.mutate(id)}
-              isAdmin={isAdmin}
-            />
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="details" data-testid="tab-lead-details">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Редактирование
+                </TabsTrigger>
+                <TabsTrigger value="chat" data-testid="tab-lead-chat">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Чат
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="details">
+                <LeadForm
+                  lead={editingLead}
+                  onSubmit={(data) => {
+                    if (data.status === 'lost' && editingLead.status !== 'lost') {
+                      setPendingFormData(data);
+                      setLeadToDefer({ id: editingLead.id, name: getLeadName(editingLead) });
+                      setIsDeferDialogOpen(true);
+                      setEditingLead(null);
+                    } else {
+                      updateMutation.mutate({ id: editingLead.id, data });
+                    }
+                  }}
+                  isPending={updateMutation.isPending}
+                  onDelete={(id) => deleteMutation.mutate(id)}
+                  isAdmin={isAdmin}
+                />
+              </TabsContent>
+              <TabsContent value="chat">
+                <Wazzup24Chat lead={editingLead} />
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>

@@ -923,17 +923,13 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
   const [isTouristDialogOpen, setIsTouristDialogOpen] = useState(false);
   const [editingTourist, setEditingTourist] = useState<LeadTourist | null>(null);
   const [prefillData, setPrefillData] = useState<Partial<InsertLeadTourist> | null>(null);
-  const [costCalculation, setCostCalculation] = useState<{ pricePerPerson: string; touristCount: number } | null>(null);
-  
   // Track focus state for number fields to control formatting
   const [isTourCostFocused, setIsTourCostFocused] = useState(false);
   const [isAdvanceFocused, setIsAdvanceFocused] = useState(false);
+  const [isRemainingFocused, setIsRemainingFocused] = useState(false);
   
   // Track if initial load is complete to avoid overwriting DB values
   const isInitializedRef = useRef(false);
-  
-  // Track if user manually edited tourCost to prevent auto-recalculation
-  const hasManualCostOverrideRef = useRef(false);
 
   // Helper function to get lead display name
   const getLeadName = (lead: Lead) => {
@@ -950,8 +946,11 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       email: lead?.email || null,
       eventId: lead?.eventId || null,
       tourCost: lead?.tourCost || null,
+      tourCostCurrency: lead?.tourCostCurrency || "RUB",
       advancePayment: lead?.advancePayment || null,
+      advancePaymentCurrency: lead?.advancePaymentCurrency || "RUB",
       remainingPayment: lead?.remainingPayment || null,
+      remainingPaymentCurrency: lead?.remainingPaymentCurrency || "RUB",
       clientCategory: lead?.clientCategory || null,
       color: lead?.color ?? null,
       status: lead?.status || "new",
@@ -990,8 +989,11 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
         email: lead.email || null,
         eventId: lead.eventId || null,
         tourCost: lead.tourCost || null,
+        tourCostCurrency: lead.tourCostCurrency || "RUB",
         advancePayment: lead.advancePayment || null,
+        advancePaymentCurrency: lead.advancePaymentCurrency || "RUB",
         remainingPayment: lead.remainingPayment || null,
+        remainingPaymentCurrency: lead.remainingPaymentCurrency || "RUB",
         clientCategory: lead.clientCategory || null,
         color: lead.color ?? null,
         status: lead.status || "new",
@@ -1003,78 +1005,11 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       });
       // Reset flags when editing a different lead
       isInitializedRef.current = false;
-      hasManualCostOverrideRef.current = false;
     } else {
       // For new leads, mark as initialized immediately since there's no DB value to preserve
       isInitializedRef.current = true;
-      hasManualCostOverrideRef.current = false;
     }
   }, [lead, form]);
-
-  // Auto-update cost calculation when event selection changes
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (value.eventId && events.length > 0) {
-        const selectedEvent = events.find(e => e.id === value.eventId);
-        if (selectedEvent) {
-          const touristCount = tourists.length || 1;
-          const pricePerPerson = parseFloat(selectedEvent.price);
-          const totalCost = pricePerPerson * touristCount;
-          
-          // Update tourCost field only when event changes (not when user manually edits tourCost)
-          if (name === "eventId") {
-            form.setValue("tourCost", totalCost.toFixed(2));
-            
-            // Recalculate remaining payment
-            const advancePayment = parseFloat(value.advancePayment || "0") || 0;
-            form.setValue("remainingPayment", (totalCost - advancePayment).toFixed(2));
-            
-            // Reset manual override flag when event changes
-            hasManualCostOverrideRef.current = false;
-          }
-          
-          // Always update calculation info for display
-          setCostCalculation({
-            pricePerPerson: pricePerPerson.toFixed(2),
-            touristCount
-          });
-        }
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form, events, tourists.length]);
-
-  // Update cost calculation when tourist count changes (after adding/deleting tourists)
-  useEffect(() => {
-    const eventId = form.getValues("eventId");
-    if (eventId && events.length > 0) {
-      const selectedEvent = events.find(e => e.id === eventId);
-      if (selectedEvent) {
-        const touristCount = tourists.length || 1; // Minimum 1 tourist for calculation
-        const pricePerPerson = parseFloat(selectedEvent.price);
-        const totalCost = pricePerPerson * touristCount;
-        
-        // Only update tourCost after initial load AND if user hasn't manually overridden it
-        if (isInitializedRef.current && !hasManualCostOverrideRef.current) {
-          // Update the tourCost field value with proper precision
-          form.setValue("tourCost", totalCost.toFixed(2));
-          
-          // Recalculate remaining payment
-          const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
-          form.setValue("remainingPayment", (totalCost - advancePayment).toFixed(2));
-        } else if (!isInitializedRef.current) {
-          // Mark as initialized after first render
-          isInitializedRef.current = true;
-        }
-        
-        // Always update calculation display
-        setCostCalculation({
-          pricePerPerson: pricePerPerson.toFixed(2),
-          touristCount
-        });
-      }
-    }
-  }, [tourists.length, events, form]);
 
   // Create tourist mutation
   const createTouristMutation = useMutation({
@@ -1337,34 +1272,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                   <FormItem className="col-span-2">
                     <FormLabel>Тур</FormLabel>
                     <Select 
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Auto-calculate tour cost based on selected event
-                        const selectedEvent = events.find(e => e.id === value);
-                        if (selectedEvent) {
-                          const touristCount = tourists.length || 1; // Minimum 1 tourist
-                          const pricePerPerson = parseFloat(selectedEvent.price);
-                          const totalCost = pricePerPerson * touristCount;
-                          
-                          // Set the calculated cost with proper precision
-                          form.setValue("tourCost", totalCost.toFixed(2));
-                          
-                          // Update calculation info for display
-                          setCostCalculation({
-                            pricePerPerson: pricePerPerson.toFixed(2),
-                            touristCount
-                          });
-                          
-                          // Recalculate remaining payment
-                          const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
-                          form.setValue("remainingPayment", (totalCost - advancePayment).toFixed(2));
-                          
-                          // Reset manual override flag when event changes
-                          hasManualCostOverrideRef.current = false;
-                        } else {
-                          setCostCalculation(null);
-                        }
-                      }}
+                      onValueChange={field.onChange}
                       value={field.value ?? ''}
                       data-testid="select-eventId"
                     >
@@ -1453,21 +1361,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                           onChange={(e) => {
                             const rawValue = parseNumberInput(e.target.value);
                             field.onChange(rawValue);
-                            const tourCost = parseFloat(rawValue || "0") || 0;
-                            const advancePayment = parseFloat(form.getValues("advancePayment") || "0") || 0;
-                            form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
-                            
-                            // Mark that user manually edited tourCost
-                            hasManualCostOverrideRef.current = true;
                           }}
                           data-testid="input-tourCost"
                         />
                       </FormControl>
-                      {costCalculation && (
-                        <FormDescription className="text-xs text-muted-foreground">
-                          Рассчитано: {formatCurrency(costCalculation.pricePerPerson)} руб × {costCalculation.touristCount} {costCalculation.touristCount === 1 ? 'турист' : costCalculation.touristCount > 4 ? 'туристов' : 'туриста'} = {formatCurrency(parseFloat(costCalculation.pricePerPerson) * costCalculation.touristCount)} руб
-                        </FormDescription>
-                      )}
                       <FormMessage />
                     </FormItem>
                   );
@@ -1476,54 +1373,59 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
 
               <FormField
                 control={form.control}
+                name="tourCostCurrency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Валюта</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || "RUB"}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-tourCostCurrency">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="RUB">₽ RUB</SelectItem>
+                        <SelectItem value="USD">$ USD</SelectItem>
+                        <SelectItem value="CNY">¥ CNY</SelectItem>
+                        <SelectItem value="EUR">€ EUR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="advancePayment"
                 render={({ field }) => {
-                  // Format number with thousand separators for display
                   const formatNumberInput = (value: string) => {
                     if (!value) return "";
-                    // Handle both comma and dot as decimal separator
                     const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
                     const num = parseFloat(cleanValue);
                     if (isNaN(num)) return "";
                     return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                   };
                   
-                  // Parse formatted string back to plain number string (with dot as decimal separator)
                   const parseNumberInput = (value: string) => {
                     if (!value || value.trim() === "") return null;
-                    
-                    // Remove all spaces first
                     let cleanValue = value.replace(/\s/g, '');
-                    
-                    // Smart decimal separator detection:
-                    // If both comma and dot exist, the rightmost one is the decimal separator
                     const lastCommaIndex = cleanValue.lastIndexOf(',');
                     const lastDotIndex = cleanValue.lastIndexOf('.');
-                    
                     if (lastCommaIndex > lastDotIndex) {
-                      // Comma is decimal separator (European format: 1.234.567,89)
                       cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
                     } else if (lastDotIndex > lastCommaIndex) {
-                      // Dot is decimal separator (US format: 1,234,567.89)
                       cleanValue = cleanValue.replace(/,/g, '');
                     } else if (lastCommaIndex !== -1 && lastDotIndex === -1) {
-                      // Only comma exists (Russian format: 123456,78)
                       cleanValue = cleanValue.replace(',', '.');
                     }
-                    // else: only dot or no separators - keep as is
-                    
-                    // Keep only digits, dot, and minus sign
                     const sanitized = cleanValue.replace(/[^\d.-]/g, '');
-                    
-                    // Validate format: optional minus, digits, optional decimal part
                     if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "-") {
-                      return field.value;  // Preserve previous valid value
+                      return field.value;
                     }
-                    
                     return sanitized;
                   };
                   
-                  // Display formatted value when not focused, raw value when focused
                   const displayValue = isAdvanceFocused 
                     ? (field.value || "") 
                     : formatNumberInput(field.value || "");
@@ -1541,9 +1443,6 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                           onChange={(e) => {
                             const rawValue = parseNumberInput(e.target.value);
                             field.onChange(rawValue);
-                            const tourCost = parseFloat(form.getValues("tourCost") || "0") || 0;
-                            const advancePayment = parseFloat(rawValue || "0") || 0;
-                            form.setValue("remainingPayment", (tourCost - advancePayment).toFixed(2));
                           }}
                           data-testid="input-advancePayment"
                         />
@@ -1556,34 +1455,108 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
 
               <FormField
                 control={form.control}
+                name="advancePaymentCurrency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Валюта</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || "RUB"}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-advancePaymentCurrency">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="RUB">₽ RUB</SelectItem>
+                        <SelectItem value="USD">$ USD</SelectItem>
+                        <SelectItem value="CNY">¥ CNY</SelectItem>
+                        <SelectItem value="EUR">€ EUR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="remainingPayment"
                 render={({ field }) => {
-                  // Format number with thousand separators for display
                   const formatNumberInput = (value: string) => {
                     if (!value) return "";
-                    // Clean value: remove spaces and replace commas with dots
                     const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
                     const num = parseFloat(cleanValue);
                     if (isNaN(num)) return "";
                     return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                   };
                   
+                  const parseNumberInput = (value: string) => {
+                    if (!value || value.trim() === "") return null;
+                    let cleanValue = value.replace(/\s/g, '');
+                    const lastCommaIndex = cleanValue.lastIndexOf(',');
+                    const lastDotIndex = cleanValue.lastIndexOf('.');
+                    if (lastCommaIndex > lastDotIndex) {
+                      cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+                    } else if (lastDotIndex > lastCommaIndex) {
+                      cleanValue = cleanValue.replace(/,/g, '');
+                    } else if (lastCommaIndex !== -1 && lastDotIndex === -1) {
+                      cleanValue = cleanValue.replace(',', '.');
+                    }
+                    const sanitized = cleanValue.replace(/[^\d.-]/g, '');
+                    if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "-") {
+                      return field.value;
+                    }
+                    return sanitized;
+                  };
+                  
+                  const displayValue = isRemainingFocused 
+                    ? (field.value || "") 
+                    : formatNumberInput(field.value || "");
+                  
                   return (
-                    <FormItem className="col-span-2">
+                    <FormItem>
                       <FormLabel>Остаток</FormLabel>
                       <FormControl>
                         <Input
                           type="text"
                           placeholder="0,00"
-                          value={formatNumberInput(field.value || "")}
+                          value={displayValue}
+                          onFocus={() => setIsRemainingFocused(true)}
+                          onBlur={() => setIsRemainingFocused(false)}
+                          onChange={(e) => {
+                            const rawValue = parseNumberInput(e.target.value);
+                            field.onChange(rawValue);
+                          }}
                           data-testid="input-remainingPayment"
-                          disabled
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   );
                 }}
+              />
+
+              <FormField
+                control={form.control}
+                name="remainingPaymentCurrency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Валюта</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || "RUB"}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-remainingPaymentCurrency">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="RUB">₽ RUB</SelectItem>
+                        <SelectItem value="USD">$ USD</SelectItem>
+                        <SelectItem value="CNY">¥ CNY</SelectItem>
+                        <SelectItem value="EUR">€ EUR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
           </div>

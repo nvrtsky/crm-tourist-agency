@@ -2470,6 +2470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/wazzup24/iframe", requireAuth, async (req, res) => {
     try {
       const { leadId, phone, name } = req.body;
+      const currentUser = req.user as User;
       
       if (!leadId) {
         return res.status(400).json({ error: "Lead ID is required" });
@@ -2490,6 +2491,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to decrypt API key" });
       }
       
+      // Normalize phone number for WhatsApp (remove +, spaces, dashes)
+      const normalizePhone = (phoneStr: string | null | undefined): string | null => {
+        if (!phoneStr) return null;
+        // Remove all non-digit characters
+        let digits = phoneStr.replace(/\D/g, '');
+        // If starts with 8, replace with 7 (Russia)
+        if (digits.startsWith('8') && digits.length === 11) {
+          digits = '7' + digits.slice(1);
+        }
+        // If doesn't start with country code, add 7 for Russia
+        if (digits.length === 10) {
+          digits = '7' + digits;
+        }
+        return digits || null;
+      };
+      
+      const normalizedPhone = normalizePhone(phone);
+      
+      // Build request body according to Wazzup24 API v3 spec
+      const requestBody: Record<string, unknown> = {
+        scope: "card",
+        user: {
+          id: currentUser.id,
+          name: currentUser.username || "CRM User"
+        }
+      };
+      
+      // Add filter with phone if available
+      if (normalizedPhone) {
+        requestBody.filter = {
+          chatType: "whatsapp",
+          chatId: normalizedPhone
+        };
+      }
+      
+      // Add entity info
+      requestBody.entity = {
+        id: leadId,
+        name: name || `Lead ${leadId}`
+      };
+      
+      console.log("Wazzup24 iframe request:", JSON.stringify(requestBody, null, 2));
+      
       // Request iframe URL from Wazzup24 API
       const response = await fetch("https://api.wazzup24.com/v3/iframe", {
         method: "POST",
@@ -2497,17 +2541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${apiKey}`
         },
-        body: JSON.stringify({
-          scope: "card",
-          filter: {
-            chatType: ["whatsapp"]
-          },
-          entity: {
-            id: leadId,
-            name: name || `Lead ${leadId}`,
-            phone: phone || undefined
-          }
-        })
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {

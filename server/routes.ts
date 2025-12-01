@@ -2510,22 +2510,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const normalizedPhone = normalizePhone(phone);
       
       // Build request body according to Wazzup24 API v3 spec
-      // For scope "card", we only need user and entity - filter is not used
+      // filter must be an array of objects with chatType and chatId
       const requestBody: Record<string, unknown> = {
         scope: "card",
         user: {
           id: currentUser.id,
           name: currentUser.username || "CRM User"
-        },
-        entity: {
-          id: leadId,
-          name: name || `Lead ${leadId}`
         }
       };
       
-      // If phone is available, add it to entity for contact matching
+      // Add filter array with phone if available (required by Wazzup24 API)
       if (normalizedPhone) {
-        (requestBody.entity as Record<string, unknown>).phone = normalizedPhone;
+        requestBody.filter = [
+          {
+            chatType: "whatsapp",
+            chatId: normalizedPhone
+          }
+        ];
+        // Also set activeChat to open this chat by default
+        requestBody.activeChat = {
+          chatType: "whatsapp",
+          chatId: normalizedPhone
+        };
       }
       
       console.log("Wazzup24 iframe request:", JSON.stringify(requestBody, null, 2));

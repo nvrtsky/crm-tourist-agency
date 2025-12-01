@@ -464,7 +464,7 @@ export function EditEventDialog({
                 name="price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Цена (₽)</FormLabel>
+                    <FormLabel>Базовая цена (₽)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"

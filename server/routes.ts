@@ -2407,6 +2407,170 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== WAZZUP24 INTEGRATION ROUTES ====================
+  
+  const { encrypt, decrypt, isEncrypted } = await import("./crypto");
+  
+  // Get Wazzup24 API key status (admin only)
+  app.get("/api/settings/wazzup24", requireAdmin, async (req, res) => {
+    try {
+      const setting = await storage.getSetting("wazzup24_api_key");
+      
+      if (!setting?.value) {
+        return res.json({ configured: false });
+      }
+      
+      // Return only status, not the actual key
+      return res.json({ 
+        configured: true,
+        updatedAt: setting.updatedAt 
+      });
+    } catch (error) {
+      console.error("Error getting Wazzup24 settings:", error);
+      res.status(500).json({ error: "Failed to get settings" });
+    }
+  });
+  
+  // Save Wazzup24 API key (admin only)
+  app.post("/api/settings/wazzup24", requireAdmin, async (req, res) => {
+    try {
+      const { apiKey } = req.body;
+      
+      if (!apiKey || typeof apiKey !== "string") {
+        return res.status(400).json({ error: "API key is required" });
+      }
+      
+      // Encrypt the API key before storing
+      const encryptedKey = encrypt(apiKey);
+      const userId = (req.user as User)?.id;
+      
+      await storage.setSetting("wazzup24_api_key", encryptedKey, userId);
+      
+      res.json({ success: true, configured: true });
+    } catch (error) {
+      console.error("Error saving Wazzup24 settings:", error);
+      res.status(500).json({ error: "Failed to save settings" });
+    }
+  });
+  
+  // Delete Wazzup24 API key (admin only)
+  app.delete("/api/settings/wazzup24", requireAdmin, async (req, res) => {
+    try {
+      const userId = (req.user as User)?.id;
+      await storage.setSetting("wazzup24_api_key", null, userId);
+      
+      res.json({ success: true, configured: false });
+    } catch (error) {
+      console.error("Error deleting Wazzup24 settings:", error);
+      res.status(500).json({ error: "Failed to delete settings" });
+    }
+  });
+  
+  // Get Wazzup24 iframe URL for a lead
+  app.post("/api/wazzup24/iframe", requireAuth, async (req, res) => {
+    try {
+      const { leadId, phone, name } = req.body;
+      
+      if (!leadId) {
+        return res.status(400).json({ error: "Lead ID is required" });
+      }
+      
+      // Get API key from settings
+      const setting = await storage.getSetting("wazzup24_api_key");
+      
+      if (!setting?.value) {
+        return res.status(400).json({ error: "Wazzup24 is not configured" });
+      }
+      
+      // Decrypt the API key
+      let apiKey: string;
+      try {
+        apiKey = isEncrypted(setting.value) ? decrypt(setting.value) : setting.value;
+      } catch {
+        return res.status(500).json({ error: "Failed to decrypt API key" });
+      }
+      
+      // Request iframe URL from Wazzup24 API
+      const response = await fetch("https://api.wazzup24.com/v3/iframe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          scope: "card",
+          filter: {
+            chatType: ["whatsapp"]
+          },
+          entity: {
+            id: leadId,
+            name: name || `Lead ${leadId}`,
+            phone: phone || undefined
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Wazzup24 API error:", response.status, errorText);
+        return res.status(response.status).json({ 
+          error: `Wazzup24 API error: ${response.statusText}`,
+          details: errorText
+        });
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error getting Wazzup24 iframe:", error);
+      res.status(500).json({ error: "Failed to get iframe URL" });
+    }
+  });
+  
+  // Test Wazzup24 connection (admin only)
+  app.post("/api/wazzup24/test", requireAdmin, async (req, res) => {
+    try {
+      // Get API key from settings
+      const setting = await storage.getSetting("wazzup24_api_key");
+      
+      if (!setting?.value) {
+        return res.status(400).json({ error: "Wazzup24 is not configured" });
+      }
+      
+      // Decrypt the API key
+      let apiKey: string;
+      try {
+        apiKey = isEncrypted(setting.value) ? decrypt(setting.value) : setting.value;
+      } catch {
+        return res.status(500).json({ error: "Failed to decrypt API key" });
+      }
+      
+      // Test connection by getting user info
+      const response = await fetch("https://api.wazzup24.com/v3/users", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Wazzup24 test error:", response.status, errorText);
+        return res.status(response.status).json({ 
+          success: false,
+          error: `Wazzup24 API error: ${response.statusText}`,
+          details: errorText
+        });
+      }
+      
+      const data = await response.json();
+      res.json({ success: true, users: data });
+    } catch (error) {
+      console.error("Error testing Wazzup24:", error);
+      res.status(500).json({ success: false, error: "Failed to test connection" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

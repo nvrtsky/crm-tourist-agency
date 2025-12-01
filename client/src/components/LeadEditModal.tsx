@@ -528,6 +528,9 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                                   <SelectItem value="vip">VIP</SelectItem>
                                   <SelectItem value="not_segmented">Не сегментированный</SelectItem>
                                   <SelectItem value="travel_agent">Турагент</SelectItem>
+                                  <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
+                                  <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
+                                  <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />

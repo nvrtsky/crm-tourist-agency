@@ -53,6 +53,9 @@ const clientCategoryMap: Record<string, string> = {
   vip: "VIP",
   not_segmented: "Не сегментированный",
   travel_agent: "Турагент",
+  tariff_standard: "Тариф стандарт",
+  tariff_economy: "Тариф эконом",
+  tariff_vip: "Тариф VIP",
 };
 
 // Helper function to determine lead display color

@@ -1251,6 +1251,31 @@ export default function EventSummary() {
     }
   };
 
+  const getTariffBadge = (clientCategory: string | null | undefined): {
+    label: string;
+    className: string;
+  } | null => {
+    switch (clientCategory) {
+      case "tariff_standard":
+        return {
+          label: "Стандарт",
+          className: "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200",
+        };
+      case "tariff_economy":
+        return {
+          label: "Эконом",
+          className: "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200",
+        };
+      case "tariff_vip":
+        return {
+          label: "VIP",
+          className: "bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-200",
+        };
+      default:
+        return null;
+    }
+  };
+
   if (eventLoading || participantsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -1739,6 +1764,18 @@ export default function EventSummary() {
                                       </TooltipContent>
                                     </Tooltip>
                                   )}
+                                  {(() => {
+                                    const tariff = getTariffBadge(participant.lead.clientCategory);
+                                    if (!tariff) return null;
+                                    return (
+                                      <span 
+                                        className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-medium ${tariff.className}`}
+                                        data-testid={`badge-tariff-${participant.lead.id}`}
+                                      >
+                                        {tariff.label}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
                               );
                             })() : (

@@ -12,19 +12,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Pencil, Trash2, Loader2, Shield } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, Plus, Pencil, Trash2, Loader2, Shield, MessageCircle, Check, X, Settings as SettingsIcon } from "lucide-react";
 import { z } from "zod";
 import type { User } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "passwordHash">;
 type UserRole = "admin" | "manager" | "viewer";
 
-// Type guard for role validation
 function isUserRole(value: string): value is UserRole {
   return value === "admin" || value === "manager" || value === "viewer";
 }
 
-// Normalize user data for frontend use
 function normalizeUserRole(role: string): UserRole {
   return isUserRole(role) ? role : "viewer";
 }
@@ -40,7 +39,7 @@ const userFormSchema = z.object({
 
 type UserFormData = z.infer<typeof userFormSchema>;
 
-export default function Settings() {
+function UsersTab() {
   const { user: currentUser, isAdmin } = useAuth();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -213,7 +212,6 @@ export default function Settings() {
         await createUserMutation.mutateAsync(formData);
       }
     } catch (error) {
-      // Error already handled in mutation
     }
   };
 
@@ -250,38 +248,11 @@ export default function Settings() {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <div className="p-6" data-testid="page-settings">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-destructive" />
-              <CardTitle>Доступ запрещен</CardTitle>
-            </div>
-            <CardDescription>
-              Эта страница доступна только администраторам
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
   const isSubmitting = createUserMutation.isPending || updateUserMutation.isPending;
 
   return (
-    <div className="p-6 space-y-6" data-testid="page-settings">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Users className="h-8 w-8" />
-            Управление пользователями
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Создание и редактирование учетных записей
-          </p>
-        </div>
+    <>
+      <div className="flex items-center justify-between mb-4">
         <Button onClick={handleOpenCreateDialog} data-testid="button-add-user">
           <Plus className="h-4 w-4 mr-2" />
           Добавить пользователя
@@ -369,7 +340,6 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Create/Edit User Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent data-testid="dialog-user-form">
           <DialogHeader>
@@ -481,7 +451,6 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent data-testid="dialog-delete-confirm">
           <AlertDialogHeader>
@@ -513,6 +482,279 @@ export default function Settings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
+}
+
+function Wazzup24Tab() {
+  const { toast } = useToast();
+  const [apiKey, setApiKey] = useState("");
+  
+  const { data: wazzup24Status, isLoading: isLoadingStatus } = useQuery<{ configured: boolean; updatedAt?: string }>({
+    queryKey: ["/api/settings/wazzup24"],
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (key: string) => {
+      const response = await apiRequest("POST", "/api/settings/wazzup24", { apiKey: key });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/wazzup24"] });
+      toast({
+        title: "API ключ сохранен",
+        description: "Интеграция Wazzup24 настроена",
+      });
+      setApiKey("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка сохранения",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("DELETE", "/api/settings/wazzup24");
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/wazzup24"] });
+      toast({
+        title: "API ключ удален",
+        description: "Интеграция Wazzup24 отключена",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка удаления",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const testMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/wazzup24/test");
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({
+          title: "Подключение успешно",
+          description: "Wazzup24 работает корректно",
+        });
+      } else {
+        toast({
+          title: "Ошибка подключения",
+          description: data.error || "Не удалось подключиться к Wazzup24",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка тестирования",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSave = async () => {
+    if (!apiKey.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Введите API ключ",
+        variant: "destructive",
+      });
+      return;
+    }
+    await saveMutation.mutateAsync(apiKey.trim());
+  };
+
+  const handleDelete = async () => {
+    await deleteMutation.mutateAsync();
+  };
+
+  const handleTest = async () => {
+    await testMutation.mutateAsync();
+  };
+
+  if (isLoadingStatus) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5" />
+            Интеграция Wazzup24
+          </CardTitle>
+          <CardDescription>
+            Подключите Wazzup24 для общения с клиентами через WhatsApp прямо из карточки лида
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">Статус:</span>
+            {wazzup24Status?.configured ? (
+              <Badge variant="default" className="flex items-center gap-1">
+                <Check className="h-3 w-3" />
+                Подключено
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <X className="h-3 w-3" />
+                Не настроено
+              </Badge>
+            )}
+          </div>
+
+          {wazzup24Status?.updatedAt && (
+            <p className="text-sm text-muted-foreground">
+              Последнее обновление: {new Date(wazzup24Status.updatedAt).toLocaleString("ru-RU")}
+            </p>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="wazzup24-api-key">API ключ</Label>
+            <div className="flex gap-2">
+              <Input
+                id="wazzup24-api-key"
+                type="password"
+                placeholder={wazzup24Status?.configured ? "Введите новый ключ для замены" : "Введите API ключ"}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                data-testid="input-wazzup24-api-key"
+              />
+              <Button
+                onClick={handleSave}
+                disabled={saveMutation.isPending || !apiKey.trim()}
+                data-testid="button-save-wazzup24"
+              >
+                {saveMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Сохранить"
+                )}
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Получите API ключ в личном кабинете Wazzup24
+            </p>
+          </div>
+
+          {wazzup24Status?.configured && (
+            <div className="flex gap-2 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={handleTest}
+                disabled={testMutation.isPending}
+                data-testid="button-test-wazzup24"
+              >
+                {testMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Проверка...
+                  </>
+                ) : (
+                  "Проверить подключение"
+                )}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                data-testid="button-delete-wazzup24"
+              >
+                {deleteMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Удалить ключ"
+                )}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Как использовать</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p>1. Получите API ключ в личном кабинете Wazzup24</p>
+          <p>2. Введите ключ выше и нажмите "Сохранить"</p>
+          <p>3. Проверьте подключение кнопкой "Проверить подключение"</p>
+          <p>4. После настройки в карточках лидов появится вкладка "Чат" для общения через WhatsApp</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function Settings() {
+  const { isAdmin } = useAuth();
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6" data-testid="page-settings">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-destructive" />
+              <CardTitle>Доступ запрещен</CardTitle>
+            </div>
+            <CardDescription>
+              Эта страница доступна только администраторам
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6" data-testid="page-settings">
+      <div>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <SettingsIcon className="h-8 w-8" />
+          Настройки
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Управление системой и интеграциями
+        </p>
+      </div>
+
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
+            <Users className="h-4 w-4" />
+            Пользователи
+          </TabsTrigger>
+          <TabsTrigger value="wazzup24" className="flex items-center gap-2" data-testid="tab-wazzup24">
+            <MessageCircle className="h-4 w-4" />
+            Wazzup24
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="users" className="mt-6">
+          <UsersTab />
+        </TabsContent>
+        <TabsContent value="wazzup24" className="mt-6">
+          <Wazzup24Tab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

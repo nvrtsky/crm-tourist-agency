@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Calendar, MapPin, Users, DollarSign, ArrowRight, Pencil, Copy, Trash2, Archive } from "lucide-react";
+import { Calendar, MapPin, Users, ArrowRight, Pencil, Copy, Trash2, Archive } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ColorIndicator, type ColorOption } from "@/components/ColorPicker";
@@ -205,7 +205,6 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
           </div>
           
           <div className="flex items-center gap-2 text-sm">
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
             <span className="font-semibold" data-testid={`text-price-${event.id}`}>
               {formatCurrency(event.price)} ₽
             </span>

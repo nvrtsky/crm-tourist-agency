@@ -39,6 +39,7 @@ import {
   type LeadTourist,
   type InsertLeadTourist,
   type UpdateLeadTourist,
+  type Setting,
   events,
   contacts,
   deals,
@@ -52,6 +53,7 @@ import {
   formSubmissions,
   groups,
   leadTourists,
+  settings,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -165,6 +167,10 @@ export interface IStorage {
   updateTourist(id: string, tourist: Partial<UpdateLeadTourist>): Promise<LeadTourist | undefined>;
   deleteTourist(id: string): Promise<boolean>;
   togglePrimaryTourist(leadId: string, touristId: string): Promise<void>;
+
+  // Settings operations
+  getSetting(key: string): Promise<Setting | undefined>;
+  setSetting(key: string, value: string | null, userId?: string): Promise<Setting>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1187,6 +1193,42 @@ export class DatabaseStorage implements IStorage {
     if (primaryCount !== 1) {
       console.error(`[TOGGLE_PRIMARY] ERROR: Expected 1 primary tourist, but found ${primaryCount}!`);
     }
+  }
+
+  // ==================== SETTINGS OPERATIONS ====================
+
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const result = await db.select().from(settings).where(eq(settings.key, key));
+    return result[0];
+  }
+
+  async setSetting(key: string, value: string | null, userId?: string): Promise<Setting> {
+    // Try to update existing setting
+    const existing = await this.getSetting(key);
+    
+    if (existing) {
+      const [result] = await db
+        .update(settings)
+        .set({ 
+          value, 
+          updatedAt: new Date(),
+          updatedByUserId: userId || null
+        })
+        .where(eq(settings.key, key))
+        .returning();
+      return result;
+    }
+    
+    // Create new setting
+    const [result] = await db
+      .insert(settings)
+      .values({ 
+        key, 
+        value,
+        updatedByUserId: userId || null
+      })
+      .returning();
+    return result;
   }
 }
 

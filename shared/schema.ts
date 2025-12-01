@@ -292,6 +292,15 @@ export const leadTourists = pgTable("lead_tourists", {
     .where(sql`${table.isPrimary} = true`),
 }));
 
+// Settings table - stores application settings (API keys, etc.)
+export const settings = pgTable("settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  value: text("value"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedByUserId: varchar("updated_by_user_id").references(() => users.id, { onDelete: 'set null' }),
+});
+
 // ================= ZOD SCHEMAS =================
 
 // User schemas
@@ -356,6 +365,10 @@ export const updateLeadTouristSchema = insertLeadTouristSchema.partial();
 export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
 export const updateGroupSchema = insertGroupSchema.partial();
 
+// Settings schemas
+export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, updatedAt: true });
+export const updateSettingSchema = insertSettingSchema.partial();
+
 // ================= TYPES =================
 
 // User types
@@ -416,6 +429,11 @@ export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
 export type LeadTourist = typeof leadTourists.$inferSelect;
 export type InsertLeadTourist = z.infer<typeof insertLeadTouristSchema>;
 export type UpdateLeadTourist = z.infer<typeof updateLeadTouristSchema>;
+
+// Settings types
+export type Setting = typeof settings.$inferSelect;
+export type InsertSetting = z.infer<typeof insertSettingSchema>;
+export type UpdateSetting = z.infer<typeof updateSettingSchema>;
 
 // Complex types with relations
 export type EventWithStats = Event & {

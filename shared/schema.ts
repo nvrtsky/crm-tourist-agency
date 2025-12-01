@@ -220,9 +220,12 @@ export const leads = pgTable("leads", {
   status: text("status").notNull().default("new"), // 'new', 'contacted', 'qualified', 'won', 'lost'
   source: text("source").notNull().default("manual"), // 'manual', 'form', 'import', 'other'
   eventId: varchar("event_id").references(() => events.id, { onDelete: 'set null' }), // Выбранный тур
-  tourCost: numeric("tour_cost", { precision: 10, scale: 2 }), // Стоимость тура (price * количество туристов)
+  tourCost: numeric("tour_cost", { precision: 10, scale: 2 }), // Стоимость тура
+  tourCostCurrency: text("tour_cost_currency").notNull().default("RUB"), // Валюта стоимости тура: RUB, USD, CNY, EUR
   advancePayment: numeric("advance_payment", { precision: 10, scale: 2 }), // Аванс
+  advancePaymentCurrency: text("advance_payment_currency").notNull().default("RUB"), // Валюта аванса: RUB, USD, CNY, EUR
   remainingPayment: numeric("remaining_payment", { precision: 10, scale: 2 }), // Остаток оплаты
+  remainingPaymentCurrency: text("remaining_payment_currency").notNull().default("RUB"), // Валюта остатка: RUB, USD, CNY, EUR
   formId: varchar("form_id").references(() => forms.id, { onDelete: 'set null' }),
   color: text("color"), // Color indicator: 'red', 'blue', 'green', 'yellow', 'purple'
   notes: text("notes"),

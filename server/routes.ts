@@ -2509,14 +2509,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const normalizedPhone = normalizePhone(phone);
       
+      // First, ensure user exists in Wazzup24 (create if not exists)
+      const userData = {
+        id: currentUser.id,
+        name: currentUser.username || "CRM User"
+      };
+      
+      console.log("Wazzup24: Ensuring user exists:", JSON.stringify(userData, null, 2));
+      
+      const userResponse = await fetch("https://api.wazzup24.com/v3/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify([userData])
+      });
+      
+      if (!userResponse.ok) {
+        const userErrorText = await userResponse.text();
+        console.error("Wazzup24 user creation error:", userResponse.status, userErrorText);
+        // Continue anyway - user might already exist
+      } else {
+        console.log("Wazzup24: User created/updated successfully");
+      }
+      
       // Build request body according to Wazzup24 API v3 spec
       // filter must be an array of objects with chatType and chatId
       const requestBody: Record<string, unknown> = {
         scope: "card",
-        user: {
-          id: currentUser.id,
-          name: currentUser.username || "CRM User"
-        }
+        user: userData
       };
       
       // Add filter array with phone if available (required by Wazzup24 API)

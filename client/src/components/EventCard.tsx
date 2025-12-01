@@ -104,6 +104,40 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      data-testid={`button-delete-event-${event.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Удалить тур?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Вы действительно хотите удалить тур "{event.name}"? Это действие нельзя отменить.
+                        {event.bookedCount > 0 && (
+                          <span className="block mt-2 text-destructive font-semibold">
+                            Внимание: В этом туре {event.bookedCount} участников!
+                          </span>
+                        )}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel data-testid="button-cancel-delete">Отмена</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => onDelete?.(event.id)}
+                        className="bg-destructive hover:bg-destructive/90"
+                        data-testid="button-confirm-delete"
+                      >
+                        Удалить
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </>
             )}
             <Badge className={getStatusClasses()} data-testid={`badge-status-${event.id}`}>
@@ -184,7 +218,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
           </p>
         )}
 
-        <div className="pt-2 space-y-2">
+        <div className="pt-2">
           <Button 
             className="w-full" 
             variant="outline"
@@ -194,44 +228,6 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
             Сводная таблица
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
-          
-          {canModify && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  className="w-full" 
-                  variant="outline"
-                  data-testid={`button-delete-event-${event.id}`}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Удалить
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Удалить тур?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Вы действительно хотите удалить тур "{event.name}"? Это действие нельзя отменить.
-                    {event.bookedCount > 0 && (
-                      <span className="block mt-2 text-destructive font-semibold">
-                        Внимание: В этом туре {event.bookedCount} участников!
-                      </span>
-                    )}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel data-testid="button-cancel-delete">Отмена</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={() => onDelete?.(event.id)}
-                    className="bg-destructive hover:bg-destructive/90"
-                    data-testid="button-confirm-delete"
-                  >
-                    Удалить
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
         </div>
       </CardContent>
     </Card>

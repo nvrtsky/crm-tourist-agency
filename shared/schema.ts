@@ -220,6 +220,7 @@ export const leads = pgTable("leads", {
   status: text("status").notNull().default("new"), // 'new', 'contacted', 'qualified', 'won', 'lost'
   source: text("source").notNull().default("manual"), // 'manual', 'form', 'import', 'other'
   eventId: varchar("event_id").references(() => events.id, { onDelete: 'set null' }), // Выбранный тур
+  selectedCities: text("selected_cities").array(), // Выбранные города маршрута (по умолчанию все города тура)
   tourCost: numeric("tour_cost", { precision: 10, scale: 2 }), // Стоимость тура
   tourCostCurrency: text("tour_cost_currency").notNull().default("RUB"), // Валюта стоимости тура: RUB, USD, CNY, EUR
   advancePayment: numeric("advance_payment", { precision: 10, scale: 2 }), // Аванс

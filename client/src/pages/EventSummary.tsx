@@ -4,7 +4,7 @@ import { useState, Fragment, useRef, useLayoutEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, Train, ChevronDown, Cake } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, Train, ChevronDown, Cake, MapPin } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -1519,6 +1519,7 @@ export default function EventSummary() {
                     <th className="sticky bg-background z-10 text-left p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" style={{ left: `${stickyOffset}px` }} rowSpan={2}>ФИО</th>
                     <th className="text-left p-2 font-medium border-r" rowSpan={2}>Данные туриста</th>
                     <th className="text-center p-2 font-medium border-r w-16" rowSpan={2}>Лид</th>
+                    <th className="text-center p-2 font-medium border-r w-24" rowSpan={2}>Остаток</th>
                     {event.cities.map((city) => {
                       const guideName = getGuideName(city);
                       return (
@@ -1702,17 +1703,55 @@ export default function EventSummary() {
                           >
                             {participant.lead ? (() => {
                               const style = getLeadStatusStyle(participant.lead.status);
+                              // Only show limited route if selectedCities is explicitly set and has fewer cities than the event
+                              const hasLimitedRoute = participant.lead.selectedCities && 
+                                participant.lead.selectedCities.length > 0 &&
+                                participant.lead.selectedCities.length < event.cities.length;
                               return (
-                                <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
-                                  <Badge 
-                                    variant={style.variant}
-                                    className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
-                                  >
-                                    {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
-                                  </Badge>
-                                </Link>
+                                <div className="flex flex-col items-center gap-1">
+                                  <Link href="/leads" data-testid={`link-lead-${participant.lead.id}`}>
+                                    <Badge 
+                                      variant={style.variant}
+                                      className={`text-[10px] cursor-pointer hover-elevate ${style.customClass || ''}`}
+                                    >
+                                      {LEAD_STATUS_LABELS[participant.lead.status] || participant.lead.status}
+                                    </Badge>
+                                  </Link>
+                                  {hasLimitedRoute && (
+                                    <Tooltip>
+                                      <TooltipTrigger 
+                                        type="button"
+                                        className="inline-flex items-center rounded-md bg-amber-100 dark:bg-amber-900 px-1.5 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-200 cursor-default"
+                                        data-testid={`badge-limited-route-${participant.lead.id}`}
+                                      >
+                                        <MapPin className="h-2.5 w-2.5 mr-0.5" />
+                                        {participant.lead.selectedCities?.length}/{event.cities.length}
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="font-medium mb-1">Ограниченный маршрут</p>
+                                        <p className="text-xs">Города: {participant.lead.selectedCities?.join(", ")}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
                               );
                             })() : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        )}
+                        
+                        {/* Remaining payment column */}
+                        {isLeadColumnAnchor && (
+                          <td 
+                            className="p-2 border-r text-center align-top w-24"
+                            rowSpan={leadColumnRowSpan}
+                          >
+                            {participant.lead?.remainingPayment ? (
+                              <span className="text-sm font-medium">
+                                {formatCurrency(participant.lead.remainingPayment, participant.lead.remainingPaymentCurrency || "RUB")}
+                              </span>
+                            ) : (
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
@@ -1872,6 +1911,71 @@ export default function EventSummary() {
                     );
                   })}
                 </tbody>
+                {/* Summary row */}
+                <tfoot className="border-t-2 bg-muted/30">
+                  <tr className="font-medium">
+                    <td colSpan={2} className="sticky left-0 bg-muted/30 z-10 p-2 text-right">Итого:</td>
+                    <td className="p-2 border-r text-center">
+                      {participants.length} чел.
+                    </td>
+                    <td className="p-2 border-r text-center">—</td>
+                    <td className="p-2 border-r text-center">
+                      {(() => {
+                        // Calculate total remaining payment grouped by currency
+                        const processedLeads = new Set<string>();
+                        const totals: Record<string, number> = {};
+                        
+                        participants.forEach(p => {
+                          if (p.lead && !processedLeads.has(p.lead.id)) {
+                            processedLeads.add(p.lead.id);
+                            if (p.lead.remainingPayment) {
+                              const currency = p.lead.remainingPaymentCurrency || "RUB";
+                              const amount = parseFloat(p.lead.remainingPayment);
+                              if (!isNaN(amount)) {
+                                totals[currency] = (totals[currency] || 0) + amount;
+                              }
+                            }
+                          }
+                        });
+                        
+                        const entries = Object.entries(totals);
+                        if (entries.length === 0) return "—";
+                        
+                        return entries.map(([currency, amount]) => 
+                          formatCurrency(amount, currency)
+                        ).join(", ");
+                      })()}
+                    </td>
+                    {event.cities.map((city) => (
+                      <Fragment key={city}>
+                        <td className="p-2 border-r text-center">—</td>
+                        <td className="p-2 border-r text-center text-xs">
+                          {(() => {
+                            // Count room types for this city
+                            const roomTypeCounts: Record<string, number> = {};
+                            
+                            participants.forEach(p => {
+                              const visit = p.visits?.find(v => v.city === city);
+                              if (visit?.roomType) {
+                                const type = visit.roomType;
+                                roomTypeCounts[type] = (roomTypeCounts[type] || 0) + 1;
+                              }
+                            });
+                            
+                            const entries = Object.entries(roomTypeCounts);
+                            if (entries.length === 0) return "—";
+                            
+                            return entries
+                              .sort((a, b) => b[1] - a[1])
+                              .map(([type, count]) => `${count} ${type}`)
+                              .join(", ");
+                          })()}
+                        </td>
+                        <td className="p-2 border-r text-center">—</td>
+                      </Fragment>
+                    ))}
+                  </tr>
+                </tfoot>
               </table>
             </div>
           )}

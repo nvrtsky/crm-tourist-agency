@@ -97,7 +97,7 @@ export function calculateTouristDataCompleteness(tourist: LeadTourist): TouristD
   };
 }
 
-export function formatCurrency(value: string | number | null | undefined): string {
+export function formatCurrency(value: string | number | null | undefined, currency?: string): string {
   if (value === null || value === undefined || value === "") {
     return "0";
   }
@@ -108,10 +108,23 @@ export function formatCurrency(value: string | number | null | undefined): strin
     return "0";
   }
   
-  return new Intl.NumberFormat("ru-RU", {
+  const formattedNumber = new Intl.NumberFormat("ru-RU", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(numValue);
+  
+  if (currency) {
+    const currencySymbols: Record<string, string> = {
+      RUB: "₽",
+      USD: "$",
+      EUR: "€",
+      CNY: "¥",
+    };
+    const symbol = currencySymbols[currency] || currency;
+    return `${formattedNumber} ${symbol}`;
+  }
+  
+  return formattedNumber;
 }
 
 export function formatTouristName(

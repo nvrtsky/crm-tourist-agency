@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin } from "lucide-react";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -74,9 +74,10 @@ function getLeadDisplayColor(lead: Lead): ColorOption {
   return null;
 }
 
-// Form schema with color field
+// Form schema with color field and selectedCities
 const createLeadFormSchema = insertLeadSchema.extend({
   color: z.string().nullable(),
+  selectedCities: z.array(z.string()).nullable(),
 });
 
 export default function Leads() {
@@ -961,6 +962,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       phone: lead?.phone || null,
       email: lead?.email || null,
       eventId: lead?.eventId || null,
+      selectedCities: lead?.selectedCities || null,
       tourCost: lead?.tourCost || null,
       tourCostCurrency: lead?.tourCostCurrency || "RUB",
       advancePayment: lead?.advancePayment || null,
@@ -997,6 +999,15 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
   // Reset form when lead changes (for edit mode)
   useEffect(() => {
     if (lead) {
+      // If lead has eventId but no selectedCities, initialize with all event cities
+      let selectedCities = lead.selectedCities || null;
+      if (lead.eventId && !selectedCities && events.length > 0) {
+        const event = events.find(e => e.id === lead.eventId);
+        if (event?.cities) {
+          selectedCities = [...event.cities];
+        }
+      }
+      
       form.reset({
         lastName: lead.lastName || "",
         firstName: lead.firstName || "",
@@ -1004,6 +1015,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
         phone: lead.phone || null,
         email: lead.email || null,
         eventId: lead.eventId || null,
+        selectedCities,
         tourCost: lead.tourCost || null,
         tourCostCurrency: lead.tourCostCurrency || "RUB",
         advancePayment: lead.advancePayment || null,
@@ -1025,7 +1037,17 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       // For new leads, mark as initialized immediately since there's no DB value to preserve
       isInitializedRef.current = true;
     }
-  }, [lead, form]);
+  }, [lead, form, events]);
+  
+  // Additional effect to update selectedCities when events load after lead
+  useEffect(() => {
+    if (lead && lead.eventId && !form.getValues("selectedCities") && events.length > 0) {
+      const event = events.find(e => e.id === lead.eventId);
+      if (event?.cities) {
+        form.setValue("selectedCities", [...event.cities]);
+      }
+    }
+  }, [events, lead, form]);
 
   // Create tourist mutation
   const createTouristMutation = useMutation({
@@ -1284,30 +1306,80 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
               <FormField
                 control={form.control}
                 name="eventId"
-                render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>Тур</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange}
-                      value={field.value ?? ''}
-                      data-testid="select-eventId"
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите тур" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {events.filter(event => !event.isArchived).map((event) => (
-                          <SelectItem key={event.id} value={event.id}>
-                            {event.name} ({format(new Date(event.startDate), "dd.MM.yyyy", { locale: ru })} - {format(new Date(event.endDate), "dd.MM.yyyy", { locale: ru })})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const selectedEvent = events.find(e => e.id === field.value);
+                  const eventCities = selectedEvent?.cities || [];
+                  const currentSelectedCities = form.watch("selectedCities") || [];
+                  
+                  return (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Тур</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // When tour changes, set all cities as selected by default
+                          const newEvent = events.find(e => e.id === value);
+                          if (newEvent?.cities) {
+                            form.setValue("selectedCities", [...newEvent.cities]);
+                          } else {
+                            form.setValue("selectedCities", null);
+                          }
+                        }}
+                        value={field.value ?? ''}
+                        data-testid="select-eventId"
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Выберите тур" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {events.filter(event => !event.isArchived).map((event) => (
+                            <SelectItem key={event.id} value={event.id}>
+                              {event.name} ({format(new Date(event.startDate), "dd.MM.yyyy", { locale: ru })} - {format(new Date(event.endDate), "dd.MM.yyyy", { locale: ru })})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                      
+                      {/* City checkboxes - shown when tour is selected */}
+                      {eventCities.length > 0 && (
+                        <div className="mt-3 p-3 bg-muted/50 rounded-md">
+                          <div className="text-sm font-medium mb-2">Города маршрута:</div>
+                          <div className="flex flex-wrap gap-3">
+                            {eventCities.map((city) => {
+                              const isChecked = currentSelectedCities.includes(city);
+                              return (
+                                <label key={city} className="flex items-center gap-2 cursor-pointer">
+                                  <Checkbox
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => {
+                                      const current = currentSelectedCities || [];
+                                      if (checked) {
+                                        form.setValue("selectedCities", [...current, city]);
+                                      } else {
+                                        form.setValue("selectedCities", current.filter(c => c !== city));
+                                      }
+                                    }}
+                                    data-testid={`checkbox-city-${city}`}
+                                  />
+                                  <span className="text-sm">{city}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                          {currentSelectedCities.length < eventCities.length && (
+                            <div className="mt-2 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              Ограниченный маршрут ({currentSelectedCities.length} из {eventCities.length} городов)
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField

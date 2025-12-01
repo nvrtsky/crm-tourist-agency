@@ -460,6 +460,9 @@ export default function Leads() {
                   <SelectItem value="vip">VIP</SelectItem>
                   <SelectItem value="not_segmented">Не сегментированный</SelectItem>
                   <SelectItem value="travel_agent">Турагент</SelectItem>
+                  <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
+                  <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
+                  <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1679,6 +1682,9 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         <SelectItem value="vip">VIP</SelectItem>
                         <SelectItem value="not_segmented">Не сегментированный</SelectItem>
                         <SelectItem value="travel_agent">Турагент</SelectItem>
+                        <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
+                        <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
+                        <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

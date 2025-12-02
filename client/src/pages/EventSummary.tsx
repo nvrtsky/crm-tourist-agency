@@ -1076,6 +1076,69 @@ export default function EventSummary() {
         });
       }
     });
+    
+    // Auto-fill arrival fields of next city when departure fields are updated
+    // Map departure fields to corresponding arrival fields
+    const departureToArrivalMap: Record<string, string> = {
+      'departureDate': 'arrivalDate',
+      'departureTime': 'arrivalTime',
+      'departureTransportType': 'transportType',
+      'departureFlightNumber': 'flightNumber',
+      'departureAirport': 'airport',
+      'departureTransfer': 'transfer',
+    };
+    
+    // Only process if this is a departure field and we have a value
+    if (field in departureToArrivalMap && value && event?.cities) {
+      const currentCityIndex = event.cities.indexOf(city);
+      const nextCity = currentCityIndex >= 0 && currentCityIndex < event.cities.length - 1 
+        ? event.cities[currentCityIndex + 1] 
+        : null;
+      
+      if (nextCity) {
+        const arrivalField = departureToArrivalMap[field];
+        
+        // Update arrival field in next city for all target members (only if empty)
+        membersToUpdate.forEach(member => {
+          const nextCityVisit = member.visits?.find(v => v.city === nextCity);
+          
+          // Check if the arrival field is empty (null, undefined, or empty string)
+          const currentArrivalValue = nextCityVisit ? (nextCityVisit as any)[arrivalField] : null;
+          const isArrivalFieldEmpty = !currentArrivalValue || currentArrivalValue === '';
+          
+          if (isArrivalFieldEmpty) {
+            if (nextCityVisit?.id) {
+              // Update existing visit
+              updateVisitMutation.mutate({ 
+                visitId: nextCityVisit.id, 
+                updates: { [arrivalField]: value } 
+              });
+            } else {
+              // Create new visit for next city with auto-filled arrival data
+              // Build payload dynamically to avoid overwriting the mapped field with undefined
+              const visitPayload: any = {
+                city: nextCity,
+                arrivalDate: undefined,
+                arrivalTime: undefined,
+                transportType: undefined,
+                flightNumber: undefined,
+                hotelName: undefined,
+                roomType: undefined,
+                departureDate: undefined,
+                departureTime: undefined,
+              };
+              // Set the arrival field with the copied value
+              visitPayload[arrivalField] = value;
+              
+              createVisitMutation.mutate({
+                dealId: member.deal.id,
+                visitData: visitPayload,
+              });
+            }
+          }
+        });
+      }
+    }
   };
 
   const handleExportExcel = () => {

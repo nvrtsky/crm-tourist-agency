@@ -90,6 +90,53 @@ export function getColorClasses(color: ColorOption): string {
   return `${config.bg} text-white`;
 }
 
+// Pastel background colors for card fill
+const PASTEL_CONFIG: Record<Exclude<ColorOption, null>, { bg: string; border: string }> = {
+  red: {
+    bg: "bg-red-50 dark:bg-red-950/30",
+    border: "border-red-200 dark:border-red-900"
+  },
+  blue: {
+    bg: "bg-blue-50 dark:bg-blue-950/30",
+    border: "border-blue-200 dark:border-blue-900"
+  },
+  green: {
+    bg: "bg-green-50 dark:bg-green-950/30",
+    border: "border-green-200 dark:border-green-900"
+  },
+  yellow: {
+    bg: "bg-yellow-50 dark:bg-yellow-950/30",
+    border: "border-yellow-200 dark:border-yellow-900"
+  },
+  purple: {
+    bg: "bg-purple-50 dark:bg-purple-950/30",
+    border: "border-purple-200 dark:border-purple-900"
+  }
+};
+
+export function getPastelClasses(color: ColorOption): { bg: string; border: string } {
+  if (!color) return { bg: "", border: "" };
+  return PASTEL_CONFIG[color];
+}
+
+// Color display mode types
+export type ColorDisplayMode = "dot" | "fill" | "both";
+
+// Get color display settings from localStorage
+export function getColorDisplayMode(): ColorDisplayMode {
+  if (typeof window === "undefined") return "both";
+  const stored = localStorage.getItem("colorDisplayMode");
+  if (stored === "dot" || stored === "fill" || stored === "both") {
+    return stored;
+  }
+  return "both";
+}
+
+// Save color display settings to localStorage
+export function setColorDisplayMode(mode: ColorDisplayMode): void {
+  localStorage.setItem("colorDisplayMode", mode);
+}
+
 export function ColorIndicator({ color }: { color: ColorOption }) {
   if (!color) return null;
   

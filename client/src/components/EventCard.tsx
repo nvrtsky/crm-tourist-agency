@@ -15,10 +15,11 @@ import {
 import { Calendar, MapPin, Users, ArrowRight, Pencil, Copy, Trash2, Archive } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ColorIndicator, type ColorOption } from "@/components/ColorPicker";
+import { ColorIndicator, type ColorOption, type ColorDisplayMode, getColorDisplayMode, getPastelClasses } from "@/components/ColorPicker";
 import type { Event, EventWithStats } from "@shared/schema";
 import { useAuth } from "@/lib/auth";
 import { formatCurrency } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 // Helper function to translate tour type to Russian
 function getTourTypeLabel(tourType: string): string {
@@ -44,6 +45,24 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
   const canModify = (user?.role === "admin" || user?.role === "manager") && (onEdit || onCopy || onDelete); // Admins and managers can modify/delete events if handlers provided
   const availablePercentage = (event.availableSpots / event.participantLimit) * 100;
   
+  const [colorDisplayMode, setColorDisplayMode] = useState<ColorDisplayMode>(() => getColorDisplayMode());
+  
+  // Listen for color display mode changes from Settings
+  useEffect(() => {
+    const handleColorModeChange = () => {
+      setColorDisplayMode(getColorDisplayMode());
+    };
+    window.addEventListener("colorDisplayModeChanged", handleColorModeChange);
+    return () => {
+      window.removeEventListener("colorDisplayModeChanged", handleColorModeChange);
+    };
+  }, []);
+  
+  const eventColor = event.color as ColorOption;
+  const pastelClasses = eventColor ? getPastelClasses(eventColor) : { bg: "", border: "" };
+  const showFill = (colorDisplayMode === "fill" || colorDisplayMode === "both") && eventColor;
+  const showDot = (colorDisplayMode === "dot" || colorDisplayMode === "both");
+  
   const getStatusClasses = () => {
     if (availablePercentage === 0 || availablePercentage < 10) {
       return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-100 dark:border-red-800";
@@ -65,11 +84,11 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
   };
 
   return (
-    <Card className="overflow-hidden hover-elevate" data-testid={`card-event-${event.id}`}>
+    <Card className={`overflow-hidden hover-elevate ${showFill ? `${pastelClasses.bg} ${pastelClasses.border} border` : ""}`} data-testid={`card-event-${event.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 flex-wrap">
-            <ColorIndicator color={event.color as ColorOption} />
+            {showDot && <ColorIndicator color={eventColor} />}
             <CardTitle className="text-lg" data-testid={`text-event-name-${event.id}`}>
               {event.name}
             </CardTitle>

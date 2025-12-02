@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -13,9 +13,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Plus, Pencil, Trash2, Loader2, Shield, MessageCircle, Check, X, Settings as SettingsIcon } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Users, Plus, Pencil, Trash2, Loader2, Shield, MessageCircle, Check, X, Settings as SettingsIcon, Palette } from "lucide-react";
 import { z } from "zod";
 import type { User } from "@shared/schema";
+import { type ColorDisplayMode, getColorDisplayMode, setColorDisplayMode, ColorIndicator, getPastelClasses } from "@/components/ColorPicker";
 
 type SanitizedUser = Omit<User, "passwordHash">;
 type UserRole = "admin" | "manager" | "viewer";
@@ -486,6 +488,94 @@ function UsersTab() {
   );
 }
 
+function DisplayTab() {
+  const { toast } = useToast();
+  const [colorMode, setColorMode] = useState<ColorDisplayMode>("both");
+
+  useEffect(() => {
+    setColorMode(getColorDisplayMode());
+  }, []);
+
+  const handleColorModeChange = (mode: ColorDisplayMode) => {
+    setColorMode(mode);
+    setColorDisplayMode(mode);
+    toast({
+      title: "Настройки сохранены",
+      description: "Режим отображения цвета обновлён",
+    });
+    window.dispatchEvent(new Event("colorDisplayModeChanged"));
+  };
+
+  const pastelRed = getPastelClasses("red");
+  const pastelBlue = getPastelClasses("blue");
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Отображение цветов
+          </CardTitle>
+          <CardDescription>
+            Настройте как отображаются цветовые метки на карточках лидов и туров
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <RadioGroup
+            value={colorMode}
+            onValueChange={(value) => handleColorModeChange(value as ColorDisplayMode)}
+            className="space-y-4"
+          >
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="dot" id="dot" data-testid="radio-color-dot" />
+              <Label htmlFor="dot" className="flex items-center gap-3 cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <ColorIndicator color="red" />
+                  <ColorIndicator color="blue" />
+                </div>
+                <span>Только точки</span>
+              </Label>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="fill" id="fill" data-testid="radio-color-fill" />
+              <Label htmlFor="fill" className="flex items-center gap-3 cursor-pointer">
+                <div className="flex gap-1">
+                  <div className={`h-6 w-8 rounded ${pastelRed.bg} ${pastelRed.border} border`} />
+                  <div className={`h-6 w-8 rounded ${pastelBlue.bg} ${pastelBlue.border} border`} />
+                </div>
+                <span>Только заливка</span>
+              </Label>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="both" id="both" data-testid="radio-color-both" />
+              <Label htmlFor="both" className="flex items-center gap-3 cursor-pointer">
+                <div className="flex gap-1">
+                  <div className={`h-6 w-8 rounded ${pastelRed.bg} ${pastelRed.border} border flex items-center justify-center`}>
+                    <ColorIndicator color="red" />
+                  </div>
+                  <div className={`h-6 w-8 rounded ${pastelBlue.bg} ${pastelBlue.border} border flex items-center justify-center`}>
+                    <ColorIndicator color="blue" />
+                  </div>
+                </div>
+                <span>Точки и заливка</span>
+              </Label>
+            </div>
+          </RadioGroup>
+
+          <div className="pt-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              Эти настройки применяются к карточкам лидов в Kanban-доске и к карточкам туров на странице мероприятий.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function Wazzup24Tab() {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState("");
@@ -738,10 +828,14 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg">
           <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
             <Users className="h-4 w-4" />
             Пользователи
+          </TabsTrigger>
+          <TabsTrigger value="display" className="flex items-center gap-2" data-testid="tab-display">
+            <Palette className="h-4 w-4" />
+            Отображение
           </TabsTrigger>
           <TabsTrigger value="wazzup24" className="flex items-center gap-2" data-testid="tab-wazzup24">
             <MessageCircle className="h-4 w-4" />
@@ -750,6 +844,9 @@ export default function Settings() {
         </TabsList>
         <TabsContent value="users" className="mt-6">
           <UsersTab />
+        </TabsContent>
+        <TabsContent value="display" className="mt-6">
+          <DisplayTab />
         </TabsContent>
         <TabsContent value="wazzup24" className="mt-6">
           <Wazzup24Tab />

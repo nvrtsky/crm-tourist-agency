@@ -25,7 +25,7 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
 import { calculateTouristDataCompleteness, formatCurrency, formatTouristName } from "@/lib/utils";
-import { ColorPicker, ColorIndicator, type ColorOption } from "@/components/ColorPicker";
+import { ColorPicker, ColorIndicator, type ColorOption, type ColorDisplayMode, getColorDisplayMode, getPastelClasses } from "@/components/ColorPicker";
 import { DeferLeadDialog } from "@/components/DeferLeadDialog";
 import { Wazzup24Chat } from "@/components/Wazzup24Chat";
 import { z } from "zod";
@@ -94,6 +94,20 @@ export default function Leads() {
   const [isDeferDialogOpen, setIsDeferDialogOpen] = useState(false);
   const [leadToDefer, setLeadToDefer] = useState<{ id: string; name: string } | null>(null);
   const [pendingFormData, setPendingFormData] = useState<Partial<InsertLead> | null>(null);
+  
+  // Color display mode state for table view
+  const [colorDisplayMode, setColorDisplayMode] = useState<ColorDisplayMode>(() => getColorDisplayMode());
+  
+  // Listen for color display mode changes from Settings
+  useEffect(() => {
+    const handleColorModeChange = () => {
+      setColorDisplayMode(getColorDisplayMode());
+    };
+    window.addEventListener("colorDisplayModeChanged", handleColorModeChange);
+    return () => {
+      window.removeEventListener("colorDisplayModeChanged", handleColorModeChange);
+    };
+  }, []);
   
   // View and filter state
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>(() => {
@@ -615,11 +629,18 @@ export default function Leads() {
                 {filteredLeads.map((lead) => {
                   const event = events.find(e => e.id === lead.eventId);
                   const displayColor = getLeadDisplayColor(lead);
+                  const pastelClasses = displayColor ? getPastelClasses(displayColor) : { bg: "", border: "" };
+                  const showFill = (colorDisplayMode === "fill" || colorDisplayMode === "both") && displayColor;
+                  const showDot = (colorDisplayMode === "dot" || colorDisplayMode === "both");
                   return (
-                  <TableRow key={lead.id} data-testid={`row-lead-${lead.id}`}>
+                  <TableRow 
+                    key={lead.id} 
+                    data-testid={`row-lead-${lead.id}`}
+                    className={showFill ? `${pastelClasses.bg}` : ""}
+                  >
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
-                        <ColorIndicator color={displayColor} />
+                        {showDot && <ColorIndicator color={displayColor} />}
                         <span>{getLeadName(lead)}</span>
                       </div>
                     </TableCell>
@@ -772,6 +793,18 @@ interface KanbanBoardProps {
 
 function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelete, getLeadName }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadWithTouristCount | null>(null);
+  const [colorDisplayMode, setColorDisplayMode] = useState<ColorDisplayMode>(() => getColorDisplayMode());
+  
+  // Listen for color display mode changes from Settings
+  useEffect(() => {
+    const handleColorModeChange = () => {
+      setColorDisplayMode(getColorDisplayMode());
+    };
+    window.addEventListener("colorDisplayModeChanged", handleColorModeChange);
+    return () => {
+      window.removeEventListener("colorDisplayModeChanged", handleColorModeChange);
+    };
+  }, []);
 
   const columns: { 
     status: string; 
@@ -864,10 +897,13 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
               {columnLeads.map((lead) => {
                 const event = events.find(e => e.id === lead.eventId);
                 const displayColor = getLeadDisplayColor(lead);
+                const pastelClasses = displayColor ? getPastelClasses(displayColor) : { bg: "", border: "" };
+                const showFill = (colorDisplayMode === "fill" || colorDisplayMode === "both") && displayColor;
+                const showDot = (colorDisplayMode === "dot" || colorDisplayMode === "both");
                 return (
                 <Card
                   key={lead.id}
-                  className="cursor-move hover-elevate active-elevate-2 transition-shadow"
+                  className={`cursor-move hover-elevate active-elevate-2 transition-shadow ${showFill ? `${pastelClasses.bg} ${pastelClasses.border} border` : ""}`}
                   draggable
                   onDragStart={() => handleDragStart(lead)}
                   data-testid={`kanban-card-${lead.id}`}
@@ -877,7 +913,7 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                       {/* ФИО и кнопки Edit/Convert на одной линии */}
                       <div className="flex items-start justify-between gap-2 flex-wrap">
                         <div className="font-medium flex-1 flex items-center gap-2">
-                          <ColorIndicator color={displayColor} />
+                          {showDot && <ColorIndicator color={displayColor} />}
                           <span>{getLeadName(lead)}</span>
                         </div>
                         <div className="flex items-center gap-1">

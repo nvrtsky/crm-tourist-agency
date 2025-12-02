@@ -1424,270 +1424,245 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                 }}
               />
 
-              <FormField
-                control={form.control}
-                name="tourCost"
-                render={({ field }) => {
-                  // Format number with thousand separators for display
-                  const formatNumberInput = (value: string) => {
-                    if (!value) return "";
-                    // Handle both comma and dot as decimal separator
-                    const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
-                    const num = parseFloat(cleanValue);
-                    if (isNaN(num)) return "";
-                    return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                  };
-                  
-                  // Parse formatted string back to plain number string (with dot as decimal separator)
-                  const parseNumberInput = (value: string) => {
-                    if (!value || value.trim() === "") return null;
-                    
-                    // Remove all spaces first
-                    let cleanValue = value.replace(/\s/g, '');
-                    
-                    // Smart decimal separator detection:
-                    // If both comma and dot exist, the rightmost one is the decimal separator
-                    const lastCommaIndex = cleanValue.lastIndexOf(',');
-                    const lastDotIndex = cleanValue.lastIndexOf('.');
-                    
-                    if (lastCommaIndex > lastDotIndex) {
-                      // Comma is decimal separator (European format: 1.234.567,89)
-                      cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
-                    } else if (lastDotIndex > lastCommaIndex) {
-                      // Dot is decimal separator (US format: 1,234,567.89)
-                      cleanValue = cleanValue.replace(/,/g, '');
-                    } else if (lastCommaIndex !== -1 && lastDotIndex === -1) {
-                      // Only comma exists (Russian format: 123456,78)
-                      cleanValue = cleanValue.replace(',', '.');
-                    }
-                    // else: only dot or no separators - keep as is
-                    
-                    // Keep only digits, dot, and minus sign
-                    const sanitized = cleanValue.replace(/[^\d.-]/g, '');
-                    
-                    // Validate format: optional minus, digits, optional decimal part
-                    if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "-") {
-                      return field.value;  // Preserve previous valid value
-                    }
-                    
-                    return sanitized;
-                  };
-                  
-                  // Display formatted value when not focused, raw value when focused
-                  const displayValue = isTourCostFocused 
-                    ? (field.value || "") 
-                    : formatNumberInput(field.value || "");
-                  
-                  return (
-                    <FormItem>
-                      <FormLabel>Стоимость тура</FormLabel>
+              <FormItem>
+                <FormLabel>Стоимость тура</FormLabel>
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="tourCost"
+                    render={({ field }) => {
+                      const formatNumberInput = (value: string) => {
+                        if (!value) return "";
+                        const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
+                        const num = parseFloat(cleanValue);
+                        if (isNaN(num)) return "";
+                        return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      };
+                      
+                      const parseNumberInput = (value: string) => {
+                        if (!value || value.trim() === "") return null;
+                        let cleanValue = value.replace(/\s/g, '');
+                        const lastCommaIndex = cleanValue.lastIndexOf(',');
+                        const lastDotIndex = cleanValue.lastIndexOf('.');
+                        if (lastCommaIndex > lastDotIndex) {
+                          cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+                        } else if (lastDotIndex > lastCommaIndex) {
+                          cleanValue = cleanValue.replace(/,/g, '');
+                        } else if (lastCommaIndex !== -1 && lastDotIndex === -1) {
+                          cleanValue = cleanValue.replace(',', '.');
+                        }
+                        const sanitized = cleanValue.replace(/[^\d.-]/g, '');
+                        if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "-") {
+                          return field.value;
+                        }
+                        return sanitized;
+                      };
+                      
+                      const displayValue = isTourCostFocused 
+                        ? (field.value || "") 
+                        : formatNumberInput(field.value || "");
+                      
+                      return (
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="0,00"
+                            value={displayValue}
+                            onFocus={() => setIsTourCostFocused(true)}
+                            onBlur={() => setIsTourCostFocused(false)}
+                            onChange={(e) => {
+                              const rawValue = parseNumberInput(e.target.value);
+                              field.onChange(rawValue);
+                            }}
+                            className="flex-1"
+                            data-testid="input-tourCost"
+                          />
+                        </FormControl>
+                      );
+                    }}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tourCostCurrency"
+                    render={({ field }) => (
                       <FormControl>
-                        <Input
-                          type="text"
-                          placeholder="0,00"
-                          value={displayValue}
-                          onFocus={() => setIsTourCostFocused(true)}
-                          onBlur={() => setIsTourCostFocused(false)}
-                          onChange={(e) => {
-                            const rawValue = parseNumberInput(e.target.value);
-                            field.onChange(rawValue);
-                          }}
-                          data-testid="input-tourCost"
-                        />
+                        <Select onValueChange={field.onChange} value={field.value || "RUB"}>
+                          <SelectTrigger className="w-20" data-testid="select-tourCostCurrency">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="RUB">₽</SelectItem>
+                            <SelectItem value="USD">$</SelectItem>
+                            <SelectItem value="CNY">¥</SelectItem>
+                            <SelectItem value="EUR">€</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
+                    )}
+                  />
+                </div>
+                <FormMessage />
+              </FormItem>
 
-              <FormField
-                control={form.control}
-                name="tourCostCurrency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Валюта</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "RUB"}>
+              <FormItem>
+                <FormLabel>Аванс</FormLabel>
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="advancePayment"
+                    render={({ field }) => {
+                      const formatNumberInput = (value: string) => {
+                        if (!value) return "";
+                        const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
+                        const num = parseFloat(cleanValue);
+                        if (isNaN(num)) return "";
+                        return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      };
+                      
+                      const parseNumberInput = (value: string) => {
+                        if (!value || value.trim() === "") return null;
+                        let cleanValue = value.replace(/\s/g, '');
+                        const lastCommaIndex = cleanValue.lastIndexOf(',');
+                        const lastDotIndex = cleanValue.lastIndexOf('.');
+                        if (lastCommaIndex > lastDotIndex) {
+                          cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+                        } else if (lastDotIndex > lastCommaIndex) {
+                          cleanValue = cleanValue.replace(/,/g, '');
+                        } else if (lastCommaIndex !== -1 && lastDotIndex === -1) {
+                          cleanValue = cleanValue.replace(',', '.');
+                        }
+                        const sanitized = cleanValue.replace(/[^\d.-]/g, '');
+                        if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "-") {
+                          return field.value;
+                        }
+                        return sanitized;
+                      };
+                      
+                      const displayValue = isAdvanceFocused 
+                        ? (field.value || "") 
+                        : formatNumberInput(field.value || "");
+                      
+                      return (
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="0,00"
+                            value={displayValue}
+                            onFocus={() => setIsAdvanceFocused(true)}
+                            onBlur={() => setIsAdvanceFocused(false)}
+                            onChange={(e) => {
+                              const rawValue = parseNumberInput(e.target.value);
+                              field.onChange(rawValue);
+                            }}
+                            className="flex-1"
+                            data-testid="input-advancePayment"
+                          />
+                        </FormControl>
+                      );
+                    }}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="advancePaymentCurrency"
+                    render={({ field }) => (
                       <FormControl>
-                        <SelectTrigger data-testid="select-tourCostCurrency">
-                          <SelectValue />
-                        </SelectTrigger>
+                        <Select onValueChange={field.onChange} value={field.value || "RUB"}>
+                          <SelectTrigger className="w-20" data-testid="select-advancePaymentCurrency">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="RUB">₽</SelectItem>
+                            <SelectItem value="USD">$</SelectItem>
+                            <SelectItem value="CNY">¥</SelectItem>
+                            <SelectItem value="EUR">€</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="RUB">₽ RUB</SelectItem>
-                        <SelectItem value="USD">$ USD</SelectItem>
-                        <SelectItem value="CNY">¥ CNY</SelectItem>
-                        <SelectItem value="EUR">€ EUR</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    )}
+                  />
+                </div>
+                <FormMessage />
+              </FormItem>
 
-              <FormField
-                control={form.control}
-                name="advancePayment"
-                render={({ field }) => {
-                  const formatNumberInput = (value: string) => {
-                    if (!value) return "";
-                    const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
-                    const num = parseFloat(cleanValue);
-                    if (isNaN(num)) return "";
-                    return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                  };
-                  
-                  const parseNumberInput = (value: string) => {
-                    if (!value || value.trim() === "") return null;
-                    let cleanValue = value.replace(/\s/g, '');
-                    const lastCommaIndex = cleanValue.lastIndexOf(',');
-                    const lastDotIndex = cleanValue.lastIndexOf('.');
-                    if (lastCommaIndex > lastDotIndex) {
-                      cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
-                    } else if (lastDotIndex > lastCommaIndex) {
-                      cleanValue = cleanValue.replace(/,/g, '');
-                    } else if (lastCommaIndex !== -1 && lastDotIndex === -1) {
-                      cleanValue = cleanValue.replace(',', '.');
-                    }
-                    const sanitized = cleanValue.replace(/[^\d.-]/g, '');
-                    if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "-") {
-                      return field.value;
-                    }
-                    return sanitized;
-                  };
-                  
-                  const displayValue = isAdvanceFocused 
-                    ? (field.value || "") 
-                    : formatNumberInput(field.value || "");
-                  
-                  return (
-                    <FormItem>
-                      <FormLabel>Аванс</FormLabel>
+              <FormItem>
+                <FormLabel>Остаток</FormLabel>
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="remainingPayment"
+                    render={({ field }) => {
+                      const formatNumberInput = (value: string) => {
+                        if (!value) return "";
+                        const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
+                        const num = parseFloat(cleanValue);
+                        if (isNaN(num)) return "";
+                        return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      };
+                      
+                      const parseNumberInput = (value: string) => {
+                        if (!value || value.trim() === "") return null;
+                        let cleanValue = value.replace(/\s/g, '');
+                        const lastCommaIndex = cleanValue.lastIndexOf(',');
+                        const lastDotIndex = cleanValue.lastIndexOf('.');
+                        if (lastCommaIndex > lastDotIndex) {
+                          cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+                        } else if (lastDotIndex > lastCommaIndex) {
+                          cleanValue = cleanValue.replace(/,/g, '');
+                        } else if (lastCommaIndex !== -1 && lastDotIndex === -1) {
+                          cleanValue = cleanValue.replace(',', '.');
+                        }
+                        const sanitized = cleanValue.replace(/[^\d.-]/g, '');
+                        if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "-") {
+                          return field.value;
+                        }
+                        return sanitized;
+                      };
+                      
+                      const displayValue = isRemainingFocused 
+                        ? (field.value || "") 
+                        : formatNumberInput(field.value || "");
+                      
+                      return (
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="0,00"
+                            value={displayValue}
+                            onFocus={() => setIsRemainingFocused(true)}
+                            onBlur={() => setIsRemainingFocused(false)}
+                            onChange={(e) => {
+                              const rawValue = parseNumberInput(e.target.value);
+                              field.onChange(rawValue);
+                            }}
+                            className="flex-1"
+                            data-testid="input-remainingPayment"
+                          />
+                        </FormControl>
+                      );
+                    }}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="remainingPaymentCurrency"
+                    render={({ field }) => (
                       <FormControl>
-                        <Input
-                          type="text"
-                          placeholder="0,00"
-                          value={displayValue}
-                          onFocus={() => setIsAdvanceFocused(true)}
-                          onBlur={() => setIsAdvanceFocused(false)}
-                          onChange={(e) => {
-                            const rawValue = parseNumberInput(e.target.value);
-                            field.onChange(rawValue);
-                          }}
-                          data-testid="input-advancePayment"
-                        />
+                        <Select onValueChange={field.onChange} value={field.value || "RUB"}>
+                          <SelectTrigger className="w-20" data-testid="select-remainingPaymentCurrency">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="RUB">₽</SelectItem>
+                            <SelectItem value="USD">$</SelectItem>
+                            <SelectItem value="CNY">¥</SelectItem>
+                            <SelectItem value="EUR">€</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-
-              <FormField
-                control={form.control}
-                name="advancePaymentCurrency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Валюта</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "RUB"}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-advancePaymentCurrency">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="RUB">₽ RUB</SelectItem>
-                        <SelectItem value="USD">$ USD</SelectItem>
-                        <SelectItem value="CNY">¥ CNY</SelectItem>
-                        <SelectItem value="EUR">€ EUR</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="remainingPayment"
-                render={({ field }) => {
-                  const formatNumberInput = (value: string) => {
-                    if (!value) return "";
-                    const cleanValue = value.replace(/\s/g, '').replace(/,/g, '.');
-                    const num = parseFloat(cleanValue);
-                    if (isNaN(num)) return "";
-                    return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                  };
-                  
-                  const parseNumberInput = (value: string) => {
-                    if (!value || value.trim() === "") return null;
-                    let cleanValue = value.replace(/\s/g, '');
-                    const lastCommaIndex = cleanValue.lastIndexOf(',');
-                    const lastDotIndex = cleanValue.lastIndexOf('.');
-                    if (lastCommaIndex > lastDotIndex) {
-                      cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
-                    } else if (lastDotIndex > lastCommaIndex) {
-                      cleanValue = cleanValue.replace(/,/g, '');
-                    } else if (lastCommaIndex !== -1 && lastDotIndex === -1) {
-                      cleanValue = cleanValue.replace(',', '.');
-                    }
-                    const sanitized = cleanValue.replace(/[^\d.-]/g, '');
-                    if (!/^-?\d*\.?\d*$/.test(sanitized) || sanitized === "-") {
-                      return field.value;
-                    }
-                    return sanitized;
-                  };
-                  
-                  const displayValue = isRemainingFocused 
-                    ? (field.value || "") 
-                    : formatNumberInput(field.value || "");
-                  
-                  return (
-                    <FormItem>
-                      <FormLabel>Остаток</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder="0,00"
-                          value={displayValue}
-                          onFocus={() => setIsRemainingFocused(true)}
-                          onBlur={() => setIsRemainingFocused(false)}
-                          onChange={(e) => {
-                            const rawValue = parseNumberInput(e.target.value);
-                            field.onChange(rawValue);
-                          }}
-                          data-testid="input-remainingPayment"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-
-              <FormField
-                control={form.control}
-                name="remainingPaymentCurrency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Валюта</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "RUB"}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-remainingPaymentCurrency">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="RUB">₽ RUB</SelectItem>
-                        <SelectItem value="USD">$ USD</SelectItem>
-                        <SelectItem value="CNY">¥ CNY</SelectItem>
-                        <SelectItem value="EUR">€ EUR</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    )}
+                  />
+                </div>
+                <FormMessage />
+              </FormItem>
             </div>
           </div>
 

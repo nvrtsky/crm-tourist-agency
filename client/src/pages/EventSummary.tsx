@@ -866,13 +866,26 @@ export default function EventSummary() {
 
   const createVisitMutation = useMutation({
     mutationFn: async ({ dealId, visitData }: { dealId: string; visitData: Partial<CityVisit> & { city: string } }) => {
-      return apiRequest("POST", `/api/deals/${dealId}/visits`, {
-        ...visitData,
-        // Set required fields with defaults
-        arrivalDate: visitData.arrivalDate || format(new Date(), 'yyyy-MM-dd'),
-        transportType: visitData.transportType || "plane",
-        hotelName: visitData.hotelName || "Hotel",
-      });
+      // Build payload without forcing default values - allows creating visits with departure data only
+      const payload: Record<string, any> = { city: visitData.city };
+      
+      // Only include fields that have actual values
+      if (visitData.arrivalDate) payload.arrivalDate = visitData.arrivalDate;
+      if (visitData.arrivalTime) payload.arrivalTime = visitData.arrivalTime;
+      if (visitData.transportType) payload.transportType = visitData.transportType;
+      if (visitData.flightNumber) payload.flightNumber = visitData.flightNumber;
+      if (visitData.airport) payload.airport = visitData.airport;
+      if (visitData.transfer) payload.transfer = visitData.transfer;
+      if (visitData.departureDate) payload.departureDate = visitData.departureDate;
+      if (visitData.departureTime) payload.departureTime = visitData.departureTime;
+      if (visitData.departureTransportType) payload.departureTransportType = visitData.departureTransportType;
+      if (visitData.departureFlightNumber) payload.departureFlightNumber = visitData.departureFlightNumber;
+      if (visitData.departureAirport) payload.departureAirport = visitData.departureAirport;
+      if (visitData.departureTransfer) payload.departureTransfer = visitData.departureTransfer;
+      if (visitData.hotelName) payload.hotelName = visitData.hotelName;
+      if (visitData.roomType) payload.roomType = visitData.roomType;
+      
+      return apiRequest("POST", `/api/deals/${dealId}/visits`, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });

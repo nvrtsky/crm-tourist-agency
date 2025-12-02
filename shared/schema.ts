@@ -158,7 +158,7 @@ export const cityVisits = pgTable("city_visits", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   dealId: varchar("deal_id").notNull().references(() => deals.id, { onDelete: 'cascade' }),
   city: text("city").notNull(),
-  arrivalDate: text("arrival_date").notNull(), // ISO date string
+  arrivalDate: text("arrival_date"), // ISO date string (optional - can be filled after departure)
   arrivalTime: text("arrival_time"), // Time string HH:MM (optional)
   departureDate: text("departure_date"), // ISO date string (optional)
   departureTime: text("departure_time"), // Time string HH:MM (optional)
@@ -170,7 +170,7 @@ export const cityVisits = pgTable("city_visits", {
   departureFlightNumber: text("departure_flight_number"), // Flight/train number for departure
   departureAirport: text("departure_airport"), // Airport/station name for departure
   departureTransfer: text("departure_transfer"), // Transfer info for departure
-  hotelName: text("hotel_name").notNull(),
+  hotelName: text("hotel_name"), // Hotel name (optional - can be filled later)
   roomType: text("room_type"), // 'twin' or 'double'
 });
 

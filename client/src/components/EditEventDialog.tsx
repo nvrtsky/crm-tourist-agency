@@ -40,6 +40,16 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 
+const CURRENCIES = ["RUB", "USD", "CNY", "EUR"] as const;
+type Currency = typeof CURRENCIES[number];
+
+const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  RUB: "₽",
+  USD: "$",
+  CNY: "¥",
+  EUR: "€",
+};
+
 const formSchema = z.object({
   name: z.string().trim().min(1, "Название обязательно"),
   description: z.string().optional(),
@@ -50,6 +60,7 @@ const formSchema = z.object({
   endDate: z.date({ required_error: "Дата окончания обязательна" }),
   participantLimit: z.number().min(1, "Лимит должен быть больше 0"),
   price: z.string().trim().min(1, "Цена обязательна"),
+  priceCurrency: z.enum(CURRENCIES).default("RUB"),
   color: z.enum(["red", "blue", "green", "yellow", "purple"]).nullable(),
   cityGuides: z.record(z.string(), z.string()).optional(), // City name -> user ID mapping
 });
@@ -122,6 +133,7 @@ export function EditEventDialog({
       endDate: event?.endDate ? new Date(event.endDate) : undefined,
       participantLimit: event?.participantLimit || 10,
       price: event?.price ? String(event.price) : "0",
+      priceCurrency: (event?.priceCurrency as Currency) || "RUB",
       color: (event?.color as ColorOption) || null,
       cityGuides: (event?.cityGuides as Record<string, string>) || {},
     },
@@ -144,6 +156,7 @@ export function EditEventDialog({
       startDate: format(data.startDate, "yyyy-MM-dd"),
       endDate: format(data.endDate, "yyyy-MM-dd"),
       price: String(data.price).trim(),
+      priceCurrency: data.priceCurrency,
       participantLimit: Number(data.participantLimit),
     };
 
@@ -188,6 +201,7 @@ export function EditEventDialog({
         endDate: event.endDate ? new Date(event.endDate) : undefined,
         participantLimit: event.participantLimit || 10,
         price: event.price ? String(event.price) : "0",
+        priceCurrency: (event.priceCurrency as Currency) || "RUB",
         color: (event.color as ColorOption) || null,
         cityGuides: (event.cityGuides as Record<string, string>) || {},
       });
@@ -459,26 +473,49 @@ export function EditEventDialog({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Базовая цена (₽)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        value={field.value || ""}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        placeholder="89000"
-                        data-testid="input-event-price"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormItem>
+                <FormLabel>Базовая цена за 1 туриста</FormLabel>
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          placeholder="89000"
+                          className="flex-1"
+                          data-testid="input-event-price"
+                        />
+                      </FormControl>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="priceCurrency"
+                    render={({ field }) => (
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="w-20" data-testid="select-price-currency">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CURRENCIES.map((currency) => (
+                              <SelectItem key={currency} value={currency}>
+                                {CURRENCY_SYMBOLS[currency]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+                </div>
+                <FormMessage />
+              </FormItem>
             </div>
 
             <FormField

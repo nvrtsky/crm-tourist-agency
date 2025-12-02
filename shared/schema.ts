@@ -101,6 +101,7 @@ export const events = pgTable("events", {
   endDate: date("end_date").notNull(),
   participantLimit: integer("participant_limit").notNull(), // Maximum number of participants
   price: numeric("price", { precision: 10, scale: 2 }).notNull(), // Tour price
+  priceCurrency: text("price_currency").notNull().default("RUB"), // Валюта базовой цены: RUB, USD, CNY, EUR
   isFull: boolean("is_full").notNull().default(false), // Auto-updated when event is full
   isArchived: boolean("is_archived").notNull().default(false), // Manual or auto-archived when tour ends
   color: text("color"), // Color indicator: 'red', 'blue', 'green', 'yellow', 'purple'

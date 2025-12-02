@@ -1,0 +1,204 @@
+[TAILING] Tailing last 100 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 100 lines:
+0|crm-chin | }
+0|crm-chin | Error fetching leads: error: column leads.selected_cities does not exist
+0|crm-chin |     at /var/www/crm-tourist-agency/node_modules/pg-pool/index.js:45:11
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|crm-chin |     at async DatabaseStorage.getAllLeads (file:///var/www/crm-tourist-agency/dist/index.js:1118:20)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:2231:22 {
+0|crm-chin |   length: 120,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42703',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '205',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '3722',
+0|crm-chin |   routine: 'errorMissingColumn'
+0|crm-chin | }
+0|crm-chin | Error fetching events: error: column "price_currency" does not exist
+0|crm-chin |     at /var/www/crm-tourist-agency/node_modules/pg-pool/index.js:45:11
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|crm-chin |     at async DatabaseStorage.getAllEvents (file:///var/www/crm-tourist-agency/dist/index.js:654:12)
+0|crm-chin |     at async DatabaseStorage.getAllEventsWithStats (file:///var/www/crm-tourist-agency/dist/index.js:685:23)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:1676:21 {
+0|crm-chin |   length: 115,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42703',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '127',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '3722',
+0|crm-chin |   routine: 'errorMissingColumn'
+0|crm-chin | }
+0|crm-chin | Error fetching events: error: column "price_currency" does not exist
+0|crm-chin |     at /var/www/crm-tourist-agency/node_modules/pg-pool/index.js:45:11
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|crm-chin |     at async DatabaseStorage.getAllEvents (file:///var/www/crm-tourist-agency/dist/index.js:654:12)
+0|crm-chin |     at async DatabaseStorage.getAllEventsWithStats (file:///var/www/crm-tourist-agency/dist/index.js:685:23)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:1676:21 {
+0|crm-chin |   length: 115,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42703',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '127',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '3722',
+0|crm-chin |   routine: 'errorMissingColumn'
+0|crm-chin | }
+0|crm-chin | Error fetching events: error: column "price_currency" does not exist
+0|crm-chin |     at /var/www/crm-tourist-agency/node_modules/pg-pool/index.js:45:11
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|crm-chin |     at async DatabaseStorage.getAllEvents (file:///var/www/crm-tourist-agency/dist/index.js:654:12)
+0|crm-chin |     at async DatabaseStorage.getAllEventsWithStats (file:///var/www/crm-tourist-agency/dist/index.js:685:23)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:1676:21 {
+0|crm-chin |   length: 115,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42703',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '127',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '3722',
+0|crm-chin |   routine: 'errorMissingColumn'
+0|crm-chin | }
+
+/root/.pm2/logs/crm-chinaunique-out.log last 100 lines:
+0|crm-chin | 
+0|crm-chin | 6:08:25 PM [express] serving on port 3000
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 6:08:53 PM [express] GET /api/leads 401 in 5ms :: {"error":"Unauthorized"}
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 6:09:00 PM [express] GET /api/leads 401 in 1ms :: {"error":"Unauthorized"}
+0|crm-chin | 📥 GET /leads
+0|crm-chin | 📥 GET /assets/index-DrSjkSiL.js
+0|crm-chin | 📥 GET /assets/index-D55Ey6Dx.css
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 6:09:04 PM [express] GET /api/auth/me 401 in 1ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 6:09:06 PM [express] POST /api/auth/login 200 in 92ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af…
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 6:09:06 PM [express] GET /api/auth/me 304 in 1ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc7…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:09:06 PM [express] GET /api/events 500 in 6ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:09:09 PM [express] GET /api/events 500 in 5ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 6:09:09 PM [express] GET /api/leads 500 in 5ms :: {"error":"Failed to fetch leads"}
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:09:11 PM [express] GET /api/events 500 in 3ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 6:09:12 PM [express] GET /api/leads 500 in 4ms :: {"error":"Failed to fetch leads"}
+0|crm-chin | 6:09:12 PM [express] GET /api/events 500 in 7ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:10:09 PM [express] GET /api/events 500 in 3ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:10:12 PM [express] GET /api/events 500 in 4ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 6:10:12 PM [express] GET /api/leads 500 in 5ms :: {"error":"Failed to fetch leads"}
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:10:13 PM [express] GET /api/events 500 in 3ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 6:10:16 PM [express] GET /api/leads 500 in 3ms :: {"error":"Failed to fetch leads"}
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:10:16 PM [express] GET /api/events 500 in 4ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/users/managers-and-admins
+0|crm-chin | 6:10:18 PM [express] GET /api/users/managers-and-admins 304 in 2ms :: [{"id":"8fb947a9-6af5-4a13-bdf…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:10:18 PM [express] GET /api/events 500 in 5ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /.env
+0|crm-chin | 📥 GET /api/.env
+0|crm-chin | 6:11:41 PM [express] GET /api/.env 200 in 2ms
+0|crm-chin | 📥 GET /backend/.env
+0|crm-chin | 📥 GET /admin/.env
+0|crm-chin | 📥 GET /.env.example
+0|crm-chin | 📥 GET /app_dev.php/_profiler/phpinfo
+0|crm-chin | 📥 GET /?phpinfo=-1
+0|crm-chin | 📥 GET /new/.env
+0|crm-chin | 📥 GET /frontend/web/debug/default/view
+0|crm-chin | 📥 GET /_static/.env
+0|crm-chin | 📥 GET /download/.env
+0|crm-chin | 📥 GET /saas/.env
+0|crm-chin | 📥 GET /.env.json
+0|crm-chin | 📥 GET /infos/
+0|crm-chin | 📥 GET /apps/.env
+0|crm-chin | 📥 GET /templates/.env
+0|crm-chin | 📥 GET /system/.env
+0|crm-chin | 
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 6:14:01 PM [express] serving on port 3000
+0|crm-chin | 📥 GET /leads
+0|crm-chin | 📥 GET /assets/index-D55Ey6Dx.css
+0|crm-chin | 📥 GET /assets/index-DrSjkSiL.js
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 6:14:09 PM [express] GET /api/auth/me 401 in 2ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 6:14:10 PM [express] POST /api/auth/login 200 in 95ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af…
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 6:14:10 PM [express] GET /api/auth/me 304 in 1ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc7…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:14:10 PM [express] GET /api/events 500 in 7ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 6:14:14 PM [express] GET /api/leads 500 in 8ms :: {"error":"Failed to fetch leads"}
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:14:14 PM [express] GET /api/events 500 in 5ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:14:15 PM [express] GET /api/events 500 in 4ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /events
+0|crm-chin | 📥 GET /assets/index-DrSjkSiL.js
+0|crm-chin | 📥 GET /assets/index-D55Ey6Dx.css
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 6:14:16 PM [express] GET /api/auth/me 304 in 1ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc7…
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 6:14:17 PM [express] GET /api/events 500 in 2ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /favicon.png
+0|crm-chin | 📥 GET /favicon.png

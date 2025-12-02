@@ -1071,21 +1071,24 @@ export default function EventSummary() {
           updates: { [field]: value || null } 
         });
       } else {
-        // Create new visit with defaults
+        // Create new visit - build payload first with undefined values, then set the actual field
+        const visitPayload: any = {
+          city,
+          arrivalDate: undefined,
+          arrivalTime: undefined,
+          transportType: undefined,
+          flightNumber: undefined,
+          hotelName: undefined,
+          roomType: undefined,
+          departureDate: undefined,
+          departureTime: undefined,
+        };
+        // Set the actual field value AFTER object creation to avoid overwrite
+        visitPayload[field] = value || undefined;
+        
         createVisitMutation.mutate({
           dealId: member.deal.id,
-          visitData: {
-            city,
-            [field]: value || undefined,
-            arrivalDate: undefined,
-            arrivalTime: undefined,
-            transportType: undefined,
-            flightNumber: undefined,
-            hotelName: undefined,
-            roomType: undefined,
-            departureDate: undefined,
-            departureTime: undefined,
-          },
+          visitData: visitPayload,
         });
       }
     });

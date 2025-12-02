@@ -341,6 +341,9 @@ export const insertLeadSchema = createInsertSchema(leads).omit({
   id: true, 
   createdAt: true, 
   updatedAt: true 
+}).extend({
+  // Explicitly define selectedCities to ensure array is properly handled
+  selectedCities: z.array(z.string()).nullable().optional(),
 });
 export const updateLeadSchema = insertLeadSchema.partial();
 export const insertLeadStatusHistorySchema = createInsertSchema(leadStatusHistory).omit({ 

@@ -4,7 +4,7 @@ import { useState, Fragment, useRef, useLayoutEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, Train, ChevronDown, Cake, MapPin } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, TrainFront, Bus, ChevronDown, Cake, MapPin } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -124,7 +124,18 @@ function TransportTypeSelector({ value, onSave, className, testIdSuffix = '' }: 
         data-testid={`button-transport-train${testIdSuffix}`}
         className="h-6 w-6"
       >
-        <Train className="h-3 w-3" />
+        <TrainFront className="h-3 w-3" />
+      </Button>
+      <Button
+        type="button"
+        size="icon"
+        variant={value === "bus" ? "default" : "ghost"}
+        onClick={() => onSave(value === "bus" ? null : "bus")}
+        aria-label="Автобус"
+        data-testid={`button-transport-bus${testIdSuffix}`}
+        className="h-6 w-6"
+      >
+        <Bus className="h-3 w-3" />
       </Button>
     </div>
   );
@@ -466,7 +477,7 @@ function ParticipantCard({
                           <EditableCell
                             type="text"
                             value={arrivalVisit?.airport}
-                            placeholder={arrivalVisit?.transportType === "plane" ? "Аэропорт" : "Вокзал"}
+                            placeholder={arrivalVisit?.transportType === "plane" ? "Аэропорт" : arrivalVisit?.transportType === "bus" ? "Автостанция" : "Вокзал"}
                             onSave={(value) => handleVisitUpdate(arrivalVisit?.id, participant.deal.id, city, "airport", value)}
                             className="text-sm flex-1"
                           />
@@ -554,7 +565,7 @@ function ParticipantCard({
                           <EditableCell
                             type="text"
                             value={departureVisit?.departureAirport}
-                            placeholder={departureVisit?.departureTransportType === "plane" ? "Аэропорт" : "Вокзал"}
+                            placeholder={departureVisit?.departureTransportType === "plane" ? "Аэропорт" : departureVisit?.departureTransportType === "bus" ? "Автостанция" : "Вокзал"}
                             onSave={(value) => handleVisitUpdate(departureVisit?.id, participant.deal.id, city, "departureAirport", value)}
                             className="text-sm flex-1"
                           />
@@ -1846,7 +1857,7 @@ export default function EventSummary() {
                                       <EditableCell
                                         type="text"
                                         value={visit?.airport}
-                                        placeholder={visit?.transportType === "plane" ? "Аэропорт" : "Вокзал"}
+                                        placeholder={visit?.transportType === "plane" ? "Аэропорт" : visit?.transportType === "bus" ? "Автостанция" : "Вокзал"}
                                         onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "airport", value)}
                                         className="text-xs flex-1"
                                       />
@@ -1932,7 +1943,7 @@ export default function EventSummary() {
                                       <EditableCell
                                         type="text"
                                         value={visit?.departureAirport}
-                                        placeholder={visit?.departureTransportType === "plane" ? "Аэропорт" : "Вокзал"}
+                                        placeholder={visit?.departureTransportType === "plane" ? "Аэропорт" : visit?.departureTransportType === "bus" ? "Автостанция" : "Вокзал"}
                                         onSave={(value) => handleVisitUpdate(visit?.id, participant.deal.id, city, "departureAirport", value)}
                                         className="text-xs flex-1"
                                       />

@@ -83,7 +83,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
             <div className="flex items-center gap-1 flex-shrink-0">
               {event.availableSpots === 0 && (
                 <Badge 
-                  className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-100 dark:border-red-800 text-[10px] sm:text-xs whitespace-nowrap" 
+                  className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-100 dark:border-green-800 text-[10px] sm:text-xs whitespace-nowrap" 
                   data-testid={`badge-full-${event.id}`}
                 >
                   Заполнено

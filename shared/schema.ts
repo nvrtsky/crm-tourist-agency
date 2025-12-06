@@ -167,6 +167,7 @@ export const deals = pgTable("deals", {
   eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
   status: text("status").notNull().default("pending"), // 'pending', 'confirmed', 'cancelled', 'completed'
   amount: numeric("amount", { precision: 10, scale: 2 }), // Deal amount (может отличаться от базовой цены тура)
+  paidAmount: numeric("paid_amount", { precision: 10, scale: 2 }), // Оплаченная сумма
   surcharge: text("surcharge"), // Additional charges/notes
   nights: text("nights"), // Number of nights
   groupId: varchar("group_id").references(() => groups.id, { onDelete: 'set null' }), // Group this deal belongs to (optional)

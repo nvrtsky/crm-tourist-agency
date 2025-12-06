@@ -700,6 +700,26 @@ export default function EventSummary() {
     },
   });
 
+  // Mutation for updating deal (paidAmount)
+  const updateDealMutation = useMutation({
+    mutationFn: async (data: { dealId: string; paidAmount?: string }) => {
+      return apiRequest("PATCH", `/api/deals/${data.dealId}`, { paidAmount: data.paidAmount });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+    },
+  });
+
+  // Mutation for updating lead (remainingPayment)
+  const updateLeadMutation = useMutation({
+    mutationFn: async (data: { leadId: string; remainingPayment?: string }) => {
+      return apiRequest("PATCH", `/api/leads/${data.leadId}`, { remainingPayment: data.remainingPayment });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
+    },
+  });
+
   // Helper to get participant expense (finds any expense for dealId + city)
   const getParticipantExpense = (dealId: string, city: string) => {
     return participantExpenses.find(
@@ -2280,9 +2300,14 @@ export default function EventSummary() {
                             <td className="p-2 border-r text-center">
                               <EditableCell
                                 type="text"
-                                value=""
+                                value={participant.deal.paidAmount?.toString() || ""}
                                 placeholder="0"
-                                onSave={() => {}}
+                                onSave={(value) => {
+                                  updateDealMutation.mutate({
+                                    dealId: participant.deal.id,
+                                    paidAmount: value || undefined,
+                                  });
+                                }}
                                 className="text-sm text-center"
                               />
                             </td>
@@ -2291,7 +2316,14 @@ export default function EventSummary() {
                                 type="text"
                                 value={participant.lead?.remainingPayment || ""}
                                 placeholder="0"
-                                onSave={() => {}}
+                                onSave={(value) => {
+                                  if (participant.lead?.id) {
+                                    updateLeadMutation.mutate({
+                                      leadId: participant.lead.id,
+                                      remainingPayment: value || undefined,
+                                    });
+                                  }
+                                }}
                                 className="text-sm text-center"
                               />
                             </td>

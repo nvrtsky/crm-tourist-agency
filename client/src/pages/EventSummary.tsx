@@ -1550,7 +1550,9 @@ export default function EventSummary() {
       <Tabs defaultValue="summary" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="summary" data-testid="tab-summary">Сводная таблица</TabsTrigger>
-          <TabsTrigger value="finance" data-testid="tab-finance">Финансы</TabsTrigger>
+          {user?.role === "admin" && (
+            <TabsTrigger value="finance" data-testid="tab-finance">Финансы</TabsTrigger>
+          )}
         </TabsList>
         
         <TabsContent value="summary">
@@ -2181,6 +2183,7 @@ export default function EventSummary() {
           </Card>
         </TabsContent>
         
+        {user?.role === "admin" && (
         <TabsContent value="finance">
           <Card data-testid="card-finance">
             <CardHeader>
@@ -2518,6 +2521,7 @@ export default function EventSummary() {
             </CardContent>
           </Card>
         </TabsContent>
+        )}
       </Tabs>
 
       {/* Create Mini-Group Dialog */}

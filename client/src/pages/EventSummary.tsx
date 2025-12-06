@@ -2208,6 +2208,7 @@ export default function EventSummary() {
                         <th className="p-2 text-center font-medium border-r min-w-[120px]">Стоимость тура</th>
                         <th className="p-2 text-center font-medium border-r min-w-[100px]">Оплачено</th>
                         <th className="p-2 text-center font-medium border-r min-w-[100px]">Остаток</th>
+                        <th className="p-2 text-center font-medium border-r min-w-[120px] bg-orange-50 dark:bg-orange-950/30">Сумма расходов</th>
                         {event.cities.map((city) => (
                           <Fragment key={city}>
                             <th colSpan={2} className="p-2 text-center font-medium border-r bg-muted/30">
@@ -2228,6 +2229,7 @@ export default function EventSummary() {
                         <th className="p-1 border-r"></th>
                         <th className="p-1 border-r"></th>
                         <th className="p-1 border-r"></th>
+                        <th className="p-1 border-r bg-orange-50 dark:bg-orange-950/30"></th>
                         {event.cities.map((city) => (
                           <Fragment key={city}>
                             <th className="p-1 border-r text-center min-w-[150px]">Тип расхода</th>
@@ -2292,6 +2294,14 @@ export default function EventSummary() {
                                 onSave={() => {}}
                                 className="text-sm text-center"
                               />
+                            </td>
+                            <td className="p-2 border-r text-center font-medium bg-orange-50 dark:bg-orange-950/30">
+                              {(() => {
+                                const total = participantExpenses
+                                  .filter(e => e.dealId === participant.deal.id)
+                                  .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                                return total > 0 ? formatCurrency(total) : "—";
+                              })()}
                             </td>
                             {event.cities.map((city) => {
                               const currentExpense = getParticipantExpense(participant.deal.id, city);
@@ -2408,6 +2418,12 @@ export default function EventSummary() {
                             ).join(", ");
                           })()}
                         </td>
+                        <td className="p-2 border-r text-center font-bold bg-orange-50 dark:bg-orange-950/30">
+                          {(() => {
+                            const total = participantExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                            return total > 0 ? formatCurrency(total) : "—";
+                          })()}
+                        </td>
                         {event.cities.map((city) => {
                           const cityParticipantTotal = participantExpenses
                             .filter(e => e.city === city)
@@ -2427,6 +2443,12 @@ export default function EventSummary() {
                           Общие расходы:
                         </td>
                         <td colSpan={3} className="p-2 border-r"></td>
+                        <td className="p-2 border-r text-center font-bold bg-orange-100 dark:bg-orange-900/30">
+                          {(() => {
+                            const total = commonExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                            return total > 0 ? formatCurrency(total) : "—";
+                          })()}
+                        </td>
                         {event.cities.map((city) => {
                           const currentCommonExpense = getCommonExpense(city);
                           return (
@@ -2533,6 +2555,14 @@ export default function EventSummary() {
                             return entries.map(([currency, amount]) => 
                               formatCurrency(amount, currency)
                             ).join(", ");
+                          })()}
+                        </td>
+                        <td className="p-2 border-r text-center font-bold bg-orange-100 dark:bg-orange-900/30">
+                          {(() => {
+                            const participantTotal = participantExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                            const commonTotal = commonExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                            const grandTotal = participantTotal + commonTotal;
+                            return grandTotal > 0 ? formatCurrency(grandTotal) : "—";
                           })()}
                         </td>
                         {event.cities.map((city) => {

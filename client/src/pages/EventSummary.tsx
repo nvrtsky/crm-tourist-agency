@@ -683,10 +683,7 @@ export default function EventSummary() {
   // Mutation for upserting participant expense
   const upsertParticipantExpenseMutation = useMutation({
     mutationFn: async (data: { dealId: string; city: string; expenseType: string; amount?: string; currency?: string; comment?: string }) => {
-      return apiRequest(`/api/events/${eventId}/expenses/participant`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
+      return apiRequest("PUT", `/api/events/${eventId}/expenses/participant`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/expenses`] });
@@ -696,27 +693,24 @@ export default function EventSummary() {
   // Mutation for upserting common expense
   const upsertCommonExpenseMutation = useMutation({
     mutationFn: async (data: { city: string; expenseType: string; amount?: string; currency?: string; comment?: string }) => {
-      return apiRequest(`/api/events/${eventId}/expenses/common`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
+      return apiRequest("PUT", `/api/events/${eventId}/expenses/common`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/expenses`] });
     },
   });
 
-  // Helper to get participant expense
-  const getParticipantExpense = (dealId: string, city: string, expenseType: string) => {
+  // Helper to get participant expense (finds any expense for dealId + city)
+  const getParticipantExpense = (dealId: string, city: string) => {
     return participantExpenses.find(
-      e => e.dealId === dealId && e.city === city && e.expenseType === expenseType
+      e => e.dealId === dealId && e.city === city
     );
   };
 
-  // Helper to get common expense
-  const getCommonExpense = (city: string, expenseType: string) => {
+  // Helper to get common expense (finds any expense for city)
+  const getCommonExpense = (city: string) => {
     return commonExpenses.find(
-      e => e.city === city && e.expenseType === expenseType
+      e => e.city === city
     );
   };
 
@@ -2300,7 +2294,7 @@ export default function EventSummary() {
                               />
                             </td>
                             {event.cities.map((city) => {
-                              const currentExpense = getParticipantExpense(participant.deal.id, city, 'accommodation');
+                              const currentExpense = getParticipantExpense(participant.deal.id, city);
                               return (
                                 <Fragment key={city}>
                                   <td className="p-1 border-r">
@@ -2351,12 +2345,12 @@ export default function EventSummary() {
                                         data-testid={`input-expense-amount-${participant.deal.id}-${city}`}
                                         onBlur={(e) => {
                                           const value = e.target.value;
-                                          if (currentExpense?.expenseType) {
+                                          if (value) {
                                             upsertParticipantExpenseMutation.mutate({
                                               dealId: participant.deal.id,
                                               city,
-                                              expenseType: currentExpense.expenseType,
-                                              amount: value || undefined,
+                                              expenseType: currentExpense?.expenseType || "other",
+                                              amount: value,
                                               currency: currentExpense?.currency || "RUB",
                                             });
                                           }
@@ -2414,12 +2408,19 @@ export default function EventSummary() {
                             ).join(", ");
                           })()}
                         </td>
-                        {event.cities.map((city) => (
-                          <Fragment key={city}>
-                            <td className="p-2 border-r text-center">—</td>
-                            <td className="p-2 border-r text-center font-bold">—</td>
-                          </Fragment>
-                        ))}
+                        {event.cities.map((city) => {
+                          const cityParticipantTotal = participantExpenses
+                            .filter(e => e.city === city)
+                            .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                          return (
+                            <Fragment key={city}>
+                              <td className="p-2 border-r text-center">—</td>
+                              <td className="p-2 border-r text-center font-bold">
+                                {cityParticipantTotal > 0 ? formatCurrency(cityParticipantTotal) : "—"}
+                              </td>
+                            </Fragment>
+                          );
+                        })}
                       </tr>
                       <tr className="bg-blue-50 dark:bg-blue-950/30">
                         <td colSpan={2} className="sticky left-0 bg-blue-50 dark:bg-blue-950/30 z-10 p-2 text-right font-medium">
@@ -2427,7 +2428,7 @@ export default function EventSummary() {
                         </td>
                         <td colSpan={3} className="p-2 border-r"></td>
                         {event.cities.map((city) => {
-                          const currentCommonExpense = getCommonExpense(city, 'guide');
+                          const currentCommonExpense = getCommonExpense(city);
                           return (
                             <Fragment key={city}>
                               <td className="p-1 border-r">
@@ -2476,11 +2477,11 @@ export default function EventSummary() {
                                     data-testid={`input-common-expense-amount-${city}`}
                                     onBlur={(e) => {
                                       const value = e.target.value;
-                                      if (currentCommonExpense?.expenseType) {
+                                      if (value) {
                                         upsertCommonExpenseMutation.mutate({
                                           city,
-                                          expenseType: currentCommonExpense.expenseType,
-                                          amount: value || undefined,
+                                          expenseType: currentCommonExpense?.expenseType || "other",
+                                          amount: value,
                                           currency: currentCommonExpense?.currency || "RUB",
                                         });
                                       }
@@ -2504,15 +2505,53 @@ export default function EventSummary() {
                       </tr>
                       <tr className="font-bold bg-muted/50">
                         <td colSpan={2} className="sticky left-0 bg-muted/50 z-10 p-2 text-right">ИТОГО:</td>
+                        <td className="p-2 border-r text-center">
+                          {formatCurrency(participants.reduce((sum, p) => sum + Number(p.deal.amount || 0), 0))} ₽
+                        </td>
                         <td className="p-2 border-r text-center">—</td>
-                        <td className="p-2 border-r text-center">—</td>
-                        <td className="p-2 border-r text-center">—</td>
-                        {event.cities.map((city) => (
-                          <Fragment key={city}>
-                            <td className="p-2 border-r text-center">—</td>
-                            <td className="p-2 border-r text-center">—</td>
-                          </Fragment>
-                        ))}
+                        <td className="p-2 border-r text-center">
+                          {(() => {
+                            const processedLeads = new Set<string>();
+                            const totals: Record<string, number> = {};
+                            
+                            participants.forEach(p => {
+                              if (p.lead && !processedLeads.has(p.lead.id)) {
+                                processedLeads.add(p.lead.id);
+                                if (p.lead.remainingPayment) {
+                                  const currency = p.lead.remainingPaymentCurrency || "RUB";
+                                  const amount = parseFloat(p.lead.remainingPayment);
+                                  if (!isNaN(amount)) {
+                                    totals[currency] = (totals[currency] || 0) + amount;
+                                  }
+                                }
+                              }
+                            });
+                            
+                            const entries = Object.entries(totals);
+                            if (entries.length === 0) return "—";
+                            
+                            return entries.map(([currency, amount]) => 
+                              formatCurrency(amount, currency)
+                            ).join(", ");
+                          })()}
+                        </td>
+                        {event.cities.map((city) => {
+                          const cityParticipantTotal = participantExpenses
+                            .filter(e => e.city === city)
+                            .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                          const cityCommonTotal = commonExpenses
+                            .filter(e => e.city === city)
+                            .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                          const cityTotal = cityParticipantTotal + cityCommonTotal;
+                          return (
+                            <Fragment key={city}>
+                              <td className="p-2 border-r text-center">—</td>
+                              <td className="p-2 border-r text-center font-bold">
+                                {cityTotal > 0 ? formatCurrency(cityTotal) : "—"}
+                              </td>
+                            </Fragment>
+                          );
+                        })}
                       </tr>
                     </tfoot>
                   </table>

@@ -192,6 +192,15 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
         )}
 
         <div className="pt-1 sm:pt-2 flex items-center gap-1 sm:gap-2">
+          <Button 
+            className="flex-1 h-8 sm:h-9 text-xs sm:text-sm" 
+            variant="outline"
+            onClick={() => onViewSummary(event.id)}
+            data-testid={`button-view-summary-${event.id}`}
+          >
+            Сводная таблица
+            <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1.5 sm:ml-2" />
+          </Button>
           {canModify && (
             <>
               <Button
@@ -249,15 +258,6 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
               </AlertDialog>
             </>
           )}
-          <Button 
-            className="flex-1 h-8 sm:h-9 text-xs sm:text-sm" 
-            variant="outline"
-            onClick={() => onViewSummary(event.id)}
-            data-testid={`button-view-summary-${event.id}`}
-          >
-            Сводная таблица
-            <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1.5 sm:ml-2" />
-          </Button>
         </div>
       </CardContent>
     </Card>

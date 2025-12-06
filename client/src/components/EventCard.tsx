@@ -132,10 +132,15 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
             </div>
           </div>
           
-          <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-            <span data-testid={`text-dates-${event.id}`}>
-              {format(new Date(event.startDate), "d MMM", { locale: ru })} - {format(new Date(event.endDate), "d MMM yyyy", { locale: ru })}
+          <div className="flex items-center justify-between gap-1.5 sm:gap-2 text-xs sm:text-sm">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <span data-testid={`text-dates-${event.id}`}>
+                {format(new Date(event.startDate), "d MMM", { locale: ru })} - {format(new Date(event.endDate), "d MMM yyyy", { locale: ru })}
+              </span>
+            </div>
+            <span className="font-semibold" data-testid={`text-price-${event.id}`}>
+              {formatCurrency(event.price)} ₽
             </span>
           </div>
           
@@ -177,12 +182,6 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
                 )}
               </>
             )}
-          </div>
-          
-          <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-            <span className="font-semibold" data-testid={`text-price-${event.id}`}>
-              {formatCurrency(event.price)} ₽
-            </span>
           </div>
         </div>
 

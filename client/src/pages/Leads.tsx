@@ -691,7 +691,19 @@ export default function Leads() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{event?.name || "—"}</TableCell>
+                        <TableCell>
+                          {event ? (
+                            <div className="flex flex-col">
+                              <span>{event.name}</span>
+                              {event.startDate && (
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(event.startDate), "dd.MM", { locale: ru })}
+                                  {event.endDate && ` - ${format(new Date(event.endDate), "dd.MM", { locale: ru })}`}
+                                </span>
+                              )}
+                            </div>
+                          ) : "—"}
+                        </TableCell>
                         <TableCell>{lead.phone || "—"}</TableCell>
                         <TableCell>{leadSourceMap[lead.source] || lead.source}</TableCell>
                         <TableCell>

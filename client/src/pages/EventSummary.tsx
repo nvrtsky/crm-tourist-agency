@@ -2199,141 +2199,108 @@ export default function EventSummary() {
                         const isPrimaryInFamily = participant.leadTourist?.isPrimary || 
                           (isFamily && leadMembers[0]?.deal.id === participant.deal.id);
                         
-                        const cityVisit = participant.visits || [];
-                        
                         return (
-                          <Fragment key={participant.deal.id}>
-                            <tr 
-                              className={`border-b hover:bg-muted/30 ${isFamily && !isPrimaryInFamily ? 'bg-muted/10' : ''}`}
-                              data-testid={`finance-row-${participant.deal.id}`}
+                          <tr 
+                            key={participant.deal.id}
+                            className={`border-b hover:bg-muted/30 ${isFamily && !isPrimaryInFamily ? 'bg-muted/10' : ''}`}
+                            data-testid={`finance-row-${participant.deal.id}`}
+                          >
+                            <td className="sticky left-0 bg-background z-10 p-2 border-r text-center font-medium">
+                              {index + 1}
+                            </td>
+                            <td 
+                              className="sticky bg-background z-10 p-2 border-r"
+                              style={{ left: stickyOffset }}
                             >
-                              <td className="sticky left-0 bg-background z-10 p-2 border-r text-center font-medium" rowSpan={2}>
-                                {index + 1}
-                              </td>
-                              <td 
-                                className="sticky bg-background z-10 p-2 border-r"
-                                style={{ left: stickyOffset }}
-                                rowSpan={2}
-                              >
-                                <div className="flex items-center gap-2">
-                                  {isFamily && <UsersRound className="h-3 w-3 text-muted-foreground" />}
-                                  <span className="font-medium truncate max-w-[180px]">
-                                    {formatTouristName(participant.leadTourist, participant.contact?.name)}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="p-2 border-r text-center" rowSpan={2}>
-                                <EditableCell
-                                  type="text"
-                                  value={participant.deal.amount?.toString() || ""}
-                                  placeholder="0"
-                                  onSave={() => {}}
-                                  className="text-sm text-center"
-                                />
-                              </td>
-                              <td className="p-2 border-r text-center" rowSpan={2}>
-                                <EditableCell
-                                  type="text"
-                                  value=""
-                                  placeholder="0"
-                                  onSave={() => {}}
-                                  className="text-sm text-center"
-                                />
-                              </td>
-                              <td className="p-2 border-r text-center" rowSpan={2}>
-                                <EditableCell
-                                  type="text"
-                                  value={participant.lead?.remainingPayment || ""}
-                                  placeholder="0"
-                                  onSave={() => {}}
-                                  className="text-sm text-center"
-                                />
-                              </td>
-                              {event.cities.map((city) => {
-                                const visit = cityVisit.find(v => v.city === city);
-                                return (
-                                  <Fragment key={city}>
-                                    <td className="p-2 border-r text-center" rowSpan={2}>
-                                      <EditableCell
-                                        type="date"
-                                        value={visit?.arrivalDate || ""}
-                                        placeholder="дд.мм.гг"
-                                        onSave={() => {}}
-                                        className="text-sm text-center"
-                                      />
-                                    </td>
-                                    <td className="p-2 border-r text-center" rowSpan={2}>
-                                      <EditableCell
-                                        type="date"
-                                        value={visit?.departureDate || ""}
-                                        placeholder="дд.мм.гг"
-                                        onSave={() => {}}
-                                        className="text-sm text-center"
-                                      />
-                                    </td>
-                                    <td className="p-1 border-r">
-                                      <Input
-                                        type="text"
-                                        placeholder="Проживание"
-                                        className="h-7 text-xs"
-                                        defaultValue="Проживание"
-                                        data-testid={`input-expense-type-${participant.deal.id}-${city}-1`}
-                                      />
-                                    </td>
-                                    <td className="p-1 border-r">
-                                      <Input
-                                        type="text"
-                                        placeholder="0"
-                                        className="h-7 text-xs text-center"
-                                        data-testid={`input-expense-amount-${participant.deal.id}-${city}-1`}
-                                      />
-                                    </td>
-                                  </Fragment>
-                                );
-                              })}
-                            </tr>
-                            <tr className="border-b hover:bg-muted/30">
-                              {event.cities.map((city) => (
-                                <Fragment key={city}>
-                                  <td className="p-1 border-r">
-                                    <div className="flex items-center gap-1">
-                                      <Input
-                                        type="text"
-                                        placeholder="Экскурсии"
-                                        className="h-7 text-xs flex-1"
-                                        defaultValue="Экскурсии"
-                                        data-testid={`input-expense-type-${participant.deal.id}-${city}-2`}
-                                      />
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 shrink-0"
-                                        title="Добавить расход"
-                                        data-testid={`button-add-expense-${participant.deal.id}-${city}`}
-                                      >
-                                        <Plus className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  </td>
-                                  <td className="p-1 border-r">
+                              <div className="flex items-center gap-2">
+                                {isFamily && <UsersRound className="h-3 w-3 text-muted-foreground" />}
+                                <span className="font-medium truncate max-w-[180px]">
+                                  {formatTouristName(participant.leadTourist, participant.contact?.name)}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="p-2 border-r text-center">
+                              <EditableCell
+                                type="text"
+                                value={participant.deal.amount?.toString() || ""}
+                                placeholder="0"
+                                onSave={() => {}}
+                                className="text-sm text-center"
+                              />
+                            </td>
+                            <td className="p-2 border-r text-center">
+                              <EditableCell
+                                type="text"
+                                value=""
+                                placeholder="0"
+                                onSave={() => {}}
+                                className="text-sm text-center"
+                              />
+                            </td>
+                            <td className="p-2 border-r text-center">
+                              <EditableCell
+                                type="text"
+                                value={participant.lead?.remainingPayment || ""}
+                                placeholder="0"
+                                onSave={() => {}}
+                                className="text-sm text-center"
+                              />
+                            </td>
+                            {event.cities.map((city) => (
+                              <Fragment key={city}>
+                                <td className="p-1 border-r text-center">
+                                  <Input
+                                    type="text"
+                                    placeholder="0"
+                                    className="h-7 text-xs text-center w-full"
+                                    data-testid={`input-arrival-${participant.deal.id}-${city}`}
+                                  />
+                                </td>
+                                <td className="p-1 border-r text-center">
+                                  <Input
+                                    type="text"
+                                    placeholder="0"
+                                    className="h-7 text-xs text-center w-full"
+                                    data-testid={`input-departure-${participant.deal.id}-${city}`}
+                                  />
+                                </td>
+                                <td className="p-1 border-r">
+                                  <div className="flex items-center gap-1">
                                     <Input
                                       type="text"
-                                      placeholder="0"
-                                      className="h-7 text-xs text-center"
-                                      data-testid={`input-expense-amount-${participant.deal.id}-${city}-2`}
+                                      placeholder="Тип расхода"
+                                      className="h-7 text-xs flex-1"
+                                      data-testid={`input-expense-type-${participant.deal.id}-${city}`}
                                     />
-                                  </td>
-                                </Fragment>
-                              ))}
-                            </tr>
-                          </Fragment>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 shrink-0"
+                                      title="Добавить расход"
+                                      data-testid={`button-add-expense-${participant.deal.id}-${city}`}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </td>
+                                <td className="p-1 border-r">
+                                  <Input
+                                    type="text"
+                                    placeholder="0"
+                                    className="h-7 text-xs text-center"
+                                    data-testid={`input-expense-amount-${participant.deal.id}-${city}`}
+                                  />
+                                </td>
+                              </Fragment>
+                            ))}
+                          </tr>
                         );
                       })}
                     </tbody>
-                    <tfoot className="border-t-2 bg-muted/30">
-                      <tr className="font-medium">
-                        <td colSpan={2} className="sticky left-0 bg-muted/30 z-10 p-2 text-right">Итого:</td>
+                    <tfoot className="border-t-2">
+                      <tr className="font-medium bg-muted/30">
+                        <td colSpan={2} className="sticky left-0 bg-muted/30 z-10 p-2 text-right">Итого участники:</td>
                         <td className="p-2 border-r text-center">
                           {formatCurrency(participants.reduce((sum, p) => sum + Number(p.deal.amount || 0), 0))} ₽
                         </td>
@@ -2370,6 +2337,59 @@ export default function EventSummary() {
                             <td className="p-2 border-r text-center">—</td>
                             <td className="p-2 border-r text-center">—</td>
                             <td className="p-2 border-r text-center font-bold">—</td>
+                          </Fragment>
+                        ))}
+                      </tr>
+                      <tr className="bg-blue-50 dark:bg-blue-950/30">
+                        <td colSpan={2} className="sticky left-0 bg-blue-50 dark:bg-blue-950/30 z-10 p-2 text-right font-medium">
+                          Общие расходы:
+                        </td>
+                        <td colSpan={3} className="p-2 border-r"></td>
+                        {event.cities.map((city) => (
+                          <Fragment key={city}>
+                            <td colSpan={2} className="p-2 border-r"></td>
+                            <td className="p-1 border-r">
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="text"
+                                  placeholder="Тип расхода"
+                                  className="h-7 text-xs flex-1 bg-white dark:bg-background"
+                                  data-testid={`input-common-expense-type-${city}`}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0"
+                                  title="Добавить общий расход"
+                                  data-testid={`button-add-common-expense-${city}`}
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </td>
+                            <td className="p-1 border-r">
+                              <Input
+                                type="text"
+                                placeholder="0"
+                                className="h-7 text-xs text-center bg-white dark:bg-background"
+                                data-testid={`input-common-expense-amount-${city}`}
+                              />
+                            </td>
+                          </Fragment>
+                        ))}
+                      </tr>
+                      <tr className="font-bold bg-muted/50">
+                        <td colSpan={2} className="sticky left-0 bg-muted/50 z-10 p-2 text-right">ИТОГО:</td>
+                        <td className="p-2 border-r text-center">—</td>
+                        <td className="p-2 border-r text-center">—</td>
+                        <td className="p-2 border-r text-center">—</td>
+                        {event.cities.map((city) => (
+                          <Fragment key={city}>
+                            <td className="p-2 border-r text-center">—</td>
+                            <td className="p-2 border-r text-center">—</td>
+                            <td className="p-2 border-r text-center">—</td>
+                            <td className="p-2 border-r text-center">—</td>
                           </Fragment>
                         ))}
                       </tr>

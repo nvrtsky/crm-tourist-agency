@@ -2156,12 +2156,12 @@ export default function EventSummary() {
                         >
                           Участник
                         </th>
-                        <th className="p-2 text-center font-medium border-r min-w-[100px]">Стоимость тура</th>
+                        <th className="p-2 text-center font-medium border-r min-w-[120px]">Стоимость тура</th>
                         <th className="p-2 text-center font-medium border-r min-w-[100px]">Оплачено</th>
                         <th className="p-2 text-center font-medium border-r min-w-[100px]">Остаток</th>
                         {event.cities.map((city) => (
                           <Fragment key={city}>
-                            <th colSpan={3} className="p-2 text-center font-medium border-r bg-muted/30">
+                            <th colSpan={4} className="p-2 text-center font-medium border-r bg-muted/30">
                               <div className="flex items-center justify-center gap-1">
                                 <MapPin className="h-3 w-3" />
                                 {city}
@@ -2181,9 +2181,10 @@ export default function EventSummary() {
                         <th className="p-1 border-r"></th>
                         {event.cities.map((city) => (
                           <Fragment key={city}>
-                            <th className="p-1 border-r text-center">Проживание</th>
-                            <th className="p-1 border-r text-center">Экскурсии</th>
-                            <th className="p-1 border-r text-center bg-blue-50 dark:bg-blue-950/30">Общие расходы</th>
+                            <th className="p-1 border-r text-center min-w-[90px]">Прибытие</th>
+                            <th className="p-1 border-r text-center min-w-[90px]">Отъезд</th>
+                            <th className="p-1 border-r text-center min-w-[140px]">Тип расхода</th>
+                            <th className="p-1 border-r text-center min-w-[100px]">Сумма</th>
                           </Fragment>
                         ))}
                       </tr>
@@ -2198,85 +2199,135 @@ export default function EventSummary() {
                         const isPrimaryInFamily = participant.leadTourist?.isPrimary || 
                           (isFamily && leadMembers[0]?.deal.id === participant.deal.id);
                         
+                        const cityVisit = participant.visits || [];
+                        
                         return (
-                          <tr 
-                            key={participant.deal.id} 
-                            className={`border-b hover:bg-muted/30 ${isFamily && !isPrimaryInFamily ? 'bg-muted/10' : ''}`}
-                            data-testid={`finance-row-${participant.deal.id}`}
-                          >
-                            <td className="sticky left-0 bg-background z-10 p-2 border-r text-center font-medium">
-                              {index + 1}
-                            </td>
-                            <td 
-                              className="sticky bg-background z-10 p-2 border-r"
-                              style={{ left: stickyOffset }}
+                          <Fragment key={participant.deal.id}>
+                            <tr 
+                              className={`border-b hover:bg-muted/30 ${isFamily && !isPrimaryInFamily ? 'bg-muted/10' : ''}`}
+                              data-testid={`finance-row-${participant.deal.id}`}
                             >
-                              <div className="flex items-center gap-2">
-                                {isFamily && <UsersRound className="h-3 w-3 text-muted-foreground" />}
-                                <span className="font-medium truncate max-w-[180px]">
-                                  {formatTouristName(participant.leadTourist, participant.contact?.name)}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="p-2 border-r text-center">
-                              <EditableCell
-                                type="text"
-                                value={participant.deal.amount?.toString() || ""}
-                                placeholder="0"
-                                onSave={() => {}}
-                                className="text-sm text-center"
-                              />
-                            </td>
-                            <td className="p-2 border-r text-center">
-                              <EditableCell
-                                type="text"
-                                value=""
-                                placeholder="0"
-                                onSave={() => {}}
-                                className="text-sm text-center"
-                              />
-                            </td>
-                            <td className="p-2 border-r text-center">
-                              <EditableCell
-                                type="text"
-                                value={participant.lead?.remainingPayment || ""}
-                                placeholder="0"
-                                onSave={() => {}}
-                                className="text-sm text-center"
-                              />
-                            </td>
-                            {event.cities.map((city) => (
-                              <Fragment key={city}>
-                                <td className="p-2 border-r text-center">
-                                  <EditableCell
-                                    type="text"
-                                    value=""
-                                    placeholder="0"
-                                    onSave={() => {}}
-                                    className="text-sm text-center"
-                                  />
-                                </td>
-                                <td className="p-2 border-r text-center">
-                                  <EditableCell
-                                    type="text"
-                                    value=""
-                                    placeholder="0"
-                                    onSave={() => {}}
-                                    className="text-sm text-center"
-                                  />
-                                </td>
-                                <td className="p-2 border-r text-center bg-blue-50 dark:bg-blue-950/30">
-                                  <EditableCell
-                                    type="text"
-                                    value=""
-                                    placeholder="0"
-                                    onSave={() => {}}
-                                    className="text-sm text-center"
-                                  />
-                                </td>
-                              </Fragment>
-                            ))}
-                          </tr>
+                              <td className="sticky left-0 bg-background z-10 p-2 border-r text-center font-medium" rowSpan={2}>
+                                {index + 1}
+                              </td>
+                              <td 
+                                className="sticky bg-background z-10 p-2 border-r"
+                                style={{ left: stickyOffset }}
+                                rowSpan={2}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {isFamily && <UsersRound className="h-3 w-3 text-muted-foreground" />}
+                                  <span className="font-medium truncate max-w-[180px]">
+                                    {formatTouristName(participant.leadTourist, participant.contact?.name)}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="p-2 border-r text-center" rowSpan={2}>
+                                <EditableCell
+                                  type="text"
+                                  value={participant.deal.amount?.toString() || ""}
+                                  placeholder="0"
+                                  onSave={() => {}}
+                                  className="text-sm text-center"
+                                />
+                              </td>
+                              <td className="p-2 border-r text-center" rowSpan={2}>
+                                <EditableCell
+                                  type="text"
+                                  value=""
+                                  placeholder="0"
+                                  onSave={() => {}}
+                                  className="text-sm text-center"
+                                />
+                              </td>
+                              <td className="p-2 border-r text-center" rowSpan={2}>
+                                <EditableCell
+                                  type="text"
+                                  value={participant.lead?.remainingPayment || ""}
+                                  placeholder="0"
+                                  onSave={() => {}}
+                                  className="text-sm text-center"
+                                />
+                              </td>
+                              {event.cities.map((city) => {
+                                const visit = cityVisit.find(v => v.city === city);
+                                return (
+                                  <Fragment key={city}>
+                                    <td className="p-2 border-r text-center" rowSpan={2}>
+                                      <EditableCell
+                                        type="date"
+                                        value={visit?.arrivalDate || ""}
+                                        placeholder="дд.мм.гг"
+                                        onSave={() => {}}
+                                        className="text-sm text-center"
+                                      />
+                                    </td>
+                                    <td className="p-2 border-r text-center" rowSpan={2}>
+                                      <EditableCell
+                                        type="date"
+                                        value={visit?.departureDate || ""}
+                                        placeholder="дд.мм.гг"
+                                        onSave={() => {}}
+                                        className="text-sm text-center"
+                                      />
+                                    </td>
+                                    <td className="p-1 border-r">
+                                      <Input
+                                        type="text"
+                                        placeholder="Проживание"
+                                        className="h-7 text-xs"
+                                        defaultValue="Проживание"
+                                        data-testid={`input-expense-type-${participant.deal.id}-${city}-1`}
+                                      />
+                                    </td>
+                                    <td className="p-1 border-r">
+                                      <Input
+                                        type="text"
+                                        placeholder="0"
+                                        className="h-7 text-xs text-center"
+                                        data-testid={`input-expense-amount-${participant.deal.id}-${city}-1`}
+                                      />
+                                    </td>
+                                  </Fragment>
+                                );
+                              })}
+                            </tr>
+                            <tr className="border-b hover:bg-muted/30">
+                              {event.cities.map((city) => (
+                                <Fragment key={city}>
+                                  <td className="p-1 border-r">
+                                    <div className="flex items-center gap-1">
+                                      <Input
+                                        type="text"
+                                        placeholder="Экскурсии"
+                                        className="h-7 text-xs flex-1"
+                                        defaultValue="Экскурсии"
+                                        data-testid={`input-expense-type-${participant.deal.id}-${city}-2`}
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 shrink-0"
+                                        title="Добавить расход"
+                                        data-testid={`button-add-expense-${participant.deal.id}-${city}`}
+                                      >
+                                        <Plus className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                  <td className="p-1 border-r">
+                                    <Input
+                                      type="text"
+                                      placeholder="0"
+                                      className="h-7 text-xs text-center"
+                                      data-testid={`input-expense-amount-${participant.deal.id}-${city}-2`}
+                                    />
+                                  </td>
+                                </Fragment>
+                              ))}
+                            </tr>
+                          </Fragment>
                         );
                       })}
                     </tbody>
@@ -2317,7 +2368,8 @@ export default function EventSummary() {
                           <Fragment key={city}>
                             <td className="p-2 border-r text-center">—</td>
                             <td className="p-2 border-r text-center">—</td>
-                            <td className="p-2 border-r text-center bg-blue-50 dark:bg-blue-950/30">—</td>
+                            <td className="p-2 border-r text-center">—</td>
+                            <td className="p-2 border-r text-center font-bold">—</td>
                           </Fragment>
                         ))}
                       </tr>

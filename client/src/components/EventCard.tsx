@@ -87,15 +87,16 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
     <Card className={`overflow-hidden hover-elevate ${showFill ? `${pastelClasses.bg} ${pastelClasses.border} border` : ""}`} data-testid={`card-event-${event.id}`}>
       <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
         <div className="space-y-2">
-          {/* Title row with action buttons */}
-          <div className="flex items-start justify-between gap-1 sm:gap-2">
-            <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0 flex-wrap">
-              {showDot && <ColorIndicator color={eventColor} />}
-              <CardTitle className="text-base sm:text-lg truncate" data-testid={`text-event-name-${event.id}`}>
-                {event.name}
-              </CardTitle>
-            </div>
-            <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+          {/* Title row - name on its own line for better visibility */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            {showDot && <ColorIndicator color={eventColor} />}
+            <CardTitle className="text-base sm:text-lg line-clamp-2" data-testid={`text-event-name-${event.id}`}>
+              {event.name}
+            </CardTitle>
+          </div>
+          {/* Action buttons row */}
+          <div className="flex items-center justify-between gap-1 sm:gap-2">
+            <div className="flex items-center gap-0.5 sm:gap-1">
               {canModify && (
                 <>
                   <Button
@@ -153,10 +154,10 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
                   </AlertDialog>
                 </>
               )}
-              <Badge className={`${getStatusClasses()} text-[10px] sm:text-xs whitespace-nowrap`} data-testid={`badge-status-${event.id}`}>
-                {getStatusText()}
-              </Badge>
             </div>
+            <Badge className={`${getStatusClasses()} text-[10px] sm:text-xs whitespace-nowrap`} data-testid={`badge-status-${event.id}`}>
+              {getStatusText()}
+            </Badge>
           </div>
           {/* Badges row */}
           <div className="flex items-center gap-1 sm:gap-2 flex-wrap">

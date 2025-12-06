@@ -143,38 +143,6 @@ function TransportTypeSelector({ value, onSave, className, testIdSuffix = '' }: 
   );
 }
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  RUB: "₽",
-  USD: "$",
-  CNY: "¥",
-  EUR: "€",
-};
-
-const CURRENCIES = ["RUB", "USD", "CNY", "EUR"] as const;
-
-interface CurrencySelectorProps {
-  value: string;
-  onChange: (value: string) => void;
-  testId?: string;
-}
-
-function CurrencySelector({ value, onChange, testId }: CurrencySelectorProps) {
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-6 w-16 text-xs" data-testid={testId}>
-        <SelectValue>{CURRENCY_SYMBOLS[value] || value}</SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {CURRENCIES.map((currency) => (
-          <SelectItem key={currency} value={currency}>
-            {CURRENCY_SYMBOLS[currency]} {currency}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
 interface ParticipantCardProps {
   participant: Participant;
   index: number;
@@ -679,12 +647,6 @@ export default function EventSummary() {
   // Measure first sticky column width dynamically
   const firstColumnRef = useRef<HTMLTableCellElement>(null);
   const [stickyOffset, setStickyOffset] = useState<number>(56);
-  
-  // Currency display states for finance table
-  const [tourCostCurrency, setTourCostCurrency] = useState<string>("RUB");
-  const [paidCurrency, setPaidCurrency] = useState<string>("RUB");
-  const [balanceCurrency, setBalanceCurrency] = useState<string>("RUB");
-  const [expensesCurrency, setExpensesCurrency] = useState<string>("RUB");
 
   const { data: event, isLoading: eventLoading } = useQuery<EventWithStats>({
     queryKey: [`/api/events/${eventId}`],
@@ -2283,54 +2245,6 @@ export default function EventSummary() {
                 <div className="overflow-x-auto -mx-6 px-6">
                   <table className="w-full text-sm border-collapse min-w-max">
                     <thead className="sticky top-0 z-20 bg-background">
-                      <tr className="border-b bg-muted/30">
-                        <th className="sticky left-0 bg-muted/30 z-30 p-1 border-r min-w-[56px]"></th>
-                        <th 
-                          className="sticky bg-muted/30 z-30 p-1 border-r min-w-[200px]"
-                          style={{ left: stickyOffset }}
-                        ></th>
-                        <th className="p-1 border-r min-w-[120px]">
-                          <div className="flex justify-center">
-                            <CurrencySelector 
-                              value={tourCostCurrency} 
-                              onChange={setTourCostCurrency} 
-                              testId="select-currency-tour-cost"
-                            />
-                          </div>
-                        </th>
-                        <th className="p-1 border-r min-w-[100px]">
-                          <div className="flex justify-center">
-                            <CurrencySelector 
-                              value={paidCurrency} 
-                              onChange={setPaidCurrency} 
-                              testId="select-currency-paid"
-                            />
-                          </div>
-                        </th>
-                        <th className="p-1 border-r min-w-[100px]">
-                          <div className="flex justify-center">
-                            <CurrencySelector 
-                              value={balanceCurrency} 
-                              onChange={setBalanceCurrency} 
-                              testId="select-currency-balance"
-                            />
-                          </div>
-                        </th>
-                        <th className="p-1 border-r min-w-[120px] bg-orange-50 dark:bg-orange-950/30">
-                          <div className="flex justify-center">
-                            <CurrencySelector 
-                              value={expensesCurrency} 
-                              onChange={setExpensesCurrency} 
-                              testId="select-currency-expenses"
-                            />
-                          </div>
-                        </th>
-                        {event.cities.map((city) => (
-                          <Fragment key={city}>
-                            <th colSpan={2} className="p-1 border-r bg-muted/30"></th>
-                          </Fragment>
-                        ))}
-                      </tr>
                       <tr className="border-b bg-muted/50">
                         <th className="sticky left-0 bg-muted/50 z-30 p-2 text-left font-medium border-r min-w-[56px]">№</th>
                         <th 
@@ -2403,59 +2317,50 @@ export default function EventSummary() {
                               </div>
                             </td>
                             <td className="p-2 border-r text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <EditableCell
-                                  type="text"
-                                  value={participant.deal.amount?.toString() || ""}
-                                  placeholder="0"
-                                  onSave={() => {}}
-                                  className="text-sm text-center"
-                                />
-                                <span className="text-xs text-muted-foreground">{CURRENCY_SYMBOLS[tourCostCurrency]}</span>
-                              </div>
+                              <EditableCell
+                                type="text"
+                                value={participant.deal.amount?.toString() || ""}
+                                placeholder="0"
+                                onSave={() => {}}
+                                className="text-sm text-center"
+                              />
                             </td>
                             <td className="p-2 border-r text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <EditableCell
-                                  type="text"
-                                  value={participant.deal.paidAmount?.toString() || ""}
-                                  placeholder="0"
-                                  onSave={(value) => {
-                                    updateDealMutation.mutate({
-                                      dealId: participant.deal.id,
-                                      paidAmount: value || undefined,
+                              <EditableCell
+                                type="text"
+                                value={participant.deal.paidAmount?.toString() || ""}
+                                placeholder="0"
+                                onSave={(value) => {
+                                  updateDealMutation.mutate({
+                                    dealId: participant.deal.id,
+                                    paidAmount: value || undefined,
+                                  });
+                                }}
+                                className="text-sm text-center"
+                              />
+                            </td>
+                            <td className="p-2 border-r text-center">
+                              <EditableCell
+                                type="text"
+                                value={participant.lead?.remainingPayment || ""}
+                                placeholder="0"
+                                onSave={(value) => {
+                                  if (participant.lead?.id) {
+                                    updateLeadMutation.mutate({
+                                      leadId: participant.lead.id,
+                                      remainingPayment: value || undefined,
                                     });
-                                  }}
-                                  className="text-sm text-center"
-                                />
-                                <span className="text-xs text-muted-foreground">{CURRENCY_SYMBOLS[paidCurrency]}</span>
-                              </div>
-                            </td>
-                            <td className="p-2 border-r text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <EditableCell
-                                  type="text"
-                                  value={participant.lead?.remainingPayment || ""}
-                                  placeholder="0"
-                                  onSave={(value) => {
-                                    if (participant.lead?.id) {
-                                      updateLeadMutation.mutate({
-                                        leadId: participant.lead.id,
-                                        remainingPayment: value || undefined,
-                                      });
-                                    }
-                                  }}
-                                  className="text-sm text-center"
-                                />
-                                <span className="text-xs text-muted-foreground">{CURRENCY_SYMBOLS[balanceCurrency]}</span>
-                              </div>
+                                  }
+                                }}
+                                className="text-sm text-center"
+                              />
                             </td>
                             <td className="p-2 border-r text-center font-medium bg-orange-50 dark:bg-orange-950/30">
                               {(() => {
                                 const total = participantExpenses
                                   .filter(e => e.dealId === participant.deal.id)
                                   .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-                                return total > 0 ? `${formatCurrency(total)} ${CURRENCY_SYMBOLS[expensesCurrency]}` : "—";
+                                return total > 0 ? formatCurrency(total) : "—";
                               })()}
                             </td>
                             {event.cities.map((city) => {

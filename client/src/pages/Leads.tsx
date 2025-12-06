@@ -809,15 +809,16 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
 
   const columns: { 
     status: string; 
-    label: string; 
+    label: string;
+    shortLabel: string;
     variant: "default" | "secondary" | "outline" | "destructive";
     customClass?: string;
   }[] = [
-    { status: "new", label: "Новый", variant: "secondary" },
-    { status: "contacted", label: "Квалифицирован", variant: "secondary" },
-    { status: "qualified", label: "Забронирован", variant: "outline", customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420]" },
-    { status: "converted", label: "Подтвержден", variant: "default", customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" },
-    { status: "lost", label: "Отложен", variant: "destructive" },
+    { status: "new", label: "Новый", shortLabel: "Нов.", variant: "secondary" },
+    { status: "contacted", label: "Квалифицирован", shortLabel: "Квал.", variant: "secondary" },
+    { status: "qualified", label: "Забронирован", shortLabel: "Забр.", variant: "outline", customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420]" },
+    { status: "converted", label: "Подтвержден", shortLabel: "Подтв.", variant: "default", customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" },
+    { status: "lost", label: "Отложен", shortLabel: "Отл.", variant: "destructive" },
   ];
 
   const handleDragStart = (lead: Lead) => {
@@ -881,12 +882,18 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
             data-testid={`kanban-column-${column.status}`}
           >
             <Card className="bg-muted/50">
-              <CardHeader className="p-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium">{column.label}</CardTitle>
+              <CardHeader className="p-2 sm:p-4">
+                <div className="flex items-center justify-between gap-1">
+                  <CardTitle 
+                    className="text-xs sm:text-sm font-medium cursor-default" 
+                    title={column.label}
+                  >
+                    <span className="md:hidden">{column.shortLabel}</span>
+                    <span className="hidden md:inline">{column.label}</span>
+                  </CardTitle>
                   <Badge 
                     variant={column.variant} 
-                    className={column.customClass ? `ml-2 ${column.customClass}` : "ml-2"}
+                    className={column.customClass ? `text-[10px] sm:text-xs ${column.customClass}` : "text-[10px] sm:text-xs"}
                   >
                     {columnLeads.length}
                   </Badge>

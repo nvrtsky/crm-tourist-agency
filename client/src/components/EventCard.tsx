@@ -75,7 +75,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
   
 
   return (
-    <Card className={`overflow-hidden hover-elevate ${showFill ? `${pastelClasses.bg} ${pastelClasses.border} border` : ""}`} data-testid={`card-event-${event.id}`}>
+    <Card className={`overflow-hidden hover-elevate flex flex-col h-full ${showFill ? `${pastelClasses.bg} ${pastelClasses.border} border` : ""}`} data-testid={`card-event-${event.id}`}>
       <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
         <div className="space-y-2">
           {/* Title row with tour type badge on the right */}
@@ -120,7 +120,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6">
+      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6 flex-1 flex flex-col">
         <div className="space-y-2 sm:space-y-3">
           <div className="flex items-start gap-1.5 sm:gap-2 text-xs sm:text-sm">
             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
@@ -191,7 +191,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
           </p>
         )}
 
-        <div className="pt-1 sm:pt-2 flex items-center gap-1 sm:gap-2">
+        <div className="pt-1 sm:pt-2 flex items-center gap-1 sm:gap-2 mt-auto">
           <Button 
             className="flex-1 h-8 sm:h-9 text-xs sm:text-sm" 
             variant="outline"

@@ -25,7 +25,7 @@ import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 import { useTranslation } from "react-i18next";
 import logoDarkUrl from "@assets/logo_1762426754494.png";
-import logoLightUrl from "@assets/logo_white.png";
+import logoLightUrl from "@assets/logo_white_1762533626956.png";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();

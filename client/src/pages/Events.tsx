@@ -535,7 +535,7 @@ export default function Events() {
       </Card>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3].map(i => (
             <Card key={i} className="h-64 animate-pulse" data-testid={`skeleton-${i}`}>
               <CardContent className="h-full bg-muted/50" />
@@ -553,7 +553,7 @@ export default function Events() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
           {filteredEvents.map(event => (
             <EventCard
               key={event.id}

@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -834,6 +834,25 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
     setDraggedLead(null);
   };
 
+  // Get status order for navigation buttons
+  const statusOrder = columns.map(c => c.status);
+  
+  const getPrevStatus = (currentStatus: string) => {
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    if (currentIndex > 0) {
+      return statusOrder[currentIndex - 1];
+    }
+    return null;
+  };
+  
+  const getNextStatus = (currentStatus: string) => {
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    if (currentIndex < statusOrder.length - 1) {
+      return statusOrder[currentIndex + 1];
+    }
+    return null;
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -857,7 +876,7 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4" data-testid="kanban-board">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4" data-testid="kanban-board">
       {columns.map((column) => {
         const columnLeads = leads
           .filter((lead) => lead.status === column.status)
@@ -908,53 +927,91 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                   onDragStart={() => handleDragStart(lead)}
                   data-testid={`kanban-card-${lead.id}`}
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-3 sm:p-4">
                     <div className="space-y-2">
                       {/* ФИО и кнопки Edit/Convert на одной линии */}
-                      <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <div className="font-medium flex-1 flex items-center gap-2">
+                      <div className="flex items-start justify-between gap-1 sm:gap-2">
+                        <div className="font-medium flex-1 min-w-0 flex items-center gap-1 sm:gap-2">
                           {showDot && <ColorIndicator color={displayColor} />}
-                          <span>{getLeadName(lead)}</span>
+                          <span className="truncate">{getLeadName(lead)}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-7 w-7 sm:h-9 sm:w-9"
                             onClick={(e) => {
                               e.stopPropagation();
                               onEdit(lead);
                             }}
                             data-testid={`kanban-edit-${lead.id}`}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </Button>
                         </div>
                       </div>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        {lead.phone && <div>{lead.phone}</div>}
-                        {lead.email && <div>{lead.email}</div>}
-                        {event && <div className="font-medium text-primary">{event.name}</div>}
+                      <div className="text-xs text-muted-foreground space-y-0.5 sm:space-y-1">
+                        {lead.phone && <div className="truncate">{lead.phone}</div>}
+                        {lead.email && <div className="truncate">{lead.email}</div>}
+                        {event && <div className="font-medium text-primary truncate">{event.name}</div>}
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-[10px]">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-[9px] sm:text-[10px] truncate max-w-[100px] sm:max-w-none">
                           {leadSourceMap[lead.source] || lead.source}
                         </Badge>
                         {lead.clientCategory && (
-                          <Badge variant="outline" className="text-[10px]">
+                          <Badge variant="outline" className="text-[9px] sm:text-[10px] truncate max-w-[100px] sm:max-w-none">
                             {clientCategoryMap[lead.clientCategory] || lead.clientCategory}
                           </Badge>
                         )}
                         {lead.touristCount !== undefined && lead.touristCount > 0 && (
-                          <Badge variant="secondary" className="text-[10px]">
-                            <Users className="h-3 w-3 mr-1" />
+                          <Badge variant="secondary" className="text-[9px] sm:text-[10px]">
+                            <Users className="h-3 w-3 mr-0.5 sm:mr-1" />
                             {lead.touristCount}
                           </Badge>
                         )}
                         {lead.hasBeenContacted && (
-                          <Badge variant="secondary" className="text-[10px]" data-testid={`badge-reactivated-${lead.id}`}>
-                            Лид из Отложенных
+                          <Badge variant="secondary" className="text-[9px] sm:text-[10px] truncate max-w-[80px] sm:max-w-none" data-testid={`badge-reactivated-${lead.id}`}>
+                            Из Отлож.
                           </Badge>
                         )}
+                      </div>
+                      {/* Status change buttons for touch devices */}
+                      <div className="flex items-center justify-between pt-1 border-t border-border/50 mt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          disabled={!getPrevStatus(lead.status)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const prevStatus = getPrevStatus(lead.status);
+                            if (prevStatus) {
+                              onStatusChange(lead.id, prevStatus);
+                            }
+                          }}
+                          data-testid={`kanban-prev-${lead.id}`}
+                        >
+                          <ChevronLeft className="h-3.5 w-3.5 mr-0.5" />
+                          <span className="hidden sm:inline">Назад</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          disabled={!getNextStatus(lead.status)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const nextStatus = getNextStatus(lead.status);
+                            if (nextStatus) {
+                              onStatusChange(lead.id, nextStatus);
+                            }
+                          }}
+                          data-testid={`kanban-next-${lead.id}`}
+                        >
+                          <span className="hidden sm:inline">Далее</span>
+                          <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+                        </Button>
                       </div>
                     </div>
                   </CardContent>

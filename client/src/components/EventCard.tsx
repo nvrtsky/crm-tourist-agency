@@ -32,6 +32,17 @@ function getTourTypeLabel(tourType: string): string {
   return labels[tourType] || tourType;
 }
 
+// Full tour type names for tooltips
+function getTourTypeFullLabel(tourType: string): string {
+  const labels: Record<string, string> = {
+    group: "Групповой тур",
+    individual: "Индивидуальный тур",
+    excursion: "Экскурсия",
+    transfer: "Трансфер",
+  };
+  return labels[tourType] || tourType;
+}
+
 interface EventCardProps {
   event: EventWithStats;
   onViewSummary: (eventId: string) => void;
@@ -90,7 +101,12 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
                 </Badge>
               )}
               {event.tourType && (
-                <Badge variant="secondary" className="text-[10px] sm:text-xs whitespace-nowrap" data-testid={`badge-tour-type-${event.id}`}>
+                <Badge 
+                  variant="secondary" 
+                  className="text-[10px] sm:text-xs whitespace-nowrap cursor-default" 
+                  title={getTourTypeFullLabel(event.tourType)}
+                  data-testid={`badge-tour-type-${event.id}`}
+                >
                   {getTourTypeLabel(event.tourType)}
                 </Badge>
               )}

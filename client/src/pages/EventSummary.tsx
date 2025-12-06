@@ -2697,7 +2697,7 @@ export default function EventSummary() {
                       </tr>
                       <tr className="font-bold bg-green-100 dark:bg-green-900/30">
                         <td colSpan={2} className="sticky left-0 bg-green-100 dark:bg-green-900/30 z-10 p-2 text-right">Прибыль:</td>
-                        <td colSpan={4 + event.cities.length * 2} className="p-2 text-center text-lg" data-testid="text-profit">
+                        <td colSpan={4 + event.cities.length * 2} className="p-2 text-left text-lg" data-testid="text-profit">
                           {(() => {
                             const tourCost = participants.reduce((sum, p) => sum + Number(p.deal.amount || 0), 0);
                             const participantTotal = participantExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);

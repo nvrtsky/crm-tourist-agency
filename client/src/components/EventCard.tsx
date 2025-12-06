@@ -117,64 +117,6 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
               )}
             </div>
           </div>
-          {/* Action buttons row - aligned left */}
-          {canModify && (
-            <div className="flex items-center gap-0.5 sm:gap-1">
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 sm:h-9 sm:w-9"
-                onClick={() => onCopy?.(event)}
-                data-testid={`button-copy-event-${event.id}`}
-              >
-                <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 sm:h-9 sm:w-9"
-                onClick={() => onEdit?.(event)}
-                data-testid={`button-edit-event-${event.id}`}
-              >
-                <Pencil className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 sm:h-9 sm:w-9"
-                    data-testid={`button-delete-event-${event.id}`}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Удалить тур?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Вы действительно хотите удалить тур "{event.name}"? Это действие нельзя отменить.
-                      {event.bookedCount > 0 && (
-                        <span className="block mt-2 text-destructive font-semibold">
-                          Внимание: В этом туре {event.bookedCount} участников!
-                        </span>
-                      )}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel data-testid="button-cancel-delete">Отмена</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={() => onDelete?.(event.id)}
-                      className="bg-destructive hover:bg-destructive/90"
-                      data-testid="button-confirm-delete"
-                    >
-                      Удалить
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          )}
         </div>
       </CardHeader>
       
@@ -250,9 +192,66 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
           </p>
         )}
 
-        <div className="pt-1 sm:pt-2">
+        <div className="pt-1 sm:pt-2 flex items-center gap-1 sm:gap-2">
+          {canModify && (
+            <>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
+                onClick={() => onCopy?.(event)}
+                data-testid={`button-copy-event-${event.id}`}
+              >
+                <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
+                onClick={() => onEdit?.(event)}
+                data-testid={`button-edit-event-${event.id}`}
+              >
+                <Pencil className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
+                    data-testid={`button-delete-event-${event.id}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Удалить тур?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Вы действительно хотите удалить тур "{event.name}"? Это действие нельзя отменить.
+                      {event.bookedCount > 0 && (
+                        <span className="block mt-2 text-destructive font-semibold">
+                          Внимание: В этом туре {event.bookedCount} участников!
+                        </span>
+                      )}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="button-cancel-delete">Отмена</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => onDelete?.(event.id)}
+                      className="bg-destructive hover:bg-destructive/90"
+                      data-testid="button-confirm-delete"
+                    >
+                      Удалить
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
           <Button 
-            className="w-full h-8 sm:h-9 text-xs sm:text-sm" 
+            className="flex-1 h-8 sm:h-9 text-xs sm:text-sm" 
             variant="outline"
             onClick={() => onViewSummary(event.id)}
             data-testid={`button-view-summary-${event.id}`}

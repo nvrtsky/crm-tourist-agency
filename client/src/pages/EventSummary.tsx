@@ -54,6 +54,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -1489,14 +1495,21 @@ export default function EventSummary() {
         </Card>
       </div>
 
-      <Card data-testid="card-participants">
-        <CardHeader>
-          <CardTitle>Сводная таблица по маршруту</CardTitle>
-          <CardDescription>
-            {event.startDate && format(new Date(event.startDate), "d MMMM yyyy", { locale: ru })} - {event.endDate && format(new Date(event.endDate), "d MMMM yyyy", { locale: ru })}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Tabs defaultValue="summary" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="summary" data-testid="tab-summary">Сводная таблица</TabsTrigger>
+          <TabsTrigger value="finance" data-testid="tab-finance">Финансы</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="summary">
+          <Card data-testid="card-participants">
+            <CardHeader>
+              <CardTitle>Сводная таблица по маршруту</CardTitle>
+              <CardDescription>
+                {event.startDate && format(new Date(event.startDate), "d MMMM yyyy", { locale: ru })} - {event.endDate && format(new Date(event.endDate), "d MMMM yyyy", { locale: ru })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
           {participants.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -2112,8 +2125,210 @@ export default function EventSummary() {
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="finance">
+          <Card data-testid="card-finance">
+            <CardHeader>
+              <CardTitle>Финансы по маршруту</CardTitle>
+              <CardDescription>
+                {event.startDate && format(new Date(event.startDate), "d MMMM yyyy", { locale: ru })} - {event.endDate && format(new Date(event.endDate), "d MMMM yyyy", { locale: ru })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {participants.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Нет участников</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <table className="w-full text-sm border-collapse min-w-max">
+                    <thead className="sticky top-0 z-20 bg-background">
+                      <tr className="border-b bg-muted/50">
+                        <th className="sticky left-0 bg-muted/50 z-30 p-2 text-left font-medium border-r min-w-[56px]">№</th>
+                        <th 
+                          ref={firstColumnRef}
+                          className="sticky bg-muted/50 z-30 p-2 text-left font-medium border-r min-w-[200px]"
+                          style={{ left: stickyOffset }}
+                        >
+                          Участник
+                        </th>
+                        <th className="p-2 text-center font-medium border-r min-w-[100px]">Стоимость тура</th>
+                        <th className="p-2 text-center font-medium border-r min-w-[100px]">Оплачено</th>
+                        <th className="p-2 text-center font-medium border-r min-w-[100px]">Остаток</th>
+                        {event.cities.map((city) => (
+                          <Fragment key={city}>
+                            <th colSpan={3} className="p-2 text-center font-medium border-r bg-muted/30">
+                              <div className="flex items-center justify-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {city}
+                              </div>
+                            </th>
+                          </Fragment>
+                        ))}
+                      </tr>
+                      <tr className="border-b text-xs text-muted-foreground">
+                        <th className="sticky left-0 bg-background z-30 p-1 border-r"></th>
+                        <th 
+                          className="sticky bg-background z-30 p-1 border-r"
+                          style={{ left: stickyOffset }}
+                        ></th>
+                        <th className="p-1 border-r"></th>
+                        <th className="p-1 border-r"></th>
+                        <th className="p-1 border-r"></th>
+                        {event.cities.map((city) => (
+                          <Fragment key={city}>
+                            <th className="p-1 border-r text-center">Проживание</th>
+                            <th className="p-1 border-r text-center">Экскурсии</th>
+                            <th className="p-1 border-r text-center bg-blue-50 dark:bg-blue-950/30">Общие расходы</th>
+                          </Fragment>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {participants.map((participant, index) => {
+                        const leadId = participant.contact?.leadId;
+                        const leadMembers = leadId 
+                          ? participants.filter(m => m.contact?.leadId === leadId)
+                          : [];
+                        const isFamily = leadMembers.length > 1;
+                        const isPrimaryInFamily = participant.leadTourist?.isPrimary || 
+                          (isFamily && leadMembers[0]?.deal.id === participant.deal.id);
+                        
+                        return (
+                          <tr 
+                            key={participant.deal.id} 
+                            className={`border-b hover:bg-muted/30 ${isFamily && !isPrimaryInFamily ? 'bg-muted/10' : ''}`}
+                            data-testid={`finance-row-${participant.deal.id}`}
+                          >
+                            <td className="sticky left-0 bg-background z-10 p-2 border-r text-center font-medium">
+                              {index + 1}
+                            </td>
+                            <td 
+                              className="sticky bg-background z-10 p-2 border-r"
+                              style={{ left: stickyOffset }}
+                            >
+                              <div className="flex items-center gap-2">
+                                {isFamily && <UsersRound className="h-3 w-3 text-muted-foreground" />}
+                                <span className="font-medium truncate max-w-[180px]">
+                                  {formatTouristName(participant.leadTourist, participant.contact?.name)}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="p-2 border-r text-center">
+                              <EditableCell
+                                type="text"
+                                value={participant.deal.amount?.toString() || ""}
+                                placeholder="0"
+                                onSave={() => {}}
+                                className="text-sm text-center"
+                              />
+                            </td>
+                            <td className="p-2 border-r text-center">
+                              <EditableCell
+                                type="text"
+                                value=""
+                                placeholder="0"
+                                onSave={() => {}}
+                                className="text-sm text-center"
+                              />
+                            </td>
+                            <td className="p-2 border-r text-center">
+                              <EditableCell
+                                type="text"
+                                value={participant.lead?.remainingPayment || ""}
+                                placeholder="0"
+                                onSave={() => {}}
+                                className="text-sm text-center"
+                              />
+                            </td>
+                            {event.cities.map((city) => (
+                              <Fragment key={city}>
+                                <td className="p-2 border-r text-center">
+                                  <EditableCell
+                                    type="text"
+                                    value=""
+                                    placeholder="0"
+                                    onSave={() => {}}
+                                    className="text-sm text-center"
+                                  />
+                                </td>
+                                <td className="p-2 border-r text-center">
+                                  <EditableCell
+                                    type="text"
+                                    value=""
+                                    placeholder="0"
+                                    onSave={() => {}}
+                                    className="text-sm text-center"
+                                  />
+                                </td>
+                                <td className="p-2 border-r text-center bg-blue-50 dark:bg-blue-950/30">
+                                  <EditableCell
+                                    type="text"
+                                    value=""
+                                    placeholder="0"
+                                    onSave={() => {}}
+                                    className="text-sm text-center"
+                                  />
+                                </td>
+                              </Fragment>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot className="border-t-2 bg-muted/30">
+                      <tr className="font-medium">
+                        <td colSpan={2} className="sticky left-0 bg-muted/30 z-10 p-2 text-right">Итого:</td>
+                        <td className="p-2 border-r text-center">
+                          {formatCurrency(participants.reduce((sum, p) => sum + Number(p.deal.amount || 0), 0))} ₽
+                        </td>
+                        <td className="p-2 border-r text-center">—</td>
+                        <td className="p-2 border-r text-center">
+                          {(() => {
+                            const processedLeads = new Set<string>();
+                            const totals: Record<string, number> = {};
+                            
+                            participants.forEach(p => {
+                              if (p.lead && !processedLeads.has(p.lead.id)) {
+                                processedLeads.add(p.lead.id);
+                                if (p.lead.remainingPayment) {
+                                  const currency = p.lead.remainingPaymentCurrency || "RUB";
+                                  const amount = parseFloat(p.lead.remainingPayment);
+                                  if (!isNaN(amount)) {
+                                    totals[currency] = (totals[currency] || 0) + amount;
+                                  }
+                                }
+                              }
+                            });
+                            
+                            const entries = Object.entries(totals);
+                            if (entries.length === 0) return "—";
+                            
+                            return entries.map(([currency, amount]) => 
+                              formatCurrency(amount, currency)
+                            ).join(", ");
+                          })()}
+                        </td>
+                        {event.cities.map((city) => (
+                          <Fragment key={city}>
+                            <td className="p-2 border-r text-center">—</td>
+                            <td className="p-2 border-r text-center">—</td>
+                            <td className="p-2 border-r text-center bg-blue-50 dark:bg-blue-950/30">—</td>
+                          </Fragment>
+                        ))}
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Create Mini-Group Dialog */}
       <Dialog open={showCreateMiniGroupDialog} onOpenChange={setShowCreateMiniGroupDialog}>

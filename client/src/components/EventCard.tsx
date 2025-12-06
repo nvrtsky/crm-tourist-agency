@@ -120,8 +120,8 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6 flex-1 flex flex-col">
-        <div className="space-y-2 sm:space-y-3">
+      <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6 flex-1 flex flex-col">
+        <div className="space-y-2 sm:space-y-3 flex-1">
           <div className="flex items-start gap-1.5 sm:gap-2 text-xs sm:text-sm">
             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
             <div className="min-w-0">
@@ -183,15 +183,15 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
               </>
             )}
           </div>
+          
+          {event.description && (
+            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-2 sm:mt-3" data-testid={`text-description-${event.id}`}>
+              {event.description}
+            </p>
+          )}
         </div>
 
-        {event.description && (
-          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2" data-testid={`text-description-${event.id}`}>
-            {event.description}
-          </p>
-        )}
-
-        <div className="pt-1 sm:pt-2 flex items-center gap-1 sm:gap-2 mt-auto">
+        <div className="flex items-center gap-1 sm:gap-2 pt-2 sm:pt-3">
           <Button 
             className="flex-1 h-8 sm:h-9 text-xs sm:text-sm" 
             variant="outline"

@@ -21,13 +21,13 @@ import { useAuth } from "@/lib/auth";
 import { formatCurrency } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
-// Helper function to translate tour type to Russian
+// Helper function to translate tour type to Russian (short labels for compact display)
 function getTourTypeLabel(tourType: string): string {
   const labels: Record<string, string> = {
-    group: "Групповой",
-    individual: "Индивидуальный",
-    excursion: "Экскурсия",
-    transfer: "Трансфер",
+    group: "Груп.",
+    individual: "Инд.",
+    excursion: "Экск.",
+    transfer: "Трансф.",
   };
   return labels[tourType] || tourType;
 }
@@ -88,9 +88,14 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
       <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
         <div className="space-y-2">
           {/* Title row - name on its own line for better visibility */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            {showDot && <ColorIndicator color={eventColor} />}
-            <CardTitle className="text-base sm:text-lg line-clamp-2" data-testid={`text-event-name-${event.id}`}>
+          {/* Mobile: full wrap; Desktop: single line with ellipsis */}
+          <div className="flex items-start gap-1 sm:gap-2 min-w-0">
+            {showDot && <span className="mt-1 flex-shrink-0"><ColorIndicator color={eventColor} /></span>}
+            <CardTitle 
+              className="text-base sm:text-lg md:truncate md:overflow-hidden md:whitespace-nowrap" 
+              title={event.name}
+              data-testid={`text-event-name-${event.id}`}
+            >
               {event.name}
             </CardTitle>
           </div>
@@ -159,15 +164,15 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
               {getStatusText()}
             </Badge>
           </div>
-          {/* Badges row */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+          {/* Badges row - single line on desktop, wrap on mobile */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap md:flex-nowrap">
             {event.tourType && (
-              <Badge variant="secondary" className="text-[10px] sm:text-xs" data-testid={`badge-tour-type-${event.id}`}>
+              <Badge variant="secondary" className="text-[10px] sm:text-xs whitespace-nowrap" data-testid={`badge-tour-type-${event.id}`}>
                 {getTourTypeLabel(event.tourType)}
               </Badge>
             )}
             {event.isArchived && (
-              <Badge variant="outline" className="gap-1 text-[10px] sm:text-xs" data-testid={`badge-archived-${event.id}`}>
+              <Badge variant="outline" className="gap-1 text-[10px] sm:text-xs whitespace-nowrap" data-testid={`badge-archived-${event.id}`}>
                 <Archive className="h-3 w-3" />
                 Архив
               </Badge>

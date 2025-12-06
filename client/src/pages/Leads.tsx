@@ -12,10 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator, ContextMenuLabel } from "@/components/ui/context-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin } from "lucide-react";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -834,25 +835,6 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
     setDraggedLead(null);
   };
 
-  // Get status order for navigation buttons
-  const statusOrder = columns.map(c => c.status);
-  
-  const getPrevStatus = (currentStatus: string) => {
-    const currentIndex = statusOrder.indexOf(currentStatus);
-    if (currentIndex > 0) {
-      return statusOrder[currentIndex - 1];
-    }
-    return null;
-  };
-  
-  const getNextStatus = (currentStatus: string) => {
-    const currentIndex = statusOrder.indexOf(currentStatus);
-    if (currentIndex < statusOrder.length - 1) {
-      return statusOrder[currentIndex + 1];
-    }
-    return null;
-  };
-
   if (isLoading) {
     return (
       <Card>
@@ -920,102 +902,103 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                 const showFill = (colorDisplayMode === "fill" || colorDisplayMode === "both") && displayColor;
                 const showDot = (colorDisplayMode === "dot" || colorDisplayMode === "both");
                 return (
-                <Card
-                  key={lead.id}
-                  className={`cursor-move hover-elevate active-elevate-2 transition-shadow ${showFill ? `${pastelClasses.bg} ${pastelClasses.border} border` : ""}`}
-                  draggable
-                  onDragStart={() => handleDragStart(lead)}
-                  data-testid={`kanban-card-${lead.id}`}
-                >
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="space-y-2">
-                      {/* ФИО и кнопки Edit/Convert на одной линии */}
-                      <div className="flex items-start justify-between gap-1 sm:gap-2">
-                        <div className="font-medium flex-1 min-w-0 flex items-center gap-1 sm:gap-2">
-                          {showDot && <ColorIndicator color={displayColor} />}
-                          <span className="truncate">{getLeadName(lead)}</span>
+                <ContextMenu key={lead.id}>
+                  <ContextMenuTrigger asChild>
+                    <Card
+                      className={`cursor-move hover-elevate active-elevate-2 transition-shadow ${showFill ? `${pastelClasses.bg} ${pastelClasses.border} border` : ""}`}
+                      draggable
+                      onDragStart={() => handleDragStart(lead)}
+                      data-testid={`kanban-card-${lead.id}`}
+                    >
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="space-y-2">
+                          {/* ФИО и кнопки Edit/Convert на одной линии */}
+                          <div className="flex items-start justify-between gap-1 sm:gap-2">
+                            <div className="font-medium flex-1 min-w-0 flex items-center gap-1 sm:gap-2">
+                              {showDot && <ColorIndicator color={displayColor} />}
+                              <span className="truncate">{getLeadName(lead)}</span>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 sm:h-9 sm:w-9"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEdit(lead);
+                                }}
+                                data-testid={`kanban-edit-${lead.id}`}
+                              >
+                                <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground space-y-0.5 sm:space-y-1">
+                            {lead.phone && <div className="truncate">{lead.phone}</div>}
+                            {lead.email && <div className="truncate">{lead.email}</div>}
+                            {event && <div className="font-medium text-primary truncate">{event.name}</div>}
+                          </div>
+                          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                            <Badge variant="outline" className="text-[9px] sm:text-[10px] truncate max-w-[100px] sm:max-w-none">
+                              {leadSourceMap[lead.source] || lead.source}
+                            </Badge>
+                            {lead.clientCategory && (
+                              <Badge variant="outline" className="text-[9px] sm:text-[10px] truncate max-w-[100px] sm:max-w-none">
+                                {clientCategoryMap[lead.clientCategory] || lead.clientCategory}
+                              </Badge>
+                            )}
+                            {lead.touristCount !== undefined && lead.touristCount > 0 && (
+                              <Badge variant="secondary" className="text-[9px] sm:text-[10px]">
+                                <Users className="h-3 w-3 mr-0.5 sm:mr-1" />
+                                {lead.touristCount}
+                              </Badge>
+                            )}
+                            {lead.hasBeenContacted && (
+                              <Badge variant="secondary" className="text-[9px] sm:text-[10px] truncate max-w-[80px] sm:max-w-none" data-testid={`badge-reactivated-${lead.id}`}>
+                                Из Отлож.
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 sm:h-9 sm:w-9"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit(lead);
-                            }}
-                            data-testid={`kanban-edit-${lead.id}`}
-                          >
-                            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground space-y-0.5 sm:space-y-1">
-                        {lead.phone && <div className="truncate">{lead.phone}</div>}
-                        {lead.email && <div className="truncate">{lead.email}</div>}
-                        {event && <div className="font-medium text-primary truncate">{event.name}</div>}
-                      </div>
-                      <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-[9px] sm:text-[10px] truncate max-w-[100px] sm:max-w-none">
-                          {leadSourceMap[lead.source] || lead.source}
+                      </CardContent>
+                    </Card>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent className="w-48">
+                    <ContextMenuLabel className="text-xs text-muted-foreground">
+                      Изменить статус
+                    </ContextMenuLabel>
+                    <ContextMenuSeparator />
+                    {columns.map((col) => (
+                      <ContextMenuItem
+                        key={col.status}
+                        disabled={lead.status === col.status}
+                        onClick={() => {
+                          if (lead.status !== col.status) {
+                            onStatusChange(lead.id, col.status);
+                          }
+                        }}
+                        className={lead.status === col.status ? "bg-accent font-medium" : ""}
+                        data-testid={`context-status-${col.status}-${lead.id}`}
+                      >
+                        <Badge 
+                          variant={col.variant} 
+                          className={`mr-2 text-[10px] ${col.customClass || ""}`}
+                        >
+                          {col.label}
                         </Badge>
-                        {lead.clientCategory && (
-                          <Badge variant="outline" className="text-[9px] sm:text-[10px] truncate max-w-[100px] sm:max-w-none">
-                            {clientCategoryMap[lead.clientCategory] || lead.clientCategory}
-                          </Badge>
-                        )}
-                        {lead.touristCount !== undefined && lead.touristCount > 0 && (
-                          <Badge variant="secondary" className="text-[9px] sm:text-[10px]">
-                            <Users className="h-3 w-3 mr-0.5 sm:mr-1" />
-                            {lead.touristCount}
-                          </Badge>
-                        )}
-                        {lead.hasBeenContacted && (
-                          <Badge variant="secondary" className="text-[9px] sm:text-[10px] truncate max-w-[80px] sm:max-w-none" data-testid={`badge-reactivated-${lead.id}`}>
-                            Из Отлож.
-                          </Badge>
-                        )}
-                      </div>
-                      {/* Status change buttons for touch devices */}
-                      <div className="flex items-center justify-between pt-1 border-t border-border/50 mt-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          disabled={!getPrevStatus(lead.status)}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const prevStatus = getPrevStatus(lead.status);
-                            if (prevStatus) {
-                              onStatusChange(lead.id, prevStatus);
-                            }
-                          }}
-                          data-testid={`kanban-prev-${lead.id}`}
-                        >
-                          <ChevronLeft className="h-3.5 w-3.5 mr-0.5" />
-                          <span className="hidden sm:inline">Назад</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          disabled={!getNextStatus(lead.status)}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const nextStatus = getNextStatus(lead.status);
-                            if (nextStatus) {
-                              onStatusChange(lead.id, nextStatus);
-                            }
-                          }}
-                          data-testid={`kanban-next-${lead.id}`}
-                        >
-                          <span className="hidden sm:inline">Далее</span>
-                          <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                        {lead.status === col.status && <span className="ml-auto text-xs">✓</span>}
+                      </ContextMenuItem>
+                    ))}
+                    <ContextMenuSeparator />
+                    <ContextMenuItem
+                      onClick={() => onEdit(lead)}
+                      data-testid={`context-edit-${lead.id}`}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Редактировать
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
                 )
               })}
             </div>

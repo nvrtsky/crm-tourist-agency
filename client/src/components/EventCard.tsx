@@ -81,6 +81,14 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
               </CardTitle>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
+              {event.availableSpots === 0 && (
+                <Badge 
+                  className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-100 dark:border-red-800 text-[10px] sm:text-xs whitespace-nowrap" 
+                  data-testid={`badge-full-${event.id}`}
+                >
+                  Заполнено
+                </Badge>
+              )}
               {event.tourType && (
                 <Badge variant="secondary" className="text-[10px] sm:text-xs whitespace-nowrap" data-testid={`badge-tour-type-${event.id}`}>
                   {getTourTypeLabel(event.tourType)}

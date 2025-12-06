@@ -611,6 +611,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== EVENT EXPENSE ROUTES ====================
+
+  // Get all expenses for event
+  app.get("/api/events/:eventId/expenses", requireAuth, async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      
+      const [participantExpenses, commonExpenses] = await Promise.all([
+        storage.getParticipantExpensesByEvent(eventId),
+        storage.getCommonExpensesByEvent(eventId)
+      ]);
+      
+      res.json({ participantExpenses, commonExpenses });
+    } catch (error) {
+      console.error("Error fetching event expenses:", error);
+      res.status(500).json({ error: "Failed to fetch expenses" });
+    }
+  });
+
+  // Upsert participant expense
+  app.put("/api/events/:eventId/expenses/participant", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const { eventId } = req.params;
+      const { dealId, city, expenseType, amount, currency, comment } = req.body;
+      
+      if (!dealId || !city || !expenseType) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      
+      const expense = await storage.upsertParticipantExpense({
+        eventId,
+        dealId,
+        city,
+        expenseType,
+        amount: amount || null,
+        currency: currency || "RUB",
+        comment: comment || null
+      });
+      
+      res.json(expense);
+    } catch (error) {
+      console.error("Error saving participant expense:", error);
+      res.status(500).json({ error: "Failed to save expense" });
+    }
+  });
+
+  // Delete participant expense
+  app.delete("/api/events/:eventId/expenses/participant", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const { eventId } = req.params;
+      const { dealId, city, expenseType } = req.body;
+      
+      if (!dealId || !city || !expenseType) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      
+      const success = await storage.deleteParticipantExpense(eventId, dealId, city, expenseType);
+      res.json({ success });
+    } catch (error) {
+      console.error("Error deleting participant expense:", error);
+      res.status(500).json({ error: "Failed to delete expense" });
+    }
+  });
+
+  // Upsert common expense
+  app.put("/api/events/:eventId/expenses/common", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const { eventId } = req.params;
+      const { city, expenseType, amount, currency, comment } = req.body;
+      
+      if (!city || !expenseType) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      
+      const expense = await storage.upsertCommonExpense({
+        eventId,
+        city,
+        expenseType,
+        amount: amount || null,
+        currency: currency || "RUB",
+        comment: comment || null
+      });
+      
+      res.json(expense);
+    } catch (error) {
+      console.error("Error saving common expense:", error);
+      res.status(500).json({ error: "Failed to save expense" });
+    }
+  });
+
+  // Delete common expense
+  app.delete("/api/events/:eventId/expenses/common", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const { eventId } = req.params;
+      const { city, expenseType } = req.body;
+      
+      if (!city || !expenseType) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      
+      const success = await storage.deleteCommonExpense(eventId, city, expenseType);
+      res.json({ success });
+    } catch (error) {
+      console.error("Error deleting common expense:", error);
+      res.status(500).json({ error: "Failed to delete expense" });
+    }
+  });
+
   // ==================== CONTACT ROUTES ====================
 
   // Get all contacts

@@ -4,7 +4,7 @@ import { useState, Fragment, useRef, useLayoutEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, TrainFront, Bus, ChevronDown, Cake, MapPin } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, TrainFront, Bus, ChevronDown, Cake, MapPin, MessageSquare } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -2161,7 +2161,7 @@ export default function EventSummary() {
                         <th className="p-2 text-center font-medium border-r min-w-[100px]">Остаток</th>
                         {event.cities.map((city) => (
                           <Fragment key={city}>
-                            <th colSpan={4} className="p-2 text-center font-medium border-r bg-muted/30">
+                            <th colSpan={2} className="p-2 text-center font-medium border-r bg-muted/30">
                               <div className="flex items-center justify-center gap-1">
                                 <MapPin className="h-3 w-3" />
                                 {city}
@@ -2181,10 +2181,8 @@ export default function EventSummary() {
                         <th className="p-1 border-r"></th>
                         {event.cities.map((city) => (
                           <Fragment key={city}>
-                            <th className="p-1 border-r text-center min-w-[90px]">Прибытие</th>
-                            <th className="p-1 border-r text-center min-w-[90px]">Отъезд</th>
-                            <th className="p-1 border-r text-center min-w-[140px]">Тип расхода</th>
-                            <th className="p-1 border-r text-center min-w-[100px]">Сумма</th>
+                            <th className="p-1 border-r text-center min-w-[150px]">Тип расхода</th>
+                            <th className="p-1 border-r text-center min-w-[120px]">Сумма</th>
                           </Fragment>
                         ))}
                       </tr>
@@ -2248,30 +2246,21 @@ export default function EventSummary() {
                             </td>
                             {event.cities.map((city) => (
                               <Fragment key={city}>
-                                <td className="p-1 border-r text-center">
-                                  <Input
-                                    type="text"
-                                    placeholder="0"
-                                    className="h-7 text-xs text-center w-full"
-                                    data-testid={`input-arrival-${participant.deal.id}-${city}`}
-                                  />
-                                </td>
-                                <td className="p-1 border-r text-center">
-                                  <Input
-                                    type="text"
-                                    placeholder="0"
-                                    className="h-7 text-xs text-center w-full"
-                                    data-testid={`input-departure-${participant.deal.id}-${city}`}
-                                  />
-                                </td>
                                 <td className="p-1 border-r">
                                   <div className="flex items-center gap-1">
-                                    <Input
-                                      type="text"
-                                      placeholder="Тип расхода"
-                                      className="h-7 text-xs flex-1"
-                                      data-testid={`input-expense-type-${participant.deal.id}-${city}`}
-                                    />
+                                    <Select>
+                                      <SelectTrigger className="h-7 text-xs flex-1" data-testid={`select-expense-type-${participant.deal.id}-${city}`}>
+                                        <SelectValue placeholder="Выберите" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="accommodation">Проживание</SelectItem>
+                                        <SelectItem value="excursions">Экскурсии</SelectItem>
+                                        <SelectItem value="meals">Питание</SelectItem>
+                                        <SelectItem value="transport">Внутренний транспорт</SelectItem>
+                                        <SelectItem value="tickets">Входные билеты</SelectItem>
+                                        <SelectItem value="other">Прочее</SelectItem>
+                                      </SelectContent>
+                                    </Select>
                                     <Button
                                       type="button"
                                       variant="ghost"
@@ -2285,12 +2274,24 @@ export default function EventSummary() {
                                   </div>
                                 </td>
                                 <td className="p-1 border-r">
-                                  <Input
-                                    type="text"
-                                    placeholder="0"
-                                    className="h-7 text-xs text-center"
-                                    data-testid={`input-expense-amount-${participant.deal.id}-${city}`}
-                                  />
+                                  <div className="flex items-center gap-1">
+                                    <Input
+                                      type="text"
+                                      placeholder="0"
+                                      className="h-7 text-xs text-center flex-1"
+                                      data-testid={`input-expense-amount-${participant.deal.id}-${city}`}
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 shrink-0"
+                                      title="Добавить комментарий"
+                                      data-testid={`button-comment-${participant.deal.id}-${city}`}
+                                    >
+                                      <MessageSquare className="h-3 w-3" />
+                                    </Button>
+                                  </div>
                                 </td>
                               </Fragment>
                             ))}
@@ -2334,8 +2335,6 @@ export default function EventSummary() {
                         {event.cities.map((city) => (
                           <Fragment key={city}>
                             <td className="p-2 border-r text-center">—</td>
-                            <td className="p-2 border-r text-center">—</td>
-                            <td className="p-2 border-r text-center">—</td>
                             <td className="p-2 border-r text-center font-bold">—</td>
                           </Fragment>
                         ))}
@@ -2347,15 +2346,20 @@ export default function EventSummary() {
                         <td colSpan={3} className="p-2 border-r"></td>
                         {event.cities.map((city) => (
                           <Fragment key={city}>
-                            <td colSpan={2} className="p-2 border-r"></td>
                             <td className="p-1 border-r">
                               <div className="flex items-center gap-1">
-                                <Input
-                                  type="text"
-                                  placeholder="Тип расхода"
-                                  className="h-7 text-xs flex-1 bg-white dark:bg-background"
-                                  data-testid={`input-common-expense-type-${city}`}
-                                />
+                                <Select>
+                                  <SelectTrigger className="h-7 text-xs flex-1 bg-white dark:bg-background" data-testid={`select-common-expense-type-${city}`}>
+                                    <SelectValue placeholder="Выберите" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="guide">Гид/Сопровождающий</SelectItem>
+                                    <SelectItem value="bus">Аренда автобуса</SelectItem>
+                                    <SelectItem value="insurance">Страховка</SelectItem>
+                                    <SelectItem value="visa">Визовые сборы</SelectItem>
+                                    <SelectItem value="other">Прочее</SelectItem>
+                                  </SelectContent>
+                                </Select>
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -2369,12 +2373,24 @@ export default function EventSummary() {
                               </div>
                             </td>
                             <td className="p-1 border-r">
-                              <Input
-                                type="text"
-                                placeholder="0"
-                                className="h-7 text-xs text-center bg-white dark:bg-background"
-                                data-testid={`input-common-expense-amount-${city}`}
-                              />
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="text"
+                                  placeholder="0"
+                                  className="h-7 text-xs text-center flex-1 bg-white dark:bg-background"
+                                  data-testid={`input-common-expense-amount-${city}`}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0"
+                                  title="Добавить комментарий"
+                                  data-testid={`button-comment-common-${city}`}
+                                >
+                                  <MessageSquare className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </td>
                           </Fragment>
                         ))}
@@ -2386,8 +2402,6 @@ export default function EventSummary() {
                         <td className="p-2 border-r text-center">—</td>
                         {event.cities.map((city) => (
                           <Fragment key={city}>
-                            <td className="p-2 border-r text-center">—</td>
-                            <td className="p-2 border-r text-center">—</td>
                             <td className="p-2 border-r text-center">—</td>
                             <td className="p-2 border-r text-center">—</td>
                           </Fragment>

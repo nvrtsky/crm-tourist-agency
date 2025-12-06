@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <circle cx="32" cy="32" r="30" fill="#E53935"/>
+  <path d="M20 20 Q32 28 20 44 Q36 36 44 44 Q36 32 44 20 Q28 28 20 20" fill="#C62828"/>
+  <text x="32" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">CRM</text>
+</svg>

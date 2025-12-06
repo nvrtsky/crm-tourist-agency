@@ -716,18 +716,51 @@ export default function EventSummary() {
     },
   });
 
-  // Helper to get participant expense (finds any expense for dealId + city)
+  // Helper to get all participant expenses for dealId + city
+  const getParticipantExpenses = (dealId: string, city: string) => {
+    return participantExpenses.filter(
+      e => e.dealId === dealId && e.city === city
+    );
+  };
+  
+  // Helper to get participant expense (finds any expense for dealId + city) - for backward compatibility
   const getParticipantExpense = (dealId: string, city: string) => {
     return participantExpenses.find(
       e => e.dealId === dealId && e.city === city
     );
   };
 
-  // Helper to get common expense (finds any expense for city)
+  // Helper to get all common expenses for city
+  const getCommonExpensesForCity = (city: string) => {
+    return commonExpenses.filter(
+      e => e.city === city
+    );
+  };
+  
+  // Helper to get common expense (finds any expense for city) - for backward compatibility
   const getCommonExpense = (city: string) => {
     return commonExpenses.find(
       e => e.city === city
     );
+  };
+  
+  // PARTICIPANT_EXPENSE_TYPES labels
+  const EXPENSE_TYPE_LABELS: Record<string, string> = {
+    accommodation: "Проживание",
+    excursions: "Экскурсии", 
+    meals: "Питание",
+    transport: "Внутренний транспорт",
+    tickets: "Входные билеты",
+    other: "Прочее",
+  };
+  
+  // COMMON_EXPENSE_TYPES labels
+  const COMMON_EXPENSE_TYPE_LABELS: Record<string, string> = {
+    guide: "Гид/Сопровождающий",
+    bus: "Аренда автобуса",
+    insurance: "Страховка",
+    visa: "Визовые сборы",
+    other: "Прочее",
   };
 
   // Sort participants by: (1) confirmed leads first, (2) leadId, (3) isPrimary, (4) groupId, (5) isPrimaryInGroup
@@ -2248,8 +2281,7 @@ export default function EventSummary() {
                         <th className="p-1 border-r bg-orange-50 dark:bg-orange-950/30"></th>
                         {event.cities.map((city) => (
                           <Fragment key={city}>
-                            <th className="p-1 border-r text-center min-w-[150px]">Тип расхода</th>
-                            <th className="p-1 border-r text-center min-w-[120px]">Сумма</th>
+                            <th colSpan={2} className="p-1 border-r text-center min-w-[270px]">Расходы</th>
                           </Fragment>
                         ))}
                       </tr>
@@ -2332,100 +2364,105 @@ export default function EventSummary() {
                               })()}
                             </td>
                             {event.cities.map((city) => {
-                              const currentExpense = getParticipantExpense(participant.deal.id, city);
+                              const cityExpenses = getParticipantExpenses(participant.deal.id, city);
+                              const usedTypes = cityExpenses.map(e => e.expenseType);
+                              const availableTypes = Object.keys(EXPENSE_TYPE_LABELS).filter(t => !usedTypes.includes(t));
+                              
                               return (
                                 <Fragment key={city}>
-                                  <td className="p-1 border-r">
-                                    <div className="flex items-center gap-1">
-                                      <Select
-                                        value={currentExpense?.expenseType || ""}
-                                        onValueChange={(value) => {
-                                          upsertParticipantExpenseMutation.mutate({
-                                            dealId: participant.deal.id,
-                                            city,
-                                            expenseType: value,
-                                            amount: currentExpense?.amount || undefined,
-                                            currency: currentExpense?.currency || "RUB",
-                                          });
-                                        }}
-                                      >
-                                        <SelectTrigger className="h-7 text-xs flex-1" data-testid={`select-expense-type-${participant.deal.id}-${city}`}>
-                                          <SelectValue placeholder="Выберите" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="accommodation">Проживание</SelectItem>
-                                          <SelectItem value="excursions">Экскурсии</SelectItem>
-                                          <SelectItem value="meals">Питание</SelectItem>
-                                          <SelectItem value="transport">Внутренний транспорт</SelectItem>
-                                          <SelectItem value="tickets">Входные билеты</SelectItem>
-                                          <SelectItem value="other">Прочее</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 shrink-0"
-                                        title="Добавить расход"
-                                        data-testid={`button-add-expense-${participant.deal.id}-${city}`}
-                                      >
-                                        <Plus className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  </td>
-                                  <td className="p-1 border-r">
-                                    <div className="flex items-center gap-1">
-                                      <Input
-                                        type="text"
-                                        placeholder="0"
-                                        defaultValue={currentExpense?.amount || ""}
-                                        className="h-7 text-xs text-center flex-1"
-                                        data-testid={`input-expense-amount-${participant.deal.id}-${city}`}
-                                        onBlur={(e) => {
-                                          const value = e.target.value;
-                                          if (value) {
-                                            upsertParticipantExpenseMutation.mutate({
-                                              dealId: participant.deal.id,
-                                              city,
-                                              expenseType: currentExpense?.expenseType || "other",
-                                              amount: value,
-                                              currency: currentExpense?.currency || "RUB",
-                                            });
-                                          }
-                                        }}
-                                      />
-                                      <Popover>
-                                        <PopoverTrigger asChild>
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 shrink-0"
-                                            data-testid={`button-comment-${participant.deal.id}-${city}`}
-                                          >
-                                            <MessageSquare className={`h-3 w-3 ${currentExpense?.comment ? 'text-primary' : ''}`} />
-                                          </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-64 p-2" align="end">
-                                          <Textarea
-                                            placeholder="Добавить комментарий..."
-                                            defaultValue={currentExpense?.comment || ""}
-                                            className="text-xs min-h-[80px]"
-                                            data-testid={`textarea-comment-${participant.deal.id}-${city}`}
+                                  <td className="p-1 border-r align-top" colSpan={2}>
+                                    <div className="space-y-1">
+                                      {cityExpenses.map((expense, idx) => (
+                                        <div key={expense.id} className="flex items-center gap-1 bg-muted/30 rounded p-1">
+                                          <span className="text-xs text-muted-foreground shrink-0 w-24 truncate" title={EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}>
+                                            {EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}
+                                          </span>
+                                          <Input
+                                            type="text"
+                                            placeholder="0"
+                                            defaultValue={expense.amount || ""}
+                                            className="h-6 text-xs text-center w-20"
+                                            data-testid={`input-expense-amount-${participant.deal.id}-${city}-${idx}`}
                                             onBlur={(e) => {
                                               const value = e.target.value;
                                               upsertParticipantExpenseMutation.mutate({
                                                 dealId: participant.deal.id,
                                                 city,
-                                                expenseType: currentExpense?.expenseType || "other",
-                                                amount: currentExpense?.amount || undefined,
-                                                currency: currentExpense?.currency || "RUB",
-                                                comment: value || undefined,
+                                                expenseType: expense.expenseType,
+                                                amount: value || undefined,
+                                                currency: expense.currency || "RUB",
+                                                comment: expense.comment,
                                               });
                                             }}
                                           />
-                                        </PopoverContent>
-                                      </Popover>
+                                          <Popover>
+                                            <PopoverTrigger asChild>
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-5 w-5 shrink-0"
+                                                data-testid={`button-comment-${participant.deal.id}-${city}-${idx}`}
+                                              >
+                                                <MessageSquare className={`h-3 w-3 ${expense.comment ? 'text-primary' : ''}`} />
+                                              </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-64 p-2" align="end">
+                                              <Textarea
+                                                placeholder="Добавить комментарий..."
+                                                defaultValue={expense.comment || ""}
+                                                className="text-xs min-h-[80px]"
+                                                data-testid={`textarea-comment-${participant.deal.id}-${city}-${idx}`}
+                                                onBlur={(e) => {
+                                                  const value = e.target.value;
+                                                  upsertParticipantExpenseMutation.mutate({
+                                                    dealId: participant.deal.id,
+                                                    city,
+                                                    expenseType: expense.expenseType,
+                                                    amount: expense.amount || undefined,
+                                                    currency: expense.currency || "RUB",
+                                                    comment: value || undefined,
+                                                  });
+                                                }}
+                                              />
+                                            </PopoverContent>
+                                          </Popover>
+                                        </div>
+                                      ))}
+                                      {availableTypes.length > 0 && (
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-6 text-xs w-full"
+                                              data-testid={`button-add-expense-${participant.deal.id}-${city}`}
+                                            >
+                                              <Plus className="h-3 w-3 mr-1" /> Добавить расход
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent>
+                                            {availableTypes.map(type => (
+                                              <DropdownMenuItem 
+                                                key={type}
+                                                onClick={() => {
+                                                  upsertParticipantExpenseMutation.mutate({
+                                                    dealId: participant.deal.id,
+                                                    city,
+                                                    expenseType: type,
+                                                    amount: undefined,
+                                                    currency: "RUB",
+                                                  });
+                                                }}
+                                                data-testid={`menu-add-expense-${participant.deal.id}-${city}-${type}`}
+                                              >
+                                                {EXPENSE_TYPE_LABELS[type]}
+                                              </DropdownMenuItem>
+                                            ))}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      )}
                                     </div>
                                   </td>
                                 </Fragment>
@@ -2480,8 +2517,7 @@ export default function EventSummary() {
                             .reduce((sum, e) => sum + Number(e.amount || 0), 0);
                           return (
                             <Fragment key={city}>
-                              <td className="p-2 border-r text-center">—</td>
-                              <td className="p-2 border-r text-center font-bold">
+                              <td colSpan={2} className="p-2 border-r text-center font-bold">
                                 {cityParticipantTotal > 0 ? formatCurrency(cityParticipantTotal) : "—"}
                               </td>
                             </Fragment>
@@ -2500,96 +2536,102 @@ export default function EventSummary() {
                           })()}
                         </td>
                         {event.cities.map((city) => {
-                          const currentCommonExpense = getCommonExpense(city);
+                          const cityCommonExpenses = getCommonExpensesForCity(city);
+                          const usedTypes = cityCommonExpenses.map(e => e.expenseType);
+                          const availableTypes = Object.keys(COMMON_EXPENSE_TYPE_LABELS).filter(t => !usedTypes.includes(t));
+                          
                           return (
                             <Fragment key={city}>
-                              <td className="p-1 border-r">
-                                <div className="flex items-center gap-1">
-                                  <Select
-                                    value={currentCommonExpense?.expenseType || ""}
-                                    onValueChange={(value) => {
-                                      upsertCommonExpenseMutation.mutate({
-                                        city,
-                                        expenseType: value,
-                                        amount: currentCommonExpense?.amount || undefined,
-                                        currency: currentCommonExpense?.currency || "RUB",
-                                      });
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-7 text-xs flex-1 bg-white dark:bg-background" data-testid={`select-common-expense-type-${city}`}>
-                                      <SelectValue placeholder="Выберите" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="guide">Гид/Сопровождающий</SelectItem>
-                                      <SelectItem value="bus">Аренда автобуса</SelectItem>
-                                      <SelectItem value="insurance">Страховка</SelectItem>
-                                      <SelectItem value="visa">Визовые сборы</SelectItem>
-                                      <SelectItem value="other">Прочее</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 shrink-0"
-                                    title="Добавить общий расход"
-                                    data-testid={`button-add-common-expense-${city}`}
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </td>
-                              <td className="p-1 border-r">
-                                <div className="flex items-center gap-1">
-                                  <Input
-                                    type="text"
-                                    placeholder="0"
-                                    defaultValue={currentCommonExpense?.amount || ""}
-                                    className="h-7 text-xs text-center flex-1 bg-white dark:bg-background"
-                                    data-testid={`input-common-expense-amount-${city}`}
-                                    onBlur={(e) => {
-                                      const value = e.target.value;
-                                      if (value) {
-                                        upsertCommonExpenseMutation.mutate({
-                                          city,
-                                          expenseType: currentCommonExpense?.expenseType || "other",
-                                          amount: value,
-                                          currency: currentCommonExpense?.currency || "RUB",
-                                        });
-                                      }
-                                    }}
-                                  />
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 shrink-0"
-                                        data-testid={`button-comment-common-${city}`}
-                                      >
-                                        <MessageSquare className={`h-3 w-3 ${currentCommonExpense?.comment ? 'text-primary' : ''}`} />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-64 p-2" align="end">
-                                      <Textarea
-                                        placeholder="Добавить комментарий..."
-                                        defaultValue={currentCommonExpense?.comment || ""}
-                                        className="text-xs min-h-[80px]"
-                                        data-testid={`textarea-comment-common-${city}`}
+                              <td className="p-1 border-r align-top" colSpan={2}>
+                                <div className="space-y-1">
+                                  {cityCommonExpenses.map((expense, idx) => (
+                                    <div key={expense.id} className="flex items-center gap-1 bg-white dark:bg-background rounded p-1">
+                                      <span className="text-xs text-muted-foreground shrink-0 w-28 truncate" title={COMMON_EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}>
+                                        {COMMON_EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}
+                                      </span>
+                                      <Input
+                                        type="text"
+                                        placeholder="0"
+                                        defaultValue={expense.amount || ""}
+                                        className="h-6 text-xs text-center w-20"
+                                        data-testid={`input-common-expense-amount-${city}-${idx}`}
                                         onBlur={(e) => {
                                           const value = e.target.value;
                                           upsertCommonExpenseMutation.mutate({
                                             city,
-                                            expenseType: currentCommonExpense?.expenseType || "other",
-                                            amount: currentCommonExpense?.amount || undefined,
-                                            currency: currentCommonExpense?.currency || "RUB",
-                                            comment: value || undefined,
+                                            expenseType: expense.expenseType,
+                                            amount: value || undefined,
+                                            currency: expense.currency || "RUB",
+                                            comment: expense.comment,
                                           });
                                         }}
                                       />
-                                    </PopoverContent>
-                                  </Popover>
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-5 w-5 shrink-0"
+                                            data-testid={`button-comment-common-${city}-${idx}`}
+                                          >
+                                            <MessageSquare className={`h-3 w-3 ${expense.comment ? 'text-primary' : ''}`} />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-64 p-2" align="end">
+                                          <Textarea
+                                            placeholder="Добавить комментарий..."
+                                            defaultValue={expense.comment || ""}
+                                            className="text-xs min-h-[80px]"
+                                            data-testid={`textarea-comment-common-${city}-${idx}`}
+                                            onBlur={(e) => {
+                                              const value = e.target.value;
+                                              upsertCommonExpenseMutation.mutate({
+                                                city,
+                                                expenseType: expense.expenseType,
+                                                amount: expense.amount || undefined,
+                                                currency: expense.currency || "RUB",
+                                                comment: value || undefined,
+                                              });
+                                            }}
+                                          />
+                                        </PopoverContent>
+                                      </Popover>
+                                    </div>
+                                  ))}
+                                  {availableTypes.length > 0 && (
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 text-xs w-full bg-white dark:bg-background"
+                                          data-testid={`button-add-common-expense-${city}`}
+                                        >
+                                          <Plus className="h-3 w-3 mr-1" /> Добавить
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent>
+                                        {availableTypes.map(type => (
+                                          <DropdownMenuItem 
+                                            key={type}
+                                            onClick={() => {
+                                              upsertCommonExpenseMutation.mutate({
+                                                city,
+                                                expenseType: type,
+                                                amount: undefined,
+                                                currency: "RUB",
+                                              });
+                                            }}
+                                            data-testid={`menu-add-common-expense-${city}-${type}`}
+                                          >
+                                            {COMMON_EXPENSE_TYPE_LABELS[type]}
+                                          </DropdownMenuItem>
+                                        ))}
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  )}
                                 </div>
                               </td>
                             </Fragment>
@@ -2646,8 +2688,7 @@ export default function EventSummary() {
                           const cityTotal = cityParticipantTotal + cityCommonTotal;
                           return (
                             <Fragment key={city}>
-                              <td className="p-2 border-r text-center">—</td>
-                              <td className="p-2 border-r text-center font-bold">
+                              <td colSpan={2} className="p-2 border-r text-center font-bold">
                                 {cityTotal > 0 ? formatCurrency(cityTotal) : "—"}
                               </td>
                             </Fragment>

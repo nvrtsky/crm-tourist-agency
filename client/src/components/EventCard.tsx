@@ -84,8 +84,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
             <div className="flex items-start gap-1 sm:gap-2 min-w-0 flex-1">
               {showDot && <span className="mt-1 flex-shrink-0"><ColorIndicator color={eventColor} /></span>}
               <CardTitle 
-                className="text-base sm:text-lg md:truncate md:overflow-hidden md:whitespace-nowrap" 
-                title={event.name}
+                className="text-base sm:text-lg"
                 data-testid={`text-event-name-${event.id}`}
               >
                 {event.name}

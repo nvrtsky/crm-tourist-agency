@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import type { Event, Contact, Deal, CityVisit, Group, User, LeadTourist, Lead } from "@shared/schema";
+import type { Event, Contact, Deal, CityVisit, Group, User, LeadTourist, Lead, EventParticipantExpense, EventCommonExpense } from "@shared/schema";
 import { updateLeadTouristSchema } from "@shared/schema";
 import { EditableCell } from "@/components/EditableCell";
 import { PassportScansField } from "@/components/PassportScansField";
@@ -667,6 +667,58 @@ export default function EventSummary() {
     queryKey: [`/api/events/${eventId}/participants`],
     enabled: !!eventId,
   });
+
+  // Fetch event expenses for finance tab
+  interface ExpensesResponse {
+    participantExpenses: EventParticipantExpense[];
+    commonExpenses: EventCommonExpense[];
+  }
+  const { data: expensesData } = useQuery<ExpensesResponse>({
+    queryKey: [`/api/events/${eventId}/expenses`],
+    enabled: !!eventId,
+  });
+  const participantExpenses = expensesData?.participantExpenses ?? [];
+  const commonExpenses = expensesData?.commonExpenses ?? [];
+
+  // Mutation for upserting participant expense
+  const upsertParticipantExpenseMutation = useMutation({
+    mutationFn: async (data: { dealId: string; city: string; expenseType: string; amount?: string; currency?: string; comment?: string }) => {
+      return apiRequest(`/api/events/${eventId}/expenses/participant`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/expenses`] });
+    },
+  });
+
+  // Mutation for upserting common expense
+  const upsertCommonExpenseMutation = useMutation({
+    mutationFn: async (data: { city: string; expenseType: string; amount?: string; currency?: string; comment?: string }) => {
+      return apiRequest(`/api/events/${eventId}/expenses/common`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/expenses`] });
+    },
+  });
+
+  // Helper to get participant expense
+  const getParticipantExpense = (dealId: string, city: string, expenseType: string) => {
+    return participantExpenses.find(
+      e => e.dealId === dealId && e.city === city && e.expenseType === expenseType
+    );
+  };
+
+  // Helper to get common expense
+  const getCommonExpense = (city: string, expenseType: string) => {
+    return commonExpenses.find(
+      e => e.city === city && e.expenseType === expenseType
+    );
+  };
 
   // Sort participants by: (1) confirmed leads first, (2) leadId, (3) isPrimary, (4) groupId, (5) isPrimaryInGroup
   // This ensures confirmed participants appear at the top while maintaining group relationships
@@ -2244,57 +2296,84 @@ export default function EventSummary() {
                                 className="text-sm text-center"
                               />
                             </td>
-                            {event.cities.map((city) => (
-                              <Fragment key={city}>
-                                <td className="p-1 border-r">
-                                  <div className="flex items-center gap-1">
-                                    <Select>
-                                      <SelectTrigger className="h-7 text-xs flex-1" data-testid={`select-expense-type-${participant.deal.id}-${city}`}>
-                                        <SelectValue placeholder="Выберите" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="accommodation">Проживание</SelectItem>
-                                        <SelectItem value="excursions">Экскурсии</SelectItem>
-                                        <SelectItem value="meals">Питание</SelectItem>
-                                        <SelectItem value="transport">Внутренний транспорт</SelectItem>
-                                        <SelectItem value="tickets">Входные билеты</SelectItem>
-                                        <SelectItem value="other">Прочее</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6 shrink-0"
-                                      title="Добавить расход"
-                                      data-testid={`button-add-expense-${participant.deal.id}-${city}`}
-                                    >
-                                      <Plus className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </td>
-                                <td className="p-1 border-r">
-                                  <div className="flex items-center gap-1">
-                                    <Input
-                                      type="text"
-                                      placeholder="0"
-                                      className="h-7 text-xs text-center flex-1"
-                                      data-testid={`input-expense-amount-${participant.deal.id}-${city}`}
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6 shrink-0"
-                                      title="Добавить комментарий"
-                                      data-testid={`button-comment-${participant.deal.id}-${city}`}
-                                    >
-                                      <MessageSquare className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </td>
-                              </Fragment>
-                            ))}
+                            {event.cities.map((city) => {
+                              const currentExpense = getParticipantExpense(participant.deal.id, city, 'accommodation');
+                              return (
+                                <Fragment key={city}>
+                                  <td className="p-1 border-r">
+                                    <div className="flex items-center gap-1">
+                                      <Select
+                                        value={currentExpense?.expenseType || ""}
+                                        onValueChange={(value) => {
+                                          upsertParticipantExpenseMutation.mutate({
+                                            dealId: participant.deal.id,
+                                            city,
+                                            expenseType: value,
+                                            amount: currentExpense?.amount || undefined,
+                                            currency: currentExpense?.currency || "RUB",
+                                          });
+                                        }}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs flex-1" data-testid={`select-expense-type-${participant.deal.id}-${city}`}>
+                                          <SelectValue placeholder="Выберите" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="accommodation">Проживание</SelectItem>
+                                          <SelectItem value="excursions">Экскурсии</SelectItem>
+                                          <SelectItem value="meals">Питание</SelectItem>
+                                          <SelectItem value="transport">Внутренний транспорт</SelectItem>
+                                          <SelectItem value="tickets">Входные билеты</SelectItem>
+                                          <SelectItem value="other">Прочее</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 shrink-0"
+                                        title="Добавить расход"
+                                        data-testid={`button-add-expense-${participant.deal.id}-${city}`}
+                                      >
+                                        <Plus className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                  <td className="p-1 border-r">
+                                    <div className="flex items-center gap-1">
+                                      <Input
+                                        type="text"
+                                        placeholder="0"
+                                        defaultValue={currentExpense?.amount || ""}
+                                        className="h-7 text-xs text-center flex-1"
+                                        data-testid={`input-expense-amount-${participant.deal.id}-${city}`}
+                                        onBlur={(e) => {
+                                          const value = e.target.value;
+                                          if (currentExpense?.expenseType) {
+                                            upsertParticipantExpenseMutation.mutate({
+                                              dealId: participant.deal.id,
+                                              city,
+                                              expenseType: currentExpense.expenseType,
+                                              amount: value || undefined,
+                                              currency: currentExpense?.currency || "RUB",
+                                            });
+                                          }
+                                        }}
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 shrink-0"
+                                        title={currentExpense?.comment || "Добавить комментарий"}
+                                        data-testid={`button-comment-${participant.deal.id}-${city}`}
+                                      >
+                                        <MessageSquare className={`h-3 w-3 ${currentExpense?.comment ? 'text-primary' : ''}`} />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </Fragment>
+                              );
+                            })}
                           </tr>
                         );
                       })}
@@ -2344,56 +2423,81 @@ export default function EventSummary() {
                           Общие расходы:
                         </td>
                         <td colSpan={3} className="p-2 border-r"></td>
-                        {event.cities.map((city) => (
-                          <Fragment key={city}>
-                            <td className="p-1 border-r">
-                              <div className="flex items-center gap-1">
-                                <Select>
-                                  <SelectTrigger className="h-7 text-xs flex-1 bg-white dark:bg-background" data-testid={`select-common-expense-type-${city}`}>
-                                    <SelectValue placeholder="Выберите" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="guide">Гид/Сопровождающий</SelectItem>
-                                    <SelectItem value="bus">Аренда автобуса</SelectItem>
-                                    <SelectItem value="insurance">Страховка</SelectItem>
-                                    <SelectItem value="visa">Визовые сборы</SelectItem>
-                                    <SelectItem value="other">Прочее</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 shrink-0"
-                                  title="Добавить общий расход"
-                                  data-testid={`button-add-common-expense-${city}`}
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </td>
-                            <td className="p-1 border-r">
-                              <div className="flex items-center gap-1">
-                                <Input
-                                  type="text"
-                                  placeholder="0"
-                                  className="h-7 text-xs text-center flex-1 bg-white dark:bg-background"
-                                  data-testid={`input-common-expense-amount-${city}`}
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 shrink-0"
-                                  title="Добавить комментарий"
-                                  data-testid={`button-comment-common-${city}`}
-                                >
-                                  <MessageSquare className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </td>
-                          </Fragment>
-                        ))}
+                        {event.cities.map((city) => {
+                          const currentCommonExpense = getCommonExpense(city, 'guide');
+                          return (
+                            <Fragment key={city}>
+                              <td className="p-1 border-r">
+                                <div className="flex items-center gap-1">
+                                  <Select
+                                    value={currentCommonExpense?.expenseType || ""}
+                                    onValueChange={(value) => {
+                                      upsertCommonExpenseMutation.mutate({
+                                        city,
+                                        expenseType: value,
+                                        amount: currentCommonExpense?.amount || undefined,
+                                        currency: currentCommonExpense?.currency || "RUB",
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-7 text-xs flex-1 bg-white dark:bg-background" data-testid={`select-common-expense-type-${city}`}>
+                                      <SelectValue placeholder="Выберите" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="guide">Гид/Сопровождающий</SelectItem>
+                                      <SelectItem value="bus">Аренда автобуса</SelectItem>
+                                      <SelectItem value="insurance">Страховка</SelectItem>
+                                      <SelectItem value="visa">Визовые сборы</SelectItem>
+                                      <SelectItem value="other">Прочее</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 shrink-0"
+                                    title="Добавить общий расход"
+                                    data-testid={`button-add-common-expense-${city}`}
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </td>
+                              <td className="p-1 border-r">
+                                <div className="flex items-center gap-1">
+                                  <Input
+                                    type="text"
+                                    placeholder="0"
+                                    defaultValue={currentCommonExpense?.amount || ""}
+                                    className="h-7 text-xs text-center flex-1 bg-white dark:bg-background"
+                                    data-testid={`input-common-expense-amount-${city}`}
+                                    onBlur={(e) => {
+                                      const value = e.target.value;
+                                      if (currentCommonExpense?.expenseType) {
+                                        upsertCommonExpenseMutation.mutate({
+                                          city,
+                                          expenseType: currentCommonExpense.expenseType,
+                                          amount: value || undefined,
+                                          currency: currentCommonExpense?.currency || "RUB",
+                                        });
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 shrink-0"
+                                    title={currentCommonExpense?.comment || "Добавить комментарий"}
+                                    data-testid={`button-comment-common-${city}`}
+                                  >
+                                    <MessageSquare className={`h-3 w-3 ${currentCommonExpense?.comment ? 'text-primary' : ''}`} />
+                                  </Button>
+                                </div>
+                              </td>
+                            </Fragment>
+                          );
+                        })}
                       </tr>
                       <tr className="font-bold bg-muted/50">
                         <td colSpan={2} className="sticky left-0 bg-muted/50 z-10 p-2 text-right">ИТОГО:</td>

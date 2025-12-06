@@ -47,6 +47,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Accordion,
   AccordionContent,
@@ -59,11 +60,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -2398,16 +2394,38 @@ export default function EventSummary() {
                                           }
                                         }}
                                       />
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 shrink-0"
-                                        title={currentExpense?.comment || "Добавить комментарий"}
-                                        data-testid={`button-comment-${participant.deal.id}-${city}`}
-                                      >
-                                        <MessageSquare className={`h-3 w-3 ${currentExpense?.comment ? 'text-primary' : ''}`} />
-                                      </Button>
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 shrink-0"
+                                            data-testid={`button-comment-${participant.deal.id}-${city}`}
+                                          >
+                                            <MessageSquare className={`h-3 w-3 ${currentExpense?.comment ? 'text-primary' : ''}`} />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-64 p-2" align="end">
+                                          <Textarea
+                                            placeholder="Добавить комментарий..."
+                                            defaultValue={currentExpense?.comment || ""}
+                                            className="text-xs min-h-[80px]"
+                                            data-testid={`textarea-comment-${participant.deal.id}-${city}`}
+                                            onBlur={(e) => {
+                                              const value = e.target.value;
+                                              upsertParticipantExpenseMutation.mutate({
+                                                dealId: participant.deal.id,
+                                                city,
+                                                expenseType: currentExpense?.expenseType || "other",
+                                                amount: currentExpense?.amount || undefined,
+                                                currency: currentExpense?.currency || "RUB",
+                                                comment: value || undefined,
+                                              });
+                                            }}
+                                          />
+                                        </PopoverContent>
+                                      </Popover>
                                     </div>
                                   </td>
                                 </Fragment>
@@ -2541,16 +2559,37 @@ export default function EventSummary() {
                                       }
                                     }}
                                   />
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 shrink-0"
-                                    title={currentCommonExpense?.comment || "Добавить комментарий"}
-                                    data-testid={`button-comment-common-${city}`}
-                                  >
-                                    <MessageSquare className={`h-3 w-3 ${currentCommonExpense?.comment ? 'text-primary' : ''}`} />
-                                  </Button>
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 shrink-0"
+                                        data-testid={`button-comment-common-${city}`}
+                                      >
+                                        <MessageSquare className={`h-3 w-3 ${currentCommonExpense?.comment ? 'text-primary' : ''}`} />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-64 p-2" align="end">
+                                      <Textarea
+                                        placeholder="Добавить комментарий..."
+                                        defaultValue={currentCommonExpense?.comment || ""}
+                                        className="text-xs min-h-[80px]"
+                                        data-testid={`textarea-comment-common-${city}`}
+                                        onBlur={(e) => {
+                                          const value = e.target.value;
+                                          upsertCommonExpenseMutation.mutate({
+                                            city,
+                                            expenseType: currentCommonExpense?.expenseType || "other",
+                                            amount: currentCommonExpense?.amount || undefined,
+                                            currency: currentCommonExpense?.currency || "RUB",
+                                            comment: value || undefined,
+                                          });
+                                        }}
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
                                 </div>
                               </td>
                             </Fragment>

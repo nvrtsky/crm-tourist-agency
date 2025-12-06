@@ -140,7 +140,7 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
               </span>
             </div>
             <span className="font-semibold" data-testid={`text-price-${event.id}`}>
-              {formatCurrency(event.price)} ₽
+              {formatCurrency(event.price, event.priceCurrency)}
             </span>
           </div>
           
@@ -183,13 +183,13 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
               </>
             )}
           </div>
-          
-          {event.description && (
-            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-2 sm:mt-3" data-testid={`text-description-${event.id}`}>
-              {event.description}
-            </p>
-          )}
         </div>
+
+        {event.description && (
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2" data-testid={`text-description-${event.id}`}>
+            {event.description}
+          </p>
+        )}
 
         <div className="flex items-center gap-1 sm:gap-2 pt-2 sm:pt-3">
           <Button 

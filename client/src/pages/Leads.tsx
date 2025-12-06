@@ -31,11 +31,11 @@ import { DeferLeadDialog } from "@/components/DeferLeadDialog";
 import { Wazzup24Chat } from "@/components/Wazzup24Chat";
 import { z } from "zod";
 
-const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  new: { label: "Новый", variant: "default" },
+const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; customClass?: string }> = {
+  new: { label: "Новый", variant: "secondary" },
   contacted: { label: "Квалифицирован", variant: "secondary" },
-  qualified: { label: "Забронирован", variant: "outline" },
-  converted: { label: "Подтвержден", variant: "default" },
+  qualified: { label: "Забронирован", variant: "outline", customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420]" },
+  converted: { label: "Подтвержден", variant: "default", customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" },
   lost: { label: "Отложен", variant: "destructive" },
 };
 
@@ -617,10 +617,9 @@ export default function Leads() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ФИО</TableHead>
-                  <TableHead>Телефон</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Тур</TableHead>
                   <TableHead>Статус</TableHead>
+                  <TableHead>Тур</TableHead>
+                  <TableHead>Телефон</TableHead>
                   <TableHead>Источник</TableHead>
                   <TableHead>Категория</TableHead>
                   <TableHead>Действия</TableHead>
@@ -633,70 +632,133 @@ export default function Leads() {
                   const pastelClasses = displayColor ? getPastelClasses(displayColor) : { bg: "", border: "" };
                   const showFill = (colorDisplayMode === "fill" || colorDisplayMode === "both") && displayColor;
                   const showDot = (colorDisplayMode === "dot" || colorDisplayMode === "both");
+                  
+                  const handleStatusChange = (newStatus: string) => {
+                    if (newStatus === 'lost') {
+                      setLeadToDefer({ id: lead.id, name: getLeadName(lead) });
+                      setIsDeferDialogOpen(true);
+                    } else {
+                      updateMutation.mutate({ id: lead.id, data: { status: newStatus } });
+                    }
+                  };
+                  
                   return (
-                  <TableRow 
-                    key={lead.id} 
-                    data-testid={`row-lead-${lead.id}`}
-                    className={showFill ? `${pastelClasses.bg}` : ""}
-                  >
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {showDot && <ColorIndicator color={displayColor} />}
-                        <span>{getLeadName(lead)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{lead.phone || "—"}</TableCell>
-                    <TableCell>{lead.email || "—"}</TableCell>
-                    <TableCell>{event?.name || "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={leadStatusMap[lead.status]?.variant || "default"} data-testid={`status-${lead.id}`}>
-                          {leadStatusMap[lead.status]?.label || lead.status}
-                        </Badge>
-                        {lead.hasBeenContacted && (
-                          <Badge variant="secondary" className="text-[10px]" data-testid={`badge-reactivated-table-${lead.id}`}>
-                            Лид из Отложенных
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{leadSourceMap[lead.source] || lead.source}</TableCell>
-                    <TableCell>
-                      {lead.clientCategory ? (
-                        <Badge variant="outline" data-testid={`category-${lead.id}`}>
-                          {clientCategoryMap[lead.clientCategory] || lead.clientCategory}
-                        </Badge>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setEditingLead(lead)}
-                          data-testid={`button-edit-${lead.id}`}
+                  <ContextMenu key={lead.id}>
+                    <ContextMenuTrigger asChild>
+                      <TableRow 
+                        data-testid={`row-lead-${lead.id}`}
+                        className={`cursor-context-menu ${showFill ? `${pastelClasses.bg}` : ""}`}
+                        onTouchStart={(e) => {
+                          const timer = setTimeout(() => {
+                            e.currentTarget.dispatchEvent(new MouseEvent('contextmenu', {
+                              bubbles: true,
+                              clientX: e.touches[0].clientX,
+                              clientY: e.touches[0].clientY
+                            }));
+                          }, 500);
+                          (e.currentTarget as any)._longPressTimer = timer;
+                        }}
+                        onTouchEnd={(e) => {
+                          if ((e.currentTarget as any)._longPressTimer) {
+                            clearTimeout((e.currentTarget as any)._longPressTimer);
+                          }
+                        }}
+                        onTouchMove={(e) => {
+                          if ((e.currentTarget as any)._longPressTimer) {
+                            clearTimeout((e.currentTarget as any)._longPressTimer);
+                          }
+                        }}
+                      >
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {showDot && <ColorIndicator color={displayColor} />}
+                            <span>{getLeadName(lead)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant={leadStatusMap[lead.status]?.variant || "default"} 
+                              className={leadStatusMap[lead.status]?.customClass || ""}
+                              data-testid={`status-${lead.id}`}
+                            >
+                              {leadStatusMap[lead.status]?.label || lead.status}
+                            </Badge>
+                            {lead.hasBeenContacted && (
+                              <Badge variant="secondary" className="text-[10px]" data-testid={`badge-reactivated-table-${lead.id}`}>
+                                Лид из Отложенных
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{event?.name || "—"}</TableCell>
+                        <TableCell>{lead.phone || "—"}</TableCell>
+                        <TableCell>{leadSourceMap[lead.source] || lead.source}</TableCell>
+                        <TableCell>
+                          {lead.clientCategory ? (
+                            <Badge variant="outline" data-testid={`category-${lead.id}`}>
+                              {clientCategoryMap[lead.clientCategory] || lead.clientCategory}
+                            </Badge>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingLead(lead)}
+                              data-testid={`button-edit-${lead.id}`}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            {isAdmin && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  if (confirm("Вы уверены, что хотите удалить этот лид?")) {
+                                    deleteMutation.mutate(lead.id);
+                                  }
+                                }}
+                                data-testid={`button-delete-${lead.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="w-48">
+                      <ContextMenuLabel className="text-xs text-muted-foreground">
+                        Изменить статус
+                      </ContextMenuLabel>
+                      <ContextMenuSeparator />
+                      {Object.entries(leadStatusMap).map(([status, config]) => (
+                        <ContextMenuItem
+                          key={status}
+                          disabled={lead.status === status}
+                          onClick={() => {
+                            if (lead.status !== status) {
+                              handleStatusChange(status);
+                            }
+                          }}
+                          className={lead.status === status ? "bg-accent font-medium" : ""}
+                          data-testid={`table-context-status-${status}-${lead.id}`}
                         >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              if (confirm("Вы уверены, что хотите удалить этот лид?")) {
-                                deleteMutation.mutate(lead.id);
-                              }
-                            }}
-                            data-testid={`button-delete-${lead.id}`}
+                          <Badge 
+                            variant={config.variant} 
+                            className={`mr-2 text-[10px] ${config.customClass || ""}`}
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                            {config.label}
+                          </Badge>
+                          {lead.status === status && <span className="ml-auto text-xs">✓</span>}
+                        </ContextMenuItem>
+                      ))}
+                    </ContextMenuContent>
+                  </ContextMenu>
                   );
                 })}
               </TableBody>

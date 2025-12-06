@@ -505,38 +505,6 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                           )}
                         />
 
-                        <FormField
-                          control={form.control}
-                          name="clientCategory"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Категория клиента</FormLabel>
-                              <Select 
-                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)} 
-                                value={field.value || "__none__"}
-                              >
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-lead-clientCategory">
-                                    <SelectValue placeholder="Выберите категорию" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="__none__">Не указана</SelectItem>
-                                  <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
-                                  <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
-                                  <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
-                                  <SelectItem value="vip">VIP</SelectItem>
-                                  <SelectItem value="not_segmented">Не сегментированный</SelectItem>
-                                  <SelectItem value="travel_agent">Турагент</SelectItem>
-                                  <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
-                                  <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
-                                  <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
                       </div>
 
                       {/* Города маршрута */}
@@ -796,6 +764,39 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                                   label=""
                                 />
                               </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="clientCategory"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Категория клиента</FormLabel>
+                              <Select 
+                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)} 
+                                value={field.value || "__none__"}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-lead-clientCategory">
+                                    <SelectValue placeholder="Выберите категорию" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="__none__">Не указана</SelectItem>
+                                  <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
+                                  <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
+                                  <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
+                                  <SelectItem value="vip">VIP</SelectItem>
+                                  <SelectItem value="not_segmented">Не сегментированный</SelectItem>
+                                  <SelectItem value="travel_agent">Турагент</SelectItem>
+                                  <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
+                                  <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
+                                  <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}

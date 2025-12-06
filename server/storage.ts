@@ -40,6 +40,10 @@ import {
   type InsertLeadTourist,
   type UpdateLeadTourist,
   type Setting,
+  type EventParticipantExpense,
+  type InsertParticipantExpense,
+  type EventCommonExpense,
+  type InsertCommonExpense,
   events,
   contacts,
   deals,
@@ -54,6 +58,8 @@ import {
   groups,
   leadTourists,
   settings,
+  eventParticipantExpenses,
+  eventCommonExpenses,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -171,6 +177,15 @@ export interface IStorage {
   // Settings operations
   getSetting(key: string): Promise<Setting | undefined>;
   setSetting(key: string, value: string | null, userId?: string): Promise<Setting>;
+
+  // Event expense operations
+  getParticipantExpensesByEvent(eventId: string): Promise<import("@shared/schema").EventParticipantExpense[]>;
+  upsertParticipantExpense(expense: import("@shared/schema").InsertParticipantExpense): Promise<import("@shared/schema").EventParticipantExpense>;
+  deleteParticipantExpense(eventId: string, dealId: string, city: string, expenseType: string): Promise<boolean>;
+  
+  getCommonExpensesByEvent(eventId: string): Promise<import("@shared/schema").EventCommonExpense[]>;
+  upsertCommonExpense(expense: import("@shared/schema").InsertCommonExpense): Promise<import("@shared/schema").EventCommonExpense>;
+  deleteCommonExpense(eventId: string, city: string, expenseType: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1233,6 +1248,90 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return result;
+  }
+
+  // ==================== EVENT EXPENSE OPERATIONS ====================
+
+  async getParticipantExpensesByEvent(eventId: string): Promise<EventParticipantExpense[]> {
+    return await db
+      .select()
+      .from(eventParticipantExpenses)
+      .where(eq(eventParticipantExpenses.eventId, eventId));
+  }
+
+  async upsertParticipantExpense(expense: InsertParticipantExpense): Promise<EventParticipantExpense> {
+    const [result] = await db
+      .insert(eventParticipantExpenses)
+      .values(expense)
+      .onConflictDoUpdate({
+        target: [
+          eventParticipantExpenses.eventId,
+          eventParticipantExpenses.dealId,
+          eventParticipantExpenses.city,
+          eventParticipantExpenses.expenseType
+        ],
+        set: {
+          amount: expense.amount,
+          currency: expense.currency,
+          comment: expense.comment,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+    return result;
+  }
+
+  async deleteParticipantExpense(eventId: string, dealId: string, city: string, expenseType: string): Promise<boolean> {
+    const result = await db
+      .delete(eventParticipantExpenses)
+      .where(and(
+        eq(eventParticipantExpenses.eventId, eventId),
+        eq(eventParticipantExpenses.dealId, dealId),
+        eq(eventParticipantExpenses.city, city),
+        eq(eventParticipantExpenses.expenseType, expenseType)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getCommonExpensesByEvent(eventId: string): Promise<EventCommonExpense[]> {
+    return await db
+      .select()
+      .from(eventCommonExpenses)
+      .where(eq(eventCommonExpenses.eventId, eventId));
+  }
+
+  async upsertCommonExpense(expense: InsertCommonExpense): Promise<EventCommonExpense> {
+    const [result] = await db
+      .insert(eventCommonExpenses)
+      .values(expense)
+      .onConflictDoUpdate({
+        target: [
+          eventCommonExpenses.eventId,
+          eventCommonExpenses.city,
+          eventCommonExpenses.expenseType
+        ],
+        set: {
+          amount: expense.amount,
+          currency: expense.currency,
+          comment: expense.comment,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+    return result;
+  }
+
+  async deleteCommonExpense(eventId: string, city: string, expenseType: string): Promise<boolean> {
+    const result = await db
+      .delete(eventCommonExpenses)
+      .where(and(
+        eq(eventCommonExpenses.eventId, eventId),
+        eq(eventCommonExpenses.city, city),
+        eq(eventCommonExpenses.expenseType, expenseType)
+      ))
+      .returning();
+    return result.length > 0;
   }
 }
 

@@ -74,6 +74,27 @@ export const FORM_FIELD_TYPES = [
 ] as const;
 export type FormFieldType = typeof FORM_FIELD_TYPES[number];
 
+// Participant expense types (individual per participant per city)
+export const PARTICIPANT_EXPENSE_TYPES = [
+  "accommodation",  // Проживание
+  "excursions",     // Экскурсии
+  "meals",          // Питание
+  "transport",      // Внутренний транспорт
+  "tickets",        // Входные билеты
+  "other"           // Прочее
+] as const;
+export type ParticipantExpenseType = typeof PARTICIPANT_EXPENSE_TYPES[number];
+
+// Common expense types (shared for entire tour per city)
+export const COMMON_EXPENSE_TYPES = [
+  "guide",          // Гид/Сопровождающий
+  "bus",            // Аренда автобуса
+  "insurance",      // Страховка
+  "visa",           // Визовые сборы
+  "other"           // Прочее
+] as const;
+export type CommonExpenseType = typeof COMMON_EXPENSE_TYPES[number];
+
 // ================= CRM TABLES =================
 
 // Users table - for authentication and authorization
@@ -303,6 +324,37 @@ export const settings = pgTable("settings", {
   updatedByUserId: varchar("updated_by_user_id").references(() => users.id, { onDelete: 'set null' }),
 });
 
+// Event participant expenses - individual expenses per participant per city
+export const eventParticipantExpenses = pgTable("event_participant_expenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
+  dealId: varchar("deal_id").notNull().references(() => deals.id, { onDelete: 'cascade' }),
+  city: text("city").notNull(),
+  expenseType: text("expense_type").notNull(), // PARTICIPANT_EXPENSE_TYPES
+  amount: numeric("amount", { precision: 12, scale: 2 }),
+  currency: text("currency").notNull().default("RUB"), // RUB, USD, CNY, EUR
+  comment: text("comment"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("event_participant_expense_unique").on(table.eventId, table.dealId, table.city, table.expenseType)
+]);
+
+// Event common expenses - shared expenses for entire tour per city
+export const eventCommonExpenses = pgTable("event_common_expenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
+  city: text("city").notNull(),
+  expenseType: text("expense_type").notNull(), // COMMON_EXPENSE_TYPES
+  amount: numeric("amount", { precision: 12, scale: 2 }),
+  currency: text("currency").notNull().default("RUB"), // RUB, USD, CNY, EUR
+  comment: text("comment"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("event_common_expense_unique").on(table.eventId, table.city, table.expenseType)
+]);
+
 // ================= ZOD SCHEMAS =================
 
 // User schemas
@@ -374,6 +426,21 @@ export const updateGroupSchema = insertGroupSchema.partial();
 export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, updatedAt: true });
 export const updateSettingSchema = insertSettingSchema.partial();
 
+// Event expense schemas
+export const insertParticipantExpenseSchema = createInsertSchema(eventParticipantExpenses).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const updateParticipantExpenseSchema = insertParticipantExpenseSchema.partial();
+
+export const insertCommonExpenseSchema = createInsertSchema(eventCommonExpenses).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const updateCommonExpenseSchema = insertCommonExpenseSchema.partial();
+
 // ================= TYPES =================
 
 // User types
@@ -439,6 +506,15 @@ export type UpdateLeadTourist = z.infer<typeof updateLeadTouristSchema>;
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type UpdateSetting = z.infer<typeof updateSettingSchema>;
+
+// Event expense types
+export type EventParticipantExpense = typeof eventParticipantExpenses.$inferSelect;
+export type InsertParticipantExpense = z.infer<typeof insertParticipantExpenseSchema>;
+export type UpdateParticipantExpense = z.infer<typeof updateParticipantExpenseSchema>;
+
+export type EventCommonExpense = typeof eventCommonExpenses.$inferSelect;
+export type InsertCommonExpense = z.infer<typeof insertCommonExpenseSchema>;
+export type UpdateCommonExpense = z.infer<typeof updateCommonExpenseSchema>;
 
 // Complex types with relations
 export type EventWithStats = Event & {

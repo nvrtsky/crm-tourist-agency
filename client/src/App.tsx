@@ -45,12 +45,42 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Component to handle root path redirect based on user role
+// This component is rendered OUTSIDE Switch to avoid route matching issues
+function RootRedirect() {
+  const [location, setLocation] = useLocation();
+  const { user, isLoading, isAuthenticated } = useAuth();
+  
+  useEffect(() => {
+    // Only redirect if we're actually on the root path
+    const isRootPath = window.location.pathname === '/' || location === '/';
+    if (isRootPath && !isLoading) {
+      if (isAuthenticated && user) {
+        // Authenticated: redirect based on user role
+        if (user.role === "viewer") {
+          setLocation("/events");
+        } else {
+          setLocation("/leads");
+        }
+      } else {
+        // Not authenticated: redirect to login
+        setLocation("/login");
+      }
+    }
+  }, [user, isLoading, isAuthenticated, location, setLocation]);
+  
+  // This component doesn't render anything - it just handles the redirect
+  return null;
+}
+
 function Router() {
   const [, setLocation] = useLocation();
-  const { user, isLoading } = useAuth();
   
   return (
-    <Switch>
+    <>
+      {/* Handle root path redirect outside Switch to avoid prefix matching issues */}
+      <RootRedirect />
+      <Switch>
       <Route path="/login" component={Login} />
       <Route path="/dev" component={DevTest} />
       
@@ -189,35 +219,9 @@ function Router() {
           </ProtectedRoute>
         )}
       </Route>
-      <Route path="/">
-        {() => {
-          // Only redirect if we're actually on the root path
-          // This prevents false redirects when wouter's state is temporarily out of sync on page reload
-          const actualPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-          if (actualPath !== '/') {
-            return null; // Don't redirect if browser is on a different path
-          }
-          
-          // Wait for auth to load before redirecting
-          if (isLoading) {
-            return (
-              <div className="flex items-center justify-center min-h-screen">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            );
-          }
-          
-          // Redirect based on user role
-          if (user?.role === "viewer") {
-            setLocation("/events");
-          } else {
-            setLocation("/leads");
-          }
-          return null;
-        }}
-      </Route>
       <Route component={NotFound} />
     </Switch>
+    </>
   );
 }
 

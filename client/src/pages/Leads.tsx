@@ -16,7 +16,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle } from "lucide-react";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -27,7 +27,7 @@ import { ru } from "date-fns/locale";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
 import { calculateTouristDataCompleteness, formatCurrency, formatTouristName } from "@/lib/utils";
 import { ColorPicker, ColorIndicator, type ColorOption, type ColorDisplayMode, getColorDisplayMode, getPastelClasses } from "@/components/ColorPicker";
-import { DeferLeadDialog } from "@/components/DeferLeadDialog";
+import { DeferLeadDialog, type DeferLeadDialogResult } from "@/components/DeferLeadDialog";
 import { Wazzup24Chat } from "@/components/Wazzup24Chat";
 import { z } from "zod";
 
@@ -36,7 +36,7 @@ const leadStatusMap: Record<string, { label: string; variant: "default" | "secon
   contacted: { label: "Квалифицирован", variant: "secondary" },
   qualified: { label: "Забронирован", variant: "outline", customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420]" },
   converted: { label: "Подтвержден", variant: "default", customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" },
-  lost: { label: "Отложен", variant: "destructive" },
+  lost: { label: "Отложен/Провал", variant: "destructive" },
 };
 
 const leadSourceMap: Record<string, string> = {
@@ -58,6 +58,17 @@ const clientCategoryMap: Record<string, string> = {
   tariff_economy: "Тариф эконом",
   tariff_vip: "Тариф VIP",
 };
+
+// Helper function to get status label based on outcomeType
+function getLeadStatusLabel(lead: Lead): string {
+  if (lead.status === 'lost') {
+    if (lead.outcomeType === 'failed') {
+      return 'Провал';
+    }
+    return 'Отложен';
+  }
+  return leadStatusMap[lead.status]?.label || lead.status;
+}
 
 // Helper function to determine lead display color
 function getLeadDisplayColor(lead: Lead): ColorOption {
@@ -682,7 +693,7 @@ export default function Leads() {
                               className={leadStatusMap[lead.status]?.customClass || ""}
                               data-testid={`status-${lead.id}`}
                             >
-                              {leadStatusMap[lead.status]?.label || lead.status}
+                              {getLeadStatusLabel(lead)}
                             </Badge>
                             {lead.hasBeenContacted && (
                               <Badge variant="secondary" className="text-[10px]" data-testid={`badge-reactivated-table-${lead.id}`}>
@@ -831,14 +842,15 @@ export default function Leads() {
           }
         }}
         leadName={leadToDefer?.name}
-        onConfirm={(data) => {
+        onConfirm={(data: DeferLeadDialogResult) => {
           if (leadToDefer) {
-            // Merge pending form data with defer data
             const updateData: Partial<InsertLead> = {
               ...(pendingFormData || {}),
               status: 'lost',
-              postponedUntil: data.postponedUntil,
-              postponeReason: data.postponeReason,
+              outcomeType: data.outcomeType,
+              postponedUntil: data.outcomeType === 'postponed' ? data.postponedUntil : null,
+              postponeReason: data.outcomeType === 'postponed' ? data.postponeReason : null,
+              failureReason: data.outcomeType === 'failed' ? data.failureReason : null,
             };
             
             updateMutation.mutate({
@@ -892,7 +904,7 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
     { status: "contacted", label: "Квалифицирован", shortLabel: "Квал.", variant: "secondary" },
     { status: "qualified", label: "Забронирован", shortLabel: "Забр.", variant: "outline", customClass: "bg-[#f4a825] dark:bg-[#f4a825] text-white dark:text-white !border-[#d89420]" },
     { status: "converted", label: "Подтвержден", shortLabel: "Подтв.", variant: "default", customClass: "bg-green-700 dark:bg-green-800 text-white border-green-800 dark:border-green-900" },
-    { status: "lost", label: "Отложен", shortLabel: "Отл.", variant: "destructive" },
+    { status: "lost", label: "Отложен/Провал", shortLabel: "Отл./Пров.", variant: "destructive" },
   ];
 
   const handleDragStart = (lead: Lead) => {
@@ -982,11 +994,13 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                 const pastelClasses = displayColor ? getPastelClasses(displayColor) : { bg: "", border: "" };
                 const showFill = (colorDisplayMode === "fill" || colorDisplayMode === "both") && displayColor;
                 const showDot = (colorDisplayMode === "dot" || colorDisplayMode === "both");
+                const isFailedLead = lead.status === 'lost' && lead.outcomeType === 'failed';
+                const isPostponedLead = lead.status === 'lost' && lead.outcomeType !== 'failed';
                 return (
                 <ContextMenu key={lead.id}>
                   <ContextMenuTrigger asChild>
                     <Card
-                      className={`cursor-move hover-elevate active-elevate-2 transition-shadow ${showFill ? `${pastelClasses.bg} ${pastelClasses.border} border` : ""}`}
+                      className={`cursor-move hover-elevate active-elevate-2 transition-shadow ${isFailedLead ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900 border" : ""} ${showFill && !isFailedLead ? `${pastelClasses.bg} ${pastelClasses.border} border` : ""}`}
                       draggable
                       onDragStart={() => handleDragStart(lead)}
                       data-testid={`kanban-card-${lead.id}`}
@@ -1040,6 +1054,27 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                               </Badge>
                             )}
                           </div>
+                          {/* Outcome indicator for lost status */}
+                          {lead.status === 'lost' && (
+                            <div className={`flex items-center gap-1 text-xs ${isFailedLead ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>
+                              {isFailedLead ? (
+                                <>
+                                  <XCircle className="h-3.5 w-3.5" />
+                                  <span>Провал</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="h-3.5 w-3.5" />
+                                  <span>
+                                    {lead.postponedUntil 
+                                      ? `До ${format(new Date(lead.postponedUntil), "dd.MM.yy", { locale: ru })}`
+                                      : "Отложен"
+                                    }
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

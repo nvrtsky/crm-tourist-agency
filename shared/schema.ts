@@ -256,7 +256,9 @@ export const leads = pgTable("leads", {
   assignedUserId: varchar("assigned_user_id").references(() => users.id, { onDelete: 'set null' }),
   createdByUserId: varchar("created_by_user_id").references(() => users.id, { onDelete: 'set null' }),
   postponedUntil: timestamp("postponed_until"), // Дата, до которой лид отложен
-  postponeReason: text("postpone_reason"), // Причина отложения: 'expensive', 'no_response', 'went_to_competitors', 'changed_mind'
+  postponeReason: text("postpone_reason"), // Причина отложения: 'next_year', 'thinking', 'other_country', 'waiting_passport'
+  outcomeType: text("outcome_type"), // Тип исхода: 'postponed' (отложен) или 'failed' (провал)
+  failureReason: text("failure_reason"), // Причина провала: 'missing_contact', 'expensive', 'competitor', 'not_target'
   hasBeenContacted: boolean("has_been_contacted").notNull().default(false), // Была ли коммуникация с лидом
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -398,6 +400,9 @@ export const insertLeadSchema = createInsertSchema(leads).omit({
 }).extend({
   // Explicitly define selectedCities to ensure array is properly handled
   selectedCities: z.array(z.string()).nullable().optional(),
+  // Explicitly define outcomeType and failureReason for proper validation
+  outcomeType: z.enum(["postponed", "failed"]).nullable().optional(),
+  failureReason: z.enum(["missing_contact", "expensive", "competitor", "not_target"]).nullable().optional(),
 });
 export const updateLeadSchema = insertLeadSchema.partial();
 export const insertLeadStatusHistorySchema = createInsertSchema(leadStatusHistory).omit({ 

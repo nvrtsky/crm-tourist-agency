@@ -858,6 +858,8 @@ export class DatabaseStorage implements IStorage {
         createdByUserId: leads.createdByUserId,
         postponedUntil: leads.postponedUntil,
         postponeReason: leads.postponeReason,
+        outcomeType: leads.outcomeType,
+        failureReason: leads.failureReason,
         hasBeenContacted: leads.hasBeenContacted,
         createdAt: leads.createdAt,
         updatedAt: leads.updatedAt,

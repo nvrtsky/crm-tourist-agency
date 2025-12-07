@@ -18,10 +18,10 @@ interface DeferLeadDialogProps {
 }
 
 const postponeReasons = [
-  { value: "expensive", label: "Дорого" },
-  { value: "no_response", label: "Пропали не отвечают" },
-  { value: "competitor", label: "Ушли к конкурентам" },
-  { value: "changed_mind", label: "Передумали" },
+  { value: "next_year", label: "На следующий год" },
+  { value: "thinking", label: "Думают" },
+  { value: "other_country", label: "Поехали в другую страну" },
+  { value: "waiting_passport", label: "Ждут паспорт" },
 ];
 
 export function DeferLeadDialog({ open, onOpenChange, onConfirm, leadName }: DeferLeadDialogProps) {

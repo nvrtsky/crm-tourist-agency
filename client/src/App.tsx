@@ -14,11 +14,6 @@ import { LogOut, Loader2 } from "lucide-react";
 import Leads from "@/pages/Leads";
 import Events from "@/pages/Events";
 import EventSummary from "@/pages/EventSummary";
-import Forms from "@/pages/Forms";
-import FormBuilder from "@/pages/FormBuilder";
-import FormSubmissions from "@/pages/FormSubmissions";
-import PublicForm from "@/pages/PublicForm";
-import Booking from "@/pages/Booking";
 import Settings from "@/pages/Settings";
 import DevTest from "@/pages/DevTest";
 import Login from "@/pages/Login";
@@ -108,41 +103,6 @@ function Router() {
           </ProtectedRoute>
         )}
       </Route>
-      <Route path="/demo/booking">
-        {() => (
-          <ProtectedRoute>
-            <Booking />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route path="/demo/forms/:id/public">
-        {(params) => (
-          <ProtectedRoute>
-            <PublicForm />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route path="/demo/forms/:id/submissions">
-        {(params) => (
-          <ProtectedRoute>
-            <FormSubmissions />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route path="/demo/forms/:id/builder">
-        {(params) => (
-          <ProtectedRoute>
-            <FormBuilder />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route path="/demo/forms">
-        {() => (
-          <ProtectedRoute>
-            <Forms />
-          </ProtectedRoute>
-        )}
-      </Route>
       <Route path="/demo/settings">
         {() => (
           <ProtectedRoute>
@@ -176,41 +136,6 @@ function Router() {
         {() => (
           <ProtectedRoute>
             <Events />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route path="/booking">
-        {() => (
-          <ProtectedRoute>
-            <Booking />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route path="/forms/:id/public">
-        {(params) => (
-          <ProtectedRoute>
-            <PublicForm />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route path="/forms/:id/submissions">
-        {(params) => (
-          <ProtectedRoute>
-            <FormSubmissions />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route path="/forms/:id/builder">
-        {(params) => (
-          <ProtectedRoute>
-            <FormBuilder />
-          </ProtectedRoute>
-        )}
-      </Route>
-      <Route path="/forms">
-        {() => (
-          <ProtectedRoute>
-            <Forms />
           </ProtectedRoute>
         )}
       </Route>

@@ -17,7 +17,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [localUser, setLocalUser] = useState<AuthUser | null>(null);
 
   const { data, isLoading } = useQuery<{ user: AuthUser } | null>({
     queryKey: ["/api/auth/me"],
@@ -28,11 +28,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (data?.user) {
-      setUser(data.user);
+      setLocalUser(data.user);
     } else {
-      setUser(null);
+      setLocalUser(null);
     }
   }, [data]);
+
+  // Use data.user directly when available to avoid race condition
+  // between query completion and useEffect state update
+  const user = data?.user ?? localUser;
 
   const loginMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
@@ -40,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return await response.json();
     },
     onSuccess: (data) => {
-      setUser(data.user);
+      setLocalUser(data.user);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
@@ -50,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await apiRequest("POST", "/api/auth/logout");
     },
     onSuccess: () => {
-      setUser(null);
+      setLocalUser(null);
       queryClient.clear();
     },
   });

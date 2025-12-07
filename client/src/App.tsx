@@ -48,12 +48,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 // Component to handle root path redirect based on user role
 // This component is rendered OUTSIDE Switch to avoid route matching issues
 function RootRedirect() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const { user, isLoading, isAuthenticated } = useAuth();
   
   useEffect(() => {
     // Only redirect if we're actually on the root path
-    const isRootPath = window.location.pathname === '/' || location === '/';
+    // IMPORTANT: Only use window.location.pathname, NOT wouter's location state
+    // because wouter's location might initially be "/" before it reads the real URL
+    const isRootPath = window.location.pathname === '/';
     if (isRootPath && !isLoading) {
       if (isAuthenticated && user) {
         // Authenticated: redirect based on user role
@@ -67,7 +69,7 @@ function RootRedirect() {
         setLocation("/login");
       }
     }
-  }, [user, isLoading, isAuthenticated, location, setLocation]);
+  }, [user, isLoading, isAuthenticated, setLocation]);
   
   // This component doesn't render anything - it just handles the redirect
   return null;

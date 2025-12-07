@@ -191,6 +191,13 @@ function Router() {
       </Route>
       <Route path="/">
         {() => {
+          // Only redirect if we're actually on the root path
+          // This prevents false redirects when wouter's state is temporarily out of sync on page reload
+          const actualPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+          if (actualPath !== '/') {
+            return null; // Don't redirect if browser is on a different path
+          }
+          
           // Wait for auth to load before redirecting
           if (isLoading) {
             return (

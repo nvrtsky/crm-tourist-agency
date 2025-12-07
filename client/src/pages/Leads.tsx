@@ -27,7 +27,7 @@ import { ru } from "date-fns/locale";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
 import { calculateTouristDataCompleteness, formatCurrency, formatTouristName } from "@/lib/utils";
 import { ColorPicker, ColorIndicator, type ColorOption, type ColorDisplayMode, getColorDisplayMode, getPastelClasses } from "@/components/ColorPicker";
-import { DeferLeadDialog, type DeferLeadDialogResult } from "@/components/DeferLeadDialog";
+import { DeferLeadDialog, type DeferLeadDialogResult, postponeReasonLabels, failureReasonLabels, postponeReasons, failureReasons } from "@/components/DeferLeadDialog";
 import { Wazzup24Chat } from "@/components/Wazzup24Chat";
 import { z } from "zod";
 
@@ -131,6 +131,7 @@ export default function Leads() {
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [tourFilter, setTourFilter] = useState<string>('');
   const [colorFilter, setColorFilter] = useState<string>('');
+  const [outcomeFilter, setOutcomeFilter] = useState<string>('');
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
 
   const { data: leads = [], isLoading } = useQuery<LeadWithTouristCount[]>({
@@ -289,6 +290,21 @@ export default function Leads() {
         }
       }
       
+      // Outcome filter (postpone/failure reasons)
+      if (outcomeFilter) {
+        // Check for outcome type filter
+        if (outcomeFilter === "postponed") {
+          if (lead.status !== 'lost' || lead.outcomeType !== 'postponed') return false;
+        } else if (outcomeFilter === "failed") {
+          if (lead.status !== 'lost' || lead.outcomeType !== 'failed') return false;
+        } else {
+          // Filter by specific reason (postpone or failure)
+          const matchesPostpone = lead.status === 'lost' && lead.postponeReason === outcomeFilter;
+          const matchesFailure = lead.status === 'lost' && lead.failureReason === outcomeFilter;
+          if (!matchesPostpone && !matchesFailure) return false;
+        }
+      }
+      
       // Date range filter
       if (dateRange.from || dateRange.to) {
         const leadDate = new Date(lead.createdAt);
@@ -304,7 +320,7 @@ export default function Leads() {
     return [...filtered].sort((a, b) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [leads, searchQuery, statusFilter, sourceFilter, categoryFilter, tourFilter, colorFilter, dateRange]);
+  }, [leads, searchQuery, statusFilter, sourceFilter, categoryFilter, tourFilter, colorFilter, outcomeFilter, dateRange]);
 
   // Calculate stats from filtered leads
   const stats = {
@@ -559,8 +575,57 @@ export default function Leads() {
               </Select>
             </div>
 
+            {/* Outcome Filter (Postponed/Failed reasons) */}
+            <div className="flex items-center gap-2 min-w-[200px]">
+              <Select
+                value={outcomeFilter || "all"}
+                onValueChange={(value) => setOutcomeFilter(value === "all" ? "" : value)}
+              >
+                <SelectTrigger className="h-8" data-testid="select-outcome-filter">
+                  <SelectValue placeholder="Отложен/Провал" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все исходы</SelectItem>
+                  <SelectItem value="postponed">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>Все отложенные</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="failed">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="h-3.5 w-3.5 text-red-500" />
+                      <span>Все провалы</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem disabled value="divider-postpone" className="opacity-50 text-xs">
+                    — Причины отложения —
+                  </SelectItem>
+                  {postponeReasons.map((reason) => (
+                    <SelectItem key={reason.value} value={reason.value}>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        <span>{reason.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                  <SelectItem disabled value="divider-failure" className="opacity-50 text-xs">
+                    — Причины провала —
+                  </SelectItem>
+                  {failureReasons.map((reason) => (
+                    <SelectItem key={reason.value} value={reason.value}>
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-3 w-3 text-red-500" />
+                        <span>{reason.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Clear Filters */}
-            {(searchQuery || statusFilter.length > 0 || sourceFilter || categoryFilter || tourFilter || colorFilter || dateRange.from || dateRange.to) && (
+            {(searchQuery || statusFilter.length > 0 || sourceFilter || categoryFilter || tourFilter || colorFilter || outcomeFilter || dateRange.from || dateRange.to) && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -571,6 +636,7 @@ export default function Leads() {
                   setCategoryFilter('');
                   setTourFilter('');
                   setColorFilter('');
+                  setOutcomeFilter('');
                   setDateRange({});
                 }}
                 data-testid="button-clear-filters"
@@ -1056,22 +1122,35 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                           </div>
                           {/* Outcome indicator for lost status */}
                           {lead.status === 'lost' && (
-                            <div className={`flex items-center gap-1 text-xs ${isFailedLead ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>
-                              {isFailedLead ? (
-                                <>
-                                  <XCircle className="h-3.5 w-3.5" />
-                                  <span>Провал</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Clock className="h-3.5 w-3.5" />
-                                  <span>
-                                    {lead.postponedUntil 
-                                      ? `До ${format(new Date(lead.postponedUntil), "dd.MM.yy", { locale: ru })}`
-                                      : "Отложен"
-                                    }
-                                  </span>
-                                </>
+                            <div className={`flex flex-col gap-0.5 text-xs ${isFailedLead ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>
+                              <div className="flex items-center gap-1">
+                                {isFailedLead ? (
+                                  <>
+                                    <XCircle className="h-3.5 w-3.5" />
+                                    <span>Провал</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Clock className="h-3.5 w-3.5" />
+                                    <span>
+                                      {lead.postponedUntil 
+                                        ? `До ${format(new Date(lead.postponedUntil), "dd.MM.yy", { locale: ru })}`
+                                        : "Отложен"
+                                      }
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                              {/* Show reason */}
+                              {isFailedLead && lead.failureReason && (
+                                <div className="text-[10px] italic truncate">
+                                  {failureReasonLabels[lead.failureReason] || lead.failureReason}
+                                </div>
+                              )}
+                              {!isFailedLead && lead.postponeReason && (
+                                <div className="text-[10px] italic truncate">
+                                  {postponeReasonLabels[lead.postponeReason] || lead.postponeReason}
+                                </div>
                               )}
                             </div>
                           )}

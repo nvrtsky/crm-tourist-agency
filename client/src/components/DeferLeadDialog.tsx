@@ -28,19 +28,27 @@ interface DeferLeadDialogProps {
   leadName?: string;
 }
 
-const postponeReasons = [
+export const postponeReasons = [
   { value: "next_year", label: "На следующий год" },
   { value: "thinking", label: "Думают" },
   { value: "other_country", label: "Поехали в другую страну" },
   { value: "waiting_passport", label: "Ждут паспорт" },
 ];
 
-const failureReasons = [
+export const failureReasons = [
   { value: "missing_contact", label: "Пропали" },
   { value: "expensive", label: "Дорого" },
   { value: "competitor", label: "Ушли к конкурентам" },
   { value: "not_target", label: "Не наша ЦА" },
 ];
+
+export const postponeReasonLabels: Record<string, string> = Object.fromEntries(
+  postponeReasons.map(r => [r.value, r.label])
+);
+
+export const failureReasonLabels: Record<string, string> = Object.fromEntries(
+  failureReasons.map(r => [r.value, r.label])
+);
 
 export function DeferLeadDialog({ open, onOpenChange, onConfirm, leadName }: DeferLeadDialogProps) {
   const [outcomeType, setOutcomeType] = useState<OutcomeType>("postponed");

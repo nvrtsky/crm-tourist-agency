@@ -753,18 +753,48 @@ export default function Leads() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Badge 
-                              variant={leadStatusMap[lead.status]?.variant || "default"} 
-                              className={leadStatusMap[lead.status]?.customClass || ""}
-                              data-testid={`status-${lead.id}`}
-                            >
-                              {getLeadStatusLabel(lead)}
-                            </Badge>
-                            {lead.hasBeenContacted && (
-                              <Badge variant="secondary" className="text-[10px]" data-testid={`badge-reactivated-table-${lead.id}`}>
-                                Лид из Отложенных
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant={leadStatusMap[lead.status]?.variant || "default"} 
+                                className={leadStatusMap[lead.status]?.customClass || ""}
+                                data-testid={`status-${lead.id}`}
+                              >
+                                {getLeadStatusLabel(lead)}
                               </Badge>
+                              {lead.hasBeenContacted && (
+                                <Badge variant="secondary" className="text-[10px]" data-testid={`badge-reactivated-table-${lead.id}`}>
+                                  Лид из Отложенных
+                                </Badge>
+                              )}
+                            </div>
+                            {/* Show date and reason for postponed/failed leads */}
+                            {lead.status === 'lost' && (
+                              <div className={`text-xs ${lead.outcomeType === 'failed' ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>
+                                {lead.outcomeType === 'failed' ? (
+                                  <div className="flex items-center gap-1">
+                                    <XCircle className="h-3 w-3" />
+                                    <span>{failureReasonLabels[lead.failureReason || ''] || lead.failureReason || 'Провал'}</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col gap-0.5">
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      <span>
+                                        {lead.postponedUntil 
+                                          ? `До ${format(new Date(lead.postponedUntil), "dd.MM.yy", { locale: ru })}`
+                                          : "Отложен"
+                                        }
+                                      </span>
+                                    </div>
+                                    {lead.postponeReason && (
+                                      <span className="text-[10px] italic ml-4">
+                                        {postponeReasonLabels[lead.postponeReason] || lead.postponeReason}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
                         </TableCell>

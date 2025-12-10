@@ -88,6 +88,10 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
       advancePaymentCurrency: "RUB",
       remainingPayment: null,
       remainingPaymentCurrency: "RUB",
+      roomType: null,
+      hotelCategory: null,
+      transfers: null,
+      meals: null,
       clientCategory: null,
       color: null,
       status: "new",
@@ -121,6 +125,10 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
         advancePaymentCurrency: lead.advancePaymentCurrency || "RUB",
         remainingPayment: lead.remainingPayment || null,
         remainingPaymentCurrency: lead.remainingPaymentCurrency || "RUB",
+        roomType: lead.roomType || null,
+        hotelCategory: lead.hotelCategory || null,
+        transfers: lead.transfers || null,
+        meals: lead.meals || null,
         clientCategory: lead.clientCategory || null,
         color: lead.color ?? null,
         status: lead.status || "new",
@@ -390,7 +398,7 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                     {/* Личные данные */}
                     <div className="space-y-4">
                       <h4 className="text-sm font-semibold text-foreground">Личные данные</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
                           name="lastName"
@@ -398,7 +406,7 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                             <FormItem>
                               <FormLabel>Фамилия *</FormLabel>
                               <FormControl>
-                                <Input {...field} data-testid="input-lead-lastName" />
+                                <Input placeholder="Иванов" {...field} data-testid="input-lead-lastName" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -411,7 +419,7 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                             <FormItem>
                               <FormLabel>Имя *</FormLabel>
                               <FormControl>
-                                <Input {...field} data-testid="input-lead-firstName" />
+                                <Input placeholder="Иван" {...field} data-testid="input-lead-firstName" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -424,19 +432,12 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                             <FormItem>
                               <FormLabel>Отчество</FormLabel>
                               <FormControl>
-                                <Input {...field} value={field.value || ""} data-testid="input-lead-middleName" />
+                                <Input placeholder="Иванович" {...field} value={field.value || ""} data-testid="input-lead-middleName" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                      </div>
-                    </div>
-
-                    {/* Контакты */}
-                    <div className="space-y-4 pt-4 border-t">
-                      <h4 className="text-sm font-semibold text-foreground">Контактные данные</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
                           name="phone"
@@ -444,7 +445,7 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                             <FormItem>
                               <FormLabel>Телефон</FormLabel>
                               <FormControl>
-                                <Input {...field} value={field.value || ""} data-testid="input-lead-phone" />
+                                <Input type="tel" placeholder="+7 (999) 123-45-67" {...field} value={field.value || ""} data-testid="input-lead-phone" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -454,10 +455,10 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                           control={form.control}
                           name="email"
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="col-span-2">
                               <FormLabel>Email</FormLabel>
                               <FormControl>
-                                <Input type="email" {...field} value={field.value || ""} data-testid="input-lead-email" />
+                                <Input type="email" placeholder="example@mail.com" {...field} value={field.value || ""} data-testid="input-lead-email" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -556,8 +557,8 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
 
                     {/* Финансы */}
                     <div className="space-y-4 pt-4 border-t">
-                      <h4 className="text-sm font-semibold text-foreground">Финансовая информация</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <h4 className="text-sm font-semibold text-foreground">Тур и оплата</h4>
+                      <div className="grid grid-cols-2 gap-4">
                         <div className="flex gap-2">
                           <FormField
                             control={form.control}
@@ -669,13 +670,138 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                             )}
                           />
                         </div>
+
+                        <FormField
+                          control={form.control}
+                          name="roomType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Тип номера</FormLabel>
+                              <Select 
+                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)} 
+                                value={field.value ?? "__none__"} 
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-lead-roomType">
+                                    <SelectValue placeholder="Выберите тип" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="__none__">Не указан</SelectItem>
+                                  <SelectItem value="Single">Single</SelectItem>
+                                  <SelectItem value="Twin">Twin</SelectItem>
+                                  <SelectItem value="Double">Double</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="hotelCategory"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Категория отелей</FormLabel>
+                              <Select 
+                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)} 
+                                value={field.value ?? "__none__"} 
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-lead-hotelCategory">
+                                    <SelectValue placeholder="Выберите категорию" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="__none__">Не указана</SelectItem>
+                                  <SelectItem value="3*">3*</SelectItem>
+                                  <SelectItem value="4*">4*</SelectItem>
+                                  <SelectItem value="5*">5*</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="transfers"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Трансферы</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Информация о трансферах"
+                                  {...field}
+                                  value={field.value || ""}
+                                  data-testid="input-lead-transfers"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="meals"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Питание</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Например: BB, HB, FB, AI"
+                                  {...field}
+                                  value={field.value || ""}
+                                  data-testid="input-lead-meals"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
                     </div>
 
-                    {/* Статус и информация о лиде */}
+                    {/* Информация о лиде */}
                     <div className="space-y-4 pt-4 border-t">
                       <h4 className="text-sm font-semibold text-foreground">Информация о лиде</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="clientCategory"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Категория клиента</FormLabel>
+                              <Select 
+                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)} 
+                                value={field.value || "__none__"}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-lead-clientCategory">
+                                    <SelectValue placeholder="Выберите категорию" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="__none__">Не указана</SelectItem>
+                                  <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
+                                  <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
+                                  <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
+                                  <SelectItem value="vip">VIP</SelectItem>
+                                  <SelectItem value="not_segmented">Не сегментированный</SelectItem>
+                                  <SelectItem value="travel_agent">Турагент</SelectItem>
+                                  <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
+                                  <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
+                                  <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
                         <FormField
                           control={form.control}
                           name="status"
@@ -759,7 +885,7 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                           control={form.control}
                           name="color"
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="col-span-2">
                               <FormLabel>Цветовая индикация</FormLabel>
                               <FormControl>
                                 <ColorPicker
@@ -768,39 +894,6 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                                   label=""
                                 />
                               </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="clientCategory"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Категория клиента</FormLabel>
-                              <Select 
-                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)} 
-                                value={field.value || "__none__"}
-                              >
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-lead-clientCategory">
-                                    <SelectValue placeholder="Выберите категорию" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="__none__">Не указана</SelectItem>
-                                  <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
-                                  <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
-                                  <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
-                                  <SelectItem value="vip">VIP</SelectItem>
-                                  <SelectItem value="not_segmented">Не сегментированный</SelectItem>
-                                  <SelectItem value="travel_agent">Турагент</SelectItem>
-                                  <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
-                                  <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
-                                  <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
-                                </SelectContent>
-                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}

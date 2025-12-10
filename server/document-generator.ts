@@ -13,7 +13,7 @@ import {
   HeadingLevel,
   convertInchesToTwip,
 } from "docx";
-import { format } from "date-fns";
+import { format, differenceInCalendarDays } from "date-fns";
 import { ru } from "date-fns/locale";
 import type { Lead, LeadTourist, Event } from "@shared/schema";
 import * as fs from "fs";
@@ -1134,19 +1134,6 @@ export async function generateBookingSheet(
               children: [
                 new Paragraph({
                   children: [
-                    new TextRun({
-                      text: "Кол-во человек в номере",
-                      bold: true,
-                      size: 20,
-                    }),
-                  ],
-                }),
-              ],
-            }),
-            new TableCell({
-              children: [
-                new Paragraph({
-                  children: [
                     new TextRun({ text: "Питание", bold: true, size: 20 }),
                   ],
                 }),
@@ -1159,23 +1146,19 @@ export async function generateBookingSheet(
             new TableCell({
               children: [
                 new Paragraph({
-                  children: [new TextRun({ text: "", size: 20 })],
-                }),
-              ],
-            }),
-            new TableCell({
-              children: [
-                new Paragraph({
-                  children: [new TextRun({ text: "", size: 20 })],
-                }),
-              ],
-            }),
-            new TableCell({
-              children: [
-                new Paragraph({
                   children: [
                     new TextRun({
-                      text: String(data.tourists.length),
+                      text: data.event?.startDate && data.event?.endDate
+                        ? String(
+                            Math.max(
+                              0,
+                              differenceInCalendarDays(
+                                new Date(data.event.endDate),
+                                new Date(data.event.startDate)
+                              )
+                            )
+                          )
+                        : "",
                       size: 20,
                     }),
                   ],
@@ -1185,7 +1168,24 @@ export async function generateBookingSheet(
             new TableCell({
               children: [
                 new Paragraph({
-                  children: [new TextRun({ text: "", size: 20 })],
+                  children: [
+                    new TextRun({
+                      text: data.lead.roomType || "",
+                      size: 20,
+                    }),
+                  ],
+                }),
+              ],
+            }),
+            new TableCell({
+              children: [
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: data.lead.meals || "",
+                      size: 20,
+                    }),
+                  ],
                 }),
               ],
             }),
@@ -1300,7 +1300,7 @@ export async function generateBookingSheet(
     new Paragraph({
       children: [
         new TextRun({
-          text: "Предоплата производится в тенге по курсу покупки на день внесения оплаты. Остаток производится в валюте по прилету.",
+          text: "Предоплата производится в рублях по курсу покупки на день внесения оплаты. Остаток производится наличными в валюте по прилету.",
           size: 20,
         }),
       ],
@@ -1316,8 +1316,8 @@ export async function generateBookingSheet(
           new ImageRun({
             data: stampImageData,
             transformation: {
-              width: 150,
-              height: 150,
+              width: 120,
+              height: 120,
             },
             type: "png",
           }),

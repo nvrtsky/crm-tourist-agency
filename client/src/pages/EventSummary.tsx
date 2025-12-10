@@ -670,6 +670,9 @@ export default function EventSummary() {
   // Measure first sticky column width dynamically
   const firstColumnRef = useRef<HTMLTableCellElement>(null);
   const [stickyOffset, setStickyOffset] = useState<number>(56);
+  
+  // Track recently created expenses to ignore blur events during re-render
+  const recentlyCreatedExpenses = useRef<Set<string>>(new Set());
 
   const { data: event, isLoading: eventLoading } = useQuery<EventWithStats>({
     queryKey: [`/api/events/${eventId}`],
@@ -2607,7 +2610,10 @@ export default function EventSummary() {
                                                   defaultValue={/^Расход \d{10,}$/.test(displayName) ? "" : displayName}
                                                   className="h-6 text-xs flex-1 min-w-0 border-0 bg-transparent shadow-none focus-visible:ring-0 px-0.5 text-muted-foreground font-inherit"
                                                   data-testid={`input-expense-name-${group.leadId}-${city}-${idx}`}
+                                                  onFocus={() => recentlyCreatedExpenses.current.delete(expense.expenseType)}
                                                   onBlur={(e) => {
+                                                    if (recentlyCreatedExpenses.current.has(expense.expenseType)) return;
+                                                    if (upsertParticipantExpenseMutation.isPending || deleteParticipantExpenseMutation.isPending) return;
                                                     const newName = e.target.value.trim();
                                                     const oldKey = expense.expenseType;
                                                     const oldDisplayName = oldKey.replace("custom:", "");
@@ -2639,13 +2645,16 @@ export default function EventSummary() {
                                               </span>
                                             )}
                                             <Input
-                                              key={`${expense.expenseType}-${expense.amount}-${expense.expenseId}`}
+                                              key={`${expense.expenseType}-${expense.amount}`}
                                               type="text"
                                               placeholder="0"
                                               defaultValue={expense.amount > 0 ? String(expense.amount) : ""}
                                               className="h-6 text-xs text-center w-20"
                                               data-testid={`input-expense-amount-${group.leadId}-${city}-${idx}`}
+                                              onFocus={() => recentlyCreatedExpenses.current.delete(expense.expenseType)}
                                               onBlur={(e) => {
+                                                if (recentlyCreatedExpenses.current.has(expense.expenseType)) return;
+                                                if (upsertParticipantExpenseMutation.isPending) return;
                                                 const value = e.target.value;
                                                 upsertParticipantExpenseMutation.mutate({
                                                   dealId: expense.dealId,
@@ -2719,6 +2728,7 @@ export default function EventSummary() {
                                             onClick={() => {
                                               const uniqueId = Date.now();
                                               const newExpenseType = `custom:Расход ${uniqueId}`;
+                                              recentlyCreatedExpenses.current.add(newExpenseType);
                                               upsertParticipantExpenseMutation.mutate({
                                                 dealId: primaryDealId,
                                                 city,
@@ -2794,7 +2804,10 @@ export default function EventSummary() {
                                             defaultValue={/^Расход \d{10,}$/.test(displayName) ? "" : displayName}
                                             className="h-6 text-xs flex-1 min-w-0 border-0 bg-transparent shadow-none focus-visible:ring-0 px-0.5 text-muted-foreground font-inherit"
                                             data-testid={`input-common-expense-name-${city}-${idx}`}
+                                            onFocus={() => recentlyCreatedExpenses.current.delete(expense.expenseType)}
                                             onBlur={(e) => {
+                                              if (recentlyCreatedExpenses.current.has(expense.expenseType)) return;
+                                              if (upsertCommonExpenseMutation.isPending || deleteCommonExpenseMutation.isPending) return;
                                               const newName = e.target.value.trim();
                                               const oldKey = expense.expenseType;
                                               const oldDisplayName = oldKey.replace("custom:", "");
@@ -2830,7 +2843,10 @@ export default function EventSummary() {
                                         defaultValue={expense.amount || ""}
                                         className="h-6 text-xs text-center w-20"
                                         data-testid={`input-common-expense-amount-${city}-${idx}`}
+                                        onFocus={() => recentlyCreatedExpenses.current.delete(expense.expenseType)}
                                         onBlur={(e) => {
+                                          if (recentlyCreatedExpenses.current.has(expense.expenseType)) return;
+                                          if (upsertCommonExpenseMutation.isPending) return;
                                           const value = e.target.value;
                                           upsertCommonExpenseMutation.mutate({
                                             city,
@@ -2901,6 +2917,7 @@ export default function EventSummary() {
                                       onClick={() => {
                                         const uniqueId = Date.now();
                                         const newExpenseType = `custom:Расход ${uniqueId}`;
+                                        recentlyCreatedExpenses.current.add(newExpenseType);
                                         upsertCommonExpenseMutation.mutate({
                                           city,
                                           expenseType: newExpenseType,

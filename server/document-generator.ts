@@ -948,7 +948,7 @@ export async function generateBookingSheet(
   const stampImagePath = path.join(
     process.cwd(),
     "attached_assets",
-    "image_1765370748931.png"
+    "image_1765389051945.png"
   );
   let stampImageData: Buffer | null = null;
 

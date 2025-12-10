@@ -2054,15 +2054,25 @@ export default function EventSummary() {
                     // Get mini-group color if applicable
                     const miniGroupColorIdx = isMiniGroup && groupId ? miniGroupColorMap.get(groupId) : undefined;
                     const miniGroupColorClass = miniGroupColorIdx !== undefined ? miniGroupColors[miniGroupColorIdx] : '';
+                    
+                    // Determine row background color for both row and sticky columns
+                    const rowBgClass = hasBirthday 
+                      ? 'bg-pink-50 dark:bg-pink-950/20' 
+                      : miniGroupColorClass || (participant.group ? 'bg-muted/5' : 'bg-background');
+                    
+                    // For sticky columns, use same color as row (or default background if no special color)
+                    const stickyBgClass = hasBirthday 
+                      ? 'bg-pink-50 dark:bg-pink-950/20' 
+                      : miniGroupColorClass || (participant.group ? 'bg-muted' : 'bg-background');
 
                     return (
                       <tr
                         key={participant.deal.id}
-                        className={`border-b hover-elevate ${hasBirthday ? 'bg-pink-50 dark:bg-pink-950/20' : miniGroupColorClass || (participant.group ? 'bg-muted/5' : '')}`}
+                        className={`border-b hover-elevate ${rowBgClass}`}
                         data-testid={`row-participant-${participant.deal.id}`}
                       >
                         {/* Number column with checkbox - always present */}
-                        <td className="sticky left-0 bg-background z-10 p-2 text-center w-[72px]">
+                        <td className={`sticky left-0 z-10 p-2 text-center w-[72px] ${stickyBgClass}`}>
                           <div className="flex items-center justify-center gap-2">
                             <Checkbox
                               checked={selectedParticipants.has(participant.deal.id)}
@@ -2082,7 +2092,7 @@ export default function EventSummary() {
                         </td>
                         
                         {/* Name column - sticky */}
-                        <td className="sticky bg-background z-10 p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" style={{ left: `${stickyOffset}px` }} data-testid={`text-name-${participant.deal.id}`}>
+                        <td className={`sticky z-10 p-2 font-medium border-r min-w-[150px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)] ${stickyBgClass}`} style={{ left: `${stickyOffset}px` }} data-testid={`text-name-${participant.deal.id}`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <span>{formatTouristName(participant.leadTourist, participant.contact?.name)}</span>

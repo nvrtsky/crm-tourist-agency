@@ -642,7 +642,23 @@ export default function EventSummary() {
   const [showCreateMiniGroupDialog, setShowCreateMiniGroupDialog] = useState(false);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
+  const [expenseCurrency, setExpenseCurrency] = useState<"CNY" | "EUR">("CNY");
   const isMobile = useIsMobile();
+  
+  // Currency conversion rates (approximate)
+  const conversionRates: Record<string, Record<string, number>> = {
+    RUB: { CNY: 0.076, EUR: 0.0095 },
+    USD: { CNY: 7.25, EUR: 0.92 },
+    CNY: { CNY: 1, EUR: 0.127 },
+    EUR: { CNY: 7.88, EUR: 1 },
+  };
+  
+  const convertToCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
+    if (fromCurrency === toCurrency) return amount;
+    const rate = conversionRates[fromCurrency]?.[toCurrency];
+    if (!rate) return 0;
+    return amount * rate;
+  };
   
   // Measure first sticky column width dynamically
   const firstColumnRef = useRef<HTMLTableCellElement>(null);
@@ -2258,11 +2274,25 @@ export default function EventSummary() {
         {user?.role === "admin" && (
         <TabsContent value="finance">
           <Card data-testid="card-finance">
-            <CardHeader>
-              <CardTitle>Финансы по маршруту</CardTitle>
-              <CardDescription>
-                {event.startDate && format(new Date(event.startDate), "d MMMM yyyy", { locale: ru })} - {event.endDate && format(new Date(event.endDate), "d MMMM yyyy", { locale: ru })}
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
+              <div>
+                <CardTitle>Финансы по маршруту</CardTitle>
+                <CardDescription>
+                  {event.startDate && format(new Date(event.startDate), "d MMMM yyyy", { locale: ru })} - {event.endDate && format(new Date(event.endDate), "d MMMM yyyy", { locale: ru })}
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Валюта расходов:</span>
+                <Select value={expenseCurrency} onValueChange={(v) => setExpenseCurrency(v as "CNY" | "EUR")}>
+                  <SelectTrigger className="w-24" data-testid="select-expense-currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CNY">¥ CNY</SelectItem>
+                    <SelectItem value="EUR">€ EUR</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               {participants.length === 0 ? (
@@ -2732,9 +2762,26 @@ export default function EventSummary() {
                             const entries = Object.entries(totals);
                             if (entries.length === 0) return "—";
                             
-                            return entries.map(([currency, amount]) => 
+                            // Calculate converted total
+                            let convertedTotal = 0;
+                            entries.forEach(([currency, amount]) => {
+                              convertedTotal += convertToCurrency(amount, currency, expenseCurrency);
+                            });
+                            
+                            const originalDisplay = entries.map(([currency, amount]) => 
                               formatCurrency(amount, currency)
                             ).join(", ");
+                            
+                            const currencySymbol = expenseCurrency === "CNY" ? "¥" : "€";
+                            
+                            return (
+                              <div>
+                                <div>{originalDisplay}</div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  ≈ {formatCurrency(convertedTotal, expenseCurrency)} {currencySymbol}
+                                </div>
+                              </div>
+                            );
                           })()}
                         </td>
                         <td className="p-2 border-r text-center">
@@ -2818,14 +2865,16 @@ export default function EventSummary() {
                         <td colSpan={2} className="sticky left-0 bg-green-100 dark:bg-green-900/30 z-10 p-2 text-right">Прибыль:</td>
                         <td colSpan={4 + event.cities.length * 2} className="p-2 text-left text-lg" data-testid="text-profit">
                           {(() => {
-                            // Calculate tourCost from leads (only once per lead)
+                            // Calculate tourCost from leads, convert all to expense currency
                             const processedLeads = new Set<string>();
-                            let tourCostRub = 0;
+                            let tourCostConverted = 0;
                             participants.forEach(p => {
                               if (p.lead && !processedLeads.has(p.lead.id)) {
                                 processedLeads.add(p.lead.id);
-                                if (p.lead.tourCost && p.lead.tourCostCurrency === "RUB") {
-                                  tourCostRub += parseFloat(p.lead.tourCost) || 0;
+                                if (p.lead.tourCost) {
+                                  const currency = p.lead.tourCostCurrency || "RUB";
+                                  const amount = parseFloat(p.lead.tourCost) || 0;
+                                  tourCostConverted += convertToCurrency(amount, currency, expenseCurrency);
                                 }
                               }
                             });
@@ -2833,10 +2882,11 @@ export default function EventSummary() {
                             const participantTotal = participantExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
                             const commonTotal = commonExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
                             const totalExpenses = participantTotal + commonTotal;
-                            const profit = tourCostRub - totalExpenses;
+                            const profit = tourCostConverted - totalExpenses;
+                            const currencySymbol = expenseCurrency === "CNY" ? "¥" : "€";
                             return (
                               <span className={profit >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
-                                {formatCurrency(profit)} ₽
+                                {formatCurrency(profit, expenseCurrency)} {currencySymbol}
                               </span>
                             );
                           })()}

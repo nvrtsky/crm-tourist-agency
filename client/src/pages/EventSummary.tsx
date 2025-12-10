@@ -2316,214 +2316,283 @@ export default function EventSummary() {
                       </tr>
                     </thead>
                     <tbody>
-                      {participants.map((participant, index) => {
-                        const leadId = participant.contact?.leadId;
-                        const leadMembers = leadId 
-                          ? participants.filter(m => m.contact?.leadId === leadId)
-                          : [];
-                        const isFamily = leadMembers.length > 1;
-                        const isPrimaryInFamily = participant.leadTourist?.isPrimary || 
-                          (isFamily && leadMembers[0]?.deal.id === participant.deal.id);
+                      {(() => {
+                        // Group participants by leadId for family consolidation
+                        const groupedByLead = new Map<string, Participant[]>();
+                        const individualParticipants: Participant[] = [];
                         
-                        return (
-                          <tr 
-                            key={participant.deal.id}
-                            className={`border-b hover:bg-muted/30 ${isFamily && !isPrimaryInFamily ? 'bg-muted/10' : ''}`}
-                            data-testid={`finance-row-${participant.deal.id}`}
-                          >
-                            <td className="sticky left-0 bg-background z-10 p-2 border-r text-center font-medium">
-                              {index + 1}
-                            </td>
-                            <td 
-                              className="sticky bg-background z-10 p-2 border-r"
-                              style={{ left: stickyOffset }}
+                        participants.forEach(p => {
+                          const leadId = p.contact?.leadId;
+                          if (leadId) {
+                            if (!groupedByLead.has(leadId)) {
+                              groupedByLead.set(leadId, []);
+                            }
+                            groupedByLead.get(leadId)!.push(p);
+                          } else {
+                            individualParticipants.push(p);
+                          }
+                        });
+                        
+                        // Create consolidated rows: one per lead (family) + individuals
+                        const consolidatedRows: { leadId: string; members: Participant[]; primary: Participant }[] = [];
+                        
+                        groupedByLead.forEach((members, leadId) => {
+                          const primary = members.find(m => m.leadTourist?.isPrimary) || members[0];
+                          consolidatedRows.push({ leadId, members, primary });
+                        });
+                        
+                        // Add individuals as single-member "groups"
+                        individualParticipants.forEach(p => {
+                          consolidatedRows.push({ leadId: p.deal.id, members: [p], primary: p });
+                        });
+                        
+                        return consolidatedRows.map((group, index) => {
+                          const { members, primary } = group;
+                          const isFamily = members.length > 1;
+                          
+                          // Get all deal IDs for expense aggregation
+                          const allDealIds = members.map(m => m.deal.id);
+                          
+                          return (
+                            <tr 
+                              key={group.leadId}
+                              className="border-b hover:bg-muted/30"
+                              data-testid={`finance-row-${group.leadId}`}
                             >
-                              <div className="flex items-center gap-2">
-                                {isFamily && <UsersRound className="h-3 w-3 text-muted-foreground" />}
-                                <span className="font-medium truncate max-w-[180px]">
-                                  {formatTouristName(participant.leadTourist, participant.contact?.name)}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="p-2 border-r text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <EditableCell
-                                  type="text"
-                                  value={participant.lead?.tourCost || ""}
-                                  placeholder="0"
-                                  onSave={(value) => {
-                                    if (participant.lead?.id) {
-                                      updateLeadMutation.mutate({
-                                        leadId: participant.lead.id,
-                                        tourCost: value || undefined,
-                                      });
+                              <td className="sticky left-0 bg-background z-10 p-2 border-r text-center font-medium">
+                                {index + 1}
+                              </td>
+                              <td 
+                                className="sticky bg-background z-10 p-2 border-r"
+                                style={{ left: stickyOffset }}
+                              >
+                                <div className="flex items-start gap-2">
+                                  {isFamily && <UsersRound className="h-3 w-3 text-muted-foreground mt-1 shrink-0" />}
+                                  <div className="flex flex-col gap-0.5">
+                                    {members.map((member, idx) => (
+                                      <span 
+                                        key={member.deal.id} 
+                                        className={`truncate max-w-[180px] ${idx === 0 ? 'font-medium' : 'text-sm text-muted-foreground'}`}
+                                      >
+                                        {formatTouristName(member.leadTourist, member.contact?.name)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-2 border-r text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <EditableCell
+                                    type="text"
+                                    value={primary.lead?.tourCost || ""}
+                                    placeholder="0"
+                                    onSave={(value) => {
+                                      if (primary.lead?.id) {
+                                        updateLeadMutation.mutate({
+                                          leadId: primary.lead.id,
+                                          tourCost: value || undefined,
+                                        });
+                                      }
+                                    }}
+                                    className="text-sm text-center"
+                                  />
+                                  <span className="text-xs text-muted-foreground shrink-0">
+                                    {getCurrencySymbol(primary.lead?.tourCostCurrency || "RUB")}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="p-2 border-r text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <EditableCell
+                                    type="text"
+                                    value={primary.lead?.advancePayment || ""}
+                                    placeholder="0"
+                                    onSave={(value) => {
+                                      if (primary.lead?.id) {
+                                        updateLeadMutation.mutate({
+                                          leadId: primary.lead.id,
+                                          advancePayment: value || undefined,
+                                        });
+                                      }
+                                    }}
+                                    className="text-sm text-center"
+                                  />
+                                  <span className="text-xs text-muted-foreground shrink-0">
+                                    {getCurrencySymbol(primary.lead?.advancePaymentCurrency || "RUB")}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="p-2 border-r text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <EditableCell
+                                    type="text"
+                                    value={primary.lead?.remainingPayment || ""}
+                                    placeholder="0"
+                                    onSave={(value) => {
+                                      if (primary.lead?.id) {
+                                        updateLeadMutation.mutate({
+                                          leadId: primary.lead.id,
+                                          remainingPayment: value || undefined,
+                                        });
+                                      }
+                                    }}
+                                    className="text-sm text-center"
+                                  />
+                                  <span className="text-xs text-muted-foreground shrink-0">
+                                    {getCurrencySymbol(primary.lead?.remainingPaymentCurrency || "RUB")}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="p-2 border-r text-center font-medium bg-orange-50 dark:bg-orange-950/30">
+                                {(() => {
+                                  // Sum expenses from all family members
+                                  const total = participantExpenses
+                                    .filter(e => allDealIds.includes(e.dealId))
+                                    .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                                  return total > 0 ? formatCurrency(total) : "—";
+                                })()}
+                              </td>
+                              {event.cities.map((city) => {
+                                // Combine expenses from all family members for this city
+                                const allCityExpenses = allDealIds.flatMap(dealId => 
+                                  getParticipantExpenses(dealId, city)
+                                );
+                                
+                                // Group expenses by type to avoid duplicates, sum amounts
+                                const expensesByType = new Map<string, { amount: number; comment: string; currency: string; dealId: string; expenseId: string }>();
+                                allCityExpenses.forEach(expense => {
+                                  const existing = expensesByType.get(expense.expenseType);
+                                  if (existing) {
+                                    existing.amount += Number(expense.amount || 0);
+                                    if (expense.comment && !existing.comment.includes(expense.comment)) {
+                                      existing.comment = existing.comment ? `${existing.comment}; ${expense.comment}` : expense.comment;
                                     }
-                                  }}
-                                  className="text-sm text-center"
-                                />
-                                <span className="text-xs text-muted-foreground shrink-0">
-                                  {getCurrencySymbol(participant.lead?.tourCostCurrency || "RUB")}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="p-2 border-r text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <EditableCell
-                                  type="text"
-                                  value={participant.lead?.advancePayment || ""}
-                                  placeholder="0"
-                                  onSave={(value) => {
-                                    if (participant.lead?.id) {
-                                      updateLeadMutation.mutate({
-                                        leadId: participant.lead.id,
-                                        advancePayment: value || undefined,
-                                      });
-                                    }
-                                  }}
-                                  className="text-sm text-center"
-                                />
-                                <span className="text-xs text-muted-foreground shrink-0">
-                                  {getCurrencySymbol(participant.lead?.advancePaymentCurrency || "RUB")}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="p-2 border-r text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <EditableCell
-                                  type="text"
-                                  value={participant.lead?.remainingPayment || ""}
-                                  placeholder="0"
-                                  onSave={(value) => {
-                                    if (participant.lead?.id) {
-                                      updateLeadMutation.mutate({
-                                        leadId: participant.lead.id,
-                                        remainingPayment: value || undefined,
-                                      });
-                                    }
-                                  }}
-                                  className="text-sm text-center"
-                                />
-                                <span className="text-xs text-muted-foreground shrink-0">
-                                  {getCurrencySymbol(participant.lead?.remainingPaymentCurrency || "RUB")}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="p-2 border-r text-center font-medium bg-orange-50 dark:bg-orange-950/30">
-                              {(() => {
-                                const total = participantExpenses
-                                  .filter(e => e.dealId === participant.deal.id)
-                                  .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-                                return total > 0 ? formatCurrency(total) : "—";
-                              })()}
-                            </td>
-                            {event.cities.map((city) => {
-                              const cityExpenses = getParticipantExpenses(participant.deal.id, city);
-                              const usedTypes = cityExpenses.map(e => e.expenseType);
-                              const availableTypes = Object.keys(EXPENSE_TYPE_LABELS).filter(t => !usedTypes.includes(t));
-                              
-                              return (
-                                <Fragment key={city}>
-                                  <td className="p-1 border-r align-top" colSpan={2}>
-                                    <div className="space-y-1">
-                                      {cityExpenses.map((expense, idx) => (
-                                        <div key={expense.id} className="flex items-center gap-1 bg-muted/30 rounded p-1">
-                                          <span className="text-xs text-muted-foreground shrink-0 w-24 truncate" title={EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}>
-                                            {EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}
-                                          </span>
-                                          <Input
-                                            type="text"
-                                            placeholder="0"
-                                            defaultValue={expense.amount || ""}
-                                            className="h-6 text-xs text-center w-20"
-                                            data-testid={`input-expense-amount-${participant.deal.id}-${city}-${idx}`}
-                                            onBlur={(e) => {
-                                              const value = e.target.value;
-                                              upsertParticipantExpenseMutation.mutate({
-                                                dealId: participant.deal.id,
-                                                city,
-                                                expenseType: expense.expenseType,
-                                                amount: value || undefined,
-                                                currency: expense.currency || "RUB",
-                                                comment: expense.comment ?? undefined,
-                                              });
-                                            }}
-                                          />
-                                          <Popover>
-                                            <PopoverTrigger asChild>
+                                  } else {
+                                    expensesByType.set(expense.expenseType, {
+                                      amount: Number(expense.amount || 0),
+                                      comment: expense.comment || "",
+                                      currency: expense.currency || "RUB",
+                                      dealId: expense.dealId,
+                                      expenseId: expense.id
+                                    });
+                                  }
+                                });
+                                
+                                const consolidatedExpenses = Array.from(expensesByType.entries()).map(([type, data]) => ({
+                                  expenseType: type,
+                                  ...data
+                                }));
+                                
+                                const usedTypes = consolidatedExpenses.map(e => e.expenseType);
+                                const availableTypes = Object.keys(EXPENSE_TYPE_LABELS).filter(t => !usedTypes.includes(t));
+                                
+                                // Use primary member's deal for adding new expenses
+                                const primaryDealId = primary.deal.id;
+                                
+                                return (
+                                  <Fragment key={city}>
+                                    <td className="p-1 border-r align-top" colSpan={2}>
+                                      <div className="space-y-1">
+                                        {consolidatedExpenses.map((expense, idx) => (
+                                          <div key={`${expense.expenseType}-${idx}`} className="flex items-center gap-1 bg-muted/30 rounded p-1">
+                                            <span className="text-xs text-muted-foreground shrink-0 w-24 truncate" title={EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}>
+                                              {EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}
+                                            </span>
+                                            <Input
+                                              type="text"
+                                              placeholder="0"
+                                              defaultValue={expense.amount > 0 ? String(expense.amount) : ""}
+                                              className="h-6 text-xs text-center w-20"
+                                              data-testid={`input-expense-amount-${group.leadId}-${city}-${idx}`}
+                                              onBlur={(e) => {
+                                                const value = e.target.value;
+                                                upsertParticipantExpenseMutation.mutate({
+                                                  dealId: expense.dealId,
+                                                  city,
+                                                  expenseType: expense.expenseType,
+                                                  amount: value || undefined,
+                                                  currency: expense.currency || "RUB",
+                                                  comment: expense.comment || undefined,
+                                                });
+                                              }}
+                                            />
+                                            <Popover>
+                                              <PopoverTrigger asChild>
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-5 w-5 shrink-0"
+                                                  data-testid={`button-comment-${group.leadId}-${city}-${idx}`}
+                                                >
+                                                  <MessageSquare className={`h-3 w-3 ${expense.comment ? 'text-primary' : ''}`} />
+                                                </Button>
+                                              </PopoverTrigger>
+                                              <PopoverContent className="w-64 p-2" align="end">
+                                                <Textarea
+                                                  placeholder="Добавить комментарий..."
+                                                  defaultValue={expense.comment || ""}
+                                                  className="text-xs min-h-[80px]"
+                                                  data-testid={`textarea-comment-${group.leadId}-${city}-${idx}`}
+                                                  onBlur={(e) => {
+                                                    const value = e.target.value;
+                                                    upsertParticipantExpenseMutation.mutate({
+                                                      dealId: expense.dealId,
+                                                      city,
+                                                      expenseType: expense.expenseType,
+                                                      amount: expense.amount > 0 ? String(expense.amount) : undefined,
+                                                      currency: expense.currency || "RUB",
+                                                      comment: value || undefined,
+                                                    });
+                                                  }}
+                                                />
+                                              </PopoverContent>
+                                            </Popover>
+                                          </div>
+                                        ))}
+                                        {availableTypes.length > 0 && (
+                                          <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
                                               <Button
                                                 type="button"
                                                 variant="ghost"
-                                                size="icon"
-                                                className="h-5 w-5 shrink-0"
-                                                data-testid={`button-comment-${participant.deal.id}-${city}-${idx}`}
+                                                size="sm"
+                                                className="h-6 text-xs w-full"
+                                                data-testid={`button-add-expense-${group.leadId}-${city}`}
                                               >
-                                                <MessageSquare className={`h-3 w-3 ${expense.comment ? 'text-primary' : ''}`} />
+                                                <Plus className="h-3 w-3 mr-1" /> Добавить расход
                                               </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-64 p-2" align="end">
-                                              <Textarea
-                                                placeholder="Добавить комментарий..."
-                                                defaultValue={expense.comment || ""}
-                                                className="text-xs min-h-[80px]"
-                                                data-testid={`textarea-comment-${participant.deal.id}-${city}-${idx}`}
-                                                onBlur={(e) => {
-                                                  const value = e.target.value;
-                                                  upsertParticipantExpenseMutation.mutate({
-                                                    dealId: participant.deal.id,
-                                                    city,
-                                                    expenseType: expense.expenseType,
-                                                    amount: expense.amount || undefined,
-                                                    currency: expense.currency || "RUB",
-                                                    comment: value || undefined,
-                                                  });
-                                                }}
-                                              />
-                                            </PopoverContent>
-                                          </Popover>
-                                        </div>
-                                      ))}
-                                      {availableTypes.length > 0 && (
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-6 text-xs w-full"
-                                              data-testid={`button-add-expense-${participant.deal.id}-${city}`}
-                                            >
-                                              <Plus className="h-3 w-3 mr-1" /> Добавить расход
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent>
-                                            {availableTypes.map(type => (
-                                              <DropdownMenuItem 
-                                                key={type}
-                                                onClick={() => {
-                                                  upsertParticipantExpenseMutation.mutate({
-                                                    dealId: participant.deal.id,
-                                                    city,
-                                                    expenseType: type,
-                                                    amount: undefined,
-                                                    currency: "RUB",
-                                                  });
-                                                }}
-                                                data-testid={`menu-add-expense-${participant.deal.id}-${city}-${type}`}
-                                              >
-                                                {EXPENSE_TYPE_LABELS[type]}
-                                              </DropdownMenuItem>
-                                            ))}
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      )}
-                                    </div>
-                                  </td>
-                                </Fragment>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent>
+                                              {availableTypes.map(type => (
+                                                <DropdownMenuItem 
+                                                  key={type}
+                                                  onClick={() => {
+                                                    upsertParticipantExpenseMutation.mutate({
+                                                      dealId: primaryDealId,
+                                                      city,
+                                                      expenseType: type,
+                                                      amount: undefined,
+                                                      currency: "RUB",
+                                                    });
+                                                  }}
+                                                  data-testid={`menu-add-expense-${group.leadId}-${city}-${type}`}
+                                                >
+                                                  {EXPENSE_TYPE_LABELS[type]}
+                                                </DropdownMenuItem>
+                                              ))}
+                                            </DropdownMenuContent>
+                                          </DropdownMenu>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </Fragment>
+                                );
+                              })}
+                            </tr>
+                          );
+                        });
+                      })()}
                     </tbody>
                     <tfoot className="border-t-2">
                       <tr className="font-medium bg-muted/30">

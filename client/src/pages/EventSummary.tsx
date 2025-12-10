@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import type { Event, Contact, Deal, CityVisit, Group, User, LeadTourist, Lead, EventParticipantExpense, EventCommonExpense } from "@shared/schema";
+import type { Event, Contact, Deal, CityVisit, Group, User, LeadTourist, Lead, EventParticipantExpense, EventCommonExpense, BaseExpense } from "@shared/schema";
 import { updateLeadTouristSchema } from "@shared/schema";
 import { EditableCell } from "@/components/EditableCell";
 import { PassportScansField } from "@/components/PassportScansField";
@@ -643,6 +643,10 @@ export default function EventSummary() {
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
   const [expenseCurrency, setExpenseCurrency] = useState<"CNY" | "EUR">("CNY");
+  const [showBaseExpenseDialog, setShowBaseExpenseDialog] = useState(false);
+  const [editingBaseExpense, setEditingBaseExpense] = useState<BaseExpense | null>(null);
+  const [baseExpenseForm, setBaseExpenseForm] = useState({ name: "", amount: "", currency: "CNY", category: "" });
+  const [baseExpenseFilter, setBaseExpenseFilter] = useState("");
   const isMobile = useIsMobile();
   
   // Currency conversion rates (approximate)
@@ -691,6 +695,41 @@ export default function EventSummary() {
   });
   const participantExpenses = expensesData?.participantExpenses ?? [];
   const commonExpenses = expensesData?.commonExpenses ?? [];
+
+  // Fetch base expenses catalog for the expenses tab
+  const { data: baseExpenses = [] } = useQuery<BaseExpense[]>({
+    queryKey: ["/api/base-expenses"],
+    enabled: user?.role === "admin",
+  });
+
+  // Mutations for base expenses CRUD
+  const createBaseExpenseMutation = useMutation({
+    mutationFn: async (data: { name: string; amount: string; currency: string; category: string | null }) => {
+      return apiRequest("POST", "/api/base-expenses", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/base-expenses"] });
+    },
+  });
+
+  const updateBaseExpenseMutation = useMutation({
+    mutationFn: async (data: { id: string; name?: string; amount?: string; currency?: string; category?: string | null }) => {
+      const { id, ...updateData } = data;
+      return apiRequest("PATCH", `/api/base-expenses/${id}`, updateData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/base-expenses"] });
+    },
+  });
+
+  const deleteBaseExpenseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/base-expenses/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/base-expenses"] });
+    },
+  });
 
   // Mutation for upserting participant expense
   const upsertParticipantExpenseMutation = useMutation({
@@ -1640,6 +1679,9 @@ export default function EventSummary() {
           <TabsTrigger value="summary" data-testid="tab-summary">Сводная таблица</TabsTrigger>
           {user?.role === "admin" && (
             <TabsTrigger value="finance" data-testid="tab-finance">Финансы</TabsTrigger>
+          )}
+          {user?.role === "admin" && (
+            <TabsTrigger value="expenses" data-testid="tab-expenses">Расходы</TabsTrigger>
           )}
         </TabsList>
         
@@ -2900,7 +2942,241 @@ export default function EventSummary() {
           </Card>
         </TabsContent>
         )}
+
+        {/* Expenses Catalog Tab - Admin only */}
+        {user?.role === "admin" && (
+        <TabsContent value="expenses">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-4">
+              <div>
+                <CardTitle>Каталог расходов</CardTitle>
+                <CardDescription>
+                  Справочник базовых расходов для использования в финансовых таблицах
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Поиск..."
+                  value={baseExpenseFilter}
+                  onChange={(e) => setBaseExpenseFilter(e.target.value)}
+                  className="w-48"
+                  data-testid="input-base-expense-filter"
+                />
+                <Button
+                  onClick={() => {
+                    setEditingBaseExpense(null);
+                    setBaseExpenseForm({ name: "", amount: "", currency: "CNY", category: "" });
+                    setShowBaseExpenseDialog(true);
+                  }}
+                  data-testid="button-add-base-expense"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Добавить расход
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {baseExpenses.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>Нет расходов в каталоге</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="p-2 text-left font-medium">Название</th>
+                        <th className="p-2 text-left font-medium">Категория</th>
+                        <th className="p-2 text-right font-medium">Сумма</th>
+                        <th className="p-2 text-center font-medium">Валюта</th>
+                        <th className="p-2 text-center font-medium">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const filtered = baseExpenses.filter(e => 
+                          !baseExpenseFilter || 
+                          e.name.toLowerCase().includes(baseExpenseFilter.toLowerCase()) ||
+                          (e.category?.toLowerCase().includes(baseExpenseFilter.toLowerCase()))
+                        );
+                        const grouped = filtered.reduce((acc, expense) => {
+                          const cat = expense.category || "Без категории";
+                          if (!acc[cat]) acc[cat] = [];
+                          acc[cat].push(expense);
+                          return acc;
+                        }, {} as Record<string, typeof baseExpenses>);
+                        
+                        return Object.entries(grouped).map(([category, expenses]) => (
+                          <Fragment key={category}>
+                            <tr className="bg-muted/30">
+                              <td colSpan={5} className="p-2 font-medium text-muted-foreground">
+                                {category} ({expenses.length})
+                              </td>
+                            </tr>
+                            {expenses.map((expense) => (
+                              <tr key={expense.id} className="border-b hover-elevate" data-testid={`row-base-expense-${expense.id}`}>
+                                <td className="p-2">{expense.name}</td>
+                                <td className="p-2 text-muted-foreground">{expense.category || "—"}</td>
+                                <td className="p-2 text-right font-mono">{formatCurrency(parseFloat(expense.amount))}</td>
+                                <td className="p-2 text-center">
+                                  <Badge variant="outline">{expense.currency}</Badge>
+                                </td>
+                                <td className="p-2 text-center">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        setEditingBaseExpense(expense);
+                                        setBaseExpenseForm({
+                                          name: expense.name,
+                                          amount: expense.amount,
+                                          currency: expense.currency,
+                                          category: expense.category || ""
+                                        });
+                                        setShowBaseExpenseDialog(true);
+                                      }}
+                                      data-testid={`button-edit-base-expense-${expense.id}`}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-destructive hover:text-destructive"
+                                      onClick={() => {
+                                        if (confirm("Удалить этот расход из каталога?")) {
+                                          deleteBaseExpenseMutation.mutate(expense.id);
+                                        }
+                                      }}
+                                      data-testid={`button-delete-base-expense-${expense.id}`}
+                                    >
+                                      <UserMinus className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </Fragment>
+                        ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        )}
       </Tabs>
+
+      {/* Base Expense Add/Edit Dialog */}
+      <Dialog open={showBaseExpenseDialog} onOpenChange={setShowBaseExpenseDialog}>
+        <DialogContent data-testid="dialog-base-expense">
+          <DialogHeader>
+            <DialogTitle>{editingBaseExpense ? "Редактировать расход" : "Добавить расход"}</DialogTitle>
+            <DialogDescription>
+              {editingBaseExpense ? "Измените данные расхода" : "Добавьте новый расход в каталог"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Название</label>
+              <Input
+                value={baseExpenseForm.name}
+                onChange={(e) => setBaseExpenseForm({ ...baseExpenseForm, name: e.target.value })}
+                placeholder="Например: Авиаперелет Пекин-Шанхай"
+                data-testid="input-base-expense-name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Сумма</label>
+                <Input
+                  type="number"
+                  value={baseExpenseForm.amount}
+                  onChange={(e) => setBaseExpenseForm({ ...baseExpenseForm, amount: e.target.value })}
+                  placeholder="0"
+                  data-testid="input-base-expense-amount"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Валюта</label>
+                <Select
+                  value={baseExpenseForm.currency}
+                  onValueChange={(value) => setBaseExpenseForm({ ...baseExpenseForm, currency: value })}
+                >
+                  <SelectTrigger data-testid="select-base-expense-currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CNY">CNY (¥)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="RUB">RUB (₽)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Категория</label>
+              <Input
+                value={baseExpenseForm.category}
+                onChange={(e) => setBaseExpenseForm({ ...baseExpenseForm, category: e.target.value })}
+                placeholder="Например: Авиаперелет"
+                data-testid="input-base-expense-category"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBaseExpenseDialog(false)} data-testid="button-cancel-base-expense">
+              Отмена
+            </Button>
+            <Button
+              onClick={() => {
+                if (!baseExpenseForm.name || !baseExpenseForm.amount) {
+                  toast({
+                    title: "Ошибка",
+                    description: "Заполните название и сумму",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                if (editingBaseExpense) {
+                  updateBaseExpenseMutation.mutate({
+                    id: editingBaseExpense.id,
+                    name: baseExpenseForm.name,
+                    amount: baseExpenseForm.amount,
+                    currency: baseExpenseForm.currency,
+                    category: baseExpenseForm.category || null
+                  }, {
+                    onSuccess: () => {
+                      toast({ title: "Расход обновлен" });
+                      setShowBaseExpenseDialog(false);
+                    }
+                  });
+                } else {
+                  createBaseExpenseMutation.mutate({
+                    name: baseExpenseForm.name,
+                    amount: baseExpenseForm.amount,
+                    currency: baseExpenseForm.currency,
+                    category: baseExpenseForm.category || null
+                  }, {
+                    onSuccess: () => {
+                      toast({ title: "Расход добавлен" });
+                      setShowBaseExpenseDialog(false);
+                    }
+                  });
+                }
+              }}
+              disabled={createBaseExpenseMutation.isPending || updateBaseExpenseMutation.isPending}
+              data-testid="button-save-base-expense"
+            >
+              {(createBaseExpenseMutation.isPending || updateBaseExpenseMutation.isPending) ? "Сохранение..." : "Сохранить"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create Mini-Group Dialog */}
       <Dialog open={showCreateMiniGroupDialog} onOpenChange={setShowCreateMiniGroupDialog}>

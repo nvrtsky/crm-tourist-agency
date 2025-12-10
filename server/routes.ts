@@ -739,6 +739,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== BASE EXPENSE ROUTES (CATALOG) ====================
+
+  // Get all base expenses
+  app.get("/api/base-expenses", requireAuth, async (req, res) => {
+    try {
+      const expenses = await storage.getAllBaseExpenses();
+      res.json(expenses);
+    } catch (error) {
+      console.error("Error fetching base expenses:", error);
+      res.status(500).json({ error: "Failed to fetch base expenses" });
+    }
+  });
+
+  // Get single base expense
+  app.get("/api/base-expenses/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const expense = await storage.getBaseExpense(id);
+      
+      if (!expense) {
+        return res.status(404).json({ error: "Base expense not found" });
+      }
+      
+      res.json(expense);
+    } catch (error) {
+      console.error("Error fetching base expense:", error);
+      res.status(500).json({ error: "Failed to fetch base expense" });
+    }
+  });
+
+  // Create base expense
+  app.post("/api/base-expenses", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      if (user.role !== "admin") {
+        return res.status(403).json({ error: "Only admins can create base expenses" });
+      }
+      
+      const { name, amount, currency, category } = req.body;
+      
+      if (!name || amount === undefined) {
+        return res.status(400).json({ error: "Name and amount are required" });
+      }
+      
+      const expense = await storage.createBaseExpense({
+        name,
+        amount: String(amount),
+        currency: currency || "CNY",
+        category: category || null
+      });
+      
+      res.json(expense);
+    } catch (error) {
+      console.error("Error creating base expense:", error);
+      res.status(500).json({ error: "Failed to create base expense" });
+    }
+  });
+
+  // Update base expense
+  app.patch("/api/base-expenses/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      if (user.role !== "admin") {
+        return res.status(403).json({ error: "Only admins can update base expenses" });
+      }
+      
+      const { id } = req.params;
+      const { name, amount, currency, category } = req.body;
+      
+      const updateData: Record<string, any> = {};
+      if (name !== undefined) updateData.name = name;
+      if (amount !== undefined) updateData.amount = String(amount);
+      if (currency !== undefined) updateData.currency = currency;
+      if (category !== undefined) updateData.category = category;
+      
+      const expense = await storage.updateBaseExpense(id, updateData);
+      
+      if (!expense) {
+        return res.status(404).json({ error: "Base expense not found" });
+      }
+      
+      res.json(expense);
+    } catch (error) {
+      console.error("Error updating base expense:", error);
+      res.status(500).json({ error: "Failed to update base expense" });
+    }
+  });
+
+  // Delete base expense
+  app.delete("/api/base-expenses/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      if (user.role !== "admin") {
+        return res.status(403).json({ error: "Only admins can delete base expenses" });
+      }
+      
+      const { id } = req.params;
+      const success = await storage.deleteBaseExpense(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Base expense not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting base expense:", error);
+      res.status(500).json({ error: "Failed to delete base expense" });
+    }
+  });
+
   // ==================== CONTACT ROUTES ====================
 
   // Get all contacts

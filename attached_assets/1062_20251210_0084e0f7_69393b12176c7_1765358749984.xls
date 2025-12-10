@@ -1,0 +1,1053 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="ProgId" content="Excel.Sheet">
+  <meta name="Generator" content="WPS Office ET">
+  <!--[if gte mso 9]>
+   <xml>
+    <o:DocumentProperties>
+     <o:Created>2025-12-10T12:19:22</o:Created>
+     <o:LastAuthor>WPS_1744381796</o:LastAuthor>
+     <o:LastSaved>2025-12-10T12:20:05</o:LastSaved>
+    </o:DocumentProperties>
+    <o:CustomDocumentProperties>
+     <o:ICV dt:dt="string">CB8E8256CCA05C25453B39694EE15EF9_42</o:ICV>
+     <o:KSOProductBuildVer dt:dt="string">1033-12.1.22533.22533</o:KSOProductBuildVer>
+    </o:CustomDocumentProperties>
+   </xml>
+  <![endif]-->
+  <style>
+<!-- @page
+	{margin:1.00in 0.75in 1.00in 0.75in;
+	mso-header-margin:0.50in;
+	mso-footer-margin:0.50in;}
+tr
+	{mso-height-source:auto;
+	mso-ruby-visibility:none;}
+col
+	{mso-width-source:auto;
+	mso-ruby-visibility:none;}
+br
+	{mso-data-placement:same-cell;}
+.font0
+	{color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:134;}
+.font1
+	{color:#000000;
+	font-size:10.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Arial Unicode MS";
+	mso-generic-font-family:auto;
+	mso-font-charset:134;}
+.font2
+	{color:#000000;
+	font-size:10.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Arial Unicode MS";
+	mso-generic-font-family:auto;
+	mso-font-charset:134;}
+.font3
+	{color:#0000FF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:underline;
+	text-underline-style:single;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:134;}
+.font4
+	{color:#800080;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:underline;
+	text-underline-style:single;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:134;}
+.font5
+	{color:#FF0000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font6
+	{color:#44546A;
+	font-size:18.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:134;}
+.font7
+	{color:#7F7F7F;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:italic;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font8
+	{color:#44546A;
+	font-size:15.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:134;}
+.font9
+	{color:#44546A;
+	font-size:13.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:134;}
+.font10
+	{color:#44546A;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:134;}
+.font11
+	{color:#3F3F76;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font12
+	{color:#3F3F3F;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font13
+	{color:#FA7D00;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font14
+	{color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font15
+	{color:#FA7D00;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font16
+	{color:#000000;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font17
+	{color:#006100;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font18
+	{color:#9C0006;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font19
+	{color:#9C6500;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font20
+	{color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.font21
+	{color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"Calibri";
+	mso-generic-font-family:auto;
+	mso-font-charset:0;}
+.style0
+	{mso-number-format:"General";
+	text-align:general;
+	vertical-align:middle;
+	white-space:nowrap;
+	mso-rotate:0;
+	mso-pattern:auto;
+	mso-background-source:auto;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:134;
+	border:none;
+	mso-protection:locked visible;
+	mso-style-name:"Normal";
+	mso-style-id:0;}
+.style16
+	{mso-number-format:"_-* \#\,\#\#0\.00_-\;\\-* \#\,\#\#0\.00_-\;_-* \0022-\0022??_-\;_-\@_-";
+	mso-style-name:"Comma";
+	mso-style-id:3;}
+.style17
+	{mso-number-format:"_-\0022£\0022* \#\,\#\#0\.00_-\;\\-\0022£\0022* \#\,\#\#0\.00_-\;_-\0022£\0022* \0022-\0022??_-\;_-\@_-";
+	mso-style-name:"Currency";
+	mso-style-id:4;}
+.style18
+	{mso-number-format:"0%";
+	mso-style-name:"Percent";
+	mso-style-id:5;}
+.style19
+	{mso-number-format:"_-* \#\,\#\#0_-\;\\-* \#\,\#\#0_-\;_-* \0022-\0022_-\;_-\@_-";
+	mso-style-name:"Comma [0]";
+	mso-style-id:6;}
+.style20
+	{mso-number-format:"_-\0022£\0022* \#\,\#\#0_-\;\\-\0022£\0022* \#\,\#\#0_-\;_-\0022£\0022* \0022-\0022_-\;_-\@_-";
+	mso-style-name:"Currency [0]";
+	mso-style-id:7;}
+.style21
+	{color:#0000FF;
+	font-size:11.0pt;
+	text-decoration:underline;
+	text-underline-style:single;
+	font-family:Calibri;
+	mso-style-name:"Link";
+	mso-style-id:8;}
+.style22
+	{color:#800080;
+	font-size:11.0pt;
+	text-decoration:underline;
+	text-underline-style:single;
+	font-family:Calibri;
+	mso-style-name:"Followed Hyperlink";
+	mso-style-id:9;}
+.style23
+	{mso-pattern:auto none;
+	background:#FFFFCC;
+	border:.5pt solid #B2B2B2;
+	mso-style-name:"Note";}
+.style24
+	{color:#FF0000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"Warning Text";}
+.style25
+	{color:#44546A;
+	font-size:18.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:134;
+	mso-style-name:"Title";}
+.style26
+	{color:#7F7F7F;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:italic;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"CExplanatory Text";}
+.style27
+	{color:#44546A;
+	font-size:15.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:134;
+	border-bottom:1.0pt solid #5B9BD5;
+	mso-style-name:"Heading 1";}
+.style28
+	{color:#44546A;
+	font-size:13.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:134;
+	border-bottom:1.0pt solid #5B9BD5;
+	mso-style-name:"Heading 2";}
+.style29
+	{color:#44546A;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:134;
+	border-bottom:1.0pt solid #ACCCEA;
+	mso-style-name:"Heading 3";}
+.style30
+	{color:#44546A;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:134;
+	mso-style-name:"Heading 4";}
+.style31
+	{mso-pattern:auto none;
+	background:#FFCC99;
+	color:#3F3F76;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	border:.5pt solid #7F7F7F;
+	mso-style-name:"Input";}
+.style32
+	{mso-pattern:auto none;
+	background:#F2F2F2;
+	color:#3F3F3F;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	border:.5pt solid #3F3F3F;
+	mso-style-name:"Output";}
+.style33
+	{mso-pattern:auto none;
+	background:#F2F2F2;
+	color:#FA7D00;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	border:.5pt solid #7F7F7F;
+	mso-style-name:"Calculation";}
+.style34
+	{mso-pattern:auto none;
+	background:#A5A5A5;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	border:2.0pt double #3F3F3F;
+	mso-style-name:"Check Cell";}
+.style35
+	{color:#FA7D00;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	border-bottom:2.0pt double #FF8001;
+	mso-style-name:"Linked Cell";}
+.style36
+	{color:#000000;
+	font-size:11.0pt;
+	font-weight:700;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	border-top:.5pt solid #5B9BD5;
+	border-bottom:2.0pt double #5B9BD5;
+	mso-style-name:"Total";}
+.style37
+	{mso-pattern:auto none;
+	background:#C6EFCE;
+	color:#006100;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"Good";}
+.style38
+	{mso-pattern:auto none;
+	background:#FFC7CE;
+	color:#9C0006;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"Bad";}
+.style39
+	{mso-pattern:auto none;
+	background:#FFEB9C;
+	color:#9C6500;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"Neutral";}
+.style40
+	{mso-pattern:auto none;
+	background:#5B9BD5;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"Accent1";}
+.style41
+	{mso-pattern:auto none;
+	background:#DDEBF7;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"20% - Accent1";}
+.style42
+	{mso-pattern:auto none;
+	background:#BDD7EE;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"40% - Accent1";}
+.style43
+	{mso-pattern:auto none;
+	background:#9BC2E6;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"60% - Accent1";}
+.style44
+	{mso-pattern:auto none;
+	background:#ED7D31;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"Accent2";}
+.style45
+	{mso-pattern:auto none;
+	background:#FCE4D6;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"20% - Accent2";}
+.style46
+	{mso-pattern:auto none;
+	background:#F8CBAD;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"40% - Accent2";}
+.style47
+	{mso-pattern:auto none;
+	background:#F4B084;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"60% - Accent2";}
+.style48
+	{mso-pattern:auto none;
+	background:#A5A5A5;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"Accent3";}
+.style49
+	{mso-pattern:auto none;
+	background:#EDEDED;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"20% - Accent3";}
+.style50
+	{mso-pattern:auto none;
+	background:#DBDBDB;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"40% - Accent3";}
+.style51
+	{mso-pattern:auto none;
+	background:#C9C9C9;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"60% - Accent3";}
+.style52
+	{mso-pattern:auto none;
+	background:#FFC000;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"Accent4";}
+.style53
+	{mso-pattern:auto none;
+	background:#FFF2CC;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"20% - Accent4";}
+.style54
+	{mso-pattern:auto none;
+	background:#FFE699;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"40% - Accent4";}
+.style55
+	{mso-pattern:auto none;
+	background:#FFD966;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"60% - Accent4";}
+.style56
+	{mso-pattern:auto none;
+	background:#4472C4;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"Accent5";}
+.style57
+	{mso-pattern:auto none;
+	background:#D9E1F2;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"20% - Accent5";}
+.style58
+	{mso-pattern:auto none;
+	background:#B4C6E7;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"40% - Accent5";}
+.style59
+	{mso-pattern:auto none;
+	background:#8EA9DB;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"60% - Accent5";}
+.style60
+	{mso-pattern:auto none;
+	background:#70AD47;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"Accent6";}
+.style61
+	{mso-pattern:auto none;
+	background:#E2EFDA;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"20% - Accent6";}
+.style62
+	{mso-pattern:auto none;
+	background:#C6E0B4;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"40% - Accent6";}
+.style63
+	{mso-pattern:auto none;
+	background:#A9D08E;
+	color:#FFFFFF;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	mso-style-name:"60% - Accent6";}
+td
+	{mso-style-parent:style0;
+	padding-top:1px;
+	padding-right:1px;
+	padding-left:1px;
+	mso-ignore:padding;
+	mso-number-format:"General";
+	text-align:general;
+	vertical-align:middle;
+	white-space:nowrap;
+	mso-rotate:0;
+	mso-pattern:auto;
+	mso-background-source:auto;
+	color:#000000;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Calibri;
+	mso-generic-font-family:auto;
+	mso-font-charset:134;
+	border:none;
+	mso-protection:locked visible;}
+.xl65
+	{mso-style-parent:style0;
+	text-align:center;
+	white-space:normal;
+	font-size:10.0pt;
+	font-weight:700;
+	font-family:Arial Unicode MS;
+	mso-font-charset:134;
+	border:.5pt solid windowtext;}
+.xl66
+	{mso-style-parent:style0;
+	white-space:normal;
+	font-size:10.0pt;
+	font-family:Arial Unicode MS;
+	mso-font-charset:134;
+	border:.5pt solid windowtext;}
+ -->  </style>
+  <!--[if gte mso 9]>
+   <xml>
+    <x:ExcelWorkbook>
+     <x:ExcelWorksheets>
+      <x:ExcelWorksheet>
+       <x:Name>1062_20251210_0084e0f7_69393b12</x:Name>
+       <x:WorksheetOptions>
+        <x:DefaultRowHeight>336</x:DefaultRowHeight>
+        <x:Selected/>
+        <x:Panes>
+         <x:Pane>
+          <x:Number>3</x:Number>
+          <x:ActiveCol>1</x:ActiveCol>
+          <x:ActiveRow>4</x:ActiveRow>
+          <x:RangeSelection>B5</x:RangeSelection>
+         </x:Pane>
+        </x:Panes>
+        <x:DoNotDisplayGridlines/>
+        <x:ProtectContents>False</x:ProtectContents>
+        <x:ProtectObjects>False</x:ProtectObjects>
+        <x:ProtectScenarios>False</x:ProtectScenarios>
+        <x:Print>
+         <x:PaperSizeIndex>9</x:PaperSizeIndex>
+        </x:Print>
+       </x:WorksheetOptions>
+      </x:ExcelWorksheet>
+     </x:ExcelWorksheets>
+     <x:ProtectStructure>False</x:ProtectStructure>
+     <x:ProtectWindows>False</x:ProtectWindows>
+     <x:RefModeR1C1/>
+     <x:WindowHeight>16560</x:WindowHeight>
+     <x:WindowWidth>-31936</x:WindowWidth>
+    </x:ExcelWorkbook>
+   </xml>
+  <![endif]-->
+ </head>
+ <body link="blue" vlink="purple">
+  <table width="269.25" border="0" cellpadding="0" cellspacing="0" style='width:269.25pt;border-collapse:collapse;table-layout:fixed;'>
+   <col width="216" style='mso-width-source:userset;mso-width-alt:8190;'/>
+   <col width="53.25" style='mso-width-source:userset;mso-width-alt:2019;'/>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl65" height="16.80" width="216" style='height:16.80pt;width:216.00pt;' x:str>Название</td>
+    <td class="xl65" width="53.25" style='width:53.25pt;' x:str>Сумма</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Авиабилеты Чжанцзяцзе-Шанхай ¥ 600</td>
+    <td class="xl66" x:str>¥600.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Авиабилеты Пекин-Чжанцзяцзе ¥ 1500</td>
+    <td class="xl66" x:str>¥1,500.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Самолет Чжанцзяцзе-Шанхай ¥ 1110</td>
+    <td class="xl66" x:str>¥1,110.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Самолет Сиань-Чжанцзяцзе ¥ 810</td>
+    <td class="xl66" x:str>¥810.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Поезд Лоян-Сиань ¥ 175</td>
+    <td class="xl66" x:str>¥175.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Поезд Пекин-Лоян ¥ 430</td>
+    <td class="xl66" x:str>¥430.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Чжанцзяцзе гид/авто 4 дня до 7 чел ¥ 4750</td>
+    <td class="xl66" x:str>¥4,750.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Сиань вх.180 при груп туре ¥ 180</td>
+    <td class="xl66" x:str>¥180.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Сиань гид/авто 2-4 при груп туре ¥ 6500</td>
+    <td class="xl66" x:str>¥6,500.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Лоян вх. Луньмень на чел ¥ 120</td>
+    <td class="xl66" x:str>¥120.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Лоян гид/авто 4 чел ¥ 5500</td>
+    <td class="xl66" x:str>¥5,500.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Лоян гид/авто 2 чел ¥ 5000</td>
+    <td class="xl66" x:str>¥5,000.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Пекин обед на стене ¥ 95</td>
+    <td class="xl66" x:str>¥95.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Утка по Пекински ¥ 200</td>
+    <td class="xl66" x:str>¥200.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин гид/авто из аэропорта по городу 1-2 чел ¥ 1600</td>
+    <td class="xl66" x:str>¥1,600.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин гид/авто из аэропорта на стену 1-2 чел ¥ 1700</td>
+    <td class="xl66" x:str>¥1,700.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Чжанцзяцзе транспорт/гид (12 чел) 3 дня ¥ 6000</td>
+    <td class="xl66" x:str>¥6,000.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Шанхай транспорт/гид в день (12 чел) ¥ 6500</td>
+    <td class="xl66" x:str>¥6,500.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Чжанцзяцзе отель 2 ночи ¥ 480</td>
+    <td class="xl66" x:str>¥480.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Авиа Шанхай-Аватар-Шанхай ¥ 3400</td>
+    <td class="xl66" x:str>¥3,400.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Шанхай входные в Шанхай Тауер ¥ 180</td>
+    <td class="xl66" x:str>¥180.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Шанхай трансфер для 4-5х ¥ 350</td>
+    <td class="xl66" x:str>¥350.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Шанхай отель 4 ночи ¥ 1800</td>
+    <td class="xl66" x:str>¥1,800.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Гуанчжоу Кантонская башня ¥ 200</td>
+    <td class="xl66" x:str>¥200.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Гуанчжоу Транспорт с гидом по городу ¥ 2000</td>
+    <td class="xl66" x:str>¥2,000.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Чжанцзяцзе Озеро Баофен ¥ 120</td>
+    <td class="xl66" x:str>¥120.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Чжанцзяцзе Пещера золотого дракона ¥ 200</td>
+    <td class="xl66" x:str>¥200.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Чжанцзяцзе гора Тяньменьша ¥ 340</td>
+    <td class="xl66" x:str>¥340.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Чжанцзяцзе Стеклянный мост ¥ 336</td>
+    <td class="xl66" x:str>¥336.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Чжанцзяцзе Аватар ¥ 420</td>
+    <td class="xl66" x:str>¥420.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Шанхай входные в Шанхай тауер детский ¥ 120</td>
+    <td class="xl66" x:str>¥120.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Шанхай входные в Шанхай тауер взрослый ¥ 180</td>
+    <td class="xl66" x:str>¥180.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Шанхай обзорная ¥ 1600</td>
+    <td class="xl66" x:str>¥1,600.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин Трансфер из Столичного аэропорта ¥ 350</td>
+    <td class="xl66" x:str>¥350.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Пекин Трансфер из Дасин ¥ 550</td>
+    <td class="xl66" x:str>¥550.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Пекин Ламайский храм ¥ 25</td>
+    <td class="xl66" x:str>¥25.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Пекин Летний сад ¥ 30</td>
+    <td class="xl66" x:str>¥30.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Пекин Китайская стена ¥ 200</td>
+    <td class="xl66" x:str>¥200.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Пекин Запретный город и храм ¥ 94</td>
+    <td class="xl66" x:str>¥94.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Пекин гид/авто на стену 16-40 чел ¥ 2800</td>
+    <td class="xl66" x:str>¥2,800.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин гид с машиной на китайскую стену 10-15 чел ¥ 2400</td>
+    <td class="xl66" x:str>¥2,400.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин гид с машиной на китайскую стену 5-10 чел ¥ 2200</td>
+    <td class="xl66" x:str>¥2,200.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин гид с машиной на китайскую стену 3-4 чел ¥ 1800</td>
+    <td class="xl66" x:str>¥1,800.00</td>
+   </tr>
+   <tr height="16.80" style='height:16.80pt;'>
+    <td class="xl66" height="16.80" style='height:16.80pt;' x:str>Пекин гид/авто на стену 1-2 чел ¥ 1500</td>
+    <td class="xl66" x:str>¥1,500.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин гид с машиной по городу 16-40 чел ¥ 2500</td>
+    <td class="xl66" x:str>¥2,500.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин гид с машиной по городу 10-15 чел ¥ 2200</td>
+    <td class="xl66" x:str>¥2,200.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин гид с машиной по городу 5-10 чел ¥ 2000</td>
+    <td class="xl66" x:str>¥2,000.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин гид с машиной по городу 3-4 чел ¥ 1600</td>
+    <td class="xl66" x:str>¥1,600.00</td>
+   </tr>
+   <tr height="29" style='height:29.00pt;'>
+    <td class="xl66" height="29" style='height:29.00pt;' x:str>Пекин гид с машиной по городу 1-2 чел ¥ 1400</td>
+    <td class="xl66" x:str>¥1,400.00</td>
+   </tr>
+   <![if supportMisalignedColumns]>
+    <tr width="0" style='display:none;'>
+     <td width="216" style='width:216;'></td>
+     <td width="53" style='width:53;'></td>
+    </tr>
+   <![endif]>
+  </table>
+ </body>
+</html>

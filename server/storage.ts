@@ -44,6 +44,9 @@ import {
   type InsertParticipantExpense,
   type EventCommonExpense,
   type InsertCommonExpense,
+  type BaseExpense,
+  type InsertBaseExpense,
+  type UpdateBaseExpense,
   events,
   contacts,
   deals,
@@ -60,6 +63,7 @@ import {
   settings,
   eventParticipantExpenses,
   eventCommonExpenses,
+  baseExpenses,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -186,6 +190,13 @@ export interface IStorage {
   getCommonExpensesByEvent(eventId: string): Promise<import("@shared/schema").EventCommonExpense[]>;
   upsertCommonExpense(expense: import("@shared/schema").InsertCommonExpense): Promise<import("@shared/schema").EventCommonExpense>;
   deleteCommonExpense(eventId: string, city: string, expenseType: string): Promise<boolean>;
+
+  // Base expense operations (catalog)
+  getAllBaseExpenses(): Promise<import("@shared/schema").BaseExpense[]>;
+  getBaseExpense(id: string): Promise<import("@shared/schema").BaseExpense | undefined>;
+  createBaseExpense(expense: import("@shared/schema").InsertBaseExpense): Promise<import("@shared/schema").BaseExpense>;
+  updateBaseExpense(id: string, expense: import("@shared/schema").UpdateBaseExpense): Promise<import("@shared/schema").BaseExpense | undefined>;
+  deleteBaseExpense(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1333,6 +1344,39 @@ export class DatabaseStorage implements IStorage {
         eq(eventCommonExpenses.expenseType, expenseType)
       ))
       .returning();
+    return result.length > 0;
+  }
+
+  // ==================== BASE EXPENSE OPERATIONS ====================
+
+  async getAllBaseExpenses(): Promise<BaseExpense[]> {
+    return await db
+      .select()
+      .from(baseExpenses)
+      .orderBy(baseExpenses.category, baseExpenses.name);
+  }
+
+  async getBaseExpense(id: string): Promise<BaseExpense | undefined> {
+    const result = await db.select().from(baseExpenses).where(eq(baseExpenses.id, id));
+    return result[0];
+  }
+
+  async createBaseExpense(expense: InsertBaseExpense): Promise<BaseExpense> {
+    const [result] = await db.insert(baseExpenses).values(expense).returning();
+    return result;
+  }
+
+  async updateBaseExpense(id: string, expense: UpdateBaseExpense): Promise<BaseExpense | undefined> {
+    const [result] = await db
+      .update(baseExpenses)
+      .set({ ...expense, updatedAt: new Date() })
+      .where(eq(baseExpenses.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteBaseExpense(id: string): Promise<boolean> {
+    const result = await db.delete(baseExpenses).where(eq(baseExpenses.id, id)).returning();
     return result.length > 0;
   }
 }

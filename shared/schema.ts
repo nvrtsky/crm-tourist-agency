@@ -362,6 +362,17 @@ export const eventCommonExpenses = pgTable("event_common_expenses", {
   uniqueIndex("event_common_expense_unique").on(table.eventId, table.city, table.expenseType)
 ]);
 
+// Base expenses catalog - reusable expense templates
+export const baseExpenses = pgTable("base_expenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("CNY"), // CNY, EUR, RUB, USD
+  category: text("category"), // City or category for grouping (e.g., "Пекин", "Шанхай", "Транспорт")
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ================= ZOD SCHEMAS =================
 
 // User schemas
@@ -451,6 +462,14 @@ export const insertCommonExpenseSchema = createInsertSchema(eventCommonExpenses)
 });
 export const updateCommonExpenseSchema = insertCommonExpenseSchema.partial();
 
+// Base expense schemas
+export const insertBaseExpenseSchema = createInsertSchema(baseExpenses).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const updateBaseExpenseSchema = insertBaseExpenseSchema.partial();
+
 // ================= TYPES =================
 
 // User types
@@ -525,6 +544,11 @@ export type UpdateParticipantExpense = z.infer<typeof updateParticipantExpenseSc
 export type EventCommonExpense = typeof eventCommonExpenses.$inferSelect;
 export type InsertCommonExpense = z.infer<typeof insertCommonExpenseSchema>;
 export type UpdateCommonExpense = z.infer<typeof updateCommonExpenseSchema>;
+
+// Base expense types
+export type BaseExpense = typeof baseExpenses.$inferSelect;
+export type InsertBaseExpense = z.infer<typeof insertBaseExpenseSchema>;
+export type UpdateBaseExpense = z.infer<typeof updateBaseExpenseSchema>;
 
 // Complex types with relations
 export type EventWithStats = Event & {

@@ -1943,14 +1943,21 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Тип номера</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Например: Twin, Double, Single"
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-roomType"
-                      />
-                    </FormControl>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value ?? ''} 
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="select-roomType">
+                          <SelectValue placeholder="Выберите тип" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Single">Single</SelectItem>
+                        <SelectItem value="Twin">Twin</SelectItem>
+                        <SelectItem value="Double">Double</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -1276,6 +1276,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       advancePaymentCurrency: lead?.advancePaymentCurrency || "RUB",
       remainingPayment: lead?.remainingPayment || null,
       remainingPaymentCurrency: lead?.remainingPaymentCurrency || "RUB",
+      roomType: lead?.roomType || null,
+      transfers: lead?.transfers || null,
+      meals: lead?.meals || null,
+      hotelCategory: lead?.hotelCategory || null,
       clientCategory: lead?.clientCategory || null,
       color: lead?.color ?? null,
       status: lead?.status || "new",
@@ -1329,6 +1333,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
         advancePaymentCurrency: lead.advancePaymentCurrency || "RUB",
         remainingPayment: lead.remainingPayment || null,
         remainingPaymentCurrency: lead.remainingPaymentCurrency || "RUB",
+        roomType: lead.roomType || null,
+        transfers: lead.transfers || null,
+        meals: lead.meals || null,
+        hotelCategory: lead.hotelCategory || null,
         clientCategory: lead.clientCategory || null,
         color: lead.color ?? null,
         status: lead.status || "new",
@@ -1928,6 +1936,89 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                 </div>
                 <FormMessage />
               </FormItem>
+
+              <FormField
+                control={form.control}
+                name="roomType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Тип номера</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Например: Twin, Double, Single"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-roomType"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="transfers"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Трансферы</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Информация о трансферах"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-transfers"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="meals"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Питание</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Например: BB, HB, FB, AI"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-meals"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="hotelCategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Категория отелей</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value ?? ''} 
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="select-hotelCategory">
+                          <SelectValue placeholder="Выберите категорию" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="3*">3*</SelectItem>
+                        <SelectItem value="4*">4*</SelectItem>
+                        <SelectItem value="5*">5*</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
 

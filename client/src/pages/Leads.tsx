@@ -16,7 +16,8 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -891,7 +892,7 @@ export default function Leads() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {editingLead && (
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="mb-4">
+              <TabsList className="mb-4 w-full flex flex-wrap h-auto gap-1">
                 <TabsTrigger value="details" data-testid="tab-lead-details">
                   <Edit className="h-4 w-4 mr-2" />
                   Редактирование
@@ -899,6 +900,10 @@ export default function Leads() {
                 <TabsTrigger value="chat" data-testid="tab-lead-chat">
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Чат
+                </TabsTrigger>
+                <TabsTrigger value="documents" data-testid="tab-lead-documents">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Документы
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="details">
@@ -921,6 +926,64 @@ export default function Leads() {
               </TabsContent>
               <TabsContent value="chat">
                 <Wazzup24Chat lead={editingLead} />
+              </TabsContent>
+              <TabsContent value="documents">
+                <div className="space-y-6">
+                  <div className="text-sm text-muted-foreground">
+                    Генерация документов для лида. Скачайте договор и лист бронирования в формате DOCX.
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <h4 className="font-medium">Договор</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Договор бронирования услуги по организации отдыха с полным текстом условий.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          window.open(`/api/leads/${editingLead.id}/documents/contract`, '_blank');
+                        }}
+                        data-testid="button-download-contract"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Скачать DOCX
+                      </Button>
+                    </div>
+                    
+                    <div className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <h4 className="font-medium">Лист бронирования</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Заявка на бронирование услуг с данными туристов, маршрутом и стоимостью.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          window.open(`/api/leads/${editingLead.id}/documents/booking-sheet`, '_blank');
+                        }}
+                        data-testid="button-download-booking-sheet"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Скачать DOCX
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <Alert>
+                    <AlertDescription>
+                      Документы генерируются автоматически на основе данных лида и туристов. 
+                      Убедитесь, что данные заполнены корректно перед скачиванием.
+                    </AlertDescription>
+                  </Alert>
+                </div>
               </TabsContent>
             </Tabs>
           )}

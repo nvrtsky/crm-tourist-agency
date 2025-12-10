@@ -126,7 +126,7 @@ export async function generateContract(data: DocumentData): Promise<Buffer> {
               new TextRun({
                 text: contractNumber,
                 bold: true,
-                color: "FF0000",
+                color: "000000",
                 size: 24,
               }),
             ],
@@ -138,7 +138,7 @@ export async function generateContract(data: DocumentData): Promise<Buffer> {
               new TextRun({ text: "\t\t\t\t\t\t\t\t\t\t" }),
               new TextRun({
                 text: contractDate,
-                color: "FF0000",
+                color: "000000",
                 size: 22,
               }),
               new TextRun({ text: " г.", size: 22 }),
@@ -970,7 +970,7 @@ export async function generateBookingSheet(
         }),
         new TextRun({
           text: contractNumber,
-          color: "FF0000",
+          color: "000000",
           size: 22,
         }),
         new TextRun({
@@ -979,7 +979,7 @@ export async function generateBookingSheet(
         }),
         new TextRun({
           text: contractDate,
-          color: "FF0000",
+          color: "000000",
           size: 22,
         }),
       ],

@@ -369,7 +369,7 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
             </Alert>
           ) : (
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="mb-4">
+              <TabsList className="mb-4 w-full flex flex-wrap h-auto gap-1">
                 <TabsTrigger value="details" data-testid="tab-lead-details">
                   <Edit className="h-4 w-4 mr-2" />
                   Редактирование

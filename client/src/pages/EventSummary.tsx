@@ -2599,12 +2599,12 @@ export default function EventSummary() {
                                           return (
                                           <div key={`${expense.expenseType}-${idx}`} className="flex items-center gap-1 bg-muted/30 rounded p-1">
                                             {isCustomExpense ? (
-                                              <div className="flex items-center gap-0.5 shrink-0 min-w-[6rem] max-w-32">
+                                              <div className="flex items-center gap-0.5 flex-1 min-w-[6rem]">
                                                 <Pencil className="h-3 w-3 text-muted-foreground/50 shrink-0" />
                                                 <Input
                                                   type="text"
                                                   placeholder=""
-                                                  defaultValue={/^Расход \d+$/.test(displayName) ? "" : displayName}
+                                                  defaultValue={/^Расход \d{10,}$/.test(displayName) ? "" : displayName}
                                                   className="h-6 text-xs flex-1 min-w-0 border-0 bg-transparent shadow-none focus-visible:ring-0 px-0.5 text-muted-foreground"
                                                   data-testid={`input-expense-name-${group.leadId}-${city}-${idx}`}
                                                   onBlur={(e) => {
@@ -2634,7 +2634,7 @@ export default function EventSummary() {
                                                 />
                                               </div>
                                             ) : (
-                                              <span className="text-xs text-muted-foreground shrink-0 min-w-[6rem] max-w-32 truncate" title={displayName}>
+                                              <span className="text-xs text-muted-foreground flex-1 min-w-[6rem] truncate" title={displayName}>
                                                 {displayName}
                                               </span>
                                             )}
@@ -2785,12 +2785,12 @@ export default function EventSummary() {
                                     return (
                                     <div key={expense.id} className="flex items-center gap-1 bg-white dark:bg-background rounded p-1">
                                       {isCustomExpense ? (
-                                        <div className="flex items-center gap-0.5 shrink-0 min-w-[6rem] max-w-32">
+                                        <div className="flex items-center gap-0.5 flex-1 min-w-[6rem]">
                                           <Pencil className="h-3 w-3 text-muted-foreground/50 shrink-0" />
                                           <Input
                                             type="text"
                                             placeholder=""
-                                            defaultValue={/^Расход \d+$/.test(displayName) ? "" : displayName}
+                                            defaultValue={/^Расход \d{10,}$/.test(displayName) ? "" : displayName}
                                             className="h-6 text-xs flex-1 min-w-0 border-0 bg-transparent shadow-none focus-visible:ring-0 px-0.5 text-muted-foreground"
                                             data-testid={`input-common-expense-name-${city}-${idx}`}
                                             onBlur={(e) => {
@@ -2818,7 +2818,7 @@ export default function EventSummary() {
                                           />
                                         </div>
                                       ) : (
-                                        <span className="text-xs text-muted-foreground shrink-0 min-w-[6rem] max-w-32 truncate" title={displayName}>
+                                        <span className="text-xs text-muted-foreground flex-1 min-w-[6rem] truncate" title={displayName}>
                                           {displayName}
                                         </span>
                                       )}

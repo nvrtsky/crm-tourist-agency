@@ -4,7 +4,7 @@ import { useState, Fragment, useRef, useLayoutEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, TrainFront, Bus, ChevronDown, Cake, MapPin, MessageSquare, Copy } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, TrainFront, Bus, ChevronDown, Cake, MapPin, MessageSquare, Copy, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -649,6 +649,7 @@ export default function EventSummary() {
   const [baseExpenseFilter, setBaseExpenseFilter] = useState("");
   const [showAddExpenseFromCatalog, setShowAddExpenseFromCatalog] = useState(false);
   const [selectedCityForExpense, setSelectedCityForExpense] = useState<string>("");
+  const [selectedDealForExpense, setSelectedDealForExpense] = useState<string | null>(null);
   const isMobile = useIsMobile();
   
   // Currency conversion rates (approximate)
@@ -750,6 +751,28 @@ export default function EventSummary() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/expenses`] });
+    },
+  });
+
+  // Mutation for deleting participant expense
+  const deleteParticipantExpenseMutation = useMutation({
+    mutationFn: async (data: { dealId: string; city: string; expenseType: string }) => {
+      return apiRequest("DELETE", `/api/events/${eventId}/expenses/participant`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/expenses`] });
+      toast({ title: "Расход удален" });
+    },
+  });
+
+  // Mutation for deleting common expense
+  const deleteCommonExpenseMutation = useMutation({
+    mutationFn: async (data: { city: string; expenseType: string }) => {
+      return apiRequest("DELETE", `/api/events/${eventId}/expenses/common`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/expenses`] });
+      toast({ title: "Расход удален" });
     },
   });
 
@@ -2622,42 +2645,76 @@ export default function EventSummary() {
                                                 />
                                               </PopoverContent>
                                             </Popover>
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-5 w-5 shrink-0 text-destructive hover:text-destructive"
+                                              onClick={() => {
+                                                if (confirm("Удалить этот расход?")) {
+                                                  deleteParticipantExpenseMutation.mutate({
+                                                    dealId: expense.dealId,
+                                                    city,
+                                                    expenseType: expense.expenseType,
+                                                  });
+                                                }
+                                              }}
+                                              data-testid={`button-delete-expense-${group.leadId}-${city}-${idx}`}
+                                            >
+                                              <X className="h-3 w-3" />
+                                            </Button>
                                           </div>
                                         ))}
-                                        {availableTypes.length > 0 && (
-                                          <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                              <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-6 text-xs w-full"
-                                                data-testid={`button-add-expense-${group.leadId}-${city}`}
-                                              >
-                                                <Plus className="h-3 w-3 mr-1" /> Добавить расход
-                                              </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent>
-                                              {availableTypes.map(type => (
-                                                <DropdownMenuItem 
-                                                  key={type}
-                                                  onClick={() => {
-                                                    upsertParticipantExpenseMutation.mutate({
-                                                      dealId: primaryDealId,
-                                                      city,
-                                                      expenseType: type,
-                                                      amount: undefined,
-                                                      currency: "RUB",
-                                                    });
-                                                  }}
-                                                  data-testid={`menu-add-expense-${group.leadId}-${city}-${type}`}
+                                        <div className="flex gap-1 flex-wrap">
+                                          {availableTypes.length > 0 && (
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger asChild>
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-6 text-xs flex-1"
+                                                  data-testid={`button-add-expense-${group.leadId}-${city}`}
                                                 >
-                                                  {EXPENSE_TYPE_LABELS[type]}
-                                                </DropdownMenuItem>
-                                              ))}
-                                            </DropdownMenuContent>
-                                          </DropdownMenu>
-                                        )}
+                                                  <Plus className="h-3 w-3 mr-1" /> Добавить
+                                                </Button>
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent>
+                                                {availableTypes.map(type => (
+                                                  <DropdownMenuItem 
+                                                    key={type}
+                                                    onClick={() => {
+                                                      upsertParticipantExpenseMutation.mutate({
+                                                        dealId: primaryDealId,
+                                                        city,
+                                                        expenseType: type,
+                                                        amount: undefined,
+                                                        currency: "RUB",
+                                                      });
+                                                    }}
+                                                    data-testid={`menu-add-expense-${group.leadId}-${city}-${type}`}
+                                                  >
+                                                    {EXPENSE_TYPE_LABELS[type]}
+                                                  </DropdownMenuItem>
+                                                ))}
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
+                                          )}
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-6 text-xs flex-1"
+                                            onClick={() => {
+                                              setSelectedCityForExpense(city);
+                                              setSelectedDealForExpense(primaryDealId);
+                                              setShowAddExpenseFromCatalog(true);
+                                            }}
+                                            data-testid={`button-add-catalog-expense-participant-${group.leadId}-${city}`}
+                                          >
+                                            <Plus className="h-3 w-3 mr-1" /> Из каталога
+                                          </Button>
+                                        </div>
                                       </div>
                                     </td>
                                   </Fragment>
@@ -2742,6 +2799,23 @@ export default function EventSummary() {
                                           />
                                         </PopoverContent>
                                       </Popover>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5 shrink-0 text-destructive hover:text-destructive"
+                                        onClick={() => {
+                                          if (confirm("Удалить этот расход?")) {
+                                            deleteCommonExpenseMutation.mutate({
+                                              city,
+                                              expenseType: expense.expenseType,
+                                            });
+                                          }
+                                        }}
+                                        data-testid={`button-delete-common-expense-${city}-${idx}`}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
                                     </div>
                                   ))}
                                   <div className="flex gap-1 flex-wrap">
@@ -2785,6 +2859,7 @@ export default function EventSummary() {
                                       className="h-6 text-xs flex-1"
                                       onClick={() => {
                                         setSelectedCityForExpense(city);
+                                        setSelectedDealForExpense(null);
                                         setShowAddExpenseFromCatalog(true);
                                       }}
                                       data-testid={`button-add-catalog-expense-${city}`}
@@ -3218,15 +3293,18 @@ export default function EventSummary() {
       {/* Add Expense from Catalog Dialog */}
       <Dialog open={showAddExpenseFromCatalog} onOpenChange={(open) => {
         setShowAddExpenseFromCatalog(open);
-        if (!open) setSelectedCityForExpense("");
+        if (!open) {
+          setSelectedCityForExpense("");
+          setSelectedDealForExpense(null);
+        }
       }}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-add-expense-from-catalog">
           <DialogHeader>
             <DialogTitle>Добавить расход из каталога</DialogTitle>
             <DialogDescription>
               {selectedCityForExpense 
-                ? `Добавить расход в город: ${selectedCityForExpense}`
-                : "Выберите расход для добавления в таблицу общих расходов"
+                ? `Добавить ${selectedDealForExpense ? "индивидуальный" : "общий"} расход в город: ${selectedCityForExpense}`
+                : "Выберите расход для добавления"
               }
             </DialogDescription>
           </DialogHeader>
@@ -3292,17 +3370,32 @@ export default function EventSummary() {
                                 });
                                 return;
                               }
-                              upsertCommonExpenseMutation.mutate({
-                                city: selectedCityForExpense,
-                                expenseType: expense.name,
-                                amount: expense.amount,
-                                currency: expense.currency,
-                                comment: `Из каталога: ${expense.category || ""}`
-                              }, {
-                                onSuccess: () => {
-                                  toast({ title: "Расход добавлен", description: `${expense.name} в ${selectedCityForExpense}` });
-                                }
-                              });
+                              if (selectedDealForExpense) {
+                                upsertParticipantExpenseMutation.mutate({
+                                  dealId: selectedDealForExpense,
+                                  city: selectedCityForExpense,
+                                  expenseType: expense.name,
+                                  amount: expense.amount,
+                                  currency: expense.currency,
+                                  comment: `Из каталога: ${expense.category || ""}`
+                                }, {
+                                  onSuccess: () => {
+                                    toast({ title: "Расход добавлен", description: `${expense.name} в ${selectedCityForExpense}` });
+                                  }
+                                });
+                              } else {
+                                upsertCommonExpenseMutation.mutate({
+                                  city: selectedCityForExpense,
+                                  expenseType: expense.name,
+                                  amount: expense.amount,
+                                  currency: expense.currency,
+                                  comment: `Из каталога: ${expense.category || ""}`
+                                }, {
+                                  onSuccess: () => {
+                                    toast({ title: "Расход добавлен", description: `${expense.name} в ${selectedCityForExpense}` });
+                                  }
+                                });
+                              }
                             }}
                             data-testid={`catalog-expense-${expense.id}`}
                           >

@@ -647,6 +647,8 @@ export default function EventSummary() {
   const [editingBaseExpense, setEditingBaseExpense] = useState<BaseExpense | null>(null);
   const [baseExpenseForm, setBaseExpenseForm] = useState({ name: "", amount: "", currency: "CNY", category: "" });
   const [baseExpenseFilter, setBaseExpenseFilter] = useState("");
+  const [showAddExpenseFromCatalog, setShowAddExpenseFromCatalog] = useState(false);
+  const [selectedCityForExpense, setSelectedCityForExpense] = useState<string>("");
   const isMobile = useIsMobile();
   
   // Currency conversion rates (approximate)
@@ -2323,7 +2325,7 @@ export default function EventSummary() {
                   {event.startDate && format(new Date(event.startDate), "d MMMM yyyy", { locale: ru })} - {event.endDate && format(new Date(event.endDate), "d MMMM yyyy", { locale: ru })}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-muted-foreground">Валюта расходов:</span>
                 <Select value={expenseCurrency} onValueChange={(v) => setExpenseCurrency(v as "CNY" | "EUR")}>
                   <SelectTrigger className="w-24" data-testid="select-expense-currency">
@@ -2334,6 +2336,15 @@ export default function EventSummary() {
                     <SelectItem value="EUR">€ EUR</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddExpenseFromCatalog(true)}
+                  data-testid="button-add-expense-from-catalog"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Добавить расход
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -3173,6 +3184,108 @@ export default function EventSummary() {
               data-testid="button-save-base-expense"
             >
               {(createBaseExpenseMutation.isPending || updateBaseExpenseMutation.isPending) ? "Сохранение..." : "Сохранить"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Expense from Catalog Dialog */}
+      <Dialog open={showAddExpenseFromCatalog} onOpenChange={setShowAddExpenseFromCatalog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-add-expense-from-catalog">
+          <DialogHeader>
+            <DialogTitle>Добавить расход из каталога</DialogTitle>
+            <DialogDescription>
+              Выберите город и расход для добавления в таблицу общих расходов
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Город</label>
+              <Select
+                value={selectedCityForExpense}
+                onValueChange={setSelectedCityForExpense}
+              >
+                <SelectTrigger data-testid="select-expense-city">
+                  <SelectValue placeholder="Выберите город" />
+                </SelectTrigger>
+                <SelectContent>
+                  {event?.cities?.map((city) => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Расходы из каталога</label>
+              <Input
+                placeholder="Поиск..."
+                value={baseExpenseFilter}
+                onChange={(e) => setBaseExpenseFilter(e.target.value)}
+                className="mb-2"
+              />
+              <div className="max-h-60 overflow-y-auto border rounded-md">
+                {baseExpenses.length === 0 ? (
+                  <p className="p-4 text-center text-muted-foreground">Нет расходов в каталоге</p>
+                ) : (
+                  (() => {
+                    const filtered = baseExpenses.filter(e => 
+                      !baseExpenseFilter || 
+                      e.name.toLowerCase().includes(baseExpenseFilter.toLowerCase()) ||
+                      (e.category?.toLowerCase().includes(baseExpenseFilter.toLowerCase()))
+                    );
+                    const grouped = filtered.reduce((acc, expense) => {
+                      const cat = expense.category || "Без категории";
+                      if (!acc[cat]) acc[cat] = [];
+                      acc[cat].push(expense);
+                      return acc;
+                    }, {} as Record<string, typeof baseExpenses>);
+                    
+                    return Object.entries(grouped).map(([category, expenses]) => (
+                      <div key={category}>
+                        <div className="bg-muted/50 px-3 py-1 text-sm font-medium text-muted-foreground sticky top-0">
+                          {category}
+                        </div>
+                        {expenses.map((expense) => (
+                          <div
+                            key={expense.id}
+                            className="flex items-center justify-between p-2 hover-elevate cursor-pointer border-b last:border-b-0"
+                            onClick={() => {
+                              if (!selectedCityForExpense) {
+                                toast({
+                                  title: "Ошибка",
+                                  description: "Сначала выберите город",
+                                  variant: "destructive"
+                                });
+                                return;
+                              }
+                              upsertCommonExpenseMutation.mutate({
+                                city: selectedCityForExpense,
+                                expenseType: expense.name,
+                                amount: expense.amount,
+                                currency: expense.currency,
+                                comment: `Из каталога: ${expense.category || ""}`
+                              }, {
+                                onSuccess: () => {
+                                  toast({ title: "Расход добавлен", description: `${expense.name} в ${selectedCityForExpense}` });
+                                }
+                              });
+                            }}
+                            data-testid={`catalog-expense-${expense.id}`}
+                          >
+                            <span className="text-sm">{expense.name}</span>
+                            <Badge variant="outline">{formatCurrency(parseFloat(expense.amount))} {expense.currency}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ));
+                  })()
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddExpenseFromCatalog(false)}>
+              Закрыть
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1316,8 +1316,8 @@ export async function generateBookingSheet(
           new ImageRun({
             data: stampImageData,
             transformation: {
-              width: 120,
-              height: 120,
+              width: 180,
+              height: 180,
             },
             type: "png",
           }),

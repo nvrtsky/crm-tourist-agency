@@ -15,7 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Edit, Trash2, Star, User as UserIcon, UserRound, Baby, MessageCircle } from "lucide-react";
+import { Plus, Edit, Trash2, Star, User as UserIcon, UserRound, Baby, MessageCircle, FileText, Download } from "lucide-react";
 import type { Lead, LeadTourist, InsertLead, InsertLeadTourist, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -377,6 +377,10 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                 <TabsTrigger value="chat" data-testid="tab-lead-chat">
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Чат
+                </TabsTrigger>
+                <TabsTrigger value="documents" data-testid="tab-lead-documents">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Документы
                 </TabsTrigger>
               </TabsList>
 
@@ -1057,6 +1061,65 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
 
               <TabsContent value="chat">
                 <Wazzup24Chat lead={lead} />
+              </TabsContent>
+
+              <TabsContent value="documents">
+                <div className="space-y-6">
+                  <div className="text-sm text-muted-foreground">
+                    Генерация документов для лида. Скачайте договор и лист бронирования в формате DOCX.
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <h4 className="font-medium">Договор</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Договор бронирования услуги по организации отдыха с полным текстом условий.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          window.open(`/api/leads/${lead.id}/documents/contract`, '_blank');
+                        }}
+                        data-testid="button-download-contract"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Скачать DOCX
+                      </Button>
+                    </div>
+                    
+                    <div className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <h4 className="font-medium">Лист бронирования</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Заявка на бронирование услуг с данными туристов, маршрутом и стоимостью.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          window.open(`/api/leads/${lead.id}/documents/booking-sheet`, '_blank');
+                        }}
+                        data-testid="button-download-booking-sheet"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Скачать DOCX
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <Alert>
+                    <AlertDescription>
+                      Документы генерируются автоматически на основе данных лида и туристов. 
+                      Убедитесь, что все данные заполнены корректно перед скачиванием.
+                    </AlertDescription>
+                  </Alert>
+                </div>
               </TabsContent>
             </Tabs>
           )}

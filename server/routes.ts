@@ -2867,6 +2867,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== DOCUMENT GENERATION ROUTES ====================
+  
+  const { generateContract, generateBookingSheet } = await import("./document-generator");
+  
+  // Generate Contract (DOCX)
+  app.get("/api/leads/:id/documents/contract", requireAuth, async (req, res) => {
+    try {
+      const lead = await storage.getLead(req.params.id);
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+      
+      const tourists = await storage.getTouristsByLead(lead.id);
+      const event = lead.eventId ? await storage.getEvent(lead.eventId) : null;
+      const primaryTourist = tourists.find((t: LeadTourist) => t.isPrimary) || tourists[0] || null;
+      
+      const buffer = await generateContract({
+        lead,
+        tourists,
+        event: event || null,
+        primaryTourist,
+      });
+      
+      const contractNumber = new Date().toISOString().slice(0,10).split('-').reverse().join('/').slice(0,8);
+      const filename = `Договор_${contractNumber.replace(/\//g, '-')}.docx`;
+      
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(filename)}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generating contract:", error);
+      res.status(500).json({ error: "Failed to generate contract" });
+    }
+  });
+  
+  // Generate Booking Sheet (DOCX)
+  app.get("/api/leads/:id/documents/booking-sheet", requireAuth, async (req, res) => {
+    try {
+      const lead = await storage.getLead(req.params.id);
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+      
+      const tourists = await storage.getTouristsByLead(lead.id);
+      const event = lead.eventId ? await storage.getEvent(lead.eventId) : null;
+      const primaryTourist = tourists.find((t: LeadTourist) => t.isPrimary) || tourists[0] || null;
+      
+      const buffer = await generateBookingSheet({
+        lead,
+        tourists,
+        event: event || null,
+        primaryTourist,
+      });
+      
+      const contractNumber = new Date().toISOString().slice(0,10).split('-').reverse().join('/').slice(0,8);
+      const filename = `Лист_бронирования_${contractNumber.replace(/\//g, '-')}.docx`;
+      
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(filename)}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generating booking sheet:", error);
+      res.status(500).json({ error: "Failed to generate booking sheet" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

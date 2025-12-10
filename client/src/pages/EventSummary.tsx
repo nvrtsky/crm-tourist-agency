@@ -2590,11 +2590,51 @@ export default function EventSummary() {
                                   <Fragment key={city}>
                                     <td className="p-1 border-r align-top" colSpan={2}>
                                       <div className="space-y-1">
-                                        {consolidatedExpenses.map((expense, idx) => (
+                                        {consolidatedExpenses.map((expense, idx) => {
+                                          const isCustomExpense = expense.expenseType.startsWith("custom:");
+                                          const displayName = isCustomExpense 
+                                            ? expense.expenseType.replace("custom:", "") 
+                                            : (EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType);
+                                          
+                                          return (
                                           <div key={`${expense.expenseType}-${idx}`} className="flex items-center gap-1 bg-muted/30 rounded p-1">
-                                            <span className="text-xs text-muted-foreground shrink-0 w-24 truncate" title={EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}>
-                                              {EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}
-                                            </span>
+                                            {isCustomExpense ? (
+                                              <Input
+                                                type="text"
+                                                placeholder="Название"
+                                                defaultValue={displayName}
+                                                className="h-6 text-xs w-28 shrink-0"
+                                                data-testid={`input-expense-name-${group.leadId}-${city}-${idx}`}
+                                                onBlur={(e) => {
+                                                  const newName = e.target.value.trim();
+                                                  const oldKey = expense.expenseType;
+                                                  const oldDisplayName = oldKey.replace("custom:", "");
+                                                  if (newName && newName !== oldDisplayName) {
+                                                    const newKey = `custom:${newName}`;
+                                                    deleteParticipantExpenseMutation.mutate({
+                                                      dealId: expense.dealId,
+                                                      city,
+                                                      expenseType: oldKey,
+                                                    }, {
+                                                      onSuccess: () => {
+                                                        upsertParticipantExpenseMutation.mutate({
+                                                          dealId: expense.dealId,
+                                                          city,
+                                                          expenseType: newKey,
+                                                          amount: String(expense.amount ?? 0),
+                                                          currency: expense.currency || "RUB",
+                                                          comment: expense.comment || undefined,
+                                                        });
+                                                      }
+                                                    });
+                                                  }
+                                                }}
+                                              />
+                                            ) : (
+                                              <span className="text-xs text-muted-foreground shrink-0 w-28 truncate" title={displayName}>
+                                                {displayName}
+                                              </span>
+                                            )}
                                             <Input
                                               type="text"
                                               placeholder="0"
@@ -2664,42 +2704,29 @@ export default function EventSummary() {
                                               <X className="h-3 w-3" />
                                             </Button>
                                           </div>
-                                        ))}
+                                          );
+                                        })}
                                         <div className="flex gap-1 flex-wrap">
-                                          {availableTypes.length > 0 && (
-                                            <DropdownMenu>
-                                              <DropdownMenuTrigger asChild>
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-6 text-xs flex-1"
-                                                  data-testid={`button-add-expense-${group.leadId}-${city}`}
-                                                >
-                                                  <Plus className="h-3 w-3 mr-1" /> Добавить
-                                                </Button>
-                                              </DropdownMenuTrigger>
-                                              <DropdownMenuContent>
-                                                {availableTypes.map(type => (
-                                                  <DropdownMenuItem 
-                                                    key={type}
-                                                    onClick={() => {
-                                                      upsertParticipantExpenseMutation.mutate({
-                                                        dealId: primaryDealId,
-                                                        city,
-                                                        expenseType: type,
-                                                        amount: undefined,
-                                                        currency: "RUB",
-                                                      });
-                                                    }}
-                                                    data-testid={`menu-add-expense-${group.leadId}-${city}-${type}`}
-                                                  >
-                                                    {EXPENSE_TYPE_LABELS[type]}
-                                                  </DropdownMenuItem>
-                                                ))}
-                                              </DropdownMenuContent>
-                                            </DropdownMenu>
-                                          )}
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 text-xs flex-1"
+                                            onClick={() => {
+                                              const uniqueId = Date.now();
+                                              const newExpenseType = `custom:Расход ${uniqueId}`;
+                                              upsertParticipantExpenseMutation.mutate({
+                                                dealId: primaryDealId,
+                                                city,
+                                                expenseType: newExpenseType,
+                                                amount: "0",
+                                                currency: "RUB",
+                                              });
+                                            }}
+                                            data-testid={`button-add-expense-${group.leadId}-${city}`}
+                                          >
+                                            <Plus className="h-3 w-3 mr-1" /> Добавить
+                                          </Button>
                                           <Button
                                             type="button"
                                             variant="outline"
@@ -2746,11 +2773,49 @@ export default function EventSummary() {
                             <Fragment key={city}>
                               <td className="p-1 border-r align-top" colSpan={2}>
                                 <div className="space-y-1">
-                                  {cityCommonExpenses.map((expense, idx) => (
+                                  {cityCommonExpenses.map((expense, idx) => {
+                                    const isCustomExpense = expense.expenseType.startsWith("custom:");
+                                    const displayName = isCustomExpense 
+                                      ? expense.expenseType.replace("custom:", "") 
+                                      : (COMMON_EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType);
+                                    
+                                    return (
                                     <div key={expense.id} className="flex items-center gap-1 bg-white dark:bg-background rounded p-1">
-                                      <span className="text-xs text-muted-foreground shrink-0 w-28 truncate" title={COMMON_EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}>
-                                        {COMMON_EXPENSE_TYPE_LABELS[expense.expenseType] || expense.expenseType}
-                                      </span>
+                                      {isCustomExpense ? (
+                                        <Input
+                                          type="text"
+                                          placeholder="Название"
+                                          defaultValue={displayName}
+                                          className="h-6 text-xs w-28 shrink-0"
+                                          data-testid={`input-common-expense-name-${city}-${idx}`}
+                                          onBlur={(e) => {
+                                            const newName = e.target.value.trim();
+                                            const oldKey = expense.expenseType;
+                                            const oldDisplayName = oldKey.replace("custom:", "");
+                                            if (newName && newName !== oldDisplayName) {
+                                              const newKey = `custom:${newName}`;
+                                              deleteCommonExpenseMutation.mutate({
+                                                city,
+                                                expenseType: oldKey,
+                                              }, {
+                                                onSuccess: () => {
+                                                  upsertCommonExpenseMutation.mutate({
+                                                    city,
+                                                    expenseType: newKey,
+                                                    amount: String(expense.amount ?? 0),
+                                                    currency: expense.currency || "RUB",
+                                                    comment: expense.comment ?? undefined,
+                                                  });
+                                                }
+                                              });
+                                            }
+                                          }}
+                                        />
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground shrink-0 w-28 truncate" title={displayName}>
+                                          {displayName}
+                                        </span>
+                                      )}
                                       <Input
                                         type="text"
                                         placeholder="0"
@@ -2817,41 +2882,28 @@ export default function EventSummary() {
                                         <X className="h-3 w-3" />
                                       </Button>
                                     </div>
-                                  ))}
+                                    );
+                                  })}
                                   <div className="flex gap-1 flex-wrap">
-                                    {availableTypes.length > 0 && (
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-6 text-xs flex-1 bg-white dark:bg-background"
-                                            data-testid={`button-add-common-expense-${city}`}
-                                          >
-                                            <Plus className="h-3 w-3 mr-1" /> Добавить
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent>
-                                          {availableTypes.map(type => (
-                                            <DropdownMenuItem 
-                                              key={type}
-                                              onClick={() => {
-                                                upsertCommonExpenseMutation.mutate({
-                                                  city,
-                                                  expenseType: type,
-                                                  amount: undefined,
-                                                  currency: "RUB",
-                                                });
-                                              }}
-                                              data-testid={`menu-add-common-expense-${city}-${type}`}
-                                            >
-                                              {COMMON_EXPENSE_TYPE_LABELS[type]}
-                                            </DropdownMenuItem>
-                                          ))}
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    )}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 text-xs flex-1 bg-white dark:bg-background"
+                                      onClick={() => {
+                                        const uniqueId = Date.now();
+                                        const newExpenseType = `custom:Расход ${uniqueId}`;
+                                        upsertCommonExpenseMutation.mutate({
+                                          city,
+                                          expenseType: newExpenseType,
+                                          amount: "0",
+                                          currency: "RUB",
+                                        });
+                                      }}
+                                      data-testid={`button-add-common-expense-${city}`}
+                                    >
+                                      <Plus className="h-3 w-3 mr-1" /> Добавить
+                                    </Button>
                                     <Button
                                       type="button"
                                       variant="outline"
@@ -3354,7 +3406,7 @@ export default function EventSummary() {
                     
                     return Object.entries(grouped).map(([category, expenses]) => (
                       <div key={category}>
-                        <div className="bg-muted/50 px-3 py-1 text-sm font-medium text-muted-foreground sticky top-0">
+                        <div className="bg-muted px-3 py-1 text-sm font-medium text-muted-foreground sticky top-0 z-10">
                           {category}
                         </div>
                         {expenses.map((expense) => (

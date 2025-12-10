@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { updateEventSchema, type Event, type User, COUNTRIES, TOUR_TYPES } from "@shared/schema";
@@ -82,6 +82,7 @@ export function EditEventDialog({
 }: EditEventDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [citiesText, setCitiesText] = useState("");
   
   // Only admins can archive events
   const canArchive = user?.role === "admin";
@@ -184,8 +185,8 @@ export function EditEventDialog({
     // Don't close dialog here - let parent handle it after mutation success
   };
 
-  const handleCitiesChange = (value: string) => {
-    const citiesArray = value.split(",").map(city => city.trim()).filter(Boolean);
+  const handleCitiesBlur = () => {
+    const citiesArray = citiesText.split(",").map(city => city.trim()).filter(Boolean);
     form.setValue("cities", citiesArray);
   };
 
@@ -205,6 +206,7 @@ export function EditEventDialog({
         color: (event.color as ColorOption) || null,
         cityGuides: (event.cityGuides as Record<string, string>) || {},
       });
+      setCitiesText(event.cities?.join(", ") || "");
     }
   }, [event, form]);
 
@@ -312,14 +314,15 @@ export function EditEventDialog({
             <FormField
               control={form.control}
               name="cities"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>Города (через запятую)</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Дели, Агра, Джайпур"
-                      value={field.value?.join(", ") || ""}
-                      onChange={(e) => handleCitiesChange(e.target.value)}
+                      value={citiesText}
+                      onChange={(e) => setCitiesText(e.target.value)}
+                      onBlur={handleCitiesBlur}
                       data-testid="input-event-cities"
                     />
                   </FormControl>

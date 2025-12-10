@@ -1616,10 +1616,16 @@ export default function EventSummary() {
                     return p && !p.deal.groupId;
                   });
                   
+                  const alreadyInGroup = selectedDealIds.length - eligibleDeals.length;
+                  
                   if (eligibleDeals.length < 2) {
+                    let description = "Выберите минимум 2 участников без группы для объединения";
+                    if (alreadyInGroup > 0) {
+                      description = `${alreadyInGroup} из ${selectedDealIds.length} выбранных уже состоят в группе. Нужно минимум 2 свободных участника.`;
+                    }
                     toast({
                       title: "Ошибка",
-                      description: "Выберите минимум 2 участников без группы для объединения",
+                      description,
                       variant: "destructive",
                     });
                     return;
@@ -2086,6 +2092,20 @@ export default function EventSummary() {
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p>День рождения в период тура</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {isMiniGroup && (
+                                    <Tooltip>
+                                      <TooltipTrigger 
+                                        type="button"
+                                        className="inline-flex items-center rounded-md bg-blue-100 dark:bg-blue-900 px-2.5 py-1.5 text-[10px] font-semibold text-blue-700 dark:text-blue-200 transition-colors cursor-default hover-elevate"
+                                        data-testid={`badge-mini-group-${participant.deal.id}`}
+                                      >
+                                        <UsersRound className="h-3 w-3" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Мини-группа: {participant.group?.name || 'Без названия'}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   )}

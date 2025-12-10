@@ -1857,7 +1857,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                 <FormMessage />
               </FormItem>
 
-              <FormItem>
+              <FormItem className="col-span-2">
                 <FormLabel>Остаток</FormLabel>
                 <div className="flex gap-2">
                   <FormField
@@ -1965,6 +1965,32 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
 
               <FormField
                 control={form.control}
+                name="hotelCategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Категория отелей</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value ?? ''} 
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="select-hotelCategory">
+                          <SelectValue placeholder="Выберите категорию" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="3*">3*</SelectItem>
+                        <SelectItem value="4*">4*</SelectItem>
+                        <SelectItem value="5*">5*</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="transfers"
                 render={({ field }) => (
                   <FormItem>
@@ -1996,32 +2022,6 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         data-testid="input-meals"
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="hotelCategory"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Категория отелей</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value ?? ''} 
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-hotelCategory">
-                          <SelectValue placeholder="Выберите категорию" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="3*">3*</SelectItem>
-                        <SelectItem value="4*">4*</SelectItem>
-                        <SelectItem value="5*">5*</SelectItem>
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

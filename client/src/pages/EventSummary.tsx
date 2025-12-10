@@ -2605,7 +2605,7 @@ export default function EventSummary() {
                                                   type="text"
                                                   placeholder=""
                                                   defaultValue={/^Расход \d{10,}$/.test(displayName) ? "" : displayName}
-                                                  className="h-6 text-xs flex-1 min-w-0 border-0 bg-transparent shadow-none focus-visible:ring-0 px-0.5 text-muted-foreground"
+                                                  className="h-6 text-xs flex-1 min-w-0 border-0 bg-transparent shadow-none focus-visible:ring-0 px-0.5 text-muted-foreground font-inherit"
                                                   data-testid={`input-expense-name-${group.leadId}-${city}-${idx}`}
                                                   onBlur={(e) => {
                                                     const newName = e.target.value.trim();
@@ -2639,6 +2639,7 @@ export default function EventSummary() {
                                               </span>
                                             )}
                                             <Input
+                                              key={`${expense.expenseType}-${expense.amount}-${expense.expenseId}`}
                                               type="text"
                                               placeholder="0"
                                               defaultValue={expense.amount > 0 ? String(expense.amount) : ""}
@@ -2791,7 +2792,7 @@ export default function EventSummary() {
                                             type="text"
                                             placeholder=""
                                             defaultValue={/^Расход \d{10,}$/.test(displayName) ? "" : displayName}
-                                            className="h-6 text-xs flex-1 min-w-0 border-0 bg-transparent shadow-none focus-visible:ring-0 px-0.5 text-muted-foreground"
+                                            className="h-6 text-xs flex-1 min-w-0 border-0 bg-transparent shadow-none focus-visible:ring-0 px-0.5 text-muted-foreground font-inherit"
                                             data-testid={`input-common-expense-name-${city}-${idx}`}
                                             onBlur={(e) => {
                                               const newName = e.target.value.trim();
@@ -2823,6 +2824,7 @@ export default function EventSummary() {
                                         </span>
                                       )}
                                       <Input
+                                        key={`${expense.expenseType}-${expense.amount}`}
                                         type="text"
                                         placeholder="0"
                                         defaultValue={expense.amount || ""}

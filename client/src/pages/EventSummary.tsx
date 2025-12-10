@@ -160,6 +160,7 @@ interface ParticipantCardProps {
   sharedVisits?: CityVisit[];
   groupMembers?: Participant[];
   hasBirthday?: boolean;
+  miniGroupColorClass?: string;
 }
 
 function ParticipantCard({
@@ -179,9 +180,15 @@ function ParticipantCard({
   sharedVisits,
   groupMembers,
   hasBirthday,
+  miniGroupColorClass,
 }: ParticipantCardProps) {
+  // Determine background color: birthday takes priority, then mini-group color
+  const bgClass = hasBirthday 
+    ? 'bg-pink-50 dark:bg-pink-950/20 border-pink-200 dark:border-pink-800' 
+    : miniGroupColorClass || '';
+  
   return (
-    <Card className={`mb-4 ${groupInfo ? 'border-l-4 border-l-primary/30' : ''} ${hasBirthday ? 'bg-pink-50 dark:bg-pink-950/20 border-pink-200 dark:border-pink-800' : ''}`} data-testid={`card-participant-${participant.deal.id}`}>
+    <Card className={`mb-4 ${groupInfo ? 'border-l-4 border-l-primary/30' : ''} ${bgClass}`} data-testid={`card-participant-${participant.deal.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
@@ -925,9 +932,26 @@ export default function EventSummary() {
   const leadFirstIndexMap = new Map<string, number>();
   const groupFirstIndexMap = new Map<string, number>();
   
+  // Color palette for mini-groups (pastel colors that work in light/dark mode)
+  const miniGroupColors = [
+    'bg-blue-100 dark:bg-blue-900/30',
+    'bg-green-100 dark:bg-green-900/30',
+    'bg-purple-100 dark:bg-purple-900/30',
+    'bg-orange-100 dark:bg-orange-900/30',
+    'bg-cyan-100 dark:bg-cyan-900/30',
+    'bg-pink-100 dark:bg-pink-900/30',
+    'bg-yellow-100 dark:bg-yellow-900/30',
+    'bg-indigo-100 dark:bg-indigo-900/30',
+  ];
+  
+  // Map mini-group IDs to color indices
+  const miniGroupColorMap = new Map<string, number>();
+  let miniGroupColorIndex = 0;
+  
   participants.forEach((p, index) => {
     const leadId = p.contact?.leadId;
     const groupId = p.deal.groupId;
+    const isMiniGroup = p.group?.type === 'mini_group';
     
     if (leadId && !leadFirstIndexMap.has(leadId)) {
       leadFirstIndexMap.set(leadId, index);
@@ -935,6 +959,12 @@ export default function EventSummary() {
     
     if (groupId && !groupFirstIndexMap.has(groupId)) {
       groupFirstIndexMap.set(groupId, index);
+    }
+    
+    // Assign color to mini-groups
+    if (isMiniGroup && groupId && !miniGroupColorMap.has(groupId)) {
+      miniGroupColorMap.set(groupId, miniGroupColorIndex);
+      miniGroupColorIndex = (miniGroupColorIndex + 1) % miniGroupColors.length;
     }
   });
 
@@ -1902,6 +1932,10 @@ export default function EventSummary() {
                     ? hasBirthdayDuringTour(participant.leadTourist.dateOfBirth, event.startDate, event.endDate)
                     : false;
                   
+                  // Get mini-group color for mobile card
+                  const miniGroupColorIdx = isMiniGroup && groupId ? miniGroupColorMap.get(groupId) : undefined;
+                  const miniGroupColor = miniGroupColorIdx !== undefined ? miniGroupColors[miniGroupColorIdx] : undefined;
+                  
                   return (
                     <ParticipantCard
                       key={participant.deal.id}
@@ -1923,6 +1957,7 @@ export default function EventSummary() {
                       sharedVisits={sharedVisits}
                       groupMembers={groupMembers}
                       hasBirthday={hasBirthday}
+                      miniGroupColorClass={miniGroupColor}
                     />
                   );
                 });
@@ -2016,10 +2051,14 @@ export default function EventSummary() {
                       ? hasBirthdayDuringTour(participant.leadTourist.dateOfBirth, event.startDate, event.endDate)
                       : false;
 
+                    // Get mini-group color if applicable
+                    const miniGroupColorIdx = isMiniGroup && groupId ? miniGroupColorMap.get(groupId) : undefined;
+                    const miniGroupColorClass = miniGroupColorIdx !== undefined ? miniGroupColors[miniGroupColorIdx] : '';
+
                     return (
                       <tr
                         key={participant.deal.id}
-                        className={`border-b hover-elevate ${participant.group ? 'bg-muted/5' : ''} ${hasBirthday ? 'bg-pink-50 dark:bg-pink-950/20' : ''}`}
+                        className={`border-b hover-elevate ${hasBirthday ? 'bg-pink-50 dark:bg-pink-950/20' : miniGroupColorClass || (participant.group ? 'bg-muted/5' : '')}`}
                         data-testid={`row-participant-${participant.deal.id}`}
                       >
                         {/* Number column with checkbox - always present */}

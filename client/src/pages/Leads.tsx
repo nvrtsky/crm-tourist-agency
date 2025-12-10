@@ -1617,7 +1617,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
           {/* Тур и оплата */}
           <div className="space-y-4 pt-4 border-t">
             <h4 className="text-sm font-semibold text-foreground">Тур и оплата</h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 items-start">
               <FormField
                 control={form.control}
                 name="eventId"

@@ -250,6 +250,10 @@ export const leads = pgTable("leads", {
   advancePaymentCurrency: text("advance_payment_currency").notNull().default("RUB"), // Валюта аванса: RUB, USD, CNY, EUR
   remainingPayment: numeric("remaining_payment", { precision: 10, scale: 2 }), // Остаток оплаты
   remainingPaymentCurrency: text("remaining_payment_currency").notNull().default("RUB"), // Валюта остатка: RUB, USD, CNY, EUR
+  roomType: text("room_type"), // Тип номера
+  transfers: text("transfers"), // Трансферы
+  meals: text("meals"), // Питание
+  hotelCategory: text("hotel_category"), // Категория отелей: '3*', '4*', '5*'
   formId: varchar("form_id").references(() => forms.id, { onDelete: 'set null' }),
   color: text("color"), // Color indicator: 'red', 'blue', 'green', 'yellow', 'purple'
   notes: text("notes"),

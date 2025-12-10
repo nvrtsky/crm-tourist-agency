@@ -46,6 +46,13 @@ export function EditableCell({
     }
   }, [isEditing, type]);
 
+  // Sync editValue with value prop when value changes externally and not editing
+  useEffect(() => {
+    if (!isEditing) {
+      setEditValue(value || "");
+    }
+  }, [value, isEditing]);
+
   useEffect(() => {
     if (type === "date") {
       setDateValue(value ? new Date(value) : undefined);
@@ -56,7 +63,8 @@ export function EditableCell({
     if (type === "date" && dateValue) {
       const isoDate = format(dateValue, 'yyyy-MM-dd');
       onSave(isoDate);
-    } else if (editValue !== value) {
+    } else {
+      // Always call onSave with current editValue
       onSave(editValue);
     }
     setIsEditing(false);

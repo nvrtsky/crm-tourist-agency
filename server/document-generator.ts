@@ -1202,7 +1202,7 @@ export async function generateBookingSheet(
           size: 22,
         }),
         new TextRun({
-          text: "Входят все индивидуальные трансферы по маршруту с аэропортов, вокзалов.",
+          text: data.lead.transfers || "Входят все индивидуальные трансферы по маршруту с аэропортов, вокзалов.",
           size: 22,
         }),
       ],

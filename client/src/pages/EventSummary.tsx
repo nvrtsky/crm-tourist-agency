@@ -932,26 +932,42 @@ export default function EventSummary() {
   const leadFirstIndexMap = new Map<string, number>();
   const groupFirstIndexMap = new Map<string, number>();
   
-  // Color palette for mini-groups (pastel colors that work in light/dark mode)
-  const miniGroupColors = [
+  // Color palette for all groups - families and mini-groups (pastel colors that work in light/dark mode)
+  const groupColors = [
     'bg-blue-100 dark:bg-blue-900/30',
     'bg-green-100 dark:bg-green-900/30',
     'bg-purple-100 dark:bg-purple-900/30',
     'bg-orange-100 dark:bg-orange-900/30',
     'bg-cyan-100 dark:bg-cyan-900/30',
-    'bg-pink-100 dark:bg-pink-900/30',
+    'bg-rose-100 dark:bg-rose-900/30',
     'bg-yellow-100 dark:bg-yellow-900/30',
     'bg-indigo-100 dark:bg-indigo-900/30',
+    'bg-teal-100 dark:bg-teal-900/30',
+    'bg-amber-100 dark:bg-amber-900/30',
+    'bg-lime-100 dark:bg-lime-900/30',
+    'bg-sky-100 dark:bg-sky-900/30',
   ];
   
-  // Map mini-group IDs to color indices
-  const miniGroupColorMap = new Map<string, number>();
-  let miniGroupColorIndex = 0;
+  // Unified color map for all groups (families by leadId, mini-groups by groupId)
+  // Key format: "lead:{leadId}" or "group:{groupId}"
+  const groupColorMap = new Map<string, number>();
+  let colorIndex = 0;
   
+  // First pass: count lead members to identify families (2+ members)
+  const leadMemberCount = new Map<string, number>();
+  participants.forEach((p) => {
+    const leadId = p.contact?.leadId;
+    if (leadId) {
+      leadMemberCount.set(leadId, (leadMemberCount.get(leadId) || 0) + 1);
+    }
+  });
+  
+  // Second pass: build index maps and assign colors
   participants.forEach((p, index) => {
     const leadId = p.contact?.leadId;
     const groupId = p.deal.groupId;
     const isMiniGroup = p.group?.type === 'mini_group';
+    const isFamily = leadId && (leadMemberCount.get(leadId) || 0) > 1;
     
     if (leadId && !leadFirstIndexMap.has(leadId)) {
       leadFirstIndexMap.set(leadId, index);
@@ -961,10 +977,21 @@ export default function EventSummary() {
       groupFirstIndexMap.set(groupId, index);
     }
     
-    // Assign color to mini-groups
-    if (isMiniGroup && groupId && !miniGroupColorMap.has(groupId)) {
-      miniGroupColorMap.set(groupId, miniGroupColorIndex);
-      miniGroupColorIndex = (miniGroupColorIndex + 1) % miniGroupColors.length;
+    // Assign color to families (priority over mini-groups since family members share all fields)
+    if (isFamily && leadId) {
+      const key = `lead:${leadId}`;
+      if (!groupColorMap.has(key)) {
+        groupColorMap.set(key, colorIndex);
+        colorIndex = (colorIndex + 1) % groupColors.length;
+      }
+    }
+    // Assign color to mini-groups (only if not already colored by family)
+    else if (isMiniGroup && groupId) {
+      const key = `group:${groupId}`;
+      if (!groupColorMap.has(key)) {
+        groupColorMap.set(key, colorIndex);
+        colorIndex = (colorIndex + 1) % groupColors.length;
+      }
     }
   });
 
@@ -1932,9 +1959,20 @@ export default function EventSummary() {
                     ? hasBirthdayDuringTour(participant.leadTourist.dateOfBirth, event.startDate, event.endDate)
                     : false;
                   
-                  // Get mini-group color for mobile card
-                  const miniGroupColorIdx = isMiniGroup && groupId ? miniGroupColorMap.get(groupId) : undefined;
-                  const miniGroupColor = miniGroupColorIdx !== undefined ? miniGroupColors[miniGroupColorIdx] : undefined;
+                  // Get group color for mobile card - priority: family > mini-group
+                  let groupColor: string | undefined;
+                  const hasFamily = leadId && participants.filter(p => p.contact?.leadId === leadId).length > 1;
+                  if (hasFamily && leadId) {
+                    const colorIdx = groupColorMap.get(`lead:${leadId}`);
+                    if (colorIdx !== undefined) {
+                      groupColor = groupColors[colorIdx];
+                    }
+                  } else if (isMiniGroup && groupId) {
+                    const colorIdx = groupColorMap.get(`group:${groupId}`);
+                    if (colorIdx !== undefined) {
+                      groupColor = groupColors[colorIdx];
+                    }
+                  }
                   
                   return (
                     <ParticipantCard
@@ -1957,7 +1995,7 @@ export default function EventSummary() {
                       sharedVisits={sharedVisits}
                       groupMembers={groupMembers}
                       hasBirthday={hasBirthday}
-                      miniGroupColorClass={miniGroupColor}
+                      miniGroupColorClass={groupColor}
                     />
                   );
                 });
@@ -2051,19 +2089,29 @@ export default function EventSummary() {
                       ? hasBirthdayDuringTour(participant.leadTourist.dateOfBirth, event.startDate, event.endDate)
                       : false;
 
-                    // Get mini-group color if applicable
-                    const miniGroupColorIdx = isMiniGroup && groupId ? miniGroupColorMap.get(groupId) : undefined;
-                    const miniGroupColorClass = miniGroupColorIdx !== undefined ? miniGroupColors[miniGroupColorIdx] : '';
+                    // Get group color - priority: family (leadId) > mini-group (groupId)
+                    let groupColorClass = '';
+                    if (hasLeadFamily && leadId) {
+                      const colorIdx = groupColorMap.get(`lead:${leadId}`);
+                      if (colorIdx !== undefined) {
+                        groupColorClass = groupColors[colorIdx];
+                      }
+                    } else if (isMiniGroup && groupId) {
+                      const colorIdx = groupColorMap.get(`group:${groupId}`);
+                      if (colorIdx !== undefined) {
+                        groupColorClass = groupColors[colorIdx];
+                      }
+                    }
                     
                     // Determine row background color for both row and sticky columns
                     const rowBgClass = hasBirthday 
                       ? 'bg-pink-50 dark:bg-pink-950/20' 
-                      : miniGroupColorClass || (participant.group ? 'bg-muted/5' : 'bg-background');
+                      : groupColorClass || 'bg-background';
                     
-                    // For sticky columns, use same color as row (or default background if no special color)
+                    // For sticky columns, use same color as row
                     const stickyBgClass = hasBirthday 
                       ? 'bg-pink-50 dark:bg-pink-950/20' 
-                      : miniGroupColorClass || (participant.group ? 'bg-muted' : 'bg-background');
+                      : groupColorClass || 'bg-background';
 
                     return (
                       <tr

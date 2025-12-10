@@ -97,6 +97,17 @@ export function calculateTouristDataCompleteness(tourist: LeadTourist): TouristD
   };
 }
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  RUB: "₽",
+  USD: "$",
+  EUR: "€",
+  CNY: "¥",
+};
+
+export function getCurrencySymbol(currency: string): string {
+  return CURRENCY_SYMBOLS[currency] || currency;
+}
+
 export function formatCurrency(value: string | number | null | undefined, currency?: string): string {
   if (value === null || value === undefined || value === "") {
     return "0";
@@ -114,13 +125,7 @@ export function formatCurrency(value: string | number | null | undefined, curren
   }).format(numValue);
   
   if (currency) {
-    const currencySymbols: Record<string, string> = {
-      RUB: "₽",
-      USD: "$",
-      EUR: "€",
-      CNY: "¥",
-    };
-    const symbol = currencySymbols[currency] || currency;
+    const symbol = getCurrencySymbol(currency);
     return `${formattedNumber} ${symbol}`;
   }
   

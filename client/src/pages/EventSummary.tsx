@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { TOURIST_FIELD_DESCRIPTORS, SECTION_TITLES } from "@/lib/touristFormConfig";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
-import { calculateTouristDataCompleteness, formatCurrency, formatTouristName } from "@/lib/utils";
+import { calculateTouristDataCompleteness, formatCurrency, formatTouristName, getCurrencySymbol } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -706,10 +706,19 @@ export default function EventSummary() {
     },
   });
 
-  // Mutation for updating lead (remainingPayment)
+  // Mutation for updating lead (financial fields)
   const updateLeadMutation = useMutation({
-    mutationFn: async (data: { leadId: string; remainingPayment?: string }) => {
-      return apiRequest("PATCH", `/api/leads/${data.leadId}`, { remainingPayment: data.remainingPayment });
+    mutationFn: async (data: { 
+      leadId: string; 
+      tourCost?: string; 
+      tourCostCurrency?: string;
+      advancePayment?: string; 
+      advancePaymentCurrency?: string;
+      remainingPayment?: string;
+      remainingPaymentCurrency?: string;
+    }) => {
+      const { leadId, ...updateData } = data;
+      return apiRequest("PATCH", `/api/leads/${leadId}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/participants`] });
@@ -1283,7 +1292,7 @@ export default function EventSummary() {
         "Телефон": p.contact?.phone || "",
         "Паспорт": p.contact?.passport || "",
         "Дата рождения": p.contact?.birthDate ? format(new Date(p.contact.birthDate), "dd.MM.yyyy") : "",
-        "Сумма": Number(p.deal.amount || 0),
+        "Сумма": Number(p.lead?.tourCost || 0),
       };
 
       event.cities.forEach((city) => {
@@ -1581,9 +1590,29 @@ export default function EventSummary() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(participants
-                .filter(p => p.lead?.status === "converted")
-                .reduce((sum, p) => sum + Number(p.deal.amount || 0), 0))} ₽
+              {(() => {
+                const processedLeads = new Set<string>();
+                const totals: Record<string, number> = {};
+                participants
+                  .filter(p => p.lead?.status === "converted")
+                  .forEach(p => {
+                    if (p.lead && !processedLeads.has(p.lead.id)) {
+                      processedLeads.add(p.lead.id);
+                      if (p.lead.tourCost) {
+                        const currency = p.lead.tourCostCurrency || "RUB";
+                        const amount = parseFloat(p.lead.tourCost);
+                        if (!isNaN(amount)) {
+                          totals[currency] = (totals[currency] || 0) + amount;
+                        }
+                      }
+                    }
+                  });
+                const entries = Object.entries(totals);
+                if (entries.length === 0) return "0 ₽";
+                return entries.map(([currency, amount]) => 
+                  formatCurrency(amount, currency)
+                ).join(", ");
+              })()}
             </div>
             <p className="text-xs text-muted-foreground">От подтвержденных</p>
           </CardContent>
@@ -2317,43 +2346,67 @@ export default function EventSummary() {
                               </div>
                             </td>
                             <td className="p-2 border-r text-center">
-                              <EditableCell
-                                type="text"
-                                value={participant.deal.amount?.toString() || ""}
-                                placeholder="0"
-                                onSave={() => {}}
-                                className="text-sm text-center"
-                              />
+                              <div className="flex items-center justify-center gap-1">
+                                <EditableCell
+                                  type="text"
+                                  value={participant.lead?.tourCost || ""}
+                                  placeholder="0"
+                                  onSave={(value) => {
+                                    if (participant.lead?.id) {
+                                      updateLeadMutation.mutate({
+                                        leadId: participant.lead.id,
+                                        tourCost: value || undefined,
+                                      });
+                                    }
+                                  }}
+                                  className="text-sm text-center"
+                                />
+                                <span className="text-xs text-muted-foreground shrink-0">
+                                  {getCurrencySymbol(participant.lead?.tourCostCurrency || "RUB")}
+                                </span>
+                              </div>
                             </td>
                             <td className="p-2 border-r text-center">
-                              <EditableCell
-                                type="text"
-                                value={participant.deal.paidAmount?.toString() || ""}
-                                placeholder="0"
-                                onSave={(value) => {
-                                  updateDealMutation.mutate({
-                                    dealId: participant.deal.id,
-                                    paidAmount: value || undefined,
-                                  });
-                                }}
-                                className="text-sm text-center"
-                              />
+                              <div className="flex items-center justify-center gap-1">
+                                <EditableCell
+                                  type="text"
+                                  value={participant.lead?.advancePayment || ""}
+                                  placeholder="0"
+                                  onSave={(value) => {
+                                    if (participant.lead?.id) {
+                                      updateLeadMutation.mutate({
+                                        leadId: participant.lead.id,
+                                        advancePayment: value || undefined,
+                                      });
+                                    }
+                                  }}
+                                  className="text-sm text-center"
+                                />
+                                <span className="text-xs text-muted-foreground shrink-0">
+                                  {getCurrencySymbol(participant.lead?.advancePaymentCurrency || "RUB")}
+                                </span>
+                              </div>
                             </td>
                             <td className="p-2 border-r text-center">
-                              <EditableCell
-                                type="text"
-                                value={participant.lead?.remainingPayment || ""}
-                                placeholder="0"
-                                onSave={(value) => {
-                                  if (participant.lead?.id) {
-                                    updateLeadMutation.mutate({
-                                      leadId: participant.lead.id,
-                                      remainingPayment: value || undefined,
-                                    });
-                                  }
-                                }}
-                                className="text-sm text-center"
-                              />
+                              <div className="flex items-center justify-center gap-1">
+                                <EditableCell
+                                  type="text"
+                                  value={participant.lead?.remainingPayment || ""}
+                                  placeholder="0"
+                                  onSave={(value) => {
+                                    if (participant.lead?.id) {
+                                      updateLeadMutation.mutate({
+                                        leadId: participant.lead.id,
+                                        remainingPayment: value || undefined,
+                                      });
+                                    }
+                                  }}
+                                  className="text-sm text-center"
+                                />
+                                <span className="text-xs text-muted-foreground shrink-0">
+                                  {getCurrencySymbol(participant.lead?.remainingPaymentCurrency || "RUB")}
+                                </span>
+                              </div>
                             </td>
                             <td className="p-2 border-r text-center font-medium bg-orange-50 dark:bg-orange-950/30">
                               {(() => {
@@ -2391,7 +2444,7 @@ export default function EventSummary() {
                                                 expenseType: expense.expenseType,
                                                 amount: value || undefined,
                                                 currency: expense.currency || "RUB",
-                                                comment: expense.comment,
+                                                comment: expense.comment ?? undefined,
                                               });
                                             }}
                                           />
@@ -2476,9 +2529,57 @@ export default function EventSummary() {
                       <tr className="font-medium bg-muted/30">
                         <td colSpan={2} className="sticky left-0 bg-muted/30 z-10 p-2 text-right">Итого участники:</td>
                         <td className="p-2 border-r text-center">
-                          {formatCurrency(participants.reduce((sum, p) => sum + Number(p.deal.amount || 0), 0))} ₽
+                          {(() => {
+                            const processedLeads = new Set<string>();
+                            const totals: Record<string, number> = {};
+                            
+                            participants.forEach(p => {
+                              if (p.lead && !processedLeads.has(p.lead.id)) {
+                                processedLeads.add(p.lead.id);
+                                if (p.lead.tourCost) {
+                                  const currency = p.lead.tourCostCurrency || "RUB";
+                                  const amount = parseFloat(p.lead.tourCost);
+                                  if (!isNaN(amount)) {
+                                    totals[currency] = (totals[currency] || 0) + amount;
+                                  }
+                                }
+                              }
+                            });
+                            
+                            const entries = Object.entries(totals);
+                            if (entries.length === 0) return "—";
+                            
+                            return entries.map(([currency, amount]) => 
+                              formatCurrency(amount, currency)
+                            ).join(", ");
+                          })()}
                         </td>
-                        <td className="p-2 border-r text-center">—</td>
+                        <td className="p-2 border-r text-center">
+                          {(() => {
+                            const processedLeads = new Set<string>();
+                            const totals: Record<string, number> = {};
+                            
+                            participants.forEach(p => {
+                              if (p.lead && !processedLeads.has(p.lead.id)) {
+                                processedLeads.add(p.lead.id);
+                                if (p.lead.advancePayment) {
+                                  const currency = p.lead.advancePaymentCurrency || "RUB";
+                                  const amount = parseFloat(p.lead.advancePayment);
+                                  if (!isNaN(amount)) {
+                                    totals[currency] = (totals[currency] || 0) + amount;
+                                  }
+                                }
+                              }
+                            });
+                            
+                            const entries = Object.entries(totals);
+                            if (entries.length === 0) return "—";
+                            
+                            return entries.map(([currency, amount]) => 
+                              formatCurrency(amount, currency)
+                            ).join(", ");
+                          })()}
+                        </td>
                         <td className="p-2 border-r text-center">
                           {(() => {
                             const processedLeads = new Set<string>();
@@ -2562,7 +2663,7 @@ export default function EventSummary() {
                                             expenseType: expense.expenseType,
                                             amount: value || undefined,
                                             currency: expense.currency || "RUB",
-                                            comment: expense.comment,
+                                            comment: expense.comment ?? undefined,
                                           });
                                         }}
                                       />
@@ -2641,9 +2742,57 @@ export default function EventSummary() {
                       <tr className="font-bold bg-muted/50">
                         <td colSpan={2} className="sticky left-0 bg-muted/50 z-10 p-2 text-right">ИТОГО:</td>
                         <td className="p-2 border-r text-center">
-                          {formatCurrency(participants.reduce((sum, p) => sum + Number(p.deal.amount || 0), 0))} ₽
+                          {(() => {
+                            const processedLeads = new Set<string>();
+                            const totals: Record<string, number> = {};
+                            
+                            participants.forEach(p => {
+                              if (p.lead && !processedLeads.has(p.lead.id)) {
+                                processedLeads.add(p.lead.id);
+                                if (p.lead.tourCost) {
+                                  const currency = p.lead.tourCostCurrency || "RUB";
+                                  const amount = parseFloat(p.lead.tourCost);
+                                  if (!isNaN(amount)) {
+                                    totals[currency] = (totals[currency] || 0) + amount;
+                                  }
+                                }
+                              }
+                            });
+                            
+                            const entries = Object.entries(totals);
+                            if (entries.length === 0) return "—";
+                            
+                            return entries.map(([currency, amount]) => 
+                              formatCurrency(amount, currency)
+                            ).join(", ");
+                          })()}
                         </td>
-                        <td className="p-2 border-r text-center">—</td>
+                        <td className="p-2 border-r text-center">
+                          {(() => {
+                            const processedLeads = new Set<string>();
+                            const totals: Record<string, number> = {};
+                            
+                            participants.forEach(p => {
+                              if (p.lead && !processedLeads.has(p.lead.id)) {
+                                processedLeads.add(p.lead.id);
+                                if (p.lead.advancePayment) {
+                                  const currency = p.lead.advancePaymentCurrency || "RUB";
+                                  const amount = parseFloat(p.lead.advancePayment);
+                                  if (!isNaN(amount)) {
+                                    totals[currency] = (totals[currency] || 0) + amount;
+                                  }
+                                }
+                              }
+                            });
+                            
+                            const entries = Object.entries(totals);
+                            if (entries.length === 0) return "—";
+                            
+                            return entries.map(([currency, amount]) => 
+                              formatCurrency(amount, currency)
+                            ).join(", ");
+                          })()}
+                        </td>
                         <td className="p-2 border-r text-center">
                           {(() => {
                             const processedLeads = new Set<string>();
@@ -2699,11 +2848,22 @@ export default function EventSummary() {
                         <td colSpan={2} className="sticky left-0 bg-green-100 dark:bg-green-900/30 z-10 p-2 text-right">Прибыль:</td>
                         <td colSpan={4 + event.cities.length * 2} className="p-2 text-left text-lg" data-testid="text-profit">
                           {(() => {
-                            const tourCost = participants.reduce((sum, p) => sum + Number(p.deal.amount || 0), 0);
+                            // Calculate tourCost from leads (only once per lead)
+                            const processedLeads = new Set<string>();
+                            let tourCostRub = 0;
+                            participants.forEach(p => {
+                              if (p.lead && !processedLeads.has(p.lead.id)) {
+                                processedLeads.add(p.lead.id);
+                                if (p.lead.tourCost && p.lead.tourCostCurrency === "RUB") {
+                                  tourCostRub += parseFloat(p.lead.tourCost) || 0;
+                                }
+                              }
+                            });
+                            
                             const participantTotal = participantExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
                             const commonTotal = commonExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
                             const totalExpenses = participantTotal + commonTotal;
-                            const profit = tourCost - totalExpenses;
+                            const profit = tourCostRub - totalExpenses;
                             return (
                               <span className={profit >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                                 {formatCurrency(profit)} ₽

@@ -759,23 +759,29 @@ export default function EventSummary() {
 
   // Mutation for deleting participant expense
   const deleteParticipantExpenseMutation = useMutation({
-    mutationFn: async (data: { dealId: string; city: string; expenseType: string }) => {
-      return apiRequest("DELETE", `/api/events/${eventId}/expenses/participant`, data);
+    mutationFn: async (data: { dealId: string; city: string; expenseType: string; silent?: boolean }) => {
+      const { silent, ...apiData } = data;
+      return apiRequest("DELETE", `/api/events/${eventId}/expenses/participant`, apiData);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/expenses`] });
-      toast({ title: "Расход удален" });
+      if (!variables.silent) {
+        toast({ title: "Расход удален" });
+      }
     },
   });
 
   // Mutation for deleting common expense
   const deleteCommonExpenseMutation = useMutation({
-    mutationFn: async (data: { city: string; expenseType: string }) => {
-      return apiRequest("DELETE", `/api/events/${eventId}/expenses/common`, data);
+    mutationFn: async (data: { city: string; expenseType: string; silent?: boolean }) => {
+      const { silent, ...apiData } = data;
+      return apiRequest("DELETE", `/api/events/${eventId}/expenses/common`, apiData);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/expenses`] });
-      toast({ title: "Расход удален" });
+      if (!variables.silent) {
+        toast({ title: "Расход удален" });
+      }
     },
   });
 
@@ -2623,6 +2629,7 @@ export default function EventSummary() {
                                                         dealId: expense.dealId,
                                                         city,
                                                         expenseType: oldKey,
+                                                        silent: true,
                                                       }, {
                                                         onSuccess: () => {
                                                           upsertParticipantExpenseMutation.mutate({
@@ -2816,6 +2823,7 @@ export default function EventSummary() {
                                                 deleteCommonExpenseMutation.mutate({
                                                   city,
                                                   expenseType: oldKey,
+                                                  silent: true,
                                                 }, {
                                                   onSuccess: () => {
                                                     upsertCommonExpenseMutation.mutate({

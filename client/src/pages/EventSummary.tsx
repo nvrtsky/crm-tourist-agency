@@ -4,7 +4,7 @@ import { useState, Fragment, useRef, useLayoutEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, TrainFront, Bus, ChevronDown, Cake, MapPin, MessageSquare } from "lucide-react";
+import { ArrowLeft, Download, Users, UsersRound, Plus, UserMinus, UserPlus, Edit, Star, Baby, User as UserIcon, Plane, TrainFront, Bus, ChevronDown, Cake, MapPin, MessageSquare, Copy } from "lucide-react";
 import { useLocation } from "wouter";
 import { utils, writeFile } from "xlsx";
 import { format } from "date-fns";
@@ -2336,15 +2336,6 @@ export default function EventSummary() {
                     <SelectItem value="EUR">€ EUR</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddExpenseFromCatalog(true)}
-                  data-testid="button-add-expense-from-catalog"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Добавить расход
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -2753,39 +2744,54 @@ export default function EventSummary() {
                                       </Popover>
                                     </div>
                                   ))}
-                                  {availableTypes.length > 0 && (
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-6 text-xs w-full bg-white dark:bg-background"
-                                          data-testid={`button-add-common-expense-${city}`}
-                                        >
-                                          <Plus className="h-3 w-3 mr-1" /> Добавить
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent>
-                                        {availableTypes.map(type => (
-                                          <DropdownMenuItem 
-                                            key={type}
-                                            onClick={() => {
-                                              upsertCommonExpenseMutation.mutate({
-                                                city,
-                                                expenseType: type,
-                                                amount: undefined,
-                                                currency: "RUB",
-                                              });
-                                            }}
-                                            data-testid={`menu-add-common-expense-${city}-${type}`}
+                                  <div className="flex gap-1 flex-wrap">
+                                    {availableTypes.length > 0 && (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 text-xs flex-1 bg-white dark:bg-background"
+                                            data-testid={`button-add-common-expense-${city}`}
                                           >
-                                            {COMMON_EXPENSE_TYPE_LABELS[type]}
-                                          </DropdownMenuItem>
-                                        ))}
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  )}
+                                            <Plus className="h-3 w-3 mr-1" /> Добавить
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                          {availableTypes.map(type => (
+                                            <DropdownMenuItem 
+                                              key={type}
+                                              onClick={() => {
+                                                upsertCommonExpenseMutation.mutate({
+                                                  city,
+                                                  expenseType: type,
+                                                  amount: undefined,
+                                                  currency: "RUB",
+                                                });
+                                              }}
+                                              data-testid={`menu-add-common-expense-${city}-${type}`}
+                                            >
+                                              {COMMON_EXPENSE_TYPE_LABELS[type]}
+                                            </DropdownMenuItem>
+                                          ))}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    )}
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 text-xs flex-1"
+                                      onClick={() => {
+                                        setSelectedCityForExpense(city);
+                                        setShowAddExpenseFromCatalog(true);
+                                      }}
+                                      data-testid={`button-add-catalog-expense-${city}`}
+                                    >
+                                      <Plus className="h-3 w-3 mr-1" /> Из каталога
+                                    </Button>
+                                  </div>
                                 </div>
                               </td>
                             </Fragment>
@@ -3038,6 +3044,24 @@ export default function EventSummary() {
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => {
+                                        setEditingBaseExpense(null);
+                                        setBaseExpenseForm({
+                                          name: expense.name + " (копия)",
+                                          amount: expense.amount,
+                                          currency: expense.currency,
+                                          category: expense.category || ""
+                                        });
+                                        setShowBaseExpenseDialog(true);
+                                      }}
+                                      title="Копировать"
+                                      data-testid={`button-copy-base-expense-${expense.id}`}
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
                                         setEditingBaseExpense(expense);
                                         setBaseExpenseForm({
                                           name: expense.name,
@@ -3047,6 +3071,7 @@ export default function EventSummary() {
                                         });
                                         setShowBaseExpenseDialog(true);
                                       }}
+                                      title="Редактировать"
                                       data-testid={`button-edit-base-expense-${expense.id}`}
                                     >
                                       <Edit className="h-4 w-4" />
@@ -3055,6 +3080,7 @@ export default function EventSummary() {
                                       variant="ghost"
                                       size="icon"
                                       className="text-destructive hover:text-destructive"
+                                      title="Удалить"
                                       onClick={() => {
                                         if (confirm("Удалить этот расход из каталога?")) {
                                           deleteBaseExpenseMutation.mutate(expense.id);
@@ -3190,31 +3216,39 @@ export default function EventSummary() {
       </Dialog>
 
       {/* Add Expense from Catalog Dialog */}
-      <Dialog open={showAddExpenseFromCatalog} onOpenChange={setShowAddExpenseFromCatalog}>
+      <Dialog open={showAddExpenseFromCatalog} onOpenChange={(open) => {
+        setShowAddExpenseFromCatalog(open);
+        if (!open) setSelectedCityForExpense("");
+      }}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="dialog-add-expense-from-catalog">
           <DialogHeader>
             <DialogTitle>Добавить расход из каталога</DialogTitle>
             <DialogDescription>
-              Выберите город и расход для добавления в таблицу общих расходов
+              {selectedCityForExpense 
+                ? `Добавить расход в город: ${selectedCityForExpense}`
+                : "Выберите расход для добавления в таблицу общих расходов"
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Город</label>
-              <Select
-                value={selectedCityForExpense}
-                onValueChange={setSelectedCityForExpense}
-              >
-                <SelectTrigger data-testid="select-expense-city">
-                  <SelectValue placeholder="Выберите город" />
-                </SelectTrigger>
-                <SelectContent>
-                  {event?.cities?.map((city) => (
-                    <SelectItem key={city} value={city}>{city}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!selectedCityForExpense && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Город</label>
+                <Select
+                  value={selectedCityForExpense}
+                  onValueChange={setSelectedCityForExpense}
+                >
+                  <SelectTrigger data-testid="select-expense-city">
+                    <SelectValue placeholder="Выберите город" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {event?.cities?.map((city) => (
+                      <SelectItem key={city} value={city}>{city}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium">Расходы из каталога</label>
               <Input

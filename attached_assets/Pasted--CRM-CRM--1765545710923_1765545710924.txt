@@ -1,0 +1,881 @@
+Интеграция CRM с виджетом бронирования
+Этот документ содержит код, который нужно добавить в CRM проект (TravelGroupManager).
+
+1. Добавить в shared/schema.ts
+Добавьте таблицу для логов синхронизации:
+
+// Sync logs table - for tracking WordPress sync operations
+export const syncLogs = pgTable("sync_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  operation: text("operation").notNull(), // 'create', 'update', 'archive', 'error'
+  entityType: text("entity_type").notNull(), // 'event', 'lead'
+  entityId: varchar("entity_id"), // ID of the affected entity
+  externalId: text("external_id"), // External ID (WordPress post ID, booking ID)
+  details: jsonb("details"), // Additional details about the operation
+  status: text("status").notNull().default("success"), // 'success', 'error'
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+// Sync log schemas
+export const insertSyncLogSchema = createInsertSchema(syncLogs).omit({ id: true, createdAt: true });
+export type InsertSyncLog = z.infer<typeof insertSyncLogSchema>;
+export type SyncLog = typeof syncLogs.$inferSelect;
+
+Добавьте поле externalId в таблицу events (если его нет):
+
+// В таблице events добавьте:
+externalId: text("external_id"), // WordPress post ID for sync tracking
+
+2. Добавить в server/storage.ts
+Добавьте методы для работы с sync_logs:
+
+// В интерфейс IStorage добавьте:
+// Sync logs
+createSyncLog(log: InsertSyncLog): Promise<SyncLog>;
+getSyncLogs(limit?: number, offset?: number): Promise<SyncLog[]>;
+getSyncLogsCount(): Promise<number>;
+// В класс DatabaseStorage добавьте реализацию:
+async createSyncLog(log: InsertSyncLog): Promise<SyncLog> {
+  const [syncLog] = await db.insert(syncLogs).values(log).returning();
+  return syncLog;
+}
+async getSyncLogs(limit = 100, offset = 0): Promise<SyncLog[]> {
+  return db.select().from(syncLogs)
+    .orderBy(desc(syncLogs.createdAt))
+    .limit(limit)
+    .offset(offset);
+}
+async getSyncLogsCount(): Promise<number> {
+  const result = await db.select({ count: sql<number>`count(*)` }).from(syncLogs);
+  return result[0]?.count || 0;
+}
+// Добавьте метод для поиска события по externalId:
+async getEventByExternalId(externalId: string): Promise<Event | undefined> {
+  const [event] = await db.select().from(events).where(eq(events.externalId, externalId));
+  return event;
+}
+
+3. Добавить публичные API эндпоинты в server/routes.ts
+Добавьте в конец функции registerRoutes:
+
+// ==================== PUBLIC API ROUTES (for booking widget integration) ====================
+// Create lead from booking widget
+app.post("/api/public/leads", async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      phone,
+      email,
+      eventId,
+      tourName,
+      tourDate,
+      tourCost,
+      tourCostCurrency,
+      advancePayment,
+      advancePaymentCurrency,
+      participants,
+      notes,
+      bookingId,
+      paymentMethod,
+    } = req.body;
+    // Validate required fields
+    if (!firstName || !lastName) {
+      return res.status(400).json({ error: "firstName and lastName are required" });
+    }
+    // Create the lead
+    const lead = await storage.createLead({
+      firstName,
+      lastName,
+      phone: phone || null,
+      email: email || null,
+      eventId: eventId || null,
+      tourCost: tourCost ? String(tourCost) : null,
+      tourCostCurrency: tourCostCurrency || "RUB",
+      advancePayment: advancePayment ? String(advancePayment) : null,
+      advancePaymentCurrency: advancePaymentCurrency || "RUB",
+      status: "new",
+      source: "booking",
+      notes: notes || `Бронирование: ${tourName || 'Тур'} на ${tourDate || 'дату'}. Участников: ${participants || 1}. Способ оплаты: ${paymentMethod || 'не указан'}. Booking ID: ${bookingId || 'не указан'}`,
+    });
+    // Log the operation
+    await storage.createSyncLog({
+      operation: "create",
+      entityType: "lead",
+      entityId: lead.id,
+      externalId: bookingId || null,
+      details: { tourName, tourDate, participants, paymentMethod },
+      status: "success",
+    });
+    res.status(201).json({ 
+      success: true, 
+      leadId: lead.id,
+      message: "Lead created successfully" 
+    });
+  } catch (error) {
+    console.error("Error creating lead from booking:", error);
+    
+    // Log the error
+    try {
+      await storage.createSyncLog({
+        operation: "create",
+        entityType: "lead",
+        externalId: req.body.bookingId || null,
+        details: req.body,
+        status: "error",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+      });
+    } catch (logError) {
+      console.error("Failed to log error:", logError);
+    }
+    
+    res.status(500).json({ error: "Failed to create lead" });
+  }
+});
+// Update lead payment status
+app.patch("/api/public/leads/:id/payment-status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentStatus, paymentId, amountPaid, transactionDate } = req.body;
+    if (!paymentStatus || !["pending", "paid", "failed"].includes(paymentStatus)) {
+      return res.status(400).json({ error: "Valid paymentStatus required: pending, paid, or failed" });
+    }
+    const lead = await storage.getLead(id);
+    if (!lead) {
+      return res.status(404).json({ error: "Lead not found" });
+    }
+    // Update lead status based on payment
+    let newStatus = lead.status;
+    if (paymentStatus === "paid") {
+      newStatus = "qualified"; // Move to qualified when payment confirmed
+    } else if (paymentStatus === "failed") {
+      newStatus = "contacted"; // Keep as contacted if payment failed
+    }
+    const updatedLead = await storage.updateLead(id, {
+      status: newStatus,
+      notes: `${lead.notes || ''}\n\n[${new Date().toISOString()}] Статус оплаты: ${paymentStatus}${paymentId ? `, ID платежа: ${paymentId}` : ''}${amountPaid ? `, Сумма: ${amountPaid}` : ''}`,
+    });
+    // Log the operation
+    await storage.createSyncLog({
+      operation: "update",
+      entityType: "lead",
+      entityId: id,
+      externalId: paymentId || null,
+      details: { paymentStatus, paymentId, amountPaid, transactionDate, previousStatus: lead.status, newStatus },
+      status: "success",
+    });
+    res.json({ 
+      success: true, 
+      leadId: id,
+      status: newStatus,
+      message: "Payment status updated" 
+    });
+  } catch (error) {
+    console.error("Error updating payment status:", error);
+    res.status(500).json({ error: "Failed to update payment status" });
+  }
+});
+// Sync events from WordPress
+app.post("/api/public/events/sync", async (req, res) => {
+  try {
+    const { events: syncEvents, source } = req.body;
+    if (!Array.isArray(syncEvents)) {
+      return res.status(400).json({ error: "events array is required" });
+    }
+    const results = {
+      created: 0,
+      updated: 0,
+      archived: 0,
+      errors: [] as string[],
+    };
+    // Get existing external IDs to track deletions
+    const existingEvents = await storage.getAllEvents();
+    const existingExternalIds = new Set(
+      existingEvents.filter(e => e.externalId).map(e => e.externalId)
+    );
+    const receivedExternalIds = new Set<string>();
+    for (const eventData of syncEvents) {
+      try {
+        const {
+          externalId,
+          name,
+          description,
+          country,
+          cities,
+          tourType,
+          startDate,
+          endDate,
+          participantLimit,
+          price,
+          priceCurrency,
+          confirmedParticipants,
+        } = eventData;
+        if (!externalId || !name || !startDate || !endDate) {
+          results.errors.push(`Missing required fields for event: ${name || externalId || 'unknown'}`);
+          continue;
+        }
+        receivedExternalIds.add(externalId);
+        // Check if event exists
+        const existingEvent = await storage.getEventByExternalId(externalId);
+        if (existingEvent) {
+          // Update existing event
+          await storage.updateEvent(existingEvent.id, {
+            name,
+            description: description || existingEvent.description,
+            country: country || existingEvent.country,
+            cities: cities || existingEvent.cities,
+            tourType: tourType || existingEvent.tourType,
+            startDate,
+            endDate,
+            participantLimit: participantLimit || existingEvent.participantLimit,
+            price: price ? String(price) : existingEvent.price,
+            priceCurrency: priceCurrency || existingEvent.priceCurrency,
+          });
+          await storage.createSyncLog({
+            operation: "update",
+            entityType: "event",
+            entityId: existingEvent.id,
+            externalId,
+            details: { name, startDate, endDate, source },
+            status: "success",
+          });
+          results.updated++;
+        } else {
+          // Create new event
+          const newEvent = await storage.createEvent({
+            externalId,
+            name,
+            description: description || "",
+            country: country || "Китай",
+            cities: cities || [],
+            tourType: tourType || "group",
+            startDate,
+            endDate,
+            participantLimit: participantLimit || 20,
+            price: price ? String(price) : "0",
+            priceCurrency: priceCurrency || "RUB",
+          });
+          await storage.createSyncLog({
+            operation: "create",
+            entityType: "event",
+            entityId: newEvent.id,
+            externalId,
+            details: { name, startDate, endDate, source },
+            status: "success",
+          });
+          results.created++;
+        }
+      } catch (eventError) {
+        const errorMsg = `Error processing event ${eventData.name || eventData.externalId}: ${eventError instanceof Error ? eventError.message : 'Unknown error'}`;
+        results.errors.push(errorMsg);
+        console.error(errorMsg);
+      }
+    }
+    // Archive events that are no longer in WordPress
+    for (const externalId of existingExternalIds) {
+      if (externalId && !receivedExternalIds.has(externalId)) {
+        const eventToArchive = await storage.getEventByExternalId(externalId);
+        if (eventToArchive && !eventToArchive.isArchived) {
+          await storage.updateEvent(eventToArchive.id, { isArchived: true });
+          
+          await storage.createSyncLog({
+            operation: "archive",
+            entityType: "event",
+            entityId: eventToArchive.id,
+            externalId,
+            details: { name: eventToArchive.name, reason: "Not found in WordPress sync" },
+            status: "success",
+          });
+          results.archived++;
+        }
+      }
+    }
+    // Log summary
+    await storage.createSyncLog({
+      operation: "sync_complete",
+      entityType: "event",
+      details: { 
+        source: source || "wordpress",
+        totalReceived: syncEvents.length,
+        created: results.created,
+        updated: results.updated,
+        archived: results.archived,
+        errors: results.errors.length,
+      },
+      status: results.errors.length > 0 ? "partial" : "success",
+      errorMessage: results.errors.length > 0 ? results.errors.join("; ") : null,
+    });
+    res.json({
+      success: true,
+      results,
+    });
+  } catch (error) {
+    console.error("Error syncing events:", error);
+    res.status(500).json({ error: "Failed to sync events" });
+  }
+});
+// Get sync logs (admin only)
+app.get("/api/sync-logs", requireAdmin, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 100;
+    const offset = parseInt(req.query.offset as string) || 0;
+    
+    const [logs, total] = await Promise.all([
+      storage.getSyncLogs(limit, offset),
+      storage.getSyncLogsCount(),
+    ]);
+    res.json({ logs, total, limit, offset });
+  } catch (error) {
+    console.error("Error fetching sync logs:", error);
+    res.status(500).json({ error: "Failed to fetch sync logs" });
+  }
+});
+
+4. После добавления кода
+Запустите миграцию базы данных:
+npm run db:push
+
+Перезапустите сервер CRM
+5. Добавить компонент SyncLogsTab в клиентскую часть CRM
+Создайте файл client/src/components/SyncLogsTab.tsx:
+
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+interface SyncLog {
+  id: string;
+  operation: string;
+  entityType: string;
+  entityId: string | null;
+  externalId: string | null;
+  details: Record<string, unknown> | null;
+  status: string;
+  errorMessage: string | null;
+  createdAt: string;
+}
+interface SyncLogsResponse {
+  logs: SyncLog[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+const ITEMS_PER_PAGE = 50;
+export function SyncLogsTab() {
+  const [page, setPage] = useState(0);
+  const { data, isLoading, refetch, isFetching } = useQuery<SyncLogsResponse>({
+    queryKey: ["/api/sync-logs", page],
+    queryFn: async () => {
+      const res = await fetch(`/api/sync-logs?limit=${ITEMS_PER_PAGE}&offset=${page * ITEMS_PER_PAGE}`);
+      if (!res.ok) throw new Error("Failed to fetch sync logs");
+      return res.json();
+    },
+  });
+  const getOperationLabel = (operation: string) => {
+    const labels: Record<string, string> = {
+      create: "Создание",
+      update: "Обновление",
+      archive: "Архивация",
+      sync_complete: "Синхронизация завершена",
+      error: "Ошибка",
+    };
+    return labels[operation] || operation;
+  };
+  const getOperationColor = (operation: string) => {
+    const colors: Record<string, string> = {
+      create: "bg-green-100 text-green-800",
+      update: "bg-blue-100 text-blue-800",
+      archive: "bg-yellow-100 text-yellow-800",
+      sync_complete: "bg-purple-100 text-purple-800",
+      error: "bg-red-100 text-red-800",
+    };
+    return colors[operation] || "bg-gray-100 text-gray-800";
+  };
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      success: "bg-green-100 text-green-800",
+      error: "bg-red-100 text-red-800",
+      partial: "bg-yellow-100 text-yellow-800",
+    };
+    return colors[status] || "bg-gray-100 text-gray-800";
+  };
+  const totalPages = data ? Math.ceil(data.total / ITEMS_PER_PAGE) : 0;
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Логи синхронизации</CardTitle>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          {isFetching ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          <span className="ml-2">Обновить</span>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Дата</TableHead>
+                    <TableHead>Операция</TableHead>
+                    <TableHead>Тип</TableHead>
+                    <TableHead>Статус</TableHead>
+                    <TableHead>Детали</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data?.logs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="whitespace-nowrap">
+                        {format(new Date(log.createdAt), "dd MMM yyyy HH:mm", { locale: ru })}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getOperationColor(log.operation)} variant="secondary">
+                          {getOperationLabel(log.operation)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {log.entityType === "event" ? "Тур" : log.entityType === "lead" ? "Лид" : log.entityType}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(log.status)} variant="secondary">
+                          {log.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {log.errorMessage ? (
+                          <span className="text-red-600" title={log.errorMessage}>
+                            {log.errorMessage}
+                          </span>
+                        ) : log.details ? (
+                          <span className="text-muted-foreground" title={JSON.stringify(log.details, null, 2)}>
+                            {(log.details as any).name || (log.details as any).tourName || JSON.stringify(log.details).substring(0, 50)}...
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {data?.logs.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        Нет записей
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Показано {page * ITEMS_PER_PAGE + 1} - {Math.min((page + 1) * ITEMS_PER_PAGE, data?.total || 0)} из {data?.total || 0}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={page >= totalPages - 1}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+Затем добавьте эту вкладку в страницу настроек (Settings page) - только для админов:
+
+// В компоненте настроек добавьте импорт и вкладку:
+import { SyncLogsTab } from "@/components/SyncLogsTab";
+// В Tabs добавьте (только если user.role === "admin"):
+{user.role === "admin" && (
+  <TabsContent value="sync-logs">
+    <SyncLogsTab />
+  </TabsContent>
+)}
+// В TabsList добавьте:
+{user.role === "admin" && (
+  <TabsTrigger value="sync-logs">Логи синхронизации</TabsTrigger>
+)}
+
+6. Настройки автоматической синхронизации туров
+6.1 Добавить таблицу sync_settings в shared/schema.ts
+// Sync settings table - for configuring automatic sync
+export const syncSettings = pgTable("sync_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(), // 'tour_sync'
+  enabled: boolean("enabled").notNull().default(false),
+  intervalHours: integer("interval_hours").notNull().default(24), // 1, 6, 12, 24, 48
+  lastSyncAt: timestamp("last_sync_at"),
+  lastSyncStatus: text("last_sync_status"), // 'success', 'error'
+  lastSyncMessage: text("last_sync_message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+export const insertSyncSettingsSchema = createInsertSchema(syncSettings).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSyncSettings = z.infer<typeof insertSyncSettingsSchema>;
+export type SyncSettings = typeof syncSettings.$inferSelect;
+
+6.2 Добавить методы в server/storage.ts
+// Sync settings
+getSyncSettings(key: string): Promise<SyncSettings | undefined>;
+upsertSyncSettings(key: string, data: Partial<InsertSyncSettings>): Promise<SyncSettings>;
+// Реализация:
+async getSyncSettings(key: string): Promise<SyncSettings | undefined> {
+  const [settings] = await db.select().from(syncSettings).where(eq(syncSettings.key, key));
+  return settings;
+}
+async upsertSyncSettings(key: string, data: Partial<InsertSyncSettings>): Promise<SyncSettings> {
+  const existing = await this.getSyncSettings(key);
+  if (existing) {
+    const [updated] = await db.update(syncSettings)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(syncSettings.key, key))
+      .returning();
+    return updated;
+  }
+  const [created] = await db.insert(syncSettings)
+    .values({ key, ...data })
+    .returning();
+  return created;
+}
+
+6.3 Добавить серверный cron job в server/index.ts
+import { storage } from "./storage";
+const BOOKING_WIDGET_URL = process.env.BOOKING_WIDGET_URL || 'https://pay.chinaunique.ru';
+// Run sync check every hour
+setInterval(async () => {
+  try {
+    const settings = await storage.getSyncSettings('tour_sync');
+    if (!settings?.enabled) return;
+    
+    const now = new Date();
+    const lastSync = settings.lastSyncAt ? new Date(settings.lastSyncAt) : new Date(0);
+    const hoursSinceLastSync = (now.getTime() - lastSync.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceLastSync >= settings.intervalHours) {
+      console.log('[CronSync] Running scheduled tour sync...');
+      
+      try {
+        const response = await fetch(`${BOOKING_WIDGET_URL}/api/sync-tours`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        const result = await response.json();
+        
+        await storage.upsertSyncSettings('tour_sync', {
+          lastSyncAt: new Date(),
+          lastSyncStatus: result.success ? 'success' : 'error',
+          lastSyncMessage: result.message || result.error || 'Sync completed',
+        });
+        
+        console.log('[CronSync] Sync result:', result);
+      } catch (error) {
+        console.error('[CronSync] Sync failed:', error);
+        await storage.upsertSyncSettings('tour_sync', {
+          lastSyncAt: new Date(),
+          lastSyncStatus: 'error',
+          lastSyncMessage: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+  } catch (error) {
+    console.error('[CronSync] Check failed:', error);
+  }
+}, 60 * 60 * 1000); // Check every hour
+
+6.4 Добавить API для настроек синхронизации в server/routes.ts
+// Get sync settings (admin only)
+app.get("/api/sync-settings/:key", requireAdmin, async (req, res) => {
+  try {
+    const settings = await storage.getSyncSettings(req.params.key);
+    res.json({ success: true, settings: settings || { key: req.params.key, enabled: false, intervalHours: 24 } });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get settings" });
+  }
+});
+// Update sync settings (admin only)
+app.patch("/api/sync-settings/:key", requireAdmin, async (req, res) => {
+  try {
+    const { enabled, intervalHours } = req.body;
+    const settings = await storage.upsertSyncSettings(req.params.key, { enabled, intervalHours });
+    res.json({ success: true, settings });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update settings" });
+  }
+});
+// Trigger manual sync (admin only)
+app.post("/api/sync-settings/:key/run", requireAdmin, async (req, res) => {
+  try {
+    const BOOKING_WIDGET_URL = process.env.BOOKING_WIDGET_URL || 'https://pay.chinaunique.ru';
+    
+    const response = await fetch(`${BOOKING_WIDGET_URL}/api/sync-tours`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    const result = await response.json();
+    
+    await storage.upsertSyncSettings(req.params.key, {
+      lastSyncAt: new Date(),
+      lastSyncStatus: result.success ? 'success' : 'error',
+      lastSyncMessage: result.message || result.error || 'Manual sync completed',
+    });
+    
+    res.json({ success: true, result });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to run sync" });
+  }
+});
+
+6.5 Создать компонент SyncSettingsTab.tsx
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, RefreshCw, Play, Clock, CheckCircle, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+interface SyncSettings {
+  key: string;
+  enabled: boolean;
+  intervalHours: number;
+  lastSyncAt: string | null;
+  lastSyncStatus: string | null;
+  lastSyncMessage: string | null;
+}
+export function SyncSettingsTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isRunning, setIsRunning] = useState(false);
+  const { data, isLoading } = useQuery<{ settings: SyncSettings }>({
+    queryKey: ["/api/sync-settings/tour_sync"],
+  });
+  const updateMutation = useMutation({
+    mutationFn: async (updates: Partial<SyncSettings>) => {
+      const res = await fetch("/api/sync-settings/tour_sync", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sync-settings/tour_sync"] });
+      toast({ title: "Настройки сохранены" });
+    },
+  });
+  const runSyncMutation = useMutation({
+    mutationFn: async () => {
+      setIsRunning(true);
+      const res = await fetch("/api/sync-settings/tour_sync/run", { method: "POST" });
+      if (!res.ok) throw new Error("Failed to run sync");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sync-settings/tour_sync"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sync-logs"] });
+      toast({ 
+        title: "Синхронизация завершена",
+        description: data.result?.message || "Туры синхронизированы с CRM",
+      });
+    },
+    onError: () => {
+      toast({ title: "Ошибка синхронизации", variant: "destructive" });
+    },
+    onSettled: () => setIsRunning(false),
+  });
+  const settings = data?.settings;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Синхронизация туров</CardTitle>
+          <CardDescription>
+            Автоматический импорт туров с сайта chinaunique.ru в CRM
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Автоматическая синхронизация</p>
+              <p className="text-sm text-muted-foreground">
+                Включить периодическую синхронизацию туров
+              </p>
+            </div>
+            <Switch
+              checked={settings?.enabled || false}
+              onCheckedChange={(enabled) => updateMutation.mutate({ enabled })}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Периодичность</p>
+              <p className="text-sm text-muted-foreground">
+                Как часто запускать синхронизацию
+              </p>
+            </div>
+            <Select
+              value={String(settings?.intervalHours || 24)}
+              onValueChange={(value) => updateMutation.mutate({ intervalHours: parseInt(value) })}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Каждый час</SelectItem>
+                <SelectItem value="6">Каждые 6 часов</SelectItem>
+                <SelectItem value="12">Каждые 12 часов</SelectItem>
+                <SelectItem value="24">Раз в сутки</SelectItem>
+                <SelectItem value="48">Раз в 2 дня</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Ручной запуск</p>
+                <p className="text-sm text-muted-foreground">
+                  Запустить синхронизацию прямо сейчас
+                </p>
+              </div>
+              <Button
+                onClick={() => runSyncMutation.mutate()}
+                disabled={isRunning}
+              >
+                {isRunning ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Play className="h-4 w-4 mr-2" />
+                )}
+                Запустить
+              </Button>
+            </div>
+          </div>
+          {settings?.lastSyncAt && (
+            <div className="border-t pt-4">
+              <p className="font-medium mb-2">Последняя синхронизация</p>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  {format(new Date(settings.lastSyncAt), "dd MMM yyyy HH:mm", { locale: ru })}
+                </div>
+                <Badge
+                  variant="secondary"
+                  className={settings.lastSyncStatus === "success" 
+                    ? "bg-green-100 text-green-800" 
+                    : "bg-red-100 text-red-800"}
+                >
+                  {settings.lastSyncStatus === "success" ? (
+                    <><CheckCircle className="h-3 w-3 mr-1" /> Успешно</>
+                  ) : (
+                    <><XCircle className="h-3 w-3 mr-1" /> Ошибка</>
+                  )}
+                </Badge>
+              </div>
+              {settings.lastSyncMessage && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {settings.lastSyncMessage}
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+6.6 Добавить вкладку в страницу настроек
+import { SyncSettingsTab } from "@/components/SyncSettingsTab";
+import { SyncLogsTab } from "@/components/SyncLogsTab";
+// В TabsList:
+{user.role === "admin" && (
+  <>
+    <TabsTrigger value="sync-settings">Синхронизация</TabsTrigger>
+    <TabsTrigger value="sync-logs">Логи</TabsTrigger>
+  </>
+)}
+// В Tabs:
+{user.role === "admin" && (
+  <>
+    <TabsContent value="sync-settings">
+      <SyncSettingsTab />
+    </TabsContent>
+    <TabsContent value="sync-logs">
+      <SyncLogsTab />
+    </TabsContent>
+  </>
+)}
+
+7. Проверка
+Проверьте что эндпоинты работают:
+
+POST https://crm.chinaunique.ru/api/public/leads
+PATCH https://crm.chinaunique.ru/api/public/leads/:id/payment-status
+POST https://crm.chinaunique.ru/api/public/events/sync
+GET https://crm.chinaunique.ru/api/sync-logs (требует авторизации админа)
+GET https://crm.chinaunique.ru/api/sync-settings/tour_sync (требует авторизации админа)
+PATCH https://crm.chinaunique.ru/api/sync-settings/tour_sync (требует авторизации админа)
+POST https://crm.chinaunique.ru/api/sync-settings/tour_sync/run (требует авторизации админа)
+8. Тестирование ручной синхронизации
+Для тестирования эндпоинта синхронизации с виджета бронирования:
+
+# Предпросмотр туров (без отправки в CRM)
+curl https://pay.chinaunique.ru/api/sync-tours/preview
+# Запуск синхронизации (отправка в CRM)
+curl -X POST https://pay.chinaunique.ru/api/sync-tours

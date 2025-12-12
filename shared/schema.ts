@@ -229,6 +229,8 @@ export const formFields = pgTable("form_fields", {
   isRequired: boolean("is_required").notNull().default(false),
   order: integer("order").notNull().default(0),
   config: jsonb("config"),
+  options: text("options").array(), // Options for select fields
+  isMultiple: boolean("is_multiple").notNull().default(false), // Allow multiple selection for select fields
 });
 
 // Leads table - CRM leads
@@ -331,6 +333,20 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   updatedByUserId: varchar("updated_by_user_id").references(() => users.id, { onDelete: 'set null' }),
 });
+
+// System dictionaries table - configurable lists for dropdowns
+export const systemDictionaries = pgTable("system_dictionaries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull(), // 'lead_source', 'lead_status', 'country', 'room_type', 'currency', 'hotel_category', 'client_category'
+  value: text("value").notNull(),
+  label: text("label").notNull(), // Display label
+  order: integer("order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("system_dictionary_unique").on(table.type, table.value)
+]);
 
 // Event participant expenses - individual expenses per participant per city
 export const eventParticipantExpenses = pgTable("event_participant_expenses", {
@@ -448,6 +464,10 @@ export const updateGroupSchema = insertGroupSchema.partial();
 export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, updatedAt: true });
 export const updateSettingSchema = insertSettingSchema.partial();
 
+// System dictionary schemas
+export const insertSystemDictionarySchema = createInsertSchema(systemDictionaries).omit({ id: true, createdAt: true, updatedAt: true });
+export const updateSystemDictionarySchema = insertSystemDictionarySchema.partial();
+
 // Event expense schemas
 export const insertParticipantExpenseSchema = createInsertSchema(eventParticipantExpenses).omit({ 
   id: true, 
@@ -536,6 +556,23 @@ export type UpdateLeadTourist = z.infer<typeof updateLeadTouristSchema>;
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type UpdateSetting = z.infer<typeof updateSettingSchema>;
+
+// System dictionary types
+export type SystemDictionary = typeof systemDictionaries.$inferSelect;
+export type InsertSystemDictionary = z.infer<typeof insertSystemDictionarySchema>;
+export type UpdateSystemDictionary = z.infer<typeof updateSystemDictionarySchema>;
+
+// Dictionary types enum
+export const DICTIONARY_TYPES = [
+  'lead_source',
+  'lead_status', 
+  'country',
+  'room_type',
+  'currency',
+  'hotel_category',
+  'client_category',
+] as const;
+export type DictionaryType = typeof DICTIONARY_TYPES[number];
 
 // Event expense types
 export type EventParticipantExpense = typeof eventParticipantExpenses.$inferSelect;

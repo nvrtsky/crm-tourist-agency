@@ -1,9 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import type { SystemDictionary } from "@shared/schema";
+import type { SystemDictionary, DictionaryTypeConfig } from "@shared/schema";
 
 export function useSystemDictionary(type: string) {
   return useQuery<SystemDictionary[]>({
     queryKey: ["/api/public/dictionaries", type],
+    enabled: !!type,
+  });
+}
+
+export function useDictionaryTypeConfig(type: string) {
+  return useQuery<DictionaryTypeConfig>({
+    queryKey: ["/api/public/dictionary-type-config", type],
     enabled: !!type,
   });
 }

@@ -51,6 +51,10 @@ import {
   type BaseExpense,
   type InsertBaseExpense,
   type UpdateBaseExpense,
+  type SyncLog,
+  type InsertSyncLog,
+  type SyncSettings,
+  type InsertSyncSettings,
   events,
   contacts,
   deals,
@@ -70,6 +74,8 @@ import {
   eventParticipantExpenses,
   eventCommonExpenses,
   baseExpenses,
+  syncLogs,
+  syncSettings,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -220,6 +226,16 @@ export interface IStorage {
   createBaseExpense(expense: import("@shared/schema").InsertBaseExpense): Promise<import("@shared/schema").BaseExpense>;
   updateBaseExpense(id: string, expense: import("@shared/schema").UpdateBaseExpense): Promise<import("@shared/schema").BaseExpense | undefined>;
   deleteBaseExpense(id: string): Promise<boolean>;
+
+  // Sync log operations
+  createSyncLog(log: import("@shared/schema").InsertSyncLog): Promise<import("@shared/schema").SyncLog>;
+  getSyncLogs(limit?: number, offset?: number): Promise<import("@shared/schema").SyncLog[]>;
+  getSyncLogsCount(): Promise<number>;
+  getEventByExternalId(externalId: string): Promise<Event | undefined>;
+
+  // Sync settings operations
+  getSyncSettings(key: string): Promise<import("@shared/schema").SyncSettings | undefined>;
+  upsertSyncSettings(key: string, data: Partial<import("@shared/schema").InsertSyncSettings>): Promise<import("@shared/schema").SyncSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1522,6 +1538,52 @@ export class DatabaseStorage implements IStorage {
   async deleteBaseExpense(id: string): Promise<boolean> {
     const result = await db.delete(baseExpenses).where(eq(baseExpenses.id, id)).returning();
     return result.length > 0;
+  }
+
+  // ==================== SYNC LOG OPERATIONS ====================
+
+  async createSyncLog(log: InsertSyncLog): Promise<SyncLog> {
+    const [syncLog] = await db.insert(syncLogs).values(log).returning();
+    return syncLog;
+  }
+
+  async getSyncLogs(limit = 100, offset = 0): Promise<SyncLog[]> {
+    return db.select().from(syncLogs)
+      .orderBy(desc(syncLogs.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getSyncLogsCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(syncLogs);
+    return result[0]?.count || 0;
+  }
+
+  async getEventByExternalId(externalId: string): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.externalId, externalId));
+    return event;
+  }
+
+  // ==================== SYNC SETTINGS OPERATIONS ====================
+
+  async getSyncSettings(key: string): Promise<SyncSettings | undefined> {
+    const [settingsRecord] = await db.select().from(syncSettings).where(eq(syncSettings.key, key));
+    return settingsRecord;
+  }
+
+  async upsertSyncSettings(key: string, data: Partial<InsertSyncSettings>): Promise<SyncSettings> {
+    const existing = await this.getSyncSettings(key);
+    if (existing) {
+      const [updated] = await db.update(syncSettings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(syncSettings.key, key))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(syncSettings)
+      .values({ key, ...data })
+      .returning();
+    return created;
   }
 }
 

@@ -16,7 +16,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download, Archive, ArchiveRestore } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
@@ -133,6 +133,7 @@ export default function Leads() {
   const [tourFilter, setTourFilter] = useState<string>('');
   const [colorFilter, setColorFilter] = useState<string>('');
   const [outcomeFilter, setOutcomeFilter] = useState<string>('');
+  const [showArchived, setShowArchived] = useState(false);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
 
   const { data: leads = [], isLoading } = useQuery<LeadWithTouristCount[]>({
@@ -236,6 +237,46 @@ export default function Leads() {
     },
   });
 
+  const archiveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("PATCH", `/api/leads/${id}/archive`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      toast({
+        title: "Успешно",
+        description: "Лид перемещен в архив",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const unarchiveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("PATCH", `/api/leads/${id}/unarchive`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      toast({
+        title: "Успешно",
+        description: "Лид восстановлен из архива",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Save viewMode to localStorage
   useEffect(() => {
     localStorage.setItem('leadsViewMode', viewMode);
@@ -244,6 +285,11 @@ export default function Leads() {
   // Filter and sort leads
   const filteredLeads = useMemo(() => {
     const filtered = leads.filter(lead => {
+      // Archive filter - hide archived leads unless showArchived is true
+      if (!showArchived && lead.isArchived) {
+        return false;
+      }
+      
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -321,7 +367,7 @@ export default function Leads() {
     return [...filtered].sort((a, b) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [leads, searchQuery, statusFilter, sourceFilter, categoryFilter, tourFilter, colorFilter, outcomeFilter, dateRange]);
+  }, [leads, searchQuery, statusFilter, sourceFilter, categoryFilter, tourFilter, colorFilter, outcomeFilter, showArchived, dateRange]);
 
   // Calculate stats from filtered leads
   const stats = {
@@ -625,6 +671,23 @@ export default function Leads() {
               </Select>
             </div>
 
+            {/* Archive Toggle */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="show-archived-leads"
+                checked={showArchived}
+                onCheckedChange={(checked) => setShowArchived(checked === true)}
+                data-testid="checkbox-show-archived"
+              />
+              <label
+                htmlFor="show-archived-leads"
+                className="text-sm cursor-pointer select-none flex items-center gap-1"
+              >
+                <Archive className="h-3.5 w-3.5" />
+                Показать архивные
+              </label>
+            </div>
+
             {/* Clear Filters */}
             {(searchQuery || statusFilter.length > 0 || sourceFilter || categoryFilter || tourFilter || colorFilter || outcomeFilter || dateRange.from || dateRange.to) && (
               <Button
@@ -674,6 +737,8 @@ export default function Leads() {
               deleteMutation.mutate(leadId);
             }
           }}
+          onArchive={(leadId) => archiveMutation.mutate(leadId)}
+          onUnarchive={(leadId) => unarchiveMutation.mutate(leadId)}
           getLeadName={getLeadName}
         />
       ) : (
@@ -877,6 +942,24 @@ export default function Leads() {
                           {lead.status === status && <span className="ml-auto text-xs">✓</span>}
                         </ContextMenuItem>
                       ))}
+                      <ContextMenuSeparator />
+                      {lead.isArchived ? (
+                        <ContextMenuItem
+                          onClick={() => unarchiveMutation.mutate(lead.id)}
+                          data-testid={`table-context-unarchive-${lead.id}`}
+                        >
+                          <ArchiveRestore className="h-4 w-4 mr-2" />
+                          Восстановить из архива
+                        </ContextMenuItem>
+                      ) : (
+                        <ContextMenuItem
+                          onClick={() => archiveMutation.mutate(lead.id)}
+                          data-testid={`table-context-archive-${lead.id}`}
+                        >
+                          <Archive className="h-4 w-4 mr-2" />
+                          В архив
+                        </ContextMenuItem>
+                      )}
                     </ContextMenuContent>
                   </ContextMenu>
                   );
@@ -1034,10 +1117,12 @@ interface KanbanBoardProps {
   onStatusChange: (leadId: string, newStatus: string) => void;
   onEdit: (lead: LeadWithTouristCount) => void;
   onDelete: (leadId: string) => void;
+  onArchive: (leadId: string) => void;
+  onUnarchive: (leadId: string) => void;
   getLeadName: (lead: Lead) => string;
 }
 
-function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelete, getLeadName }: KanbanBoardProps) {
+function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelete, onArchive, onUnarchive, getLeadName }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadWithTouristCount | null>(null);
   const [colorDisplayMode, setColorDisplayMode] = useState<ColorDisplayMode>(() => getColorDisplayMode());
   
@@ -1285,6 +1370,23 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                       <Edit className="h-4 w-4 mr-2" />
                       Редактировать
                     </ContextMenuItem>
+                    {lead.isArchived ? (
+                      <ContextMenuItem
+                        onClick={() => onUnarchive(lead.id)}
+                        data-testid={`context-unarchive-${lead.id}`}
+                      >
+                        <ArchiveRestore className="h-4 w-4 mr-2" />
+                        Восстановить из архива
+                      </ContextMenuItem>
+                    ) : (
+                      <ContextMenuItem
+                        onClick={() => onArchive(lead.id)}
+                        data-testid={`context-archive-${lead.id}`}
+                      >
+                        <Archive className="h-4 w-4 mr-2" />
+                        В архив
+                      </ContextMenuItem>
+                    )}
                   </ContextMenuContent>
                 </ContextMenu>
                 )

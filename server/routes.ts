@@ -3147,10 +3147,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== PUBLIC API ENDPOINTS (WordPress Integration) ====================
-  // These endpoints are for external systems (WordPress booking widget) and do not require authentication
+  // These endpoints are for external systems (WordPress booking widget) and require API key authentication
+  
+  // API Key validation middleware for WordPress endpoints
+  const validateApiKey = (req: any, res: any, next: any) => {
+    const apiKey = req.headers['x-api-key'] || req.query.api_key;
+    const expectedKey = process.env.WORDPRESS_API_KEY;
+    
+    if (!expectedKey) {
+      console.error("WORDPRESS_API_KEY not configured");
+      return res.status(500).json({ error: "API key not configured on server" });
+    }
+    
+    if (!apiKey || apiKey !== expectedKey) {
+      return res.status(401).json({ error: "Invalid or missing API key" });
+    }
+    
+    next();
+  };
+
+  // Rate limiting for public endpoints
+  const publicApiLimits = new Map<string, { count: number; resetAt: number }>();
+  const PUBLIC_RATE_LIMIT = 100; // max requests per window
+  const PUBLIC_RATE_WINDOW = 60 * 1000; // 1 minute
+  
+  const publicRateLimiter = (req: any, res: any, next: any) => {
+    const ip = req.ip || 'unknown';
+    const now = Date.now();
+    const limits = publicApiLimits.get(ip);
+    
+    if (limits && limits.count >= PUBLIC_RATE_LIMIT && now < limits.resetAt) {
+      return res.status(429).json({ error: "Too many requests. Please try again later." });
+    }
+    
+    if (!limits || now >= limits.resetAt) {
+      publicApiLimits.set(ip, { count: 1, resetAt: now + PUBLIC_RATE_WINDOW });
+    } else {
+      limits.count++;
+    }
+    
+    next();
+  };
   
   // Public: Create lead from WordPress booking
-  app.post("/api/public/leads", async (req, res) => {
+  app.post("/api/public/leads", validateApiKey, publicRateLimiter, async (req, res) => {
     try {
       const { 
         eventExternalId,  // WordPress post ID 
@@ -3254,7 +3294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Public: Update lead payment status
-  app.patch("/api/public/leads/:id/payment-status", async (req, res) => {
+  app.patch("/api/public/leads/:id/payment-status", validateApiKey, publicRateLimiter, async (req, res) => {
     try {
       const { paymentStatus, paidAmount, paidDate, comment } = req.body;
 
@@ -3296,7 +3336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Public: Sync events from WordPress
-  app.post("/api/public/events/sync", async (req, res) => {
+  app.post("/api/public/events/sync", validateApiKey, publicRateLimiter, async (req, res) => {
     try {
       const { tours } = req.body;
 

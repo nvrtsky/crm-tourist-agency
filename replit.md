@@ -34,6 +34,16 @@ A normalized PostgreSQL schema underpins the system, supporting core CRM entitie
 -   **Authentication & User Management**: Implements session-based authentication with Passport.js and bcrypt, featuring role-based access control (admin/manager/viewer) for secure login, route protection, and restricted content access.
 -   **System Dictionaries**: Centralized management of lookup tables (lead sources, statuses, countries, accommodation types, currencies) via Settings page. Admin-only CRUD operations for maintaining system-wide configuration values. **Multi-Select Support**: Dictionary types can be configured with `isMultiple` toggle - when enabled, form fields render as checkbox groups instead of dropdowns. Values are stored as comma-separated strings for backward compatibility. Affected fields: clientCategory, source, roomType, hotelCategory.
 
+### WordPress Integration
+The system provides API endpoints for WordPress booking widget integration:
+-   **Public API Endpoints**: Secured with API key (`WORDPRESS_API_KEY` environment variable) and rate limiting:
+    -   `POST /api/public/leads` - Creates leads from WordPress booking forms
+    -   `PATCH /api/public/leads/:id/payment-status` - Updates lead payment status
+    -   `POST /api/public/events/sync` - Syncs tours from WordPress to CRM events
+-   **Sync Logs**: Admin-only view in Settings > Синхронизация to monitor all sync operations
+-   **Database Tables**: `syncLogs` (operation history), `syncSettings` (automatic sync configuration), `events.externalId` (WordPress post ID tracking)
+-   **Automatic Sync**: Configurable interval (1h to 48h) for automatic tour synchronization
+
 ### Technical Decisions
 The system employs dynamic geography for event city tracking, maintains a standalone design without external CRM integrations, uses a backend-automated notification strategy, and features a refined lead data separation architecture. Initial tourist entries are auto-created, and comprehensive tourist data completeness is indicated.
 

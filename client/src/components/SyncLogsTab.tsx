@@ -81,11 +81,18 @@ export function SyncLogsTab() {
   const limit = 20;
 
   const { data: syncSettings, isLoading: settingsLoading } = useQuery<SyncSettings>({
-    queryKey: ["/api/sync-settings", "tour_sync"],
+    queryKey: ["/api/sync-settings/tour_sync"],
   });
 
   const { data: logsResponse, isLoading: logsLoading } = useQuery<SyncLogsResponse>({
-    queryKey: ["/api/sync-logs", page, limit],
+    queryKey: ["/api/sync-logs", { page, limit }],
+    queryFn: async () => {
+      const response = await fetch(`/api/sync-logs?page=${page}&limit=${limit}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch sync logs');
+      return response.json();
+    },
   });
 
   const updateSettingsMutation = useMutation({

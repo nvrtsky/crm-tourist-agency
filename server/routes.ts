@@ -580,6 +580,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Event not found" });
       }
       
+      // Also archive all leads linked to this event
+      await storage.archiveLeadsByEvent(id);
+      
       res.json(event);
     } catch (error) {
       console.error("Error archiving event:", error);
@@ -1419,6 +1422,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting lead:", error);
       res.status(500).json({ error: "Failed to delete lead" });
+    }
+  });
+
+  // Archive lead
+  app.patch("/api/leads/:id/archive", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      
+      // Only admin and manager can archive leads
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const { id } = req.params;
+      const lead = await storage.archiveLead(id);
+      
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+      
+      res.json(lead);
+    } catch (error) {
+      console.error("Error archiving lead:", error);
+      res.status(500).json({ error: "Failed to archive lead" });
+    }
+  });
+
+  // Unarchive lead
+  app.patch("/api/leads/:id/unarchive", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as User;
+      
+      // Only admin and manager can unarchive leads
+      if (user.role === "viewer") {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const { id } = req.params;
+      const lead = await storage.unarchiveLead(id);
+      
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+      
+      res.json(lead);
+    } catch (error) {
+      console.error("Error unarchiving lead:", error);
+      res.status(500).json({ error: "Failed to unarchive lead" });
     }
   });
 

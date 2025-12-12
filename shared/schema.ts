@@ -264,6 +264,7 @@ export const leads = pgTable("leads", {
   outcomeType: text("outcome_type"), // Тип исхода: 'postponed' (отложен) или 'failed' (провал)
   failureReason: text("failure_reason"), // Причина провала: 'missing_contact', 'expensive', 'competitor', 'not_target'
   hasBeenContacted: boolean("has_been_contacted").notNull().default(false), // Была ли коммуникация с лидом
+  isArchived: boolean("is_archived").notNull().default(false), // Архивирован ли лид
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

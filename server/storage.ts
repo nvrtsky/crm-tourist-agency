@@ -150,6 +150,9 @@ export interface IStorage {
   updateLead(id: string, lead: Partial<InsertLead>): Promise<Lead | undefined>;
   deleteLead(id: string): Promise<boolean>;
   updateLeadCostsByEventPrice(eventId: string, newPrice: string): Promise<void>;
+  archiveLead(id: string): Promise<Lead | undefined>;
+  unarchiveLead(id: string): Promise<Lead | undefined>;
+  archiveLeadsByEvent(eventId: string): Promise<void>;
 
   // Lead status history operations
   getHistoryByLead(leadId: string): Promise<LeadStatusHistoryEntry[]>;
@@ -876,6 +879,7 @@ export class DatabaseStorage implements IStorage {
         outcomeType: leads.outcomeType,
         failureReason: leads.failureReason,
         hasBeenContacted: leads.hasBeenContacted,
+        isArchived: leads.isArchived,
         createdAt: leads.createdAt,
         updatedAt: leads.updatedAt,
         touristCount: sql<number>`cast(count(${leadTourists.id}) as int)`.as('touristCount')
@@ -889,7 +893,7 @@ export class DatabaseStorage implements IStorage {
     }
     
     const result = await query
-      .groupBy(leads.id, leads.createdAt, leads.updatedAt)
+      .groupBy(leads.id, leads.createdAt, leads.updatedAt, leads.isArchived)
       .orderBy(desc(leads.createdAt));
     
     return result;
@@ -1018,6 +1022,31 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(leads.id, lead.id));
     }
+  }
+
+  async archiveLead(id: string): Promise<Lead | undefined> {
+    const result = await db
+      .update(leads)
+      .set({ isArchived: true, updatedAt: new Date() })
+      .where(eq(leads.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async unarchiveLead(id: string): Promise<Lead | undefined> {
+    const result = await db
+      .update(leads)
+      .set({ isArchived: false, updatedAt: new Date() })
+      .where(eq(leads.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async archiveLeadsByEvent(eventId: string): Promise<void> {
+    await db
+      .update(leads)
+      .set({ isArchived: true, updatedAt: new Date() })
+      .where(eq(leads.eventId, eventId));
   }
 
   // ==================== LEAD STATUS HISTORY OPERATIONS ====================

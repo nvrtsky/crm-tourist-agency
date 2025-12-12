@@ -1,0 +1,105 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 50
+[TAILING] Tailing last 50 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 50 lines:
+0|crm-chin |   routine: 'parserOpenTable'
+0|crm-chin | }
+0|crm-chin | Error fetching event participants: error: column "paid_amount" does not exist
+0|crm-chin |     at /var/www/crm-tourist-agency/node_modules/pg-pool/index.js:45:11
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|crm-chin |     at async DatabaseStorage.getDealsByEvent (file:///var/www/crm-tourist-agency/dist/index.js:2284:12)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:3242:22 {
+0|crm-chin |   length: 111,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42703',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '60',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '3722',
+0|crm-chin |   routine: 'errorMissingColumn'
+0|crm-chin | }
+0|crm-chin | Error fetching leads: error: column leads.room_type does not exist
+0|crm-chin |     at /var/www/crm-tourist-agency/node_modules/pg-pool/index.js:45:11
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|crm-chin |     at async DatabaseStorage.getAllLeads (file:///var/www/crm-tourist-agency/dist/index.js:2548:20)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:3922:22 {
+0|crm-chin |   length: 114,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42703',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '413',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '3722',
+0|crm-chin |   routine: 'errorMissingColumn'
+0|crm-chin | }
+
+/root/.pm2/logs/crm-chinaunique-out.log last 50 lines:
+0|crm-chin | 9:19:06 PM [express] GET /api/listings 200 in 2ms
+0|crm-chin | 📥 GET /api/subcategories
+0|crm-chin | 9:19:06 PM [express] GET /api/subcategories 200 in 1ms
+0|crm-chin | 📥 POST /api/telegram/auth
+0|crm-chin | 9:19:06 PM [express] POST /api/telegram/auth 200 in 2ms
+0|crm-chin | 📥 GET /api/users/profile
+0|crm-chin | 9:19:06 PM [express] GET /api/users/profile 200 in 1ms
+0|crm-chin | 
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 9:19:38 PM [express] serving on port 3000
+0|crm-chin | 
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 9:20:44 PM [express] serving on port 3000
+0|crm-chin | 📥 GET /leads
+0|crm-chin | 📥 GET /assets/index-thX5fzkc.js
+0|crm-chin | 📥 GET /assets/index-D2efzZ6f.css
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 9:21:14 PM [express] GET /api/auth/me 401 in 2ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 9:21:19 PM [express] POST /api/auth/login 200 in 107ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6a…
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 9:21:19 PM [express] GET /api/auth/me 304 in 0ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc7…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 9:21:19 PM [express] GET /api/events 304 in 143ms :: [{"id":"e23189b8-239a-45a2-b3a9-419d6c32ff61","…
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 9:21:22 PM [express] GET /api/leads 500 in 7ms :: {"error":"Failed to fetch leads"}
+0|crm-chin | 📥 GET /api/events/c73c03fb-65da-47eb-b09b-cb8c30c20980/expenses
+0|crm-chin | 9:22:07 PM [express] GET /api/events/c73c03fb-65da-47eb-b09b-cb8c30c20980/expenses 500 in 3ms :: {"e…
+0|crm-chin | 📥 GET /api/base-expenses
+0|crm-chin | 9:22:07 PM [express] GET /api/base-expenses 500 in 3ms :: {"error":"Failed to fetch base expenses"}
+0|crm-chin | 📥 GET /api/events/c73c03fb-65da-47eb-b09b-cb8c30c20980/participants
+0|crm-chin | 9:22:07 PM [express] GET /api/events/c73c03fb-65da-47eb-b09b-cb8c30c20980/participants 500 in 2ms ::…
+0|crm-chin | 📥 GET /api/events/c73c03fb-65da-47eb-b09b-cb8c30c20980
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 9:22:07 PM [express] GET /api/events/c73c03fb-65da-47eb-b09b-cb8c30c20980 200 in 5ms :: {"id":"c73c0…
+0|crm-chin | 📥 GET /api/users/managers-and-admins
+0|crm-chin | 9:22:08 PM [express] GET /api/users/managers-and-admins 304 in 2ms :: [{"id":"8fb947a9-6af5-4a13-bdf…
+0|crm-chin | 📥 GET /api/users/viewers
+0|crm-chin | 9:22:08 PM [express] GET /api/users/viewers 304 in 1ms :: []
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 9:22:11 PM [express] GET /api/leads 500 in 3ms :: {"error":"Failed to fetch leads"}
+0|crm-chin | 📥 GET /developmentserver/metadatauploader

@@ -2760,6 +2760,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== SYSTEM DICTIONARY ROUTES ====================
 
+  // Get dictionary items by type (public for authenticated users - for form dropdowns)
+  app.get("/api/public/dictionaries/:type", requireAuth, async (req, res) => {
+    try {
+      const { type } = req.params;
+      const items = await storage.getDictionaryItems(type);
+      // Return only active items, sorted by order
+      const activeItems = items.filter(item => item.isActive).sort((a, b) => a.order - b.order);
+      res.json(activeItems);
+    } catch (error) {
+      console.error("Error fetching dictionary items:", error);
+      res.status(500).json({ error: "Failed to fetch dictionary items" });
+    }
+  });
+
   // Get all dictionary items (admin only)
   app.get("/api/dictionaries", requireAdmin, async (req, res) => {
     try {

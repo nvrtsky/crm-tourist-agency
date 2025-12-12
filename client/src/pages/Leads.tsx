@@ -30,6 +30,7 @@ import { calculateTouristDataCompleteness, formatCurrency, formatTouristName } f
 import { ColorPicker, ColorIndicator, type ColorOption, type ColorDisplayMode, getColorDisplayMode, getPastelClasses } from "@/components/ColorPicker";
 import { DeferLeadDialog, type DeferLeadDialogResult, postponeReasonLabels, failureReasonLabels, postponeReasons, failureReasons } from "@/components/DeferLeadDialog";
 import { Wazzup24Chat } from "@/components/Wazzup24Chat";
+import { useSystemDictionary, useDictionaryMap } from "@/hooks/use-system-dictionary";
 import { z } from "zod";
 
 const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; customClass?: string }> = {
@@ -143,6 +144,34 @@ export default function Leads() {
   const { data: events = [] } = useQuery<EventWithStats[]>({
     queryKey: ["/api/events"],
   });
+
+  // Dictionary queries for dynamic form options
+  const { data: clientCategoryItems = [] } = useSystemDictionary("client_category");
+  const { data: leadSourceItems = [] } = useSystemDictionary("lead_source");
+  const { data: leadStatusItems = [] } = useSystemDictionary("lead_status");
+  const { data: hotelCategoryItems = [] } = useSystemDictionary("hotel_category");
+  const { data: roomTypeItems = [] } = useSystemDictionary("room_type");
+
+  // Create dynamic maps from dictionary data (with fallback to hardcoded values)
+  const dynamicClientCategoryMap = useMemo(() => {
+    if (clientCategoryItems.length > 0) {
+      return clientCategoryItems.reduce((acc, item) => {
+        acc[item.value] = item.label;
+        return acc;
+      }, {} as Record<string, string>);
+    }
+    return clientCategoryMap;
+  }, [clientCategoryItems]);
+
+  const dynamicLeadSourceMap = useMemo(() => {
+    if (leadSourceItems.length > 0) {
+      return leadSourceItems.reduce((acc, item) => {
+        acc[item.value] = item.label;
+        return acc;
+      }, {} as Record<string, string>);
+    }
+    return leadSourceMap;
+  }, [leadSourceItems]);
 
   const createMutation = useMutation<Lead, Error, InsertLead>({
     mutationFn: async (data: InsertLead) => {
@@ -890,11 +919,11 @@ export default function Leads() {
                           ) : "—"}
                         </TableCell>
                         <TableCell>{lead.phone || "—"}</TableCell>
-                        <TableCell>{leadSourceMap[lead.source] || lead.source}</TableCell>
+                        <TableCell>{dynamicLeadSourceMap[lead.source] || lead.source}</TableCell>
                         <TableCell>
                           {lead.clientCategory ? (
                             <Badge variant="outline" data-testid={`category-${lead.id}`}>
-                              {clientCategoryMap[lead.clientCategory] || lead.clientCategory}
+                              {dynamicClientCategoryMap[lead.clientCategory] || lead.clientCategory}
                             </Badge>
                           ) : (
                             "—"
@@ -1144,6 +1173,30 @@ interface KanbanBoardProps {
 function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelete, onArchive, onUnarchive, getLeadName }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadWithTouristCount | null>(null);
   const [colorDisplayMode, setColorDisplayMode] = useState<ColorDisplayMode>(() => getColorDisplayMode());
+
+  // Dictionary queries for dynamic display
+  const { data: clientCategoryItems = [] } = useSystemDictionary("client_category");
+  const { data: leadSourceItems = [] } = useSystemDictionary("lead_source");
+
+  const dynamicClientCategoryMap = useMemo(() => {
+    if (clientCategoryItems.length > 0) {
+      return clientCategoryItems.reduce((acc, item) => {
+        acc[item.value] = item.label;
+        return acc;
+      }, {} as Record<string, string>);
+    }
+    return clientCategoryMap;
+  }, [clientCategoryItems]);
+
+  const dynamicLeadSourceMap = useMemo(() => {
+    if (leadSourceItems.length > 0) {
+      return leadSourceItems.reduce((acc, item) => {
+        acc[item.value] = item.label;
+        return acc;
+      }, {} as Record<string, string>);
+    }
+    return leadSourceMap;
+  }, [leadSourceItems]);
   
   // Listen for color display mode changes from Settings
   useEffect(() => {
@@ -1298,11 +1351,11 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                           </div>
                           <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                             <Badge variant="outline" className="text-[9px] sm:text-[10px] truncate max-w-[100px] sm:max-w-none">
-                              {leadSourceMap[lead.source] || lead.source}
+                              {dynamicLeadSourceMap[lead.source] || lead.source}
                             </Badge>
                             {lead.clientCategory && (
                               <Badge variant="outline" className="text-[9px] sm:text-[10px] truncate max-w-[100px] sm:max-w-none">
-                                {clientCategoryMap[lead.clientCategory] || lead.clientCategory}
+                                {dynamicClientCategoryMap[lead.clientCategory] || lead.clientCategory}
                               </Badge>
                             )}
                             {lead.touristCount !== undefined && lead.touristCount > 0 && (
@@ -1444,6 +1497,12 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
   
   // Track if initial load is complete to avoid overwriting DB values
   const isInitializedRef = useRef(false);
+
+  // Dictionary queries for dynamic form options
+  const { data: clientCategoryItems = [] } = useSystemDictionary("client_category");
+  const { data: leadSourceItems = [] } = useSystemDictionary("lead_source");
+  const { data: hotelCategoryItems = [] } = useSystemDictionary("hotel_category");
+  const { data: roomTypeItems = [] } = useSystemDictionary("room_type");
 
   // Helper function to get lead display name
   const getLeadName = (lead: Lead) => {
@@ -2143,9 +2202,17 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Single">Single</SelectItem>
-                        <SelectItem value="Twin">Twin</SelectItem>
-                        <SelectItem value="Double">Double</SelectItem>
+                        {roomTypeItems.length > 0 ? (
+                          roomTypeItems.map(item => (
+                            <SelectItem key={item.value} value={item.label}>{item.label}</SelectItem>
+                          ))
+                        ) : (
+                          <>
+                            <SelectItem value="Single">Single</SelectItem>
+                            <SelectItem value="Twin">Twin</SelectItem>
+                            <SelectItem value="Double">Double</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -2169,9 +2236,17 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="3*">3*</SelectItem>
-                        <SelectItem value="4*">4*</SelectItem>
-                        <SelectItem value="5*">5*</SelectItem>
+                        {hotelCategoryItems.length > 0 ? (
+                          hotelCategoryItems.map(item => (
+                            <SelectItem key={item.value} value={item.label}>{item.label}</SelectItem>
+                          ))
+                        ) : (
+                          <>
+                            <SelectItem value="3*">3*</SelectItem>
+                            <SelectItem value="4*">4*</SelectItem>
+                            <SelectItem value="5*">5*</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -2240,15 +2315,23 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
-                        <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
-                        <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
-                        <SelectItem value="vip">VIP</SelectItem>
-                        <SelectItem value="not_segmented">Не сегментированный</SelectItem>
-                        <SelectItem value="travel_agent">Турагент</SelectItem>
-                        <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
-                        <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
-                        <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
+                        {clientCategoryItems.length > 0 ? (
+                          clientCategoryItems.map(item => (
+                            <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                          ))
+                        ) : (
+                          <>
+                            <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
+                            <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
+                            <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
+                            <SelectItem value="vip">VIP</SelectItem>
+                            <SelectItem value="not_segmented">Не сегментированный</SelectItem>
+                            <SelectItem value="travel_agent">Турагент</SelectItem>
+                            <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
+                            <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
+                            <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -2294,11 +2377,19 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="form">Веб-форма</SelectItem>
-                        <SelectItem value="referral">Рекомендация</SelectItem>
-                        <SelectItem value="direct">Прямое обращение</SelectItem>
-                        <SelectItem value="advertisement">Реклама</SelectItem>
-                        <SelectItem value="other">Другое</SelectItem>
+                        {leadSourceItems.length > 0 ? (
+                          leadSourceItems.map(item => (
+                            <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                          ))
+                        ) : (
+                          <>
+                            <SelectItem value="form">Веб-форма</SelectItem>
+                            <SelectItem value="referral">Рекомендация</SelectItem>
+                            <SelectItem value="direct">Прямое обращение</SelectItem>
+                            <SelectItem value="advertisement">Реклама</SelectItem>
+                            <SelectItem value="other">Другое</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

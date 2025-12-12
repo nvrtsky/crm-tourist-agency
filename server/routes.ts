@@ -607,6 +607,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Event not found" });
       }
       
+      // Also unarchive all leads linked to this event
+      await storage.unarchiveLeadsByEvent(id);
+      
       res.json(event);
     } catch (error) {
       console.error("Error unarchiving event:", error);

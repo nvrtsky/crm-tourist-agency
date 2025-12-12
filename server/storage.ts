@@ -153,6 +153,7 @@ export interface IStorage {
   archiveLead(id: string): Promise<Lead | undefined>;
   unarchiveLead(id: string): Promise<Lead | undefined>;
   archiveLeadsByEvent(eventId: string): Promise<void>;
+  unarchiveLeadsByEvent(eventId: string): Promise<void>;
 
   // Lead status history operations
   getHistoryByLead(leadId: string): Promise<LeadStatusHistoryEntry[]>;
@@ -1046,6 +1047,13 @@ export class DatabaseStorage implements IStorage {
     await db
       .update(leads)
       .set({ isArchived: true, updatedAt: new Date() })
+      .where(eq(leads.eventId, eventId));
+  }
+
+  async unarchiveLeadsByEvent(eventId: string): Promise<void> {
+    await db
+      .update(leads)
+      .set({ isArchived: false, updatedAt: new Date() })
       .where(eq(leads.eventId, eventId));
   }
 

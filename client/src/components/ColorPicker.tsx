@@ -116,7 +116,7 @@ const PASTEL_CONFIG: Record<Exclude<ColorOption, null>, { bg: string; border: st
 
 export function getPastelClasses(color: ColorOption): { bg: string; border: string } {
   if (!color) return { bg: "", border: "" };
-  return PASTEL_CONFIG[color];
+  return PASTEL_CONFIG[color] || { bg: "", border: "" };
 }
 
 // Color display mode types

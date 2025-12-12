@@ -25,6 +25,7 @@ import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicato
 import { calculateTouristDataCompleteness, formatTouristName } from "@/lib/utils";
 import { ColorPicker, ColorIndicator, type ColorOption } from "@/components/ColorPicker";
 import { Wazzup24Chat } from "@/components/Wazzup24Chat";
+import { MultiSelectField } from "@/components/MultiSelectField";
 
 const leadFormSchema = insertLeadSchema.extend({
   color: z.string().nullable(),
@@ -677,22 +678,20 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Тип номера</FormLabel>
-                              <Select 
-                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)} 
-                                value={field.value ?? "__none__"} 
-                              >
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-lead-roomType">
-                                    <SelectValue placeholder="Выберите тип" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="__none__">Не указан</SelectItem>
-                                  <SelectItem value="Single">Single</SelectItem>
-                                  <SelectItem value="Twin">Twin</SelectItem>
-                                  <SelectItem value="Double">Double</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <MultiSelectField
+                                  dictionaryType="room_type"
+                                  value={field.value}
+                                  onChange={(value) => field.onChange(value)}
+                                  placeholder="Выберите тип"
+                                  fallbackOptions={[
+                                    { value: "Single", label: "Single" },
+                                    { value: "Twin", label: "Twin" },
+                                    { value: "Double", label: "Double" },
+                                  ]}
+                                  data-testid="select-lead-roomType"
+                                />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -704,22 +703,20 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Категория отелей</FormLabel>
-                              <Select 
-                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)} 
-                                value={field.value ?? "__none__"} 
-                              >
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-lead-hotelCategory">
-                                    <SelectValue placeholder="Выберите категорию" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="__none__">Не указана</SelectItem>
-                                  <SelectItem value="3*">3*</SelectItem>
-                                  <SelectItem value="4*">4*</SelectItem>
-                                  <SelectItem value="5*">5*</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <MultiSelectField
+                                  dictionaryType="hotel_category"
+                                  value={field.value}
+                                  onChange={(value) => field.onChange(value)}
+                                  placeholder="Выберите категорию"
+                                  fallbackOptions={[
+                                    { value: "3*", label: "3*" },
+                                    { value: "4*", label: "4*" },
+                                    { value: "5*", label: "5*" },
+                                  ]}
+                                  data-testid="select-lead-hotelCategory"
+                                />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -775,28 +772,26 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Категория клиента</FormLabel>
-                              <Select 
-                                onValueChange={(value) => field.onChange(value === "__none__" ? null : value)} 
-                                value={field.value || "__none__"}
-                              >
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-lead-clientCategory">
-                                    <SelectValue placeholder="Выберите категорию" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="__none__">Не указана</SelectItem>
-                                  <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
-                                  <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
-                                  <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
-                                  <SelectItem value="vip">VIP</SelectItem>
-                                  <SelectItem value="not_segmented">Не сегментированный</SelectItem>
-                                  <SelectItem value="travel_agent">Турагент</SelectItem>
-                                  <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
-                                  <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
-                                  <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <MultiSelectField
+                                  dictionaryType="client_category"
+                                  value={field.value}
+                                  onChange={(value) => field.onChange(value)}
+                                  placeholder="Выберите категорию"
+                                  fallbackOptions={[
+                                    { value: "category_ab", label: "Категория А и В (Даты и бюджет)" },
+                                    { value: "category_c", label: "Категория C (Неопределились)" },
+                                    { value: "category_d", label: "Категория D (Нет бюджета)" },
+                                    { value: "vip", label: "VIP" },
+                                    { value: "not_segmented", label: "Не сегментированный" },
+                                    { value: "travel_agent", label: "Турагент" },
+                                    { value: "tariff_standard", label: "Тариф стандарт" },
+                                    { value: "tariff_economy", label: "Тариф эконом" },
+                                    { value: "tariff_vip", label: "Тариф VIP" },
+                                  ]}
+                                  data-testid="select-lead-clientCategory"
+                                />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -833,20 +828,22 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Источник *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-lead-source">
-                                    <SelectValue placeholder="Выберите источник" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="form">Веб-форма</SelectItem>
-                                  <SelectItem value="referral">Рекомендация</SelectItem>
-                                  <SelectItem value="direct">Прямое обращение</SelectItem>
-                                  <SelectItem value="advertisement">Реклама</SelectItem>
-                                  <SelectItem value="other">Другое</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <MultiSelectField
+                                  dictionaryType="lead_source"
+                                  value={field.value}
+                                  onChange={(value) => field.onChange(value || "direct")}
+                                  placeholder="Выберите источник"
+                                  fallbackOptions={[
+                                    { value: "form", label: "Веб-форма" },
+                                    { value: "referral", label: "Рекомендация" },
+                                    { value: "direct", label: "Прямое обращение" },
+                                    { value: "advertisement", label: "Реклама" },
+                                    { value: "other", label: "Другое" },
+                                  ]}
+                                  data-testid="select-lead-source"
+                                />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}

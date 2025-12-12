@@ -13,22 +13,19 @@ interface MultiSelectFieldProps {
   "data-testid"?: string;
 }
 
-function parseValue(value: string | string[] | null | undefined): string[] {
+export function parseMultiValue(value: string | string[] | null | undefined): string[] {
   if (!value) return [];
   if (Array.isArray(value)) return value;
-  try {
-    const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) return parsed;
-    return [value];
-  } catch {
-    return value ? [value] : [];
+  if (value.includes(",")) {
+    return value.split(",").map(v => v.trim()).filter(Boolean);
   }
+  return value ? [value] : [];
 }
 
-function serializeValue(values: string[], isMultiple: boolean): string | string[] | null {
+export function serializeMultiValue(values: string[], isMultiple: boolean): string | null {
   if (values.length === 0) return null;
   if (!isMultiple) return values[0];
-  return JSON.stringify(values);
+  return values.join(",");
 }
 
 export function MultiSelectField({
@@ -48,16 +45,16 @@ export function MultiSelectField({
     ? items.map(item => ({ value: item.value, label: item.label }))
     : fallbackOptions;
   
-  const selectedValues = parseValue(value);
+  const selectedValues = parseMultiValue(value);
   
   const handleCheckboxChange = (optionValue: string, checked: boolean) => {
     let newValues: string[];
     if (checked) {
       newValues = [...selectedValues, optionValue];
     } else {
-      newValues = selectedValues.filter(v => v !== optionValue);
+      newValues = selectedValues.filter((v: string) => v !== optionValue);
     }
-    onChange(serializeValue(newValues, true));
+    onChange(serializeMultiValue(newValues, true));
   };
   
   const handleSelectChange = (selectedValue: string) => {

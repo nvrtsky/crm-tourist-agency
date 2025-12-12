@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Pencil, Trash2, Loader2, Shield, MessageCircle, Check, X, Settings as SettingsIcon, Palette, Book, ArrowUp, ArrowDown } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, Loader2, Shield, MessageCircle, Check, X, Settings as SettingsIcon, Palette, Book, ArrowUp, ArrowDown, Cloud } from "lucide-react";
+import { SyncLogsTab } from "@/components/SyncLogsTab";
 import { z } from "zod";
 import type { User, SystemDictionary, DICTIONARY_TYPES } from "@shared/schema";
 import { type ColorDisplayMode, getColorDisplayMode, setColorDisplayMode, ColorIndicator, getPastelClasses } from "@/components/ColorPicker";
@@ -1181,7 +1182,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-5 max-w-3xl">
           <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
             <Users className="h-4 w-4" />
             Пользователи
@@ -1198,6 +1199,10 @@ export default function Settings() {
             <MessageCircle className="h-4 w-4" />
             Wazzup24
           </TabsTrigger>
+          <TabsTrigger value="sync" className="flex items-center gap-2" data-testid="tab-sync">
+            <Cloud className="h-4 w-4" />
+            Синхронизация
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-6">
           <UsersTab />
@@ -1210,6 +1215,9 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="wazzup24" className="mt-6">
           <Wazzup24Tab />
+        </TabsContent>
+        <TabsContent value="sync" className="mt-6">
+          <SyncLogsTab />
         </TabsContent>
       </Tabs>
     </div>

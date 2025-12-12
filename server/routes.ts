@@ -3188,18 +3188,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Parse client name into parts
+      const nameParts = clientName.trim().split(/\s+/);
+      const lastName = nameParts[0] || "Неизвестно";
+      const firstName = nameParts[1] || "";
+      const middleName = nameParts.slice(2).join(" ") || null;
+
       // Create lead
       const lead = await storage.createLead({
-        clientName,
+        lastName,
+        firstName,
+        middleName,
         phone,
         email: email || null,
-        touristCount: touristCount || 1,
         source: source || "WordPress",
-        comment: comment || null,
+        notes: comment || null,
         status: "Новый",
         eventId: event?.id || null,
-        assignedTo: null,
-        externalId: bookingId || null,
         clientCategory: clientCategory || null,
         roomType: roomType || null,
         hotelCategory: hotelCategory || null,
@@ -3208,9 +3213,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create initial tourist
       await storage.createTourist({
         leadId: lead.id,
-        lastName: clientName.split(" ")[0] || "",
-        firstName: clientName.split(" ")[1] || "",
-        middleName: clientName.split(" ")[2] || null,
+        lastName,
+        firstName,
+        middleName,
         phone,
         email: email || null,
         isPrimary: true,
@@ -3260,11 +3265,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updates: Record<string, any> = {};
       if (paymentStatus) updates.paymentStatus = paymentStatus;
-      if (paidAmount !== undefined) updates.paidAmount = String(paidAmount);
-      if (paidDate) updates.paidDate = new Date(paidDate);
+      if (paidAmount !== undefined) updates.advancePayment = String(paidAmount);
+      if (paidDate) updates.updatedAt = new Date(paidDate);
       if (comment) {
-        updates.comment = lead.comment 
-          ? `${lead.comment}\n[${new Date().toISOString().slice(0,10)}] ${comment}`
+        updates.notes = lead.notes 
+          ? `${lead.notes}\n[${new Date().toISOString().slice(0,10)}] ${comment}`
           : `[${new Date().toISOString().slice(0,10)}] ${comment}`;
       }
 
@@ -3318,8 +3323,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const eventData = {
             name: tour.title || tour.name,
             description: tour.description || null,
-            startDate: tour.startDate ? new Date(tour.startDate) : new Date(),
-            endDate: tour.endDate ? new Date(tour.endDate) : new Date(),
+            startDate: tour.startDate ? new Date(tour.startDate).toISOString() : new Date().toISOString(),
+            endDate: tour.endDate ? new Date(tour.endDate).toISOString() : new Date().toISOString(),
             price: tour.price ? String(tour.price) : "0",
             currency: tour.currency || "RUB",
             participantLimit: tour.capacity || tour.participantLimit || 30,

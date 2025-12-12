@@ -3146,6 +3146,362 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== PUBLIC API ENDPOINTS (WordPress Integration) ====================
+  // These endpoints are for external systems (WordPress booking widget) and do not require authentication
+  
+  // Public: Create lead from WordPress booking
+  app.post("/api/public/leads", async (req, res) => {
+    try {
+      const { 
+        eventExternalId,  // WordPress post ID 
+        clientName,
+        phone,
+        email,
+        touristCount,
+        source,
+        comment,
+        bookingId,  // Unique booking ID from WordPress
+        clientCategory,
+        roomType,
+        hotelCategory,
+      } = req.body;
+
+      // Validate required fields
+      if (!clientName || !phone) {
+        return res.status(400).json({ error: "Missing required fields: clientName, phone" });
+      }
+
+      // Find event by external ID if provided
+      let event = null;
+      if (eventExternalId) {
+        event = await storage.getEventByExternalId(String(eventExternalId));
+        if (!event) {
+          // Log the error and create without event
+          await storage.createSyncLog({
+            operation: "error",
+            entityType: "lead",
+            externalId: bookingId || null,
+            status: "error",
+            errorMessage: `Event not found for externalId: ${eventExternalId}`,
+            details: { eventExternalId, clientName, phone },
+          });
+        }
+      }
+
+      // Create lead
+      const lead = await storage.createLead({
+        clientName,
+        phone,
+        email: email || null,
+        touristCount: touristCount || 1,
+        source: source || "WordPress",
+        comment: comment || null,
+        status: "Новый",
+        eventId: event?.id || null,
+        assignedTo: null,
+        externalId: bookingId || null,
+        clientCategory: clientCategory || null,
+        roomType: roomType || null,
+        hotelCategory: hotelCategory || null,
+      });
+
+      // Create initial tourist
+      await storage.createTourist({
+        leadId: lead.id,
+        lastName: clientName.split(" ")[0] || "",
+        firstName: clientName.split(" ")[1] || "",
+        middleName: clientName.split(" ")[2] || null,
+        phone,
+        email: email || null,
+        isPrimary: true,
+      });
+
+      // Log successful creation
+      await storage.createSyncLog({
+        operation: "create",
+        entityType: "lead",
+        entityId: lead.id,
+        externalId: bookingId || null,
+        status: "success",
+        details: { eventExternalId, clientName, phone, eventId: event?.id },
+      });
+
+      res.status(201).json({
+        success: true,
+        leadId: lead.id,
+        message: "Lead created successfully",
+      });
+    } catch (error) {
+      console.error("Error creating lead from WordPress:", error);
+      
+      // Log the error
+      await storage.createSyncLog({
+        operation: "error",
+        entityType: "lead",
+        externalId: req.body.bookingId || null,
+        status: "error",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        details: req.body,
+      });
+
+      res.status(500).json({ error: "Failed to create lead" });
+    }
+  });
+
+  // Public: Update lead payment status
+  app.patch("/api/public/leads/:id/payment-status", async (req, res) => {
+    try {
+      const { paymentStatus, paidAmount, paidDate, comment } = req.body;
+
+      const lead = await storage.getLead(req.params.id);
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      const updates: Record<string, any> = {};
+      if (paymentStatus) updates.paymentStatus = paymentStatus;
+      if (paidAmount !== undefined) updates.paidAmount = String(paidAmount);
+      if (paidDate) updates.paidDate = new Date(paidDate);
+      if (comment) {
+        updates.comment = lead.comment 
+          ? `${lead.comment}\n[${new Date().toISOString().slice(0,10)}] ${comment}`
+          : `[${new Date().toISOString().slice(0,10)}] ${comment}`;
+      }
+
+      const updatedLead = await storage.updateLead(req.params.id, updates);
+
+      // Log the update
+      await storage.createSyncLog({
+        operation: "update",
+        entityType: "lead",
+        entityId: req.params.id,
+        status: "success",
+        details: { paymentStatus, paidAmount, updates },
+      });
+
+      res.json({
+        success: true,
+        leadId: updatedLead?.id,
+        message: "Payment status updated",
+      });
+    } catch (error) {
+      console.error("Error updating lead payment status:", error);
+      res.status(500).json({ error: "Failed to update payment status" });
+    }
+  });
+
+  // Public: Sync events from WordPress
+  app.post("/api/public/events/sync", async (req, res) => {
+    try {
+      const { tours } = req.body;
+
+      if (!Array.isArray(tours)) {
+        return res.status(400).json({ error: "tours must be an array" });
+      }
+
+      const results = {
+        created: 0,
+        updated: 0,
+        archived: 0,
+        errors: [] as string[],
+      };
+
+      const receivedExternalIds = new Set<string>();
+
+      for (const tour of tours) {
+        try {
+          const externalId = String(tour.id || tour.postId);
+          receivedExternalIds.add(externalId);
+
+          const existingEvent = await storage.getEventByExternalId(externalId);
+
+          const eventData = {
+            name: tour.title || tour.name,
+            description: tour.description || null,
+            startDate: tour.startDate ? new Date(tour.startDate) : new Date(),
+            endDate: tour.endDate ? new Date(tour.endDate) : new Date(),
+            price: tour.price ? String(tour.price) : "0",
+            currency: tour.currency || "RUB",
+            participantLimit: tour.capacity || tour.participantLimit || 30,
+            cities: tour.cities || tour.route || [],
+            externalId,
+            status: tour.status === "private" || tour.status === "draft" ? "Черновик" : "Активный",
+          };
+
+          if (existingEvent) {
+            // Update existing event
+            await storage.updateEvent(existingEvent.id, eventData);
+            results.updated++;
+            
+            await storage.createSyncLog({
+              operation: "update",
+              entityType: "event",
+              entityId: existingEvent.id,
+              externalId,
+              status: "success",
+              details: { name: eventData.name },
+            });
+          } else {
+            // Create new event
+            const newEvent = await storage.createEvent(eventData as any);
+            results.created++;
+
+            await storage.createSyncLog({
+              operation: "create",
+              entityType: "event",
+              entityId: newEvent.id,
+              externalId,
+              status: "success",
+              details: { name: eventData.name },
+            });
+          }
+        } catch (tourError) {
+          const errorMsg = `Error processing tour ${tour.id}: ${tourError instanceof Error ? tourError.message : "Unknown error"}`;
+          results.errors.push(errorMsg);
+          
+          await storage.createSyncLog({
+            operation: "error",
+            entityType: "event",
+            externalId: String(tour.id || "unknown"),
+            status: "error",
+            errorMessage: errorMsg,
+            details: tour,
+          });
+        }
+      }
+
+      // Archive events that are no longer in WordPress (optional)
+      if (req.body.archiveRemoved === true) {
+        const allEvents = await storage.getAllEvents();
+        for (const event of allEvents) {
+          if (event.externalId && !receivedExternalIds.has(event.externalId) && !event.isArchived) {
+            await storage.archiveEvent(event.id);
+            results.archived++;
+
+            await storage.createSyncLog({
+              operation: "archive",
+              entityType: "event",
+              entityId: event.id,
+              externalId: event.externalId,
+              status: "success",
+              details: { reason: "Tour removed from WordPress" },
+            });
+          }
+        }
+      }
+
+      // Log sync completion
+      await storage.createSyncLog({
+        operation: "sync_complete",
+        entityType: "event",
+        status: results.errors.length > 0 ? "partial" : "success",
+        details: results,
+      });
+
+      // Update sync settings
+      await storage.upsertSyncSettings("tour_sync", {
+        lastSyncAt: new Date(),
+        lastSyncStatus: results.errors.length > 0 ? "partial" : "success",
+        lastSyncMessage: `Created: ${results.created}, Updated: ${results.updated}, Archived: ${results.archived}`,
+      });
+
+      res.json({
+        success: true,
+        ...results,
+      });
+    } catch (error) {
+      console.error("Error syncing events from WordPress:", error);
+
+      await storage.createSyncLog({
+        operation: "error",
+        entityType: "event",
+        status: "error",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+      });
+
+      res.status(500).json({ error: "Failed to sync events" });
+    }
+  });
+
+  // Admin: Get sync logs (requires authentication)
+  app.get("/api/sync-logs", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = (page - 1) * limit;
+
+      const [logs, total] = await Promise.all([
+        storage.getSyncLogs(limit, offset),
+        storage.getSyncLogsCount(),
+      ]);
+
+      res.json({
+        logs,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching sync logs:", error);
+      res.status(500).json({ error: "Failed to fetch sync logs" });
+    }
+  });
+
+  // Admin: Get sync settings
+  app.get("/api/sync-settings/:key", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getSyncSettings(req.params.key);
+      res.json(settings || { key: req.params.key, enabled: false, intervalHours: 24 });
+    } catch (error) {
+      console.error("Error fetching sync settings:", error);
+      res.status(500).json({ error: "Failed to fetch sync settings" });
+    }
+  });
+
+  // Admin: Update sync settings
+  app.patch("/api/sync-settings/:key", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { enabled, intervalHours } = req.body;
+      const settings = await storage.upsertSyncSettings(req.params.key, {
+        enabled: enabled !== undefined ? enabled : undefined,
+        intervalHours: intervalHours !== undefined ? intervalHours : undefined,
+      });
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating sync settings:", error);
+      res.status(500).json({ error: "Failed to update sync settings" });
+    }
+  });
+
+  // Admin: Trigger manual sync
+  app.post("/api/sync-settings/:key/trigger", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      // This endpoint allows admin to manually trigger a sync
+      // The actual sync logic would be done by calling the WordPress API
+      // For now, just log the trigger request
+      await storage.createSyncLog({
+        operation: "sync_complete",
+        entityType: "event",
+        status: "success",
+        details: { triggeredBy: "admin", manual: true },
+      });
+
+      await storage.upsertSyncSettings(req.params.key, {
+        lastSyncAt: new Date(),
+        lastSyncStatus: "success",
+        lastSyncMessage: "Manual sync triggered",
+      });
+
+      res.json({ success: true, message: "Sync triggered" });
+    } catch (error) {
+      console.error("Error triggering sync:", error);
+      res.status(500).json({ error: "Failed to trigger sync" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

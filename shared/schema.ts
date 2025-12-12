@@ -127,6 +127,7 @@ export const events = pgTable("events", {
   isArchived: boolean("is_archived").notNull().default(false), // Manual or auto-archived when tour ends
   color: text("color"), // Color indicator: 'red', 'blue', 'green', 'yellow', 'purple'
   cityGuides: jsonb("city_guides"), // City to guide mapping: { "cityName": "userId" }
+  externalId: text("external_id"), // WordPress post ID for sync tracking
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -762,3 +763,40 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
   }),
   deals: many(deals),
 }));
+
+// ================= SYNC TABLES =================
+
+// Sync logs table - for tracking WordPress sync operations
+export const syncLogs = pgTable("sync_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  operation: text("operation").notNull(), // 'create', 'update', 'archive', 'error', 'sync_complete'
+  entityType: text("entity_type").notNull(), // 'event', 'lead'
+  entityId: varchar("entity_id"), // ID of the affected entity
+  externalId: text("external_id"), // External ID (WordPress post ID, booking ID)
+  details: jsonb("details"), // Additional details about the operation
+  status: text("status").notNull().default("success"), // 'success', 'error', 'partial'
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Sync log schemas
+export const insertSyncLogSchema = createInsertSchema(syncLogs).omit({ id: true, createdAt: true });
+export type InsertSyncLog = z.infer<typeof insertSyncLogSchema>;
+export type SyncLog = typeof syncLogs.$inferSelect;
+
+// Sync settings table - for configuring automatic sync
+export const syncSettings = pgTable("sync_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(), // 'tour_sync'
+  enabled: boolean("enabled").notNull().default(false),
+  intervalHours: integer("interval_hours").notNull().default(24), // 1, 6, 12, 24, 48
+  lastSyncAt: timestamp("last_sync_at"),
+  lastSyncStatus: text("last_sync_status"), // 'success', 'error'
+  lastSyncMessage: text("last_sync_message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertSyncSettingsSchema = createInsertSchema(syncSettings).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSyncSettings = z.infer<typeof insertSyncSettingsSchema>;
+export type SyncSettings = typeof syncSettings.$inferSelect;

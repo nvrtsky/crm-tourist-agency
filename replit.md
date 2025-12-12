@@ -32,7 +32,7 @@ A normalized PostgreSQL schema underpins the system, supporting core CRM entitie
 -   **Booking Module**: A public-facing reservation system allowing customers to view, filter, and book tours, automatically generating leads linked to specific events.
 -   **Color Indication System**: Allows manual color tagging for events and leads, with automatic status-based highlighting for leads.
 -   **Authentication & User Management**: Implements session-based authentication with Passport.js and bcrypt, featuring role-based access control (admin/manager/viewer) for secure login, route protection, and restricted content access.
--   **System Dictionaries**: Centralized management of lookup tables (lead sources, statuses, countries, accommodation types, currencies) via Settings page. Admin-only CRUD operations for maintaining system-wide configuration values.
+-   **System Dictionaries**: Centralized management of lookup tables (lead sources, statuses, countries, accommodation types, currencies) via Settings page. Admin-only CRUD operations for maintaining system-wide configuration values. **Multi-Select Support**: Dictionary types can be configured with `isMultiple` toggle - when enabled, form fields render as checkbox groups instead of dropdowns. Values are stored as comma-separated strings for backward compatibility. Affected fields: clientCategory, source, roomType, hotelCategory.
 
 ### Technical Decisions
 The system employs dynamic geography for event city tracking, maintains a standalone design without external CRM integrations, uses a backend-automated notification strategy, and features a refined lead data separation architecture. Initial tourist entries are auto-created, and comprehensive tourist data completeness is indicated.

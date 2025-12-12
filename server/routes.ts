@@ -30,6 +30,7 @@ import {
   insertUserSchema,
   updateUserSchema,
   loginSchema,
+  insertDictionaryTypeConfigSchema,
   type User,
   type LeadTourist,
 } from "@shared/schema";
@@ -2854,6 +2855,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting dictionary item:", error);
       res.status(500).json({ error: "Failed to delete dictionary item" });
+    }
+  });
+
+  // ==================== DICTIONARY TYPE CONFIG ROUTES ====================
+
+  // Get all dictionary type configs (admin only)
+  app.get("/api/dictionary-type-configs", requireAdmin, async (req, res) => {
+    try {
+      const configs = await storage.getAllDictionaryTypeConfigs();
+      res.json(configs);
+    } catch (error) {
+      console.error("Error fetching dictionary type configs:", error);
+      res.status(500).json({ error: "Failed to fetch dictionary type configs" });
+    }
+  });
+
+  // Get dictionary type config by type (public for forms)
+  app.get("/api/public/dictionary-type-config/:type", requireAuth, async (req, res) => {
+    try {
+      const { type } = req.params;
+      const config = await storage.getDictionaryTypeConfig(type);
+      res.json(config || { type, isMultiple: false, displayName: type });
+    } catch (error) {
+      console.error("Error fetching dictionary type config:", error);
+      res.status(500).json({ error: "Failed to fetch dictionary type config" });
+    }
+  });
+
+  // Upsert dictionary type config (admin only)
+  app.put("/api/dictionary-type-configs/:type", requireAdmin, async (req, res) => {
+    try {
+      const { type } = req.params;
+      
+      // Validate request body
+      const validationSchema = insertDictionaryTypeConfigSchema.partial().extend({
+        type: z.string().optional(),
+      });
+      const validation = validationSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: "Invalid request body", 
+          details: validation.error.errors 
+        });
+      }
+      
+      const { isMultiple, displayName, description } = validation.data;
+      
+      const config = await storage.upsertDictionaryTypeConfig({
+        type,
+        isMultiple: isMultiple ?? false,
+        displayName: displayName || type,
+        description: description || null
+      });
+      
+      res.json(config);
+    } catch (error) {
+      console.error("Error upserting dictionary type config:", error);
+      res.status(500).json({ error: "Failed to update dictionary type config" });
     }
   });
   

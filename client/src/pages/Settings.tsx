@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { Users, Plus, Pencil, Trash2, Loader2, Shield, MessageCircle, Check, X, Settings as SettingsIcon, Palette, Book, ArrowUp, ArrowDown } from "lucide-react";
 import { z } from "zod";
 import type { User, SystemDictionary, DICTIONARY_TYPES } from "@shared/schema";
@@ -867,6 +868,35 @@ function DictionariesTab() {
     },
   });
 
+  // Dictionary type config query and mutation
+  const { data: typeConfig } = useQuery<{ type: string; isMultiple: boolean; displayName: string }>({
+    queryKey: ["/api/dictionary-type-configs", selectedType],
+    queryFn: async () => {
+      const response = await fetch(`/api/dictionary-type-configs`);
+      if (!response.ok) return { type: selectedType, isMultiple: false, displayName: selectedType };
+      const configs = await response.json();
+      const config = configs.find((c: { type: string }) => c.type === selectedType);
+      return config || { type: selectedType, isMultiple: false, displayName: DICTIONARY_TYPE_LABELS[selectedType] || selectedType };
+    },
+  });
+
+  const updateTypeConfigMutation = useMutation({
+    mutationFn: async (isMultiple: boolean) => {
+      const response = await apiRequest("PUT", `/api/dictionary-type-configs/${selectedType}`, {
+        isMultiple,
+        displayName: DICTIONARY_TYPE_LABELS[selectedType] || selectedType,
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dictionary-type-configs", selectedType] });
+      toast({ title: "Настройки типа обновлены" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingItem(null);
@@ -932,7 +962,7 @@ function DictionariesTab() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <Label className="whitespace-nowrap">Справочник:</Label>
             <Select value={selectedType} onValueChange={setSelectedType}>
               <SelectTrigger className="w-[300px]" data-testid="select-dictionary-type">
@@ -946,6 +976,18 @@ function DictionariesTab() {
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="is-multiple"
+                checked={typeConfig?.isMultiple ?? false}
+                onCheckedChange={(checked) => updateTypeConfigMutation.mutate(checked)}
+                disabled={updateTypeConfigMutation.isPending}
+                data-testid="switch-is-multiple"
+              />
+              <Label htmlFor="is-multiple" className="text-sm text-muted-foreground whitespace-nowrap">
+                Множественный выбор
+              </Label>
+            </div>
             <Button onClick={handleOpenCreate} data-testid="button-add-dictionary-item">
               <Plus className="h-4 w-4 mr-2" />
               Добавить

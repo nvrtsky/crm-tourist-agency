@@ -42,6 +42,8 @@ import {
   type Setting,
   type SystemDictionary,
   type InsertSystemDictionary,
+  type DictionaryTypeConfig,
+  type InsertDictionaryTypeConfig,
   type EventParticipantExpense,
   type InsertParticipantExpense,
   type EventCommonExpense,
@@ -64,6 +66,7 @@ import {
   leadTourists,
   settings,
   systemDictionaries,
+  dictionaryTypeConfig,
   eventParticipantExpenses,
   eventCommonExpenses,
   baseExpenses,
@@ -195,6 +198,12 @@ export interface IStorage {
   createDictionaryItem(item: InsertSystemDictionary): Promise<SystemDictionary>;
   updateDictionaryItem(id: string, item: Partial<InsertSystemDictionary>): Promise<SystemDictionary | undefined>;
   deleteDictionaryItem(id: string): Promise<boolean>;
+
+  // Dictionary type config operations
+  getDictionaryTypeConfig(type: string): Promise<import("@shared/schema").DictionaryTypeConfig | undefined>;
+  getAllDictionaryTypeConfigs(): Promise<import("@shared/schema").DictionaryTypeConfig[]>;
+  upsertDictionaryTypeConfig(config: import("@shared/schema").InsertDictionaryTypeConfig): Promise<import("@shared/schema").DictionaryTypeConfig>;
+  deleteDictionaryTypeConfig(type: string): Promise<boolean>;
 
   // Event expense operations
   getParticipantExpensesByEvent(eventId: string): Promise<import("@shared/schema").EventParticipantExpense[]>;
@@ -1352,6 +1361,48 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(systemDictionaries)
       .where(eq(systemDictionaries.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  // ==================== DICTIONARY TYPE CONFIG OPERATIONS ====================
+
+  async getDictionaryTypeConfig(type: string): Promise<DictionaryTypeConfig | undefined> {
+    const result = await db
+      .select()
+      .from(dictionaryTypeConfig)
+      .where(eq(dictionaryTypeConfig.type, type));
+    return result[0];
+  }
+
+  async getAllDictionaryTypeConfigs(): Promise<DictionaryTypeConfig[]> {
+    return await db
+      .select()
+      .from(dictionaryTypeConfig)
+      .orderBy(dictionaryTypeConfig.displayName);
+  }
+
+  async upsertDictionaryTypeConfig(config: InsertDictionaryTypeConfig): Promise<DictionaryTypeConfig> {
+    const [result] = await db
+      .insert(dictionaryTypeConfig)
+      .values(config)
+      .onConflictDoUpdate({
+        target: [dictionaryTypeConfig.type],
+        set: {
+          isMultiple: config.isMultiple,
+          displayName: config.displayName,
+          description: config.description,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+    return result;
+  }
+
+  async deleteDictionaryTypeConfig(type: string): Promise<boolean> {
+    const result = await db
+      .delete(dictionaryTypeConfig)
+      .where(eq(dictionaryTypeConfig.type, type))
       .returning();
     return result.length > 0;
   }

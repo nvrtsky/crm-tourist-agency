@@ -348,6 +348,17 @@ export const systemDictionaries = pgTable("system_dictionaries", {
   uniqueIndex("system_dictionary_unique").on(table.type, table.value)
 ]);
 
+// Dictionary type configuration - metadata per dictionary type
+export const dictionaryTypeConfig = pgTable("dictionary_type_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull().unique(), // Matches type from system_dictionaries
+  isMultiple: boolean("is_multiple").notNull().default(false), // Allow multiple selection
+  displayName: text("display_name").notNull(), // Human-readable name for the type
+  description: text("description"), // Optional description
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Event participant expenses - individual expenses per participant per city
 export const eventParticipantExpenses = pgTable("event_participant_expenses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -471,6 +482,10 @@ export const updateSettingSchema = insertSettingSchema.partial();
 export const insertSystemDictionarySchema = createInsertSchema(systemDictionaries).omit({ id: true, createdAt: true, updatedAt: true });
 export const updateSystemDictionarySchema = insertSystemDictionarySchema.partial();
 
+// Dictionary type config schemas
+export const insertDictionaryTypeConfigSchema = createInsertSchema(dictionaryTypeConfig).omit({ id: true, createdAt: true, updatedAt: true });
+export const updateDictionaryTypeConfigSchema = insertDictionaryTypeConfigSchema.partial();
+
 // Event expense schemas
 export const insertParticipantExpenseSchema = createInsertSchema(eventParticipantExpenses).omit({ 
   id: true, 
@@ -564,6 +579,10 @@ export type UpdateSetting = z.infer<typeof updateSettingSchema>;
 export type SystemDictionary = typeof systemDictionaries.$inferSelect;
 export type InsertSystemDictionary = z.infer<typeof insertSystemDictionarySchema>;
 export type UpdateSystemDictionary = z.infer<typeof updateSystemDictionarySchema>;
+
+export type DictionaryTypeConfig = typeof dictionaryTypeConfig.$inferSelect;
+export type InsertDictionaryTypeConfig = z.infer<typeof insertDictionaryTypeConfigSchema>;
+export type UpdateDictionaryTypeConfig = z.infer<typeof updateDictionaryTypeConfigSchema>;
 
 // Dictionary types enum
 export const DICTIONARY_TYPES = [

@@ -362,7 +362,8 @@ export default function Events() {
         event.cities.some(city => city.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesCountry = countryFilter === "all" || event.country === countryFilter;
       const matchesTourType = tourTypeFilter === "all" || event.tourType === tourTypeFilter;
-      const matchesArchived = showArchived || !event.isArchived; // Show only active by default
+      // Archive filter - show only archived when showArchived is true, otherwise show only non-archived
+      const matchesArchived = showArchived ? event.isArchived : !event.isArchived;
       return matchesSearch && matchesCountry && matchesTourType && matchesArchived;
     })
     .sort((a, b) => {
@@ -528,7 +529,7 @@ export default function Events() {
             />
             <Label htmlFor="show-archived" className="flex items-center gap-2 cursor-pointer">
               <Archive className="h-4 w-4" />
-              Показать архив
+              Только архивные
             </Label>
           </div>
         </CardContent>

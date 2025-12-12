@@ -54,7 +54,7 @@ export function MultiSelectField({
     } else {
       newValues = selectedValues.filter((v: string) => v !== optionValue);
     }
-    onChange(serializeMultiValue(newValues, true));
+    onChange(serializeMultiValue(newValues, isMultiple));
   };
   
   const handleSelectChange = (selectedValue: string) => {

@@ -30,7 +30,7 @@ import { calculateTouristDataCompleteness, formatCurrency, formatTouristName } f
 import { ColorPicker, ColorIndicator, type ColorOption, type ColorDisplayMode, getColorDisplayMode, getPastelClasses } from "@/components/ColorPicker";
 import { DeferLeadDialog, type DeferLeadDialogResult, postponeReasonLabels, failureReasonLabels, postponeReasons, failureReasons } from "@/components/DeferLeadDialog";
 import { Wazzup24Chat } from "@/components/Wazzup24Chat";
-import { useSystemDictionary, useDictionaryMap } from "@/hooks/use-system-dictionary";
+import { useSystemDictionary } from "@/hooks/use-system-dictionary";
 import { z } from "zod";
 
 const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; customClass?: string }> = {
@@ -148,7 +148,6 @@ export default function Leads() {
   // Dictionary queries for dynamic form options
   const { data: clientCategoryItems = [] } = useSystemDictionary("client_category");
   const { data: leadSourceItems = [] } = useSystemDictionary("lead_source");
-  const { data: leadStatusItems = [] } = useSystemDictionary("lead_status");
   const { data: hotelCategoryItems = [] } = useSystemDictionary("hotel_category");
   const { data: roomTypeItems = [] } = useSystemDictionary("room_type");
 
@@ -558,11 +557,19 @@ export default function Leads() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Все источники</SelectItem>
-                  <SelectItem value="form">Веб-форма</SelectItem>
-                  <SelectItem value="referral">Рекомендация</SelectItem>
-                  <SelectItem value="direct">Прямое обращение</SelectItem>
-                  <SelectItem value="advertisement">Реклама</SelectItem>
-                  <SelectItem value="other">Другое</SelectItem>
+                  {leadSourceItems.length > 0 ? (
+                    leadSourceItems.map(item => (
+                      <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="form">Веб-форма</SelectItem>
+                      <SelectItem value="referral">Рекомендация</SelectItem>
+                      <SelectItem value="direct">Прямое обращение</SelectItem>
+                      <SelectItem value="advertisement">Реклама</SelectItem>
+                      <SelectItem value="other">Другое</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -578,15 +585,23 @@ export default function Leads() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Все категории</SelectItem>
-                  <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
-                  <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
-                  <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
-                  <SelectItem value="vip">VIP</SelectItem>
-                  <SelectItem value="not_segmented">Не сегментированный</SelectItem>
-                  <SelectItem value="travel_agent">Турагент</SelectItem>
-                  <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
-                  <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
-                  <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
+                  {clientCategoryItems.length > 0 ? (
+                    clientCategoryItems.map(item => (
+                      <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="category_ab">Категория А и В (Даты и бюджет)</SelectItem>
+                      <SelectItem value="category_c">Категория C (Неопределились)</SelectItem>
+                      <SelectItem value="category_d">Категория D (Нет бюджета)</SelectItem>
+                      <SelectItem value="vip">VIP</SelectItem>
+                      <SelectItem value="not_segmented">Не сегментированный</SelectItem>
+                      <SelectItem value="travel_agent">Турагент</SelectItem>
+                      <SelectItem value="tariff_standard">Тариф стандарт</SelectItem>
+                      <SelectItem value="tariff_economy">Тариф эконом</SelectItem>
+                      <SelectItem value="tariff_vip">Тариф VIP</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>

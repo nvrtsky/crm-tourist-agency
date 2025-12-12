@@ -20,7 +20,7 @@ The frontend is built with React, TypeScript, Wouter, TanStack Query, Shadcn UI,
 The backend is developed using Express.js and TypeScript, integrated with a PostgreSQL database via Drizzle ORM. It provides RESTful APIs for CRM entities, utilizes Zod for data validation, and includes a dedicated storage layer for database abstraction.
 
 ### Database Schema
-A normalized PostgreSQL schema underpins the system, supporting core CRM entities such as `events`, `contacts`, `deals`, `leads`, and `groups`. Additional tables manage `leadTourists`, `users`, `cityVisits`, `leadStatusHistory`, `notifications`, `forms`, and `formSubmissions`.
+A normalized PostgreSQL schema underpins the system, supporting core CRM entities such as `events`, `contacts`, `deals`, `leads`, and `groups`. Additional tables manage `leadTourists`, `users`, `cityVisits`, `leadStatusHistory`, `notifications`, `forms`, `formSubmissions`, and `systemDictionaries`.
 
 ### Key Features
 -   **Events Module**: Manages tourist events, offering filtering, sorting, participant tracking, and comprehensive editing capabilities. Includes inline editable itinerary details and Excel export. Participant counting specifically includes only "Подтвержден" (converted) leads. Events can be archived, copied, and deleted (admin only). **Summary Table**: Includes "Remaining Payment" column, "Limited Route" indicator with city tooltip, and footer row with total remaining payments (by currency) and room type counts per city (e.g., "5 Twin, 2 Single, 1 Double").
@@ -28,10 +28,11 @@ A normalized PostgreSQL schema underpins the system, supporting core CRM entitie
 -   **Leads Module**: Provides comprehensive lead management with dual table/Kanban views. Features include automatic conversion upon tour assignment, postponement with follow-up, advanced filtering, and automatic color tagging. Tour cost is dynamically calculated and updated. Automatic participant addition intelligently converts tourists to contacts and deals based on event assignment changes. **City Selection**: When a tour is assigned, city checkboxes appear allowing managers to specify limited routes (not all tour cities).
 -   **Group Management**: Supports "Families" (shared services) and "Mini-groups" (shared hotel only), with automated creation for families and manual for mini-groups.
 -   **Notification System**: Delivers automated in-app notifications for bookings, group capacity, upcoming events, and participant birthdays.
--   **Forms Module**: A lead generation system with a form builder, public pages, and submission tracking that automatically creates leads.
+-   **Forms Module**: A lead generation system with a form builder, public pages, and submission tracking that automatically creates leads. **Admin-Configurable Fields**: Administrators can configure select field options and enable multi-select functionality. Multi-select fields render as checkboxes and submit as arrays.
 -   **Booking Module**: A public-facing reservation system allowing customers to view, filter, and book tours, automatically generating leads linked to specific events.
 -   **Color Indication System**: Allows manual color tagging for events and leads, with automatic status-based highlighting for leads.
 -   **Authentication & User Management**: Implements session-based authentication with Passport.js and bcrypt, featuring role-based access control (admin/manager/viewer) for secure login, route protection, and restricted content access.
+-   **System Dictionaries**: Centralized management of lookup tables (lead sources, statuses, countries, accommodation types, currencies) via Settings page. Admin-only CRUD operations for maintaining system-wide configuration values.
 
 ### Technical Decisions
 The system employs dynamic geography for event city tracking, maintains a standalone design without external CRM integrations, uses a backend-automated notification strategy, and features a refined lead data separation architecture. Initial tourist entries are auto-created, and comprehensive tourist data completeness is indicated.

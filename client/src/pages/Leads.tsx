@@ -943,6 +943,13 @@ export default function Leads() {
                         </ContextMenuItem>
                       ))}
                       <ContextMenuSeparator />
+                      <ContextMenuItem
+                        onClick={() => setEditingLead(lead)}
+                        data-testid={`table-context-edit-${lead.id}`}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Редактировать
+                      </ContextMenuItem>
                       {lead.isArchived ? (
                         <ContextMenuItem
                           onClick={() => unarchiveMutation.mutate(lead.id)}

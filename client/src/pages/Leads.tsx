@@ -839,6 +839,12 @@ export default function Leads() {
                                   Лид из Отложенных
                                 </Badge>
                               )}
+                              {lead.isArchived && (
+                                <Badge variant="outline" className="text-[10px] bg-muted" data-testid={`badge-archived-table-${lead.id}`}>
+                                  <Archive className="h-3 w-3 mr-1" />
+                                  Архив
+                                </Badge>
+                              )}
                             </div>
                             {/* Show date and reason for postponed/failed leads */}
                             {lead.status === 'lost' && (
@@ -1308,6 +1314,12 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                             {lead.hasBeenContacted && (
                               <Badge variant="secondary" className="text-[9px] sm:text-[10px] truncate max-w-[80px] sm:max-w-none" data-testid={`badge-reactivated-${lead.id}`}>
                                 Из Отлож.
+                              </Badge>
+                            )}
+                            {lead.isArchived && (
+                              <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-muted" data-testid={`badge-archived-${lead.id}`}>
+                                <Archive className="h-3 w-3 mr-0.5" />
+                                Архив
                               </Badge>
                             )}
                           </div>

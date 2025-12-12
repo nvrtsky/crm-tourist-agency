@@ -285,9 +285,15 @@ export default function Leads() {
   // Filter and sort leads
   const filteredLeads = useMemo(() => {
     const filtered = leads.filter(lead => {
-      // Archive filter - hide archived leads unless showArchived is true
-      if (!showArchived && lead.isArchived) {
-        return false;
+      // Archive filter - show only archived leads when showArchived is true, otherwise show only non-archived
+      if (showArchived) {
+        if (!lead.isArchived) {
+          return false;
+        }
+      } else {
+        if (lead.isArchived) {
+          return false;
+        }
       }
       
       // Search filter
@@ -684,7 +690,7 @@ export default function Leads() {
                 className="text-sm cursor-pointer select-none flex items-center gap-1"
               >
                 <Archive className="h-3.5 w-3.5" />
-                Показать архивные
+                Только архивные
               </label>
             </div>
 

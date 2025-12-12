@@ -14,10 +14,23 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Users, Plus, Pencil, Trash2, Loader2, Shield, MessageCircle, Check, X, Settings as SettingsIcon, Palette } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, Loader2, Shield, MessageCircle, Check, X, Settings as SettingsIcon, Palette, Book, ArrowUp, ArrowDown } from "lucide-react";
 import { z } from "zod";
-import type { User } from "@shared/schema";
+import type { User, SystemDictionary, DICTIONARY_TYPES } from "@shared/schema";
 import { type ColorDisplayMode, getColorDisplayMode, setColorDisplayMode, ColorIndicator, getPastelClasses } from "@/components/ColorPicker";
+
+// Dictionary type labels in Russian
+const DICTIONARY_TYPE_LABELS: Record<string, string> = {
+  lead_source: "Источники лидов",
+  lead_status: "Статусы лидов",
+  country: "Страны",
+  room_type: "Типы размещения",
+  currency: "Валюты",
+  hotel_category: "Категории отелей",
+  client_category: "Категории клиентов",
+};
+
+const AVAILABLE_DICTIONARY_TYPES = Object.keys(DICTIONARY_TYPE_LABELS);
 
 type SanitizedUser = Omit<User, "passwordHash">;
 type UserRole = "admin" | "manager" | "viewer";
@@ -794,6 +807,304 @@ function Wazzup24Tab() {
   );
 }
 
+function DictionariesTab() {
+  const { toast } = useToast();
+  const [selectedType, setSelectedType] = useState<string>("lead_source");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<SystemDictionary | null>(null);
+  const [deletingItem, setDeletingItem] = useState<SystemDictionary | null>(null);
+  const [formData, setFormData] = useState({ value: "", label: "" });
+
+  const { data: items = [], isLoading } = useQuery<SystemDictionary[]>({
+    queryKey: ["/api/dictionaries", selectedType],
+  });
+
+  const filteredItems = items.filter(item => item.type === selectedType);
+
+  const createMutation = useMutation({
+    mutationFn: async (data: { type: string; value: string; label: string; order: number }) => {
+      const response = await apiRequest("POST", "/api/dictionaries", data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dictionaries", selectedType] });
+      toast({ title: "Элемент добавлен" });
+      handleCloseDialog();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<{ value: string; label: string; order: number }> }) => {
+      const response = await apiRequest("PATCH", `/api/dictionaries/${id}`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dictionaries", selectedType] });
+      toast({ title: "Элемент обновлен" });
+      handleCloseDialog();
+    },
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/dictionaries/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dictionaries", selectedType] });
+      toast({ title: "Элемент удален" });
+      setIsDeleteDialogOpen(false);
+      setDeletingItem(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Ошибка", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingItem(null);
+    setFormData({ value: "", label: "" });
+  };
+
+  const handleOpenCreate = () => {
+    setEditingItem(null);
+    setFormData({ value: "", label: "" });
+    setIsDialogOpen(true);
+  };
+
+  const handleOpenEdit = (item: SystemDictionary) => {
+    setEditingItem(item);
+    setFormData({ value: item.value, label: item.label });
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (!formData.value.trim() || !formData.label.trim()) {
+      toast({ title: "Ошибка", description: "Заполните все поля", variant: "destructive" });
+      return;
+    }
+
+    if (editingItem) {
+      updateMutation.mutate({ id: editingItem.id, data: formData });
+    } else {
+      createMutation.mutate({
+        type: selectedType,
+        value: formData.value.trim(),
+        label: formData.label.trim(),
+        order: filteredItems.length,
+      });
+    }
+  };
+
+  const handleMoveItem = (index: number, direction: "up" | "down") => {
+    const toIndex = direction === "up" ? index - 1 : index + 1;
+    if (toIndex < 0 || toIndex >= filteredItems.length) return;
+
+    const item1 = filteredItems[index];
+    const item2 = filteredItems[toIndex];
+
+    // Swap orders
+    updateMutation.mutate({ id: item1.id, data: { order: toIndex } });
+    updateMutation.mutate({ id: item2.id, data: { order: index } });
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Book className="h-5 w-5" />
+                Справочники
+              </CardTitle>
+              <CardDescription>
+                Управление списками значений для выпадающих полей
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Label className="whitespace-nowrap">Справочник:</Label>
+            <Select value={selectedType} onValueChange={setSelectedType}>
+              <SelectTrigger className="w-[300px]" data-testid="select-dictionary-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AVAILABLE_DICTIONARY_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {DICTIONARY_TYPE_LABELS[type]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleOpenCreate} data-testid="button-add-dictionary-item">
+              <Plus className="h-4 w-4 mr-2" />
+              Добавить
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Нет элементов в справочнике
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Значение</TableHead>
+                  <TableHead>Отображение</TableHead>
+                  <TableHead className="w-[150px]">Действия</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredItems
+                  .sort((a, b) => a.order - b.order)
+                  .map((item, index) => (
+                  <TableRow key={item.id} data-testid={`row-dictionary-${item.id}`}>
+                    <TableCell className="font-mono text-sm">{item.value}</TableCell>
+                    <TableCell>{item.label}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleMoveItem(index, "up")}
+                          disabled={index === 0}
+                          data-testid={`button-move-up-${item.id}`}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleMoveItem(index, "down")}
+                          disabled={index === filteredItems.length - 1}
+                          data-testid={`button-move-down-${item.id}`}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOpenEdit(item)}
+                          data-testid={`button-edit-${item.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setDeletingItem(item);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                          data-testid={`button-delete-${item.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
+        <DialogContent data-testid="dialog-dictionary-item">
+          <DialogHeader>
+            <DialogTitle>
+              {editingItem ? "Редактировать элемент" : "Добавить элемент"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingItem
+                ? "Измените значения элемента справочника"
+                : `Добавьте новый элемент в справочник "${DICTIONARY_TYPE_LABELS[selectedType]}"`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="value">Значение (код)</Label>
+              <Input
+                id="value"
+                value={formData.value}
+                onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                placeholder="Уникальный идентификатор"
+                data-testid="input-dictionary-value"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="label">Отображение</Label>
+              <Input
+                id="label"
+                value={formData.label}
+                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                placeholder="Как будет показываться пользователю"
+                data-testid="input-dictionary-label"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseDialog} data-testid="button-cancel-dictionary">
+              Отмена
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid="button-save-dictionary"
+            >
+              {(createMutation.isPending || updateMutation.isPending) && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              {editingItem ? "Сохранить" : "Добавить"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить элемент?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы уверены, что хотите удалить элемент "{deletingItem?.label}"?
+              Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-dictionary">Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingItem && deleteMutation.mutate(deletingItem.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-dictionary"
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { isAdmin } = useAuth();
 
@@ -828,10 +1139,14 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg">
+        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
           <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
             <Users className="h-4 w-4" />
             Пользователи
+          </TabsTrigger>
+          <TabsTrigger value="dictionaries" className="flex items-center gap-2" data-testid="tab-dictionaries">
+            <Book className="h-4 w-4" />
+            Справочники
           </TabsTrigger>
           <TabsTrigger value="display" className="flex items-center gap-2" data-testid="tab-display">
             <Palette className="h-4 w-4" />
@@ -844,6 +1159,9 @@ export default function Settings() {
         </TabsList>
         <TabsContent value="users" className="mt-6">
           <UsersTab />
+        </TabsContent>
+        <TabsContent value="dictionaries" className="mt-6">
+          <DictionariesTab />
         </TabsContent>
         <TabsContent value="display" className="mt-6">
           <DisplayTab />

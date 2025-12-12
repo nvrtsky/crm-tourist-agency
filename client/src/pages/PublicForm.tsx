@@ -59,6 +59,17 @@ const buildSchema = (fields: FormFieldType[]) => {
       case "tour":
         fieldSchema = z.string();
         break;
+      case "select":
+        if (field.isMultiple) {
+          fieldSchema = field.isRequired
+            ? z.array(z.string()).min(1, "Выберите хотя бы один вариант")
+            : z.array(z.string()).optional();
+        } else {
+          fieldSchema = field.isRequired
+            ? z.string().min(1, "Обязательное поле")
+            : z.string().optional();
+        }
+        break;
       case "checkbox":
         fieldSchema = z.boolean();
         if (field.isRequired) {
@@ -71,10 +82,13 @@ const buildSchema = (fields: FormFieldType[]) => {
         fieldSchema = z.string();
     }
     
-    if (field.isRequired && field.type !== "checkbox") {
-      fieldSchema = (fieldSchema as z.ZodString).min(1, "Обязательное поле");
-    } else if (!field.isRequired && field.type !== "checkbox") {
-      fieldSchema = fieldSchema.optional();
+    // Apply required/optional only for non-special types
+    if (field.type !== "checkbox" && field.type !== "select") {
+      if (field.isRequired) {
+        fieldSchema = (fieldSchema as z.ZodString).min(1, "Обязательное поле");
+      } else {
+        fieldSchema = fieldSchema.optional();
+      }
     }
     
     shape[field.key] = fieldSchema;
@@ -179,9 +193,15 @@ function FormContent({ formData, onSubmitSuccess }: { formData: FormWithFields; 
   const formSchema = buildSchema(sortedFields);
   
   const defaultValues = sortedFields.reduce((acc, field) => {
-    acc[field.key] = field.type === "checkbox" ? false : "";
+    if (field.type === "checkbox") {
+      acc[field.key] = false;
+    } else if (field.type === "select" && field.isMultiple) {
+      acc[field.key] = [];
+    } else {
+      acc[field.key] = "";
+    }
     return acc;
-  }, {} as Record<string, string | boolean>);
+  }, {} as Record<string, string | boolean | string[]>);
   
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -189,7 +209,7 @@ function FormContent({ formData, onSubmitSuccess }: { formData: FormWithFields; 
   });
 
   const submitMutation = useMutation({
-    mutationFn: async (data: Record<string, string | boolean>) => {
+    mutationFn: async (data: Record<string, string | boolean | string[]>) => {
       const response = await fetch(`/api/public/forms/${formData.id}/submit`, {
         method: "POST",
         headers: {
@@ -210,7 +230,7 @@ function FormContent({ formData, onSubmitSuccess }: { formData: FormWithFields; 
     },
   });
 
-  const handleSubmit = (data: Record<string, string | boolean>) => {
+  const handleSubmit = (data: Record<string, string | boolean | string[]>) => {
     submitMutation.mutate(data);
   };
 
@@ -245,19 +265,52 @@ function FormContent({ formData, onSubmitSuccess }: { formData: FormWithFields; 
                           value={formField.value as string}
                         />
                       ) : field.type === "select" ? (
-                        <Select
-                          onValueChange={formField.onChange}
-                          value={formField.value as string}
-                        >
-                          <SelectTrigger data-testid={`select-${field.key}`}>
-                            <SelectValue placeholder="Выберите значение" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="option1">Опция 1</SelectItem>
-                            <SelectItem value="option2">Опция 2</SelectItem>
-                            <SelectItem value="option3">Опция 3</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        field.isMultiple ? (
+                          <div className="space-y-2 border rounded-md p-3" data-testid={`multiselect-${field.key}`}>
+                            {(field.options && field.options.length > 0) ? (
+                              field.options.map((opt, idx) => {
+                                const currentValues = Array.isArray(formField.value) ? formField.value as string[] : [];
+                                const isChecked = currentValues.includes(opt);
+                                return (
+                                  <label key={idx} className="flex items-center gap-2 cursor-pointer">
+                                    <Checkbox
+                                      checked={isChecked}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          formField.onChange([...currentValues, opt]);
+                                        } else {
+                                          formField.onChange(currentValues.filter(v => v !== opt));
+                                        }
+                                      }}
+                                      data-testid={`checkbox-${field.key}-${idx}`}
+                                    />
+                                    <span className="text-sm">{opt}</span>
+                                  </label>
+                                );
+                              })
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Нет опций</span>
+                            )}
+                          </div>
+                        ) : (
+                          <Select
+                            onValueChange={formField.onChange}
+                            value={formField.value as string}
+                          >
+                            <SelectTrigger data-testid={`select-${field.key}`}>
+                              <SelectValue placeholder="Выберите значение" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(field.options && field.options.length > 0) ? (
+                                field.options.map((opt, idx) => (
+                                  <SelectItem key={idx} value={opt}>{opt}</SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="empty" disabled>Нет опций</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        )
                       ) : field.type === "tour" ? (
                         <TourSelect
                           onChange={formField.onChange}

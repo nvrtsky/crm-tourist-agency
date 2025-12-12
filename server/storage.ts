@@ -40,6 +40,8 @@ import {
   type InsertLeadTourist,
   type UpdateLeadTourist,
   type Setting,
+  type SystemDictionary,
+  type InsertSystemDictionary,
   type EventParticipantExpense,
   type InsertParticipantExpense,
   type EventCommonExpense,
@@ -61,6 +63,7 @@ import {
   groups,
   leadTourists,
   settings,
+  systemDictionaries,
   eventParticipantExpenses,
   eventCommonExpenses,
   baseExpenses,
@@ -185,6 +188,13 @@ export interface IStorage {
   // Settings operations
   getSetting(key: string): Promise<Setting | undefined>;
   setSetting(key: string, value: string | null, userId?: string): Promise<Setting>;
+
+  // System dictionary operations
+  getDictionaryItems(type: string): Promise<SystemDictionary[]>;
+  getAllDictionaries(): Promise<SystemDictionary[]>;
+  createDictionaryItem(item: InsertSystemDictionary): Promise<SystemDictionary>;
+  updateDictionaryItem(id: string, item: Partial<InsertSystemDictionary>): Promise<SystemDictionary | undefined>;
+  deleteDictionaryItem(id: string): Promise<boolean>;
 
   // Event expense operations
   getParticipantExpensesByEvent(eventId: string): Promise<import("@shared/schema").EventParticipantExpense[]>;
@@ -1302,6 +1312,48 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return result;
+  }
+
+  // ==================== SYSTEM DICTIONARY OPERATIONS ====================
+
+  async getDictionaryItems(type: string): Promise<SystemDictionary[]> {
+    return await db
+      .select()
+      .from(systemDictionaries)
+      .where(eq(systemDictionaries.type, type))
+      .orderBy(systemDictionaries.order);
+  }
+
+  async getAllDictionaries(): Promise<SystemDictionary[]> {
+    return await db
+      .select()
+      .from(systemDictionaries)
+      .orderBy(systemDictionaries.type, systemDictionaries.order);
+  }
+
+  async createDictionaryItem(item: InsertSystemDictionary): Promise<SystemDictionary> {
+    const [result] = await db
+      .insert(systemDictionaries)
+      .values(item)
+      .returning();
+    return result;
+  }
+
+  async updateDictionaryItem(id: string, item: Partial<InsertSystemDictionary>): Promise<SystemDictionary | undefined> {
+    const result = await db
+      .update(systemDictionaries)
+      .set({ ...item, updatedAt: new Date() })
+      .where(eq(systemDictionaries.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteDictionaryItem(id: string): Promise<boolean> {
+    const result = await db
+      .delete(systemDictionaries)
+      .where(eq(systemDictionaries.id, id))
+      .returning();
+    return result.length > 0;
   }
 
   // ==================== EVENT EXPENSE OPERATIONS ====================

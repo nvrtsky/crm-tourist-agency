@@ -2757,6 +2757,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to delete settings" });
     }
   });
+
+  // ==================== SYSTEM DICTIONARY ROUTES ====================
+
+  // Get all dictionary items (admin only)
+  app.get("/api/dictionaries", requireAdmin, async (req, res) => {
+    try {
+      const items = await storage.getAllDictionaries();
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching dictionaries:", error);
+      res.status(500).json({ error: "Failed to fetch dictionaries" });
+    }
+  });
+
+  // Get dictionary items by type (admin only)
+  app.get("/api/dictionaries/:type", requireAdmin, async (req, res) => {
+    try {
+      const { type } = req.params;
+      const items = await storage.getDictionaryItems(type);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching dictionary items:", error);
+      res.status(500).json({ error: "Failed to fetch dictionary items" });
+    }
+  });
+
+  // Create dictionary item (admin only)
+  app.post("/api/dictionaries", requireAdmin, async (req, res) => {
+    try {
+      const { type, value, label, order, isActive } = req.body;
+      
+      if (!type || !value || !label) {
+        return res.status(400).json({ error: "Type, value, and label are required" });
+      }
+      
+      const item = await storage.createDictionaryItem({
+        type,
+        value,
+        label,
+        order: order || 0,
+        isActive: isActive !== false,
+      });
+      
+      res.status(201).json(item);
+    } catch (error) {
+      console.error("Error creating dictionary item:", error);
+      res.status(500).json({ error: "Failed to create dictionary item" });
+    }
+  });
+
+  // Update dictionary item (admin only)
+  app.patch("/api/dictionaries/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const item = await storage.updateDictionaryItem(id, updates);
+      
+      if (!item) {
+        return res.status(404).json({ error: "Dictionary item not found" });
+      }
+      
+      res.json(item);
+    } catch (error) {
+      console.error("Error updating dictionary item:", error);
+      res.status(500).json({ error: "Failed to update dictionary item" });
+    }
+  });
+
+  // Delete dictionary item (admin only)
+  app.delete("/api/dictionaries/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteDictionaryItem(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Dictionary item not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting dictionary item:", error);
+      res.status(500).json({ error: "Failed to delete dictionary item" });
+    }
+  });
   
   // Get Wazzup24 iframe URL for a lead
   app.post("/api/wazzup24/iframe", requireAuth, async (req, res) => {

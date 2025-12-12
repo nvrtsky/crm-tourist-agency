@@ -442,10 +442,13 @@ export const insertLeadStatusHistorySchema = createInsertSchema(leadStatusHistor
   changedAt: true 
 });
 
-// Form submission schemas
+// Form submission schemas - extend to explicitly allow arrays in data field
 export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).omit({ 
   id: true, 
   submittedAt: true 
+}).extend({
+  // Explicitly allow string arrays for multi-select form fields
+  data: z.record(z.union([z.string(), z.boolean(), z.array(z.string())])),
 });
 
 // Lead tourist schemas

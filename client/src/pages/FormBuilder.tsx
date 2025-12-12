@@ -33,6 +33,7 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   GripVertical,
@@ -49,6 +50,9 @@ import {
   AlignLeft,
   Calendar,
   MapPin,
+  ArrowUp,
+  ArrowDown,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -65,6 +69,8 @@ const fieldFormSchema = insertFormFieldSchema
     key: z.string().min(1, "Укажите ключ поля"),
     label: z.string().min(1, "Укажите название поля"),
     type: z.enum(FORM_FIELD_TYPES as unknown as [string, ...string[]]),
+    options: z.array(z.string()).nullable().optional(),
+    isMultiple: z.boolean().optional().default(false),
   });
 
 type FieldFormData = z.infer<typeof fieldFormSchema>;
@@ -100,6 +106,8 @@ export default function FormBuilder() {
   const [isAddFieldDialogOpen, setIsAddFieldDialogOpen] = useState(false);
   const [editingField, setEditingField] = useState<FormFieldType | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [selectOptions, setSelectOptions] = useState<string[]>([]);
+  const [newOption, setNewOption] = useState("");
 
   const { data: formData, isLoading } = useQuery<FormWithFields>({
     queryKey: [`/api/forms/${id}`],
@@ -113,9 +121,14 @@ export default function FormBuilder() {
       label: "",
       type: "text",
       isRequired: false,
+      isMultiple: false,
+      options: [],
       order: 0,
     },
   });
+
+  // Watch field type to show/hide options editor
+  const watchType = form.watch("type");
 
   // Debug: log form errors
   useEffect(() => {
@@ -212,22 +225,31 @@ export default function FormBuilder() {
   const handleSubmit = (data: FieldFormData) => {
     console.log("[FormBuilder] handleSubmit called with:", data);
     console.log("[FormBuilder] Editing field:", editingField);
+    // Include options from state if it's a select field
+    const submitData = {
+      ...data,
+      options: data.type === "select" ? selectOptions : null,
+      isMultiple: data.type === "select" ? data.isMultiple : false,
+    };
     if (editingField) {
       console.log("[FormBuilder] Updating field");
-      updateFieldMutation.mutate({ id: editingField.id, data });
+      updateFieldMutation.mutate({ id: editingField.id, data: submitData });
     } else {
       console.log("[FormBuilder] Creating new field");
-      createFieldMutation.mutate(data);
+      createFieldMutation.mutate(submitData);
     }
   };
 
   const handleEdit = (field: FormFieldType) => {
     setEditingField(field);
+    setSelectOptions(field.options || []);
     form.reset({
       key: field.key,
       label: field.label,
       type: field.type,
       isRequired: field.isRequired,
+      isMultiple: field.isMultiple || false,
+      options: field.options || [],
       order: field.order,
     });
   };
@@ -235,7 +257,28 @@ export default function FormBuilder() {
   const handleCloseDialog = () => {
     setIsAddFieldDialogOpen(false);
     setEditingField(null);
+    setSelectOptions([]);
+    setNewOption("");
     form.reset();
+  };
+
+  const handleAddOption = () => {
+    if (newOption.trim() && !selectOptions.includes(newOption.trim())) {
+      setSelectOptions([...selectOptions, newOption.trim()]);
+      setNewOption("");
+    }
+  };
+
+  const handleRemoveOption = (index: number) => {
+    setSelectOptions(selectOptions.filter((_, i) => i !== index));
+  };
+
+  const handleMoveOption = (fromIndex: number, direction: "up" | "down") => {
+    const toIndex = direction === "up" ? fromIndex - 1 : fromIndex + 1;
+    if (toIndex < 0 || toIndex >= selectOptions.length) return;
+    const newOptions = [...selectOptions];
+    [newOptions[fromIndex], newOptions[toIndex]] = [newOptions[toIndex], newOptions[fromIndex]];
+    setSelectOptions(newOptions);
   };
 
   const handleDragStart = (index: number) => {
@@ -412,11 +455,33 @@ export default function FormBuilder() {
                         disabled
                       />
                     ) : field.type === "select" ? (
-                      <Select disabled>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите значение" />
-                        </SelectTrigger>
-                      </Select>
+                      field.isMultiple ? (
+                        <div className="space-y-2 border rounded-md p-3">
+                          {field.options && field.options.length > 0 ? (
+                            field.options.map((opt, idx) => (
+                              <label key={idx} className="flex items-center gap-2 opacity-50">
+                                <Checkbox disabled />
+                                <span className="text-sm">{opt}</span>
+                              </label>
+                            ))
+                          ) : (
+                            <span className="text-muted-foreground text-sm">Нет опций</span>
+                          )}
+                        </div>
+                      ) : (
+                        <Select disabled>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Выберите значение" />
+                          </SelectTrigger>
+                          {field.options && field.options.length > 0 && (
+                            <SelectContent>
+                              {field.options.map((opt, idx) => (
+                                <SelectItem key={idx} value={opt}>{opt}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          )}
+                        </Select>
+                      )
                     ) : field.type === "checkbox" ? (
                       <div className="flex items-center gap-2">
                         <input type="checkbox" disabled className="rounded" />
@@ -519,6 +584,109 @@ export default function FormBuilder() {
                   </FormItem>
                 )}
               />
+
+              {/* Options editor for select fields */}
+              {watchType === "select" && (
+                <div className="space-y-3 rounded-lg border p-3">
+                  <FormLabel>Опции выбора</FormLabel>
+                  
+                  {/* Options list */}
+                  <div className="space-y-2">
+                    {selectOptions.map((option, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input
+                          value={option}
+                          onChange={(e) => {
+                            const newOptions = [...selectOptions];
+                            newOptions[index] = e.target.value;
+                            setSelectOptions(newOptions);
+                          }}
+                          className="flex-1"
+                          data-testid={`input-option-${index}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleMoveOption(index, "up")}
+                          disabled={index === 0}
+                          data-testid={`button-move-up-${index}`}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleMoveOption(index, "down")}
+                          disabled={index === selectOptions.length - 1}
+                          data-testid={`button-move-down-${index}`}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveOption(index)}
+                          data-testid={`button-remove-option-${index}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add new option */}
+                  <div className="flex gap-2">
+                    <Input
+                      value={newOption}
+                      onChange={(e) => setNewOption(e.target.value)}
+                      placeholder="Новая опция"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddOption();
+                        }
+                      }}
+                      data-testid="input-new-option"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddOption}
+                      data-testid="button-add-option"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Добавить
+                    </Button>
+                  </div>
+
+                  {/* Multiple selection toggle */}
+                  <FormField
+                    control={form.control}
+                    name="isMultiple"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-3 mt-3">
+                        <div className="space-y-0.5">
+                          <FormLabel>Множественный выбор</FormLabel>
+                          <FormDescription>
+                            Разрешить выбор нескольких значений
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-multiple"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
               <FormField
                 control={form.control}
                 name="isRequired"

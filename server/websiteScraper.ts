@@ -45,6 +45,48 @@ const TOUR_TYPE_MAP: Record<string, string> = {
 };
 
 /**
+ * Decode HTML entities in a string
+ * Converts &#171; to « and &#187; to » etc.
+ */
+function decodeHtmlEntities(text: string): string {
+  if (!text) return text;
+  
+  // Common HTML entities
+  const entities: Record<string, string> = {
+    '&#171;': '«',
+    '&#187;': '»',
+    '&#34;': '"',
+    '&#39;': "'",
+    '&#38;': '&',
+    '&#60;': '<',
+    '&#62;': '>',
+    '&laquo;': '«',
+    '&raquo;': '»',
+    '&quot;': '"',
+    '&apos;': "'",
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&nbsp;': ' ',
+    '&ndash;': '–',
+    '&mdash;': '—',
+  };
+  
+  let result = text;
+  for (const [entity, char] of Object.entries(entities)) {
+    result = result.replace(new RegExp(entity, 'g'), char);
+  }
+  
+  // Handle decimal numeric entities like &#171;
+  result = result.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)));
+  
+  // Handle hexadecimal numeric entities like &#xAB; or &#XAB;
+  result = result.replace(/&#[xX]([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  
+  return result;
+}
+
+/**
  * Fetch HTML content from URL
  */
 async function fetchPage(url: string): Promise<string> {
@@ -246,9 +288,9 @@ async function parseTourPage(url: string): Promise<TourData | null> {
     const html = await fetchPage(url);
     const slug = url.match(/\/tours\/([^/]+)\/?$/)?.[1] || '';
     
-    // Extract title
+    // Extract title and decode HTML entities
     const titleMatch = html.match(/<h1[^>]*class="h1-alt"[^>]*>([^<]+)<\/h1>/);
-    const name = titleMatch?.[1]?.trim() || '';
+    const name = decodeHtmlEntities(titleMatch?.[1]?.trim() || '');
     
     if (!name) {
       console.error('No title found for:', url);
@@ -305,9 +347,9 @@ async function parseTourPage(url: string): Promise<TourData | null> {
       }
     }
     
-    // Extract description
+    // Extract description and decode HTML entities
     const descMatch = html.match(/<div class="paragraph-prop"><p>([^<]+)<\/p>/);
-    const description = descMatch?.[1]?.trim();
+    const description = decodeHtmlEntities(descMatch?.[1]?.trim() || '') || undefined;
     
     return {
       slug,

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, Cloud, CheckCircle2, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, Cloud, CheckCircle2, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
@@ -76,9 +77,20 @@ function getStatusBadge(status: string) {
   }
 }
 
+interface ScrapeWebsiteResponse {
+  success: boolean;
+  created: number;
+  updated: number;
+  archived: number;
+  errors: string[];
+  tours: { name: string; dates: number }[];
+  message: string;
+}
+
 export function SyncLogsTab() {
   const [page, setPage] = useState(1);
   const limit = 20;
+  const { toast } = useToast();
 
   const { data: syncSettings, isLoading: settingsLoading } = useQuery<SyncSettings>({
     queryKey: ["/api/sync-settings/tour_sync"],
@@ -111,6 +123,28 @@ export function SyncLogsTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sync-logs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sync-settings"] });
+    },
+  });
+
+  const scrapeWebsiteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/sync/scrape-website");
+      return response.json() as Promise<ScrapeWebsiteResponse>;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sync-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      toast({
+        title: "Синхронизация завершена",
+        description: `Создано: ${data.created}, обновлено: ${data.updated}, архивировано: ${data.archived}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка импорта",
+        description: error.message || "Не удалось выполнить импорт с сайта",
+        variant: "destructive",
+      });
     },
   });
 
@@ -184,15 +218,26 @@ export function SyncLogsTab() {
               </Select>
             </div>
 
-            <Button
-              onClick={() => triggerSyncMutation.mutate()}
-              disabled={triggerSyncMutation.isPending}
-              variant="outline"
-              data-testid="button-trigger-sync"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${triggerSyncMutation.isPending ? 'animate-spin' : ''}`} />
-              Синхронизировать сейчас
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => scrapeWebsiteMutation.mutate()}
+                disabled={scrapeWebsiteMutation.isPending}
+                variant="outline"
+                data-testid="button-scrape-website"
+              >
+                <Download className={`w-4 h-4 mr-2 ${scrapeWebsiteMutation.isPending ? 'animate-spin' : ''}`} />
+                {scrapeWebsiteMutation.isPending ? 'Импорт...' : 'Импорт с сайта'}
+              </Button>
+              <Button
+                onClick={() => triggerSyncMutation.mutate()}
+                disabled={triggerSyncMutation.isPending}
+                variant="outline"
+                data-testid="button-trigger-sync"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${triggerSyncMutation.isPending ? 'animate-spin' : ''}`} />
+                Синхронизировать сейчас
+              </Button>
+            </div>
           </div>
 
           {settings.lastSyncAt && (

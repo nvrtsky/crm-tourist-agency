@@ -3590,8 +3590,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      // Update sync settings
-      await storage.upsertSyncSettings("website_scrape", {
+      // Update sync settings (use tour_sync key for UI consistency)
+      await storage.upsertSyncSettings("tour_sync", {
         lastSyncAt: new Date(),
         lastSyncStatus: result.errors.length > 0 ? "partial" : "success",
         lastSyncMessage: `Создано: ${result.created}, Обновлено: ${result.updated}, Архивировано: ${result.archived}`,

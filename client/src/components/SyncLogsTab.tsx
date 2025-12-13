@@ -309,17 +309,7 @@ export function SyncLogsTab() {
       return apiRequest("PATCH", "/api/sync-settings/tour_sync", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/sync-settings"] });
-    },
-  });
-
-  const triggerSyncMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest("POST", "/api/sync-settings/tour_sync/trigger");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/sync-logs"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/sync-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sync-settings/tour_sync"] });
     },
   });
 
@@ -331,8 +321,9 @@ export function SyncLogsTab() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/sync-logs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sync-settings/tour_sync"] });
       toast({
-        title: "Синхронизация завершена",
+        title: "Импорт завершён",
         description: `Создано: ${data.created}, обновлено: ${data.updated}, архивировано: ${data.archived}`,
       });
     },
@@ -477,10 +468,10 @@ export function SyncLogsTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Cloud className="w-5 h-5" />
-            Синхронизация с WordPress
+            Импорт туров с сайта
           </CardTitle>
           <CardDescription>
-            Настройки автоматической синхронизации туров и бронирований с сайтом WordPress
+            Автоматический импорт туров с сайта chinaunique.ru
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -520,33 +511,22 @@ export function SyncLogsTab() {
               </Select>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                onClick={() => scrapeWebsiteMutation.mutate()}
-                disabled={scrapeWebsiteMutation.isPending}
-                variant="outline"
-                data-testid="button-scrape-website"
-              >
-                <Download className={`w-4 h-4 mr-2 ${scrapeWebsiteMutation.isPending ? 'animate-spin' : ''}`} />
-                {scrapeWebsiteMutation.isPending ? 'Импорт...' : 'Импорт с сайта'}
-              </Button>
-              <Button
-                onClick={() => triggerSyncMutation.mutate()}
-                disabled={triggerSyncMutation.isPending}
-                variant="outline"
-                data-testid="button-trigger-sync"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${triggerSyncMutation.isPending ? 'animate-spin' : ''}`} />
-                Синхронизировать сейчас
-              </Button>
-            </div>
+            <Button
+              onClick={() => scrapeWebsiteMutation.mutate()}
+              disabled={scrapeWebsiteMutation.isPending}
+              variant="outline"
+              data-testid="button-scrape-website"
+            >
+              <Download className={`w-4 h-4 mr-2 ${scrapeWebsiteMutation.isPending ? 'animate-spin' : ''}`} />
+              {scrapeWebsiteMutation.isPending ? 'Импорт...' : 'Импорт с сайта'}
+            </Button>
           </div>
 
           {settings.lastSyncAt && (
             <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
               <Clock className="w-4 h-4 text-muted-foreground" />
               <div className="text-sm">
-                <span className="text-muted-foreground">Последняя синхронизация: </span>
+                <span className="text-muted-foreground">Последний импорт: </span>
                 <span className="font-medium">
                   {format(new Date(settings.lastSyncAt), "d MMM yyyy, HH:mm", { locale: ru })}
                 </span>

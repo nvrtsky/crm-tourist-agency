@@ -9,9 +9,40 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, Cloud, CheckCircle2, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { RefreshCw, Cloud, CheckCircle2, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight, Download, ChevronDown, Plus, Edit, Archive, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+
+interface TourAction {
+  name: string;
+  action: "created" | "updated" | "archived";
+  dates: number;
+  startDate?: string;
+  priceChange?: {
+    from: number;
+    to: number;
+    currency: string;
+  };
+}
+
+interface SyncWarning {
+  type: string;
+  tourName: string;
+  message: string;
+}
+
+interface SyncCompleteDetails {
+  toursScraped: number;
+  totalDatesProcessed: number;
+  durationMs: number;
+  created: number;
+  updated: number;
+  archived: number;
+  tourActions: TourAction[];
+  warnings: SyncWarning[];
+  errors: string[];
+}
 
 interface SyncLog {
   id: string;
@@ -43,6 +74,16 @@ interface SyncLogsResponse {
     total: number;
     totalPages: number;
   };
+}
+
+function formatDuration(ms: number): string {
+  const seconds = ms / 1000;
+  if (seconds < 60) {
+    return `${seconds.toFixed(1)} сек`;
+  }
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+  return `${minutes} мин ${remainingSeconds} сек`;
 }
 
 function getOperationLabel(operation: string): string {
@@ -90,10 +131,148 @@ interface ScrapeWebsiteResponse {
   message: string;
 }
 
+function SyncCompleteExpandableDetails({ details }: { details: SyncCompleteDetails }) {
+  const createdTours = details.tourActions?.filter(t => t.action === "created") || [];
+  const updatedTours = details.tourActions?.filter(t => t.action === "updated") || [];
+  const archivedTours = details.tourActions?.filter(t => t.action === "archived") || [];
+  
+  const warningsByType = (details.warnings || []).reduce((acc, warning) => {
+    if (!acc[warning.type]) {
+      acc[warning.type] = [];
+    }
+    acc[warning.type].push(warning);
+    return acc;
+  }, {} as Record<string, SyncWarning[]>);
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/50 space-y-4">
+      <div className="flex flex-wrap items-center gap-4 text-sm">
+        <span className="text-muted-foreground">
+          <span className="font-medium text-green-600 dark:text-green-400">Создано: {details.created}</span>
+        </span>
+        <span className="text-muted-foreground">
+          <span className="font-medium text-blue-600 dark:text-blue-400">Обновлено: {details.updated}</span>
+        </span>
+        <span className="text-muted-foreground">
+          <span className="font-medium text-orange-600 dark:text-orange-400">Архивировано: {details.archived}</span>
+        </span>
+      </div>
+
+      {createdTours.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
+            <Plus className="w-3.5 h-3.5" />
+            Созданные туры ({createdTours.length})
+          </div>
+          <div className="pl-5 space-y-1">
+            {createdTours.map((tour, idx) => (
+              <div key={idx} className="text-sm text-muted-foreground flex items-center gap-2">
+                <span className="font-medium text-foreground">{tour.name}</span>
+                <Badge variant="secondary" className="text-xs">{tour.dates} дат</Badge>
+                {tour.startDate && (
+                  <span className="text-xs">с {format(new Date(tour.startDate), "dd.MM.yyyy")}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {updatedTours.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
+            <Edit className="w-3.5 h-3.5" />
+            Обновленные туры ({updatedTours.length})
+          </div>
+          <div className="pl-5 space-y-1">
+            {updatedTours.map((tour, idx) => (
+              <div key={idx} className="text-sm text-muted-foreground flex flex-wrap items-center gap-2">
+                <span className="font-medium text-foreground">{tour.name}</span>
+                <Badge variant="secondary" className="text-xs">{tour.dates} дат</Badge>
+                {tour.priceChange && (
+                  <span className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
+                    {tour.priceChange.from} → {tour.priceChange.to} {tour.priceChange.currency}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {archivedTours.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-orange-600 dark:text-orange-400">
+            <Archive className="w-3.5 h-3.5" />
+            Архивированные туры ({archivedTours.length})
+          </div>
+          <div className="pl-5 space-y-1">
+            {archivedTours.map((tour, idx) => (
+              <div key={idx} className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{tour.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {Object.keys(warningsByType).length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-yellow-600 dark:text-yellow-400">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Предупреждения
+          </div>
+          <div className="pl-5 space-y-2">
+            {Object.entries(warningsByType).map(([type, warnings]) => (
+              <div key={type} className="space-y-1">
+                <div className="text-xs font-medium text-muted-foreground uppercase">{type}</div>
+                {warnings.map((warning, idx) => (
+                  <div key={idx} className="text-sm bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 p-2 rounded">
+                    <span className="font-medium">{warning.tourName}:</span> {warning.message}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {details.errors && details.errors.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
+            <XCircle className="w-3.5 h-3.5" />
+            Ошибки ({details.errors.length})
+          </div>
+          <div className="pl-5 space-y-1">
+            {details.errors.map((error, idx) => (
+              <div key={idx} className="text-sm bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 p-2 rounded">
+                {error}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SyncLogsTab() {
   const [page, setPage] = useState(1);
+  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
   const limit = 20;
   const { toast } = useToast();
+
+  const toggleExpanded = (logId: string) => {
+    setExpandedLogs(prev => {
+      const next = new Set(prev);
+      if (next.has(logId)) {
+        next.delete(logId);
+      } else {
+        next.add(logId);
+      }
+      return next;
+    });
+  };
 
   const { data: syncSettings, isLoading: settingsLoading } = useQuery<SyncSettings>({
     queryKey: ["/api/sync-settings/tour_sync"],
@@ -171,6 +350,111 @@ export function SyncLogsTab() {
   const settings = syncSettings || { key: "tour_sync", enabled: false, intervalHours: 24 };
   const logs = logsResponse?.logs || [];
   const pagination = logsResponse?.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 };
+
+  const renderLogRow = (log: SyncLog) => {
+    const isSyncComplete = log.operation === "sync_complete";
+    const isExpanded = expandedLogs.has(log.id);
+    const details = log.details as SyncCompleteDetails | undefined;
+
+    const getSummaryText = () => {
+      if (!isSyncComplete || !details) return null;
+      const tours = details.toursScraped ?? 0;
+      const dates = details.totalDatesProcessed ?? 0;
+      const duration = details.durationMs ? formatDuration(details.durationMs) : null;
+      
+      const parts = [];
+      if (tours > 0 || dates > 0) {
+        parts.push(`${tours} туров, ${dates} дат`);
+      }
+      if (duration) {
+        parts.push(duration);
+      }
+      return parts.length > 0 ? parts.join(" | ") : null;
+    };
+
+    const summaryText = getSummaryText();
+
+    if (isSyncComplete && details) {
+      return (
+        <Collapsible
+          key={log.id}
+          open={isExpanded}
+          onOpenChange={() => toggleExpanded(log.id)}
+        >
+          <div
+            className="border rounded-lg overflow-hidden"
+            data-testid={`row-sync-log-${log.id}`}
+          >
+            <CollapsibleTrigger className="w-full">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 hover-elevate cursor-pointer">
+                <div className="flex items-center gap-2 min-w-[140px]">
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(log.createdAt), "dd.MM.yy HH:mm")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" data-testid={`badge-entity-${log.entityType}`}>
+                    {getEntityTypeLabel(log.entityType)}
+                  </Badge>
+                  <span className="font-medium text-sm">
+                    {getOperationLabel(log.operation)}
+                  </span>
+                </div>
+                <div className="flex-1 text-sm text-muted-foreground">
+                  {summaryText && (
+                    <span className="font-medium">{summaryText}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(log.status)}
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                </div>
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-3 pb-3">
+                <SyncCompleteExpandableDetails details={details} />
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
+      );
+    }
+
+    return (
+      <div
+        key={log.id}
+        className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 border rounded-lg"
+        data-testid={`row-sync-log-${log.id}`}
+      >
+        <div className="flex items-center gap-2 min-w-[140px]">
+          <span className="text-xs text-muted-foreground">
+            {format(new Date(log.createdAt), "dd.MM.yy HH:mm")}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" data-testid={`badge-entity-${log.entityType}`}>
+            {getEntityTypeLabel(log.entityType)}
+          </Badge>
+          <span className="font-medium text-sm">
+            {getOperationLabel(log.operation)}
+          </span>
+        </div>
+        <div className="flex-1 text-sm text-muted-foreground truncate">
+          {log.entityId && <span>ID: {log.entityId.slice(0, 8)}...</span>}
+          {log.externalId && <span className="ml-2">Внешний: {log.externalId}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          {getStatusBadge(log.status)}
+        </div>
+        {log.errorMessage && (
+          <div className="w-full text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded mt-2">
+            {log.errorMessage}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -282,39 +566,7 @@ export function SyncLogsTab() {
           ) : (
             <>
               <div className="space-y-3">
-                {logs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 border rounded-lg"
-                    data-testid={`row-sync-log-${log.id}`}
-                  >
-                    <div className="flex items-center gap-2 min-w-[140px]">
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(log.createdAt), "dd.MM.yy HH:mm")}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" data-testid={`badge-entity-${log.entityType}`}>
-                        {getEntityTypeLabel(log.entityType)}
-                      </Badge>
-                      <span className="font-medium text-sm">
-                        {getOperationLabel(log.operation)}
-                      </span>
-                    </div>
-                    <div className="flex-1 text-sm text-muted-foreground truncate">
-                      {log.entityId && <span>ID: {log.entityId.slice(0, 8)}...</span>}
-                      {log.externalId && <span className="ml-2">Внешний: {log.externalId}</span>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(log.status)}
-                    </div>
-                    {log.errorMessage && (
-                      <div className="w-full text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
-                        {log.errorMessage}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {logs.map((log) => renderLogRow(log))}
               </div>
 
               {pagination.totalPages > 1 && (

@@ -92,10 +92,18 @@ function getLeadDisplayColor(lead: Lead): ColorOption {
   return null;
 }
 
-// Form schema with color field and selectedCities
+// Form schema with color field, selectedCities, and primary tourist data
 const createLeadFormSchema = insertLeadSchema.extend({
   color: z.string().nullable(),
   selectedCities: z.array(z.string()).nullable(),
+  // Primary tourist data (for completeness)
+  dateOfBirth: z.string().nullable().optional(),
+  passportSeries: z.string().nullable().optional(),
+  passportIssuedBy: z.string().nullable().optional(),
+  registrationAddress: z.string().nullable().optional(),
+  foreignPassportName: z.string().nullable().optional(),
+  foreignPassportNumber: z.string().nullable().optional(),
+  foreignPassportValidUntil: z.string().nullable().optional(),
 });
 
 export default function Leads() {
@@ -435,7 +443,21 @@ export default function Leads() {
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <LeadForm
-              onSubmit={(data) => createMutation.mutate(data)}
+              onSubmit={(data) => {
+                // Explicitly include tourist fields in the payload to ensure they're sent to the API
+                // The backend expects these fields and will pass them to the auto-created tourist
+                const payload = {
+                  ...data,
+                  dateOfBirth: data.dateOfBirth || null,
+                  passportSeries: data.passportSeries || null,
+                  passportIssuedBy: data.passportIssuedBy || null,
+                  registrationAddress: data.registrationAddress || null,
+                  foreignPassportName: data.foreignPassportName || null,
+                  foreignPassportNumber: data.foreignPassportNumber || null,
+                  foreignPassportValidUntil: data.foreignPassportValidUntil || null,
+                };
+                createMutation.mutate(payload as InsertLead);
+              }}
               isPending={createMutation.isPending}
             />
           </DialogContent>
@@ -1553,6 +1575,14 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       formId: lead?.formId || null,
       assignedUserId: lead?.assignedUserId || null,
       createdByUserId: lead?.createdByUserId || null,
+      // Primary tourist data
+      dateOfBirth: null,
+      passportSeries: null,
+      passportIssuedBy: null,
+      registrationAddress: null,
+      foreignPassportName: null,
+      foreignPassportNumber: null,
+      foreignPassportValidUntil: null,
     },
   });
 
@@ -1878,6 +1908,162 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
               />
             </div>
           </div>
+
+          {/* Паспортные данные основного туриста - только при создании нового лида */}
+          {!lead && (
+            <>
+              {/* Дата рождения */}
+              <div className="space-y-4 pt-4 border-t">
+                <h4 className="text-sm font-semibold text-foreground">Дата рождения</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Дата рождения</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-dateOfBirth"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Российский паспорт */}
+              <div className="space-y-4 pt-4 border-t">
+                <h4 className="text-sm font-semibold text-foreground">Российский паспорт</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="passportSeries"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Серия и номер паспорта</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="45 12 123456"
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-passportSeries"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="passportIssuedBy"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Кем выдан</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Отделом УФМС..."
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-passportIssuedBy"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="registrationAddress"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel>Адрес регистрации</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="г. Москва, ул. ..."
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-registrationAddress"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Загранпаспорт */}
+              <div className="space-y-4 pt-4 border-t">
+                <h4 className="text-sm font-semibold text-foreground">Загранпаспорт</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="foreignPassportName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ФИО в загранпаспорте</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="IVANOV IVAN"
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-foreignPassportName"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="foreignPassportNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Номер загранпаспорта</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="75 1234567"
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-foreignPassportNumber"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="foreignPassportValidUntil"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Действителен до</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-foreignPassportValidUntil"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Тур и оплата */}
           <div className="space-y-4 pt-4 border-t">

@@ -965,7 +965,15 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async createLeadWithAutoTourist(lead: InsertLead): Promise<Lead> {
+  async createLeadWithAutoTourist(lead: InsertLead, touristData?: {
+    dateOfBirth?: string | null;
+    passportSeries?: string | null;
+    passportIssuedBy?: string | null;
+    registrationAddress?: string | null;
+    foreignPassportName?: string | null;
+    foreignPassportNumber?: string | null;
+    foreignPassportValidUntil?: string | null;
+  }): Promise<Lead> {
     return await db.transaction(async (tx) => {
       // Create the lead
       const [createdLead] = await tx.insert(leads).values(lead).returning();
@@ -979,7 +987,7 @@ export class DatabaseStorage implements IStorage {
         note: "Lead created",
       });
 
-      // Auto-create first tourist from lead contact data
+      // Auto-create first tourist from lead contact data + optional tourist data
       console.log(`[CREATE_LEAD_TX] Auto-creating first tourist for lead ${createdLead.id}`);
       await tx.insert(leadTourists).values({
         leadId: createdLead.id,
@@ -988,6 +996,13 @@ export class DatabaseStorage implements IStorage {
         middleName: createdLead.middleName,
         email: createdLead.email,
         phone: createdLead.phone,
+        dateOfBirth: touristData?.dateOfBirth || null,
+        passportSeries: touristData?.passportSeries || null,
+        passportIssuedBy: touristData?.passportIssuedBy || null,
+        registrationAddress: touristData?.registrationAddress || null,
+        foreignPassportName: touristData?.foreignPassportName || null,
+        foreignPassportNumber: touristData?.foreignPassportNumber || null,
+        foreignPassportValidUntil: touristData?.foreignPassportValidUntil || null,
         touristType: 'adult',
         isPrimary: true,
         isAutoCreated: true,

@@ -1313,7 +1313,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create lead
   app.post("/api/leads", async (req, res) => {
     try {
-      const validation = insertLeadSchema.safeParse(req.body);
+      // Extract tourist-specific fields from request body
+      const { 
+        dateOfBirth, 
+        passportSeries, 
+        passportIssuedBy, 
+        registrationAddress,
+        foreignPassportName,
+        foreignPassportNumber, 
+        foreignPassportValidUntil,
+        ...leadData 
+      } = req.body;
+      
+      const validation = insertLeadSchema.safeParse(leadData);
       if (!validation.success) {
         return res.status(400).json({
           error: "Validation error",
@@ -1322,7 +1334,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create lead with auto-created tourist in a single transaction
-      const lead = await storage.createLeadWithAutoTourist(validation.data);
+      // Pass tourist data separately to be added to the auto-created tourist
+      const touristData = {
+        dateOfBirth: dateOfBirth || null,
+        passportSeries: passportSeries || null,
+        passportIssuedBy: passportIssuedBy || null,
+        registrationAddress: registrationAddress || null,
+        foreignPassportName: foreignPassportName || null,
+        foreignPassportNumber: foreignPassportNumber || null,
+        foreignPassportValidUntil: foreignPassportValidUntil || null,
+      };
+      
+      const lead = await storage.createLeadWithAutoTourist(validation.data, touristData);
       
       // Auto-convert if eventId is set during creation
       if (lead.eventId) {

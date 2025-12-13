@@ -3571,18 +3571,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Sync to database with smart update/create/archive logic
       const result = await syncToursToDatabase(tours, storage);
 
-      // Log sync completion
+      // Log sync completion with enhanced details
       await storage.createSyncLog({
         operation: "sync_complete",
         entityType: "event",
         status: result.errors.length > 0 ? "partial" : "success",
         details: {
-          source: "website_scrape",
+          source: result.source || "website_scrape",
           created: result.created,
           updated: result.updated,
           archived: result.archived,
           errors: result.errors,
-          toursProcessed: result.tours.length,
+          toursScraped: result.toursScraped,
+          totalDatesProcessed: result.totalDatesProcessed,
+          durationMs: result.durationMs,
+          tourActions: result.tourActions,
+          warnings: result.warnings,
         },
       });
 

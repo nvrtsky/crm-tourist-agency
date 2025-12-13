@@ -1,0 +1,401 @@
+/**
+ * Website Scraper for chinaunique.ru tours
+ * Parses tour list and individual tour pages to extract:
+ * - Tour name, price, cities, tour type, dates
+ * Creates events in CRM for each tour + date combination
+ */
+
+interface TourData {
+  slug: string;
+  url: string;
+  name: string;
+  price: number;
+  currency: string;
+  tourType: string;
+  duration: number;
+  cities: string[];
+  dates: { startDate: string; endDate: string }[];
+  description?: string;
+}
+
+interface SyncResult {
+  created: number;
+  updated: number;
+  archived: number;
+  errors: string[];
+  tours: { name: string; dates: number }[];
+}
+
+const SITE_BASE_URL = 'https://chinaunique.ru';
+const TOURS_PAGE_URL = `${SITE_BASE_URL}/tours/`;
+
+// Russian month names for date parsing
+const MONTH_MAP: Record<string, number> = {
+  'января': 0, 'февраля': 1, 'марта': 2, 'апреля': 3,
+  'мая': 4, 'июня': 5, 'июля': 6, 'августа': 7,
+  'сентября': 8, 'октября': 9, 'ноября': 10, 'декабря': 11
+};
+
+// Tour type mapping
+const TOUR_TYPE_MAP: Record<string, string> = {
+  'Групповые туры': 'group',
+  'Индивидуальные туры': 'individual',
+  'Экскурсии в Китае': 'excursion',
+  'Экскурсии': 'excursion'
+};
+
+/**
+ * Fetch HTML content from URL
+ */
+async function fetchPage(url: string): Promise<string> {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'CRM-Sync-Bot/1.0'
+    }
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  }
+  return response.text();
+}
+
+/**
+ * Extract tour URLs from the tours listing page (handles pagination)
+ */
+async function getTourUrls(): Promise<string[]> {
+  const tourUrls: string[] = [];
+  let pageNum = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const pageUrl = pageNum === 1 ? TOURS_PAGE_URL : `${TOURS_PAGE_URL}page/${pageNum}/`;
+    
+    try {
+      const html = await fetchPage(pageUrl);
+      
+      // Extract tour block URLs
+      const tourBlockRegex = /href="(https:\/\/chinaunique\.ru\/tours\/[^"]+\/)" class="tour-block"/g;
+      let match;
+      let foundOnPage = 0;
+      
+      while ((match = tourBlockRegex.exec(html)) !== null) {
+        const url = match[1];
+        if (!tourUrls.includes(url)) {
+          tourUrls.push(url);
+          foundOnPage++;
+        }
+      }
+      
+      // Check for next page
+      hasMore = html.includes(`/tours/page/${pageNum + 1}/`);
+      pageNum++;
+      
+      // Safety limit
+      if (pageNum > 10) break;
+      
+    } catch (error) {
+      console.error(`Error fetching page ${pageNum}:`, error);
+      hasMore = false;
+    }
+  }
+  
+  return tourUrls;
+}
+
+/**
+ * Parse Russian date range like "16-22 марта 2026 г" to start/end dates
+ */
+function parseDateRange(dateStr: string): { startDate: string; endDate: string } | null {
+  try {
+    // Clean the string
+    dateStr = dateStr.trim().replace(/\s+/g, ' ').replace(' г', '');
+    
+    // Pattern: "16-22 марта 2026" or "26 мая-1 июня 2026"
+    const crossMonthMatch = dateStr.match(/(\d+)\s+(\S+)-(\d+)\s+(\S+)\s+(\d{4})/);
+    if (crossMonthMatch) {
+      const [, startDay, startMonth, endDay, endMonth, year] = crossMonthMatch;
+      const startMonthNum = MONTH_MAP[startMonth.toLowerCase()];
+      const endMonthNum = MONTH_MAP[endMonth.toLowerCase()];
+      
+      if (startMonthNum !== undefined && endMonthNum !== undefined) {
+        const startDate = new Date(parseInt(year), startMonthNum, parseInt(startDay));
+        const endDate = new Date(parseInt(year), endMonthNum, parseInt(endDay));
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        };
+      }
+    }
+    
+    // Pattern: "16-22 марта 2026"
+    const sameMonthMatch = dateStr.match(/(\d+)-(\d+)\s+(\S+)\s+(\d{4})/);
+    if (sameMonthMatch) {
+      const [, startDay, endDay, month, year] = sameMonthMatch;
+      const monthNum = MONTH_MAP[month.toLowerCase()];
+      
+      if (monthNum !== undefined) {
+        const startDate = new Date(parseInt(year), monthNum, parseInt(startDay));
+        const endDate = new Date(parseInt(year), monthNum, parseInt(endDay));
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        };
+      }
+    }
+    
+    // Pattern: "7- 13 октября 2026 г" (with space after dash)
+    const spaceAfterDashMatch = dateStr.match(/(\d+)-\s*(\d+)\s+(\S+)\s+(\d{4})/);
+    if (spaceAfterDashMatch) {
+      const [, startDay, endDay, month, year] = spaceAfterDashMatch;
+      const monthNum = MONTH_MAP[month.toLowerCase()];
+      
+      if (monthNum !== undefined) {
+        const startDate = new Date(parseInt(year), monthNum, parseInt(startDay));
+        const endDate = new Date(parseInt(year), monthNum, parseInt(endDay));
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Date parse error:', dateStr, error);
+    return null;
+  }
+}
+
+/**
+ * Extract cities from tour content (from "📍 Проживание:" markers)
+ */
+function extractCities(html: string): string[] {
+  const cities: string[] = [];
+  
+  // Match "Проживание:" followed by city name
+  const cityRegex = /Проживание:<\/strong>[\s:]*([^<\n]+)/gi;
+  let match;
+  
+  while ((match = cityRegex.exec(html)) !== null) {
+    const city = match[1].trim().replace(/[^\w\sА-Яа-яЁё-]/g, '').trim();
+    if (city && city !== 'нет' && !cities.includes(city)) {
+      cities.push(city);
+    }
+  }
+  
+  // Also try alternate pattern
+  const altRegex = /Проживание:[\s]*<\/span>[\s]*([^<\n]+)/gi;
+  while ((match = altRegex.exec(html)) !== null) {
+    const city = match[1].trim().replace(/[^\w\sА-Яа-яЁё-]/g, '').trim();
+    if (city && city !== 'нет' && !cities.includes(city)) {
+      cities.push(city);
+    }
+  }
+  
+  return cities;
+}
+
+/**
+ * Parse individual tour page to extract all data
+ */
+async function parseTourPage(url: string): Promise<TourData | null> {
+  try {
+    const html = await fetchPage(url);
+    const slug = url.match(/\/tours\/([^/]+)\/?$/)?.[1] || '';
+    
+    // Extract title
+    const titleMatch = html.match(/<h1[^>]*class="h1-alt"[^>]*>([^<]+)<\/h1>/);
+    const name = titleMatch?.[1]?.trim() || '';
+    
+    if (!name) {
+      console.error('No title found for:', url);
+      return null;
+    }
+    
+    // Extract price
+    const priceMatch = html.match(/data-base-price="(\d+)"/);
+    const price = priceMatch ? parseInt(priceMatch[1]) : 0;
+    
+    // Extract tour type
+    let tourType = 'group';
+    const tourTypeMatch = html.match(/<div class="tour-tag">([^<]+)<\/div>/);
+    if (tourTypeMatch) {
+      const typeStr = tourTypeMatch[1].trim();
+      tourType = TOUR_TYPE_MAP[typeStr] || 'group';
+    }
+    
+    // Extract duration from title (e.g., "7 дней", "2 дня")
+    const durationMatch = name.match(/(\d+)\s*(дней|дня|день)/i);
+    const duration = durationMatch ? parseInt(durationMatch[1]) : 7;
+    
+    // Extract cities
+    const cities = extractCities(html);
+    if (cities.length === 0) {
+      // Try to extract from meta description
+      const metaMatch = html.match(/meta name="description" content="([^"]+)"/);
+      if (metaMatch) {
+        const desc = metaMatch[1];
+        // Common cities in China
+        const knownCities = ['Пекин', 'Шанхай', 'Чжанцзяцзе', 'Сиань', 'Лоян', 'Гуанчжоу', 'Гуйлинь', 'Яншо', 'Куньмин', 'Лицзян', 'Шангрила'];
+        for (const city of knownCities) {
+          if (desc.includes(city) && !cities.includes(city)) {
+            cities.push(city);
+          }
+        }
+      }
+    }
+    
+    // Extract dates from "Даты ближайших туров" section
+    const dates: { startDate: string; endDate: string }[] = [];
+    const datesSection = html.match(/Даты ближайших туров<\/div>[\s\S]*?<ul>([\s\S]*?)<\/ul>/);
+    
+    if (datesSection) {
+      const dateListHtml = datesSection[1];
+      const dateRegex = /<li>([^<]+)<\/li>/g;
+      let dateMatch;
+      
+      while ((dateMatch = dateRegex.exec(dateListHtml)) !== null) {
+        const parsed = parseDateRange(dateMatch[1]);
+        if (parsed) {
+          dates.push(parsed);
+        }
+      }
+    }
+    
+    // Extract description
+    const descMatch = html.match(/<div class="paragraph-prop"><p>([^<]+)<\/p>/);
+    const description = descMatch?.[1]?.trim();
+    
+    return {
+      slug,
+      url,
+      name,
+      price,
+      currency: 'CNY',
+      tourType,
+      duration,
+      cities: cities.length > 0 ? cities : ['Китай'],
+      dates,
+      description
+    };
+    
+  } catch (error) {
+    console.error('Error parsing tour page:', url, error);
+    return null;
+  }
+}
+
+/**
+ * Generate unique external ID for tour + date combination
+ */
+function generateExternalId(slug: string, startDate: string): string {
+  return `wp_${slug}_${startDate}`;
+}
+
+/**
+ * Main scrape function - fetches all tours and their dates
+ */
+export async function scrapeAllTours(): Promise<TourData[]> {
+  console.log('[SCRAPER] Starting to scrape tours from chinaunique.ru...');
+  
+  const tourUrls = await getTourUrls();
+  console.log(`[SCRAPER] Found ${tourUrls.length} tour URLs`);
+  
+  const tours: TourData[] = [];
+  
+  for (const url of tourUrls) {
+    const tourData = await parseTourPage(url);
+    if (tourData) {
+      tours.push(tourData);
+      console.log(`[SCRAPER] Parsed: ${tourData.name} (${tourData.dates.length} dates)`);
+    }
+    // Small delay to be nice to the server
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+  
+  console.log(`[SCRAPER] Completed. Total tours: ${tours.length}`);
+  return tours;
+}
+
+/**
+ * Sync scraped tours to CRM database
+ */
+export async function syncToursToDatabase(
+  tours: TourData[],
+  storage: any
+): Promise<SyncResult> {
+  const result: SyncResult = {
+    created: 0,
+    updated: 0,
+    archived: 0,
+    errors: [],
+    tours: []
+  };
+  
+  // Get all existing events with external IDs starting with 'wp_'
+  const existingEvents = await storage.getAllEvents();
+  const wpEvents = existingEvents.filter((e: any) => e.externalId?.startsWith('wp_'));
+  const existingExternalIds = new Set(wpEvents.map((e: any) => e.externalId));
+  const processedExternalIds = new Set<string>();
+  
+  for (const tour of tours) {
+    let tourDatesCreated = 0;
+    
+    for (const dateRange of tour.dates) {
+      const externalId = generateExternalId(tour.slug, dateRange.startDate);
+      processedExternalIds.add(externalId);
+      
+      const eventData = {
+        name: tour.name,
+        country: 'Китай',
+        cities: tour.cities,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        price: tour.price,
+        priceCurrency: tour.currency,
+        tourType: tour.tourType,
+        participantLimit: 20,
+        description: tour.description || null,
+        externalId,
+        websiteUrl: tour.url,
+        isArchived: false
+      };
+      
+      try {
+        // Check if event already exists
+        const existingEvent = wpEvents.find((e: any) => e.externalId === externalId);
+        
+        if (existingEvent) {
+          // Update existing event
+          await storage.updateEvent(existingEvent.id, eventData);
+          result.updated++;
+        } else {
+          // Create new event
+          await storage.createEvent(eventData);
+          result.created++;
+          tourDatesCreated++;
+        }
+      } catch (error: any) {
+        result.errors.push(`${tour.name} (${dateRange.startDate}): ${error.message}`);
+      }
+    }
+    
+    result.tours.push({ name: tour.name, dates: tour.dates.length });
+  }
+  
+  // Archive events that no longer exist on the website
+  for (const event of wpEvents) {
+    if (!processedExternalIds.has(event.externalId) && !event.isArchived) {
+      try {
+        await storage.archiveEvent(event.id);
+        result.archived++;
+      } catch (error: any) {
+        result.errors.push(`Archive ${event.name}: ${error.message}`);
+      }
+    }
+  }
+  
+  return result;
+}
+
+export { generateExternalId, parseDateRange, TourData, SyncResult };

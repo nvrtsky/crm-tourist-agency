@@ -7,6 +7,7 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import multer from "multer";
 import { ObjectStorageService } from "./objectStorage";
+import { scrapeAllTours, syncToursToDatabase } from "./websiteScraper";
 import {
   insertEventSchema,
   updateEventSchema,
@@ -3546,6 +3547,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error triggering sync:", error);
       res.status(500).json({ error: "Failed to trigger sync" });
+    }
+  });
+
+  // Admin: Scrape tours from website and sync to database
+  app.post("/api/sync/scrape-website", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      console.log("[SYNC] Starting website scrape...");
+      
+      // Log sync start
+      await storage.createSyncLog({
+        operation: "sync_start",
+        entityType: "event",
+        status: "pending",
+        details: { source: "website_scrape", triggeredBy: "admin" },
+      });
+
+      // Scrape all tours from the website
+      const tours = await scrapeAllTours();
+      
+      console.log(`[SYNC] Scraped ${tours.length} tours, syncing to database...`);
+
+      // Sync to database with smart update/create/archive logic
+      const result = await syncToursToDatabase(tours, storage);
+
+      // Log sync completion
+      await storage.createSyncLog({
+        operation: "sync_complete",
+        entityType: "event",
+        status: result.errors.length > 0 ? "partial" : "success",
+        details: {
+          source: "website_scrape",
+          created: result.created,
+          updated: result.updated,
+          archived: result.archived,
+          errors: result.errors,
+          toursProcessed: result.tours.length,
+        },
+      });
+
+      // Update sync settings
+      await storage.upsertSyncSettings("website_scrape", {
+        lastSyncAt: new Date(),
+        lastSyncStatus: result.errors.length > 0 ? "partial" : "success",
+        lastSyncMessage: `Создано: ${result.created}, Обновлено: ${result.updated}, Архивировано: ${result.archived}`,
+      });
+
+      console.log(`[SYNC] Completed. Created: ${result.created}, Updated: ${result.updated}, Archived: ${result.archived}`);
+
+      res.json({
+        success: true,
+        ...result,
+        message: `Синхронизация завершена. Создано: ${result.created}, обновлено: ${result.updated}, архивировано: ${result.archived}`,
+      });
+    } catch (error) {
+      console.error("[SYNC] Error scraping website:", error);
+
+      await storage.createSyncLog({
+        operation: "error",
+        entityType: "event",
+        status: "error",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        details: { source: "website_scrape" },
+      });
+
+      res.status(500).json({ 
+        error: "Failed to scrape website",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

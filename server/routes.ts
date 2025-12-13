@@ -3331,12 +3331,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+  // CORS middleware for booking widget endpoints (cross-origin requests from chinaunique.ru)
+  const bookingWidgetCorsMiddleware = (req: any, res: any, next: any) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Accept');
+    
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  };
+
+  // Handle OPTIONS preflight requests for booking widget routes
+  app.options('/api/booking/*', bookingWidgetCorsMiddleware);
+  app.options('/api/public/leads', bookingWidgetCorsMiddleware);
+  app.options('/api/public/leads/:id/payment-status', bookingWidgetCorsMiddleware);
+
   // Register booking widget endpoints (no auth required)
   // Both /api/booking/leads and /api/public/leads paths supported for backward compatibility
-  app.post("/api/booking/leads", handleCreateBookingLead);
-  app.post("/api/public/leads", handleCreateBookingLead);  // Backward compatibility
-  app.patch("/api/booking/leads/:id/payment-status", handlePaymentStatusUpdate);
-  app.patch("/api/public/leads/:id/payment-status", handlePaymentStatusUpdate);  // Backward compatibility
+  app.post("/api/booking/leads", bookingWidgetCorsMiddleware, handleCreateBookingLead);
+  app.post("/api/public/leads", bookingWidgetCorsMiddleware, handleCreateBookingLead);  // Backward compatibility
+  app.patch("/api/booking/leads/:id/payment-status", bookingWidgetCorsMiddleware, handlePaymentStatusUpdate);
+  app.patch("/api/public/leads/:id/payment-status", bookingWidgetCorsMiddleware, handlePaymentStatusUpdate);  // Backward compatibility
 
   // ==================== WORDPRESS API ENDPOINTS (With API Key) ====================
   // These endpoints require API key authentication for server-to-server WordPress sync

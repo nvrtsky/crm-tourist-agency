@@ -104,13 +104,51 @@ async function getTourUrls(): Promise<string[]> {
 
 /**
  * Parse Russian date range like "16-22 марта 2026 г" to start/end dates
+ * Handles multiple formats:
+ * - "16-22 марта 2026" (same month)
+ * - "26 мая-1 июня 2026" (cross month)
+ * - "16 марта – 22 марта 2026" (full dates with em-dash)
+ * - "с 5 по 12 мая 2026" (Russian "from X to Y")
  */
 function parseDateRange(dateStr: string): { startDate: string; endDate: string } | null {
   try {
-    // Clean the string
-    dateStr = dateStr.trim().replace(/\s+/g, ' ').replace(' г', '');
+    // Clean the string: normalize whitespace, remove "г", replace em-dash with hyphen
+    dateStr = dateStr.trim().replace(/\s+/g, ' ').replace(/\s*г\.?$/, '').replace(/–/g, '-').replace(/—/g, '-');
     
-    // Pattern: "16-22 марта 2026" or "26 мая-1 июня 2026"
+    // Pattern: "с 5 по 12 мая 2026" (Russian "from X to Y" format)
+    const russianFromToMatch = dateStr.match(/с\s*(\d+)\s*по\s*(\d+)\s+(\S+)\s+(\d{4})/i);
+    if (russianFromToMatch) {
+      const [, startDay, endDay, month, year] = russianFromToMatch;
+      const monthNum = MONTH_MAP[month.toLowerCase()];
+      
+      if (monthNum !== undefined) {
+        const startDate = new Date(parseInt(year), monthNum, parseInt(startDay));
+        const endDate = new Date(parseInt(year), monthNum, parseInt(endDay));
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        };
+      }
+    }
+    
+    // Pattern: "16 марта - 22 марта 2026" (full date on both sides)
+    const fullDatesMatch = dateStr.match(/(\d+)\s+(\S+)\s*-\s*(\d+)\s+(\S+)\s+(\d{4})/);
+    if (fullDatesMatch) {
+      const [, startDay, startMonth, endDay, endMonth, year] = fullDatesMatch;
+      const startMonthNum = MONTH_MAP[startMonth.toLowerCase()];
+      const endMonthNum = MONTH_MAP[endMonth.toLowerCase()];
+      
+      if (startMonthNum !== undefined && endMonthNum !== undefined) {
+        const startDate = new Date(parseInt(year), startMonthNum, parseInt(startDay));
+        const endDate = new Date(parseInt(year), endMonthNum, parseInt(endDay));
+        return {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        };
+      }
+    }
+    
+    // Pattern: "26 мая-1 июня 2026" (cross month, compact)
     const crossMonthMatch = dateStr.match(/(\d+)\s+(\S+)-(\d+)\s+(\S+)\s+(\d{4})/);
     if (crossMonthMatch) {
       const [, startDay, startMonth, endDay, endMonth, year] = crossMonthMatch;
@@ -127,26 +165,10 @@ function parseDateRange(dateStr: string): { startDate: string; endDate: string }
       }
     }
     
-    // Pattern: "16-22 марта 2026"
-    const sameMonthMatch = dateStr.match(/(\d+)-(\d+)\s+(\S+)\s+(\d{4})/);
+    // Pattern: "16-22 марта 2026" or "7- 13 октября 2026" (same month with optional space)
+    const sameMonthMatch = dateStr.match(/(\d+)\s*-\s*(\d+)\s+(\S+)\s+(\d{4})/);
     if (sameMonthMatch) {
       const [, startDay, endDay, month, year] = sameMonthMatch;
-      const monthNum = MONTH_MAP[month.toLowerCase()];
-      
-      if (monthNum !== undefined) {
-        const startDate = new Date(parseInt(year), monthNum, parseInt(startDay));
-        const endDate = new Date(parseInt(year), monthNum, parseInt(endDay));
-        return {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: endDate.toISOString().split('T')[0]
-        };
-      }
-    }
-    
-    // Pattern: "7- 13 октября 2026 г" (with space after dash)
-    const spaceAfterDashMatch = dateStr.match(/(\d+)-\s*(\d+)\s+(\S+)\s+(\d{4})/);
-    if (spaceAfterDashMatch) {
-      const [, startDay, endDay, month, year] = spaceAfterDashMatch;
       const monthNum = MONTH_MAP[month.toLowerCase()];
       
       if (monthNum !== undefined) {
@@ -338,11 +360,20 @@ export async function syncToursToDatabase(
   const existingExternalIds = new Set(wpEvents.map((e: any) => e.externalId));
   const processedExternalIds = new Set<string>();
   
+  // Track externalIds we've already created in this run to avoid duplicates
+  const createdInThisRun = new Set<string>();
+  
   for (const tour of tours) {
     let tourDatesCreated = 0;
     
     for (const dateRange of tour.dates) {
       const externalId = generateExternalId(tour.slug, dateRange.startDate);
+      
+      // Skip if we already processed this externalId in this run
+      if (processedExternalIds.has(externalId) || createdInThisRun.has(externalId)) {
+        continue;
+      }
+      
       processedExternalIds.add(externalId);
       
       const eventData = {
@@ -362,7 +393,7 @@ export async function syncToursToDatabase(
       };
       
       try {
-        // Check if event already exists
+        // Check if event already exists in database
         const existingEvent = wpEvents.find((e: any) => e.externalId === externalId);
         
         if (existingEvent) {
@@ -370,8 +401,9 @@ export async function syncToursToDatabase(
           await storage.updateEvent(existingEvent.id, eventData);
           result.updated++;
         } else {
-          // Create new event
+          // Create new event (mark as created to avoid duplicate inserts)
           await storage.createEvent(eventData);
+          createdInThisRun.add(externalId);
           result.created++;
           tourDatesCreated++;
         }

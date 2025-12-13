@@ -18,12 +18,33 @@ interface TourData {
   description?: string;
 }
 
+interface TourAction {
+  name: string;
+  action: 'created' | 'updated' | 'archived';
+  dates: number;
+  startDate?: string;
+  priceChange?: { from: number; to: number; currency: string };
+}
+
+interface SyncWarning {
+  type: 'no_dates' | 'no_description' | 'no_cities' | 'parse_error';
+  tourName: string;
+  message: string;
+}
+
 interface SyncResult {
   created: number;
   updated: number;
   archived: number;
   errors: string[];
   tours: { name: string; dates: number }[];
+  // Enhanced details
+  tourActions: TourAction[];
+  warnings: SyncWarning[];
+  durationMs: number;
+  toursScraped: number;
+  totalDatesProcessed: number;
+  source: string;
 }
 
 const SITE_BASE_URL = 'https://chinaunique.ru';
@@ -409,13 +430,46 @@ export async function syncToursToDatabase(
   tours: TourData[],
   storage: any
 ): Promise<SyncResult> {
+  const startTime = Date.now();
+  
   const result: SyncResult = {
     created: 0,
     updated: 0,
     archived: 0,
     errors: [],
-    tours: []
+    tours: [],
+    tourActions: [],
+    warnings: [],
+    durationMs: 0,
+    toursScraped: tours.length,
+    totalDatesProcessed: 0,
+    source: 'chinaunique.ru'
   };
+  
+  // Collect warnings for tours
+  for (const tour of tours) {
+    if (tour.dates.length === 0) {
+      result.warnings.push({
+        type: 'no_dates',
+        tourName: tour.name,
+        message: 'Тур без дат'
+      });
+    }
+    if (!tour.description) {
+      result.warnings.push({
+        type: 'no_description',
+        tourName: tour.name,
+        message: 'Нет описания'
+      });
+    }
+    if (tour.cities.length === 0 || (tour.cities.length === 1 && tour.cities[0] === 'Китай')) {
+      result.warnings.push({
+        type: 'no_cities',
+        tourName: tour.name,
+        message: 'Города не определены'
+      });
+    }
+  }
   
   // Get all existing events with external IDs starting with 'wp_'
   const existingEvents = await storage.getAllEvents();
@@ -428,6 +482,8 @@ export async function syncToursToDatabase(
   
   for (const tour of tours) {
     let tourDatesCreated = 0;
+    let tourDatesUpdated = 0;
+    let priceChange: { from: number; to: number; currency: string } | undefined;
     
     for (const dateRange of tour.dates) {
       const externalId = generateExternalId(tour.slug, dateRange.startDate);
@@ -438,6 +494,7 @@ export async function syncToursToDatabase(
       }
       
       processedExternalIds.add(externalId);
+      result.totalDatesProcessed++;
       
       const eventData = {
         name: tour.name,
@@ -460,9 +517,18 @@ export async function syncToursToDatabase(
         const existingEvent = wpEvents.find((e: any) => e.externalId === externalId);
         
         if (existingEvent) {
+          // Track price changes
+          if (existingEvent.price !== tour.price) {
+            priceChange = {
+              from: existingEvent.price,
+              to: tour.price,
+              currency: tour.currency
+            };
+          }
           // Update existing event
           await storage.updateEvent(existingEvent.id, eventData);
           result.updated++;
+          tourDatesUpdated++;
         } else {
           // Create new event (mark as created to avoid duplicate inserts)
           await storage.createEvent(eventData);
@@ -476,6 +542,25 @@ export async function syncToursToDatabase(
     }
     
     result.tours.push({ name: tour.name, dates: tour.dates.length });
+    
+    // Record tour action
+    if (tourDatesCreated > 0) {
+      result.tourActions.push({
+        name: tour.name,
+        action: 'created',
+        dates: tourDatesCreated,
+        startDate: tour.dates[0]?.startDate,
+        priceChange
+      });
+    } else if (tourDatesUpdated > 0) {
+      result.tourActions.push({
+        name: tour.name,
+        action: 'updated',
+        dates: tourDatesUpdated,
+        startDate: tour.dates[0]?.startDate,
+        priceChange
+      });
+    }
   }
   
   // Archive events that no longer exist on the website
@@ -484,13 +569,21 @@ export async function syncToursToDatabase(
       try {
         await storage.archiveEvent(event.id);
         result.archived++;
+        result.tourActions.push({
+          name: event.name,
+          action: 'archived',
+          dates: 1,
+          startDate: event.startDate
+        });
       } catch (error: any) {
         result.errors.push(`Archive ${event.name}: ${error.message}`);
       }
     }
   }
   
+  result.durationMs = Date.now() - startTime;
+  
   return result;
 }
 
-export { generateExternalId, parseDateRange, TourData, SyncResult };
+export { generateExternalId, parseDateRange, TourData, SyncResult, TourAction, SyncWarning };

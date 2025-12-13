@@ -3398,8 +3398,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
   
-  // Public: Create lead from WordPress booking
-  app.post("/api/public/leads", validateApiKey, publicRateLimiter, async (req, res) => {
+  // WordPress: Create lead from WordPress booking (requires API key)
+  app.post("/api/wordpress/leads", validateApiKey, publicRateLimiter, async (req, res) => {
     try {
       const { 
         eventExternalId,  // WordPress post ID 
@@ -3502,8 +3502,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Public: Update lead payment status
-  app.patch("/api/public/leads/:id/payment-status", validateApiKey, publicRateLimiter, async (req, res) => {
+  // WordPress: Update lead payment status (requires API key)
+  app.patch("/api/wordpress/leads/:id/payment-status", validateApiKey, publicRateLimiter, async (req, res) => {
     try {
       const { paymentStatus, paidAmount, paidDate, comment } = req.body;
 

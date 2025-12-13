@@ -63,6 +63,7 @@ const formSchema = z.object({
   priceCurrency: z.enum(CURRENCIES).default("RUB"),
   color: z.enum(["red", "blue", "green", "yellow", "purple"]).nullable(),
   cityGuides: z.record(z.string(), z.string()).optional(), // City name -> user ID mapping
+  websiteUrl: z.string().url("Введите корректный URL").optional().or(z.literal("")), // URL to tour page on website
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -137,6 +138,7 @@ export function EditEventDialog({
       priceCurrency: (event?.priceCurrency as Currency) || "RUB",
       color: (event?.color as ColorOption) || null,
       cityGuides: (event?.cityGuides as Record<string, string>) || {},
+      websiteUrl: event?.websiteUrl || "",
     },
   });
 
@@ -179,6 +181,13 @@ export function EditEventDialog({
       normalizedData.cityGuides = data.cityGuides;
     } else {
       normalizedData.cityGuides = null;
+    }
+
+    // Add websiteUrl if provided
+    if (data.websiteUrl && data.websiteUrl.trim()) {
+      normalizedData.websiteUrl = data.websiteUrl.trim();
+    } else {
+      normalizedData.websiteUrl = null;
     }
 
     onSave(normalizedData);
@@ -245,6 +254,25 @@ export function EditEventDialog({
                       placeholder="Описание тура"
                       value={field.value || ""}
                       data-testid="input-event-description"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="websiteUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL тура на сайте</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder="https://example.com/tour/..."
+                      value={field.value || ""}
+                      data-testid="input-event-website-url"
                     />
                   </FormControl>
                   <FormMessage />

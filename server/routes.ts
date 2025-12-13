@@ -3372,6 +3372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             participantLimit: tour.capacity || tour.participantLimit || 30,
             cities: tour.cities || tour.route || [],
             externalId,
+            websiteUrl: tour.url || tour.websiteUrl || tour.permalink || null,
           };
 
           if (existingEvent) {

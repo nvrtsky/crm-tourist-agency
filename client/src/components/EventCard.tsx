@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Calendar, MapPin, Users, ArrowRight, Pencil, Copy, Trash2, Archive } from "lucide-react";
+import { Calendar, MapPin, Users, ArrowRight, Pencil, Copy, Trash2, Archive, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ColorIndicator, type ColorOption, type ColorDisplayMode, getColorDisplayMode, getPastelClasses } from "@/components/ColorPicker";
@@ -189,6 +189,19 @@ export function EventCard({ event, onViewSummary, onEdit, onCopy, onDelete }: Ev
           <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2" data-testid={`text-description-${event.id}`}>
             {event.description}
           </p>
+        )}
+
+        {event.websiteUrl && (
+          <a 
+            href={event.websiteUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs sm:text-sm text-primary hover:underline pt-1"
+            data-testid={`link-website-${event.id}`}
+          >
+            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="truncate">Открыть на сайте</span>
+          </a>
         )}
 
         <div className="flex items-center gap-1 sm:gap-2 pt-2 sm:pt-3">

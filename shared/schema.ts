@@ -128,6 +128,7 @@ export const events = pgTable("events", {
   color: text("color"), // Color indicator: 'red', 'blue', 'green', 'yellow', 'purple'
   cityGuides: jsonb("city_guides"), // City to guide mapping: { "cityName": "userId" }
   externalId: text("external_id"), // WordPress post ID for sync tracking
+  websiteUrl: text("website_url"), // URL to the tour page on WordPress website
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

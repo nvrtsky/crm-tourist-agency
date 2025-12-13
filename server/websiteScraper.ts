@@ -30,6 +30,7 @@ interface SyncWarning {
   type: 'no_dates' | 'no_description' | 'no_cities' | 'parse_error';
   tourName: string;
   message: string;
+  url?: string;
 }
 
 interface SyncResult {
@@ -452,21 +453,24 @@ export async function syncToursToDatabase(
       result.warnings.push({
         type: 'no_dates',
         tourName: tour.name,
-        message: 'Тур без дат'
+        message: 'Тур без дат',
+        url: tour.url
       });
     }
     if (!tour.description) {
       result.warnings.push({
         type: 'no_description',
         tourName: tour.name,
-        message: 'Нет описания'
+        message: 'Нет описания',
+        url: tour.url
       });
     }
     if (tour.cities.length === 0 || (tour.cities.length === 1 && tour.cities[0] === 'Китай')) {
       result.warnings.push({
         type: 'no_cities',
         tourName: tour.name,
-        message: 'Города не определены'
+        message: 'Города не определены',
+        url: tour.url
       });
     }
   }

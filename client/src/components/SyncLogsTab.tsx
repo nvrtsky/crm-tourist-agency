@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { RefreshCw, Cloud, CheckCircle2, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight, Download, ChevronDown, Plus, Edit, Archive, AlertTriangle } from "lucide-react";
+import { RefreshCw, Cloud, CheckCircle2, XCircle, AlertCircle, Clock, ChevronLeft, ChevronRight, Download, ChevronDown, Plus, Edit, Archive, AlertTriangle, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
@@ -30,6 +30,7 @@ interface SyncWarning {
   type: string;
   tourName: string;
   message: string;
+  url?: string;
 }
 
 interface SyncCompleteDetails {
@@ -227,8 +228,22 @@ function SyncCompleteExpandableDetails({ details }: { details: SyncCompleteDetai
               <div key={type} className="space-y-1">
                 <div className="text-xs font-medium text-muted-foreground uppercase">{type}</div>
                 {warnings.map((warning, idx) => (
-                  <div key={idx} className="text-sm bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 p-2 rounded">
-                    <span className="font-medium">{warning.tourName}:</span> {warning.message}
+                  <div key={idx} className="text-sm bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 p-2 rounded flex items-center gap-2 flex-wrap">
+                    {warning.url ? (
+                      <a
+                        href={warning.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium underline hover:no-underline inline-flex items-center gap-1"
+                        data-testid={`link-warning-tour-${idx}`}
+                      >
+                        {warning.tourName}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : (
+                      <span className="font-medium">{warning.tourName}</span>
+                    )}
+                    <span>: {warning.message}</span>
                   </div>
                 ))}
               </div>

@@ -37,8 +37,8 @@ A normalized PostgreSQL schema underpins the system, supporting core CRM entitie
 ### WordPress Integration
 The system provides API endpoints for WordPress integration:
 -   **WordPress API Endpoints** (secured with API key `WORDPRESS_API_KEY`):
-    -   `POST /api/public/leads` - Creates leads from WordPress (requires API key)
-    -   `PATCH /api/public/leads/:id/payment-status` - Updates lead payment status (requires API key)
+    -   `POST /api/wordpress/leads` - Creates leads from WordPress (requires API key)
+    -   `PATCH /api/wordpress/leads/:id/payment-status` - Updates lead payment status (requires API key)
     -   `POST /api/public/events/sync` - Syncs tours from WordPress to CRM events
 
 ### Booking Widget Integration

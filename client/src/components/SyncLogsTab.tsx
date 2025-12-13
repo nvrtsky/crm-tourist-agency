@@ -51,6 +51,7 @@ function getOperationLabel(operation: string): string {
     case "update": return "Обновление";
     case "archive": return "Архивация";
     case "error": return "Ошибка";
+    case "sync_start": return "Начало синхронизации";
     case "sync_complete": return "Синхронизация завершена";
     default: return operation;
   }
@@ -67,11 +68,13 @@ function getEntityTypeLabel(entityType: string): string {
 function getStatusBadge(status: string) {
   switch (status) {
     case "success":
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200" data-testid="badge-status-success"><CheckCircle2 className="w-3 h-3 mr-1" />Успешно</Badge>;
+      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800" data-testid="badge-status-success"><CheckCircle2 className="w-3 h-3 mr-1" />Успешно</Badge>;
     case "error":
-      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200" data-testid="badge-status-error"><XCircle className="w-3 h-3 mr-1" />Ошибка</Badge>;
+      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800" data-testid="badge-status-error"><XCircle className="w-3 h-3 mr-1" />Ошибка</Badge>;
     case "partial":
-      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200" data-testid="badge-status-partial"><AlertCircle className="w-3 h-3 mr-1" />Частично</Badge>;
+      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800" data-testid="badge-status-partial"><AlertCircle className="w-3 h-3 mr-1" />Частично</Badge>;
+    case "pending":
+      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800" data-testid="badge-status-pending"><Clock className="w-3 h-3 mr-1" />В процессе</Badge>;
     default:
       return <Badge variant="outline" data-testid={`badge-status-${status}`}>{status}</Badge>;
   }

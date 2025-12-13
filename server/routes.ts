@@ -3170,8 +3170,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ==================== PUBLIC API ENDPOINTS (WordPress Integration) ====================
-  // These endpoints are for external systems (WordPress booking widget) and require API key authentication
+  // ==================== PUBLIC API ENDPOINTS (Booking Widget - No Auth) ====================
+  // These endpoints must be registered BEFORE the WordPress API-key-protected endpoints
+  // to handle public booking widget requests without authentication
+
+  // Zod schema for creating lead from booking widget
+  const bookingLeadSchema = z.object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    phone: z.string().optional(),
+    email: z.string().email().optional().or(z.literal("")),
+    tourName: z.string().optional(),
+    tourDate: z.string().optional(),
+    tourUrl: z.string().optional(),
+    tourCost: z.string().optional(),
+    tourCostCurrency: z.string().default("RUB"),
+    advancePayment: z.string().optional(),
+    advancePaymentCurrency: z.string().default("RUB"),
+    participants: z.number().optional(),
+    bookingId: z.string().optional(),
+    paymentMethod: z.string().optional(),
+  });
+
+  // Zod schema for payment status update
+  const paymentStatusSchema = z.object({
+    paymentStatus: z.enum(["pending", "paid", "failed"]),
+    paymentId: z.string().optional(),
+    amountPaid: z.string().optional(),
+    transactionDate: z.string().optional(),
+  });
+
+  // Handler for creating lead from booking widget
+  const handleCreateBookingLead = async (req: any, res: any) => {
+    try {
+      const validation = bookingLeadSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid request data",
+          details: validation.error.errors,
+        });
+      }
+
+      const data = validation.data;
+
+      // Try to find matching event by websiteUrl
+      let eventId: string | undefined = undefined;
+      if (data.tourUrl) {
+        const event = await storage.getEventByWebsiteUrl(data.tourUrl);
+        if (event) {
+          eventId = event.id;
+        }
+      }
+
+      // Build notes from booking widget data
+      const notesParts: string[] = [];
+      if (data.tourName) notesParts.push(`Тур: ${data.tourName}`);
+      if (data.tourDate) notesParts.push(`Дата: ${data.tourDate}`);
+      if (data.participants) notesParts.push(`Участников: ${data.participants}`);
+      if (data.paymentMethod) notesParts.push(`Способ оплаты: ${data.paymentMethod}`);
+      if (data.bookingId) notesParts.push(`ID бронирования: ${data.bookingId}`);
+      const notes = notesParts.length > 0 ? notesParts.join("\n") : undefined;
+
+      // Create the lead
+      const lead = await storage.createLead({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone || undefined,
+        email: data.email || undefined,
+        eventId: eventId,
+        tourCost: data.tourCost || undefined,
+        tourCostCurrency: data.tourCostCurrency,
+        advancePayment: data.advancePayment || undefined,
+        advancePaymentCurrency: data.advancePaymentCurrency,
+        status: "new",
+        source: "booking",
+        notes: notes,
+      });
+
+      res.status(201).json({
+        success: true,
+        leadId: lead.id,
+        message: "Lead created successfully",
+      });
+    } catch (error) {
+      console.error("[PUBLIC API] Error creating lead:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to create lead",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  // Handler for updating payment status
+  const handlePaymentStatusUpdate = async (req: any, res: any) => {
+    try {
+      const { id } = req.params;
+      const validation = paymentStatusSchema.safeParse(req.body);
+      
+      if (!validation.success) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid request data",
+          details: validation.error.errors,
+        });
+      }
+
+      const data = validation.data;
+
+      // Get existing lead
+      const existingLead = await storage.getLead(id);
+      if (!existingLead) {
+        return res.status(404).json({
+          success: false,
+          error: "Lead not found",
+        });
+      }
+
+      // Determine new lead status based on payment status
+      let newStatus: string = existingLead.status;
+      if (data.paymentStatus === "paid") {
+        newStatus = "qualified";
+      } else if (data.paymentStatus === "failed") {
+        newStatus = "contacted";
+      }
+
+      // Build payment info note
+      const paymentNotes: string[] = [];
+      paymentNotes.push(`\n--- Обновление оплаты (${new Date().toLocaleString("ru-RU")}) ---`);
+      paymentNotes.push(`Статус оплаты: ${data.paymentStatus}`);
+      if (data.paymentId) paymentNotes.push(`ID платежа: ${data.paymentId}`);
+      if (data.amountPaid) paymentNotes.push(`Сумма: ${data.amountPaid}`);
+      if (data.transactionDate) paymentNotes.push(`Дата транзакции: ${data.transactionDate}`);
+
+      // Append to existing notes
+      const updatedNotes = existingLead.notes 
+        ? existingLead.notes + paymentNotes.join("\n")
+        : paymentNotes.join("\n");
+
+      // Update the lead
+      await storage.updateLead(id, {
+        status: newStatus as any,
+        notes: updatedNotes,
+      });
+
+      res.json({
+        success: true,
+        leadId: id,
+        status: newStatus,
+        message: "Payment status updated",
+      });
+    } catch (error) {
+      console.error("[PUBLIC API] Error updating payment status:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to update payment status",
+        details: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  // Register booking widget endpoints (no auth required)
+  // Both /api/booking/leads and /api/public/leads paths supported for backward compatibility
+  app.post("/api/booking/leads", handleCreateBookingLead);
+  app.post("/api/public/leads", handleCreateBookingLead);  // Backward compatibility
+  app.patch("/api/booking/leads/:id/payment-status", handlePaymentStatusUpdate);
+  app.patch("/api/public/leads/:id/payment-status", handlePaymentStatusUpdate);  // Backward compatibility
+
+  // ==================== WORDPRESS API ENDPOINTS (With API Key) ====================
+  // These endpoints require API key authentication for server-to-server WordPress sync
   
   // API Key validation middleware for WordPress endpoints
   const validateApiKey = (req: any, res: any, next: any) => {
@@ -3641,165 +3809,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: "Failed to scrape website",
         details: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
-  });
-
-  // ==================== PUBLIC API ENDPOINTS (Booking Widget Integration) ====================
-
-  // Zod schema for creating lead from booking widget
-  const bookingLeadSchema = z.object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    phone: z.string().optional(),
-    email: z.string().email().optional().or(z.literal("")),
-    tourName: z.string().optional(),
-    tourDate: z.string().optional(),
-    tourUrl: z.string().optional(),
-    tourCost: z.string().optional(),
-    tourCostCurrency: z.string().default("RUB"),
-    advancePayment: z.string().optional(),
-    advancePaymentCurrency: z.string().default("RUB"),
-    participants: z.number().optional(),
-    bookingId: z.string().optional(),
-    paymentMethod: z.string().optional(),
-  });
-
-  // POST /api/public/leads - Create lead from booking widget (no auth required)
-  app.post("/api/public/leads", async (req, res) => {
-    try {
-      const validation = bookingLeadSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({
-          success: false,
-          error: "Invalid request data",
-          details: validation.error.errors,
-        });
-      }
-
-      const data = validation.data;
-
-      // Try to find matching event by websiteUrl
-      let eventId: string | undefined = undefined;
-      if (data.tourUrl) {
-        const event = await storage.getEventByWebsiteUrl(data.tourUrl);
-        if (event) {
-          eventId = event.id;
-        }
-      }
-
-      // Build notes from booking widget data
-      const notesParts: string[] = [];
-      if (data.tourName) notesParts.push(`Тур: ${data.tourName}`);
-      if (data.tourDate) notesParts.push(`Дата: ${data.tourDate}`);
-      if (data.participants) notesParts.push(`Участников: ${data.participants}`);
-      if (data.paymentMethod) notesParts.push(`Способ оплаты: ${data.paymentMethod}`);
-      if (data.bookingId) notesParts.push(`ID бронирования: ${data.bookingId}`);
-      const notes = notesParts.length > 0 ? notesParts.join("\n") : undefined;
-
-      // Create the lead
-      const lead = await storage.createLead({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone || undefined,
-        email: data.email || undefined,
-        eventId: eventId,
-        tourCost: data.tourCost || undefined,
-        tourCostCurrency: data.tourCostCurrency,
-        advancePayment: data.advancePayment || undefined,
-        advancePaymentCurrency: data.advancePaymentCurrency,
-        status: "new",
-        source: "booking",
-        notes: notes,
-      });
-
-      res.status(201).json({
-        success: true,
-        leadId: lead.id,
-        message: "Lead created successfully",
-      });
-    } catch (error) {
-      console.error("[PUBLIC API] Error creating lead:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to create lead",
-        details: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  });
-
-  // Zod schema for payment status update
-  const paymentStatusSchema = z.object({
-    paymentStatus: z.enum(["pending", "paid", "failed"]),
-    paymentId: z.string().optional(),
-    amountPaid: z.string().optional(),
-    transactionDate: z.string().optional(),
-  });
-
-  // PATCH /api/public/leads/:id/payment-status - Update payment status (no auth required)
-  app.patch("/api/public/leads/:id/payment-status", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const validation = paymentStatusSchema.safeParse(req.body);
-      
-      if (!validation.success) {
-        return res.status(400).json({
-          success: false,
-          error: "Invalid request data",
-          details: validation.error.errors,
-        });
-      }
-
-      const data = validation.data;
-
-      // Get existing lead
-      const existingLead = await storage.getLead(id);
-      if (!existingLead) {
-        return res.status(404).json({
-          success: false,
-          error: "Lead not found",
-        });
-      }
-
-      // Determine new lead status based on payment status
-      let newStatus: string = existingLead.status;
-      if (data.paymentStatus === "paid") {
-        newStatus = "qualified";
-      } else if (data.paymentStatus === "failed") {
-        newStatus = "contacted";
-      }
-
-      // Build payment info note
-      const paymentNotes: string[] = [];
-      paymentNotes.push(`\n--- Обновление оплаты (${new Date().toLocaleString("ru-RU")}) ---`);
-      paymentNotes.push(`Статус оплаты: ${data.paymentStatus}`);
-      if (data.paymentId) paymentNotes.push(`ID платежа: ${data.paymentId}`);
-      if (data.amountPaid) paymentNotes.push(`Сумма: ${data.amountPaid}`);
-      if (data.transactionDate) paymentNotes.push(`Дата транзакции: ${data.transactionDate}`);
-
-      // Append to existing notes
-      const updatedNotes = existingLead.notes 
-        ? existingLead.notes + paymentNotes.join("\n")
-        : paymentNotes.join("\n");
-
-      // Update the lead
-      const updatedLead = await storage.updateLead(id, {
-        status: newStatus as any,
-        notes: updatedNotes,
-      });
-
-      res.json({
-        success: true,
-        leadId: id,
-        status: newStatus,
-        message: "Payment status updated",
-      });
-    } catch (error) {
-      console.error("[PUBLIC API] Error updating payment status:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to update payment status",
-        details: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });

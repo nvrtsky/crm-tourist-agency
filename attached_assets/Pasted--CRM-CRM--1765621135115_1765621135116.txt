@@ -1,0 +1,168 @@
+Интеграция CRM с виджетом бронирования
+Этот документ содержит код, который нужно добавить в CRM проект (TravelGroupManager) для интеграции с виджетом бронирования.
+
+Обзор интеграции
+Виджет бронирования взаимодействует с CRM в двух точках:
+
+Создание лида — при нажатии кнопки "Перейти к оплате"
+Обновление статуса оплаты — после успешной/неуспешной оплаты через T-Bank
+1. Добавить публичные API эндпоинты в server/routes.ts
+Добавьте в конец функции registerRoutes:
+
+// ==================== PUBLIC API ROUTES (for booking widget integration) ====================
+// Create lead from booking widget
+app.post("/api/public/leads", async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      phone,
+      email,
+      eventId,
+      tourName,
+      tourDate,
+      tourUrl,
+      tourCost,
+      tourCostCurrency,
+      advancePayment,
+      advancePaymentCurrency,
+      participants,
+      notes,
+      bookingId,
+      paymentMethod,
+    } = req.body;
+    // Validate required fields
+    if (!firstName || !lastName) {
+      return res.status(400).json({ error: "firstName and lastName are required" });
+    }
+    // Create the lead
+    const lead = await storage.createLead({
+      firstName,
+      lastName,
+      phone: phone || null,
+      email: email || null,
+      eventId: eventId || null,
+      tourUrl: tourUrl || null,
+      tourCost: tourCost ? String(tourCost) : null,
+      tourCostCurrency: tourCostCurrency || "RUB",
+      advancePayment: advancePayment ? String(advancePayment) : null,
+      advancePaymentCurrency: advancePaymentCurrency || "RUB",
+      status: "new",
+      source: "booking",
+      notes: notes || `Бронирование: ${tourName || 'Тур'} на ${tourDate || 'дату'}. Участников: ${participants || 1}. Способ оплаты: ${paymentMethod || 'не указан'}. Booking ID: ${bookingId || 'не указан'}`,
+    });
+    console.log('[Booking] Lead created:', lead.id, 'for booking:', bookingId);
+    res.status(201).json({ 
+      success: true, 
+      leadId: lead.id,
+      message: "Lead created successfully" 
+    });
+  } catch (error) {
+    console.error("Error creating lead from booking:", error);
+    res.status(500).json({ error: "Failed to create lead" });
+  }
+});
+// Update lead payment status
+app.patch("/api/public/leads/:id/payment-status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentStatus, paymentId, amountPaid, transactionDate } = req.body;
+    if (!paymentStatus || !["pending", "paid", "failed"].includes(paymentStatus)) {
+      return res.status(400).json({ error: "Valid paymentStatus required: pending, paid, or failed" });
+    }
+    const lead = await storage.getLead(id);
+    if (!lead) {
+      return res.status(404).json({ error: "Lead not found" });
+    }
+    // Update lead status based on payment
+    let newStatus = lead.status;
+    if (paymentStatus === "paid") {
+      newStatus = "qualified"; // Move to qualified when payment confirmed
+    } else if (paymentStatus === "failed") {
+      newStatus = "contacted"; // Keep as contacted if payment failed
+    }
+    const updatedLead = await storage.updateLead(id, {
+      status: newStatus,
+      notes: `${lead.notes || ''}\n\n[${new Date().toISOString()}] Статус оплаты: ${paymentStatus}${paymentId ? `, ID платежа: ${paymentId}` : ''}${amountPaid ? `, Сумма: ${amountPaid}` : ''}`,
+    });
+    console.log('[Booking] Payment status updated for lead:', id, 'status:', paymentStatus);
+    res.json({ 
+      success: true, 
+      leadId: id,
+      status: newStatus,
+      message: "Payment status updated" 
+    });
+  } catch (error) {
+    console.error("Error updating payment status:", error);
+    res.status(500).json({ error: "Failed to update payment status" });
+  }
+});
+
+2. После добавления кода
+Перезапустите сервер CRM.
+
+API Схема
+POST /api/public/leads
+Создание лида при бронировании.
+
+Request Body:
+
+{
+  "firstName": "Иван",
+  "lastName": "Петров",
+  "phone": "+7 (999) 123-45-67",
+  "email": "ivan@example.com",
+  "tourName": "Тур в Аватар на 3 дня",
+  "tourDate": "8 – 12 дек 2025",
+  "tourUrl": "https://chinaunique.ru/tours/avatar-3-days/",
+  "tourCost": 49000,
+  "tourCostCurrency": "RUB",
+  "advancePayment": 4900,
+  "advancePaymentCurrency": "RUB",
+  "participants": 2,
+  "bookingId": "booking-123",
+  "paymentMethod": "rf_card"
+}
+
+Response:
+
+{
+  "success": true,
+  "leadId": "uuid-lead-id",
+  "message": "Lead created successfully"
+}
+
+PATCH /api/public/leads/:id/payment-status
+Обновление статуса оплаты лида.
+
+Request Body:
+
+{
+  "paymentStatus": "paid",
+  "paymentId": "tbank-payment-123",
+  "amountPaid": 4900,
+  "transactionDate": "2025-12-13T10:30:00Z"
+}
+
+paymentStatus values:
+
+pending — ожидание оплаты
+paid — оплата успешна (лид переводится в статус "qualified")
+failed — оплата не удалась (лид переводится в статус "contacted")
+Response:
+
+{
+  "success": true,
+  "leadId": "uuid-lead-id",
+  "status": "qualified",
+  "message": "Payment status updated"
+}
+
+Настройка на стороне виджета бронирования
+В файле server/routes.ts виджета бронирования уже настроена отправка данных в CRM:
+
+При создании бронирования отправляется POST запрос на /api/public/leads
+После получения результата оплаты от T-Bank отправляется PATCH запрос на /api/public/leads/:id/payment-status
+Для работы интеграции необходимо настроить переменную окружения:
+
+CRM_API_URL=https://your-crm-domain.com

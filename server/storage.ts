@@ -232,6 +232,7 @@ export interface IStorage {
   getSyncLogs(limit?: number, offset?: number): Promise<import("@shared/schema").SyncLog[]>;
   getSyncLogsCount(): Promise<number>;
   getEventByExternalId(externalId: string): Promise<Event | undefined>;
+  getEventByWebsiteUrl(websiteUrl: string): Promise<Event | undefined>;
 
   // Sync settings operations
   getSyncSettings(key: string): Promise<import("@shared/schema").SyncSettings | undefined>;
@@ -1576,6 +1577,11 @@ export class DatabaseStorage implements IStorage {
 
   async getEventByExternalId(externalId: string): Promise<Event | undefined> {
     const [event] = await db.select().from(events).where(eq(events.externalId, externalId));
+    return event;
+  }
+
+  async getEventByWebsiteUrl(websiteUrl: string): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.websiteUrl, websiteUrl));
     return event;
   }
 

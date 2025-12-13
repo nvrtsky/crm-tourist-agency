@@ -3366,11 +3366,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             startDate: tour.startDate ? new Date(tour.startDate).toISOString() : new Date().toISOString(),
             endDate: tour.endDate ? new Date(tour.endDate).toISOString() : new Date().toISOString(),
             price: tour.price ? String(tour.price) : "0",
-            currency: tour.currency || "RUB",
+            priceCurrency: tour.currency || tour.priceCurrency || "RUB",
+            country: tour.country || "Китай",
+            tourType: tour.tourType || "Групповой",
             participantLimit: tour.capacity || tour.participantLimit || 30,
             cities: tour.cities || tour.route || [],
             externalId,
-            status: tour.status === "private" || tour.status === "draft" ? "Черновик" : "Активный",
           };
 
           if (existingEvent) {

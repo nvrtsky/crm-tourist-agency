@@ -44,6 +44,18 @@ The system provides API endpoints for WordPress booking widget integration:
 -   **Database Tables**: `syncLogs` (operation history), `syncSettings` (automatic sync configuration), `events.externalId` (WordPress post ID tracking)
 -   **Automatic Sync**: Configurable interval (1h to 48h) for automatic tour synchronization
 
+### Website Scraper Integration
+The system includes a website scraper to import tours from chinaunique.ru:
+-   **Scraper Utility**: `server/websiteScraper.ts` - Parses tour listing pages and individual tour pages
+-   **Data Extraction**: Tour name, price (CNY), cities, tour type, duration, description, dates from "Даты ближайших туров" section
+-   **Date Parsing**: Handles Russian date formats including "16-22 марта 2026", "26 мая-1 июня 2026", "с 5 по 12 мая 2026", single-day events
+-   **Smart Sync**: Uses `externalId` format `wp_{slug}_{startDate}` to detect new/existing/removed tours:
+    -   Creates new events for new tour+date combinations
+    -   Updates existing events when data changes
+    -   Archives events that are no longer on the website
+-   **Admin UI**: Settings > Синхронизация > "Импорт с сайта" button triggers sync
+-   **API Endpoint**: `POST /api/sync/scrape-website` (admin-only)
+
 ### Technical Decisions
 The system employs dynamic geography for event city tracking, maintains a standalone design without external CRM integrations, uses a backend-automated notification strategy, and features a refined lead data separation architecture. Initial tourist entries are auto-created, and comprehensive tourist data completeness is indicated.
 

@@ -105,15 +105,20 @@ async function getTourUrls(): Promise<string[]> {
 /**
  * Parse Russian date range like "16-22 марта 2026 г" to start/end dates
  * Handles multiple formats:
- * - "16-22 марта 2026" (same month)
+ * - "16-22 марта 2026" (same month with hyphen)
+ * - "5–12 мая 2026" (same month with en-dash, no spaces)
  * - "26 мая-1 июня 2026" (cross month)
  * - "16 марта – 22 марта 2026" (full dates with em-dash)
  * - "с 5 по 12 мая 2026" (Russian "from X to Y")
+ * - "5 апреля 2026" (single day)
  */
 function parseDateRange(dateStr: string): { startDate: string; endDate: string } | null {
   try {
-    // Clean the string: normalize whitespace, remove "г", replace em-dash with hyphen
-    dateStr = dateStr.trim().replace(/\s+/g, ' ').replace(/\s*г\.?$/, '').replace(/–/g, '-').replace(/—/g, '-');
+    // Clean the string: normalize whitespace, remove "г", normalize all dash types to hyphen
+    dateStr = dateStr.trim()
+      .replace(/\s+/g, ' ')
+      .replace(/\s*г\.?$/i, '')
+      .replace(/[–—―‒]/g, '-');  // en-dash, em-dash, horizontal bar, figure dash
     
     // Pattern: "с 5 по 12 мая 2026" (Russian "from X to Y" format)
     const russianFromToMatch = dateStr.match(/с\s*(\d+)\s*по\s*(\d+)\s+(\S+)\s+(\d{4})/i);
@@ -165,7 +170,7 @@ function parseDateRange(dateStr: string): { startDate: string; endDate: string }
       }
     }
     
-    // Pattern: "16-22 марта 2026" or "7- 13 октября 2026" (same month with optional space)
+    // Pattern: "16-22 марта 2026" or "5-12 мая 2026" (same month, with or without spaces around dash)
     const sameMonthMatch = dateStr.match(/(\d+)\s*-\s*(\d+)\s+(\S+)\s+(\d{4})/);
     if (sameMonthMatch) {
       const [, startDay, endDay, month, year] = sameMonthMatch;
@@ -177,6 +182,22 @@ function parseDateRange(dateStr: string): { startDate: string; endDate: string }
         return {
           startDate: startDate.toISOString().split('T')[0],
           endDate: endDate.toISOString().split('T')[0]
+        };
+      }
+    }
+    
+    // Pattern: "5 апреля 2026" (single day - start and end are the same)
+    const singleDayMatch = dateStr.match(/^(\d+)\s+(\S+)\s+(\d{4})$/);
+    if (singleDayMatch) {
+      const [, day, month, year] = singleDayMatch;
+      const monthNum = MONTH_MAP[month.toLowerCase()];
+      
+      if (monthNum !== undefined) {
+        const date = new Date(parseInt(year), monthNum, parseInt(day));
+        const dateStr = date.toISOString().split('T')[0];
+        return {
+          startDate: dateStr,
+          endDate: dateStr
         };
       }
     }

@@ -44,17 +44,57 @@ The system provides API endpoints for WordPress booking widget integration:
 -   **Database Tables**: `syncLogs` (operation history), `syncSettings` (automatic sync configuration), `events.externalId` (WordPress post ID tracking)
 -   **Automatic Sync**: Configurable interval (1h to 48h) for automatic tour synchronization
 
-### Website Scraper Integration
-The system includes a website scraper to import tours from chinaunique.ru:
--   **Scraper Utility**: `server/websiteScraper.ts` - Parses tour listing pages and individual tour pages
--   **Data Extraction**: Tour name, price (CNY), cities, tour type, duration, description, dates from "Даты ближайших туров" section
--   **Date Parsing**: Handles Russian date formats including "16-22 марта 2026", "26 мая-1 июня 2026", "с 5 по 12 мая 2026", single-day events
--   **Smart Sync**: Uses `externalId` format `wp_{slug}_{startDate}` to detect new/existing/removed tours:
-    -   Creates new events for new tour+date combinations
-    -   Updates existing events when data changes
-    -   Archives events that are no longer on the website
--   **Admin UI**: Settings > Синхронизация > "Импорт с сайта" button triggers sync
--   **API Endpoint**: `POST /api/sync/scrape-website` (admin-only)
+### Импорт туров с сайта (Website Scraper)
+Система автоматического импорта туров с сайта chinaunique.ru.
+
+#### Источник данных
+-   **URL**: `https://chinaunique.ru/tours/` - страница со списком туров
+-   **Пагинация**: Автоматически обрабатывает все страницы каталога
+-   **Scraper**: `server/websiteScraper.ts`
+
+#### Извлекаемые данные
+Для каждого тура извлекается:
+-   Название тура (из `<h1 class="h1-alt">`)
+-   Цена в CNY (из атрибута `data-base-price`)
+-   Тип тура: групповой/индивидуальный/экскурсия (из `<div class="tour-tag">`)
+-   Продолжительность в днях (из названия, например "7 дней")
+-   Города маршрута (из блоков "Проживание:")
+-   Даты проведения (из секции "Даты ближайших туров")
+-   Описание тура
+-   URL страницы тура
+
+#### Парсинг дат
+Поддерживаемые форматы русских дат:
+-   `16-22 марта 2026` — диапазон в одном месяце
+-   `26 мая-1 июня 2026` — диапазон через месяцы
+-   `с 5 по 12 мая 2026` — формат "с X по Y"
+-   `16 марта – 22 марта 2026` — полные даты
+-   `5 апреля 2026` — однодневное событие
+
+#### Логика синхронизации
+Каждая комбинация тур + дата создаёт отдельное событие в CRM:
+1.  **ExternalId**: Формат `wp_{slug}_{startDate}` для уникальной идентификации
+2.  **Создание**: Новые туры/даты создаются как события
+3.  **Обновление**: Существующие события обновляются (отслеживаются изменения цен)
+4.  **Архивация**: Туры, удалённые с сайта, автоматически архивируются
+
+#### Система предупреждений
+При парсинге генерируются предупреждения:
+-   `no_dates` — Тур без запланированных дат
+-   `no_description` — Отсутствует описание тура
+-   `no_cities` — Города маршрута не определены
+
+Предупреждения отображаются в журнале с кликабельными ссылками на сайт.
+
+#### Настройки автоимпорта
+-   **Переключатель**: Вкл/выкл автоматического импорта
+-   **Интервал**: 1ч, 6ч, 12ч, 24ч, 48ч
+-   **Хранение**: Таблица `syncSettings`, ключ `tour_sync`
+
+#### API и UI
+-   **Endpoint**: `POST /api/sync/scrape-website` (только админ)
+-   **UI**: Настройки > Синхронизация > кнопка "Импорт с сайта"
+-   **Журнал**: Раскрываемые записи с детализацией по турам, ценам, предупреждениям
 
 ### Technical Decisions
 The system employs dynamic geography for event city tracking, maintains a standalone design without external CRM integrations, uses a backend-automated notification strategy, and features a refined lead data separation architecture. Initial tourist entries are auto-created, and comprehensive tourist data completeness is indicated.

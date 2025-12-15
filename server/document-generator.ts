@@ -1011,21 +1011,11 @@ export async function generateBookingSheet(
           size: 22,
         }),
         new TextRun({
-          text: primaryTourist.foreignPassportNumber || "",
+          text: primaryTourist.passportSeries || "",
           size: 22,
         }),
         new TextRun({
-          text: " , годен до ",
-          size: 22,
-        }),
-        new TextRun({
-          text: primaryTourist.foreignPassportValidUntil
-            ? formatDate(primaryTourist.foreignPassportValidUntil)
-            : "",
-          size: 22,
-        }),
-        new TextRun({
-          text: " г,",
+          text: ",",
           size: 22,
         }),
       ],

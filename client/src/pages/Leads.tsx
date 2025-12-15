@@ -1144,21 +1144,45 @@ export default function Leads() {
                         variant="outline" 
                         className="w-full"
                         onClick={() => {
-                          // Validate foreign passport data for all tourists
-                          const touristsWithMissingPassportData = editingLeadTourists.filter(tourist => 
-                            !tourist.foreignPassportName || 
-                            !tourist.foreignPassportNumber || 
-                            !tourist.foreignPassportValidUntil
-                          );
+                          const missingFields: string[] = [];
                           
-                          if (touristsWithMissingPassportData.length > 0) {
-                            const touristNames = touristsWithMissingPassportData.map(t => 
-                              `${t.lastName || ''} ${t.firstName || ''}`.trim() || 'Без имени'
-                            ).join(', ');
-                            
+                          // Find primary tourist
+                          const primaryTourist = editingLeadTourists.find(t => t.isPrimary) || editingLeadTourists[0];
+                          
+                          // Validate primary tourist (Заказчик) - Russian passport data
+                          if (primaryTourist) {
+                            const primaryName = `${primaryTourist.lastName || ''} ${primaryTourist.firstName || ''}`.trim() || 'Заказчик';
+                            if (!primaryTourist.passportSeries) {
+                              missingFields.push(`${primaryName}: серия и номер паспорта РФ`);
+                            }
+                            if (!primaryTourist.passportIssuedBy) {
+                              missingFields.push(`${primaryName}: кем выдан паспорт РФ`);
+                            }
+                            if (!primaryTourist.dateOfBirth) {
+                              missingFields.push(`${primaryName}: дата рождения`);
+                            }
+                          }
+                          
+                          // Validate all tourists - foreign passport data
+                          editingLeadTourists.forEach(tourist => {
+                            const touristName = `${tourist.lastName || ''} ${tourist.firstName || ''}`.trim() || 'Турист';
+                            if (!tourist.foreignPassportName) {
+                              missingFields.push(`${touristName}: имя в загранпаспорте`);
+                            }
+                            if (!tourist.foreignPassportNumber) {
+                              missingFields.push(`${touristName}: номер загранпаспорта`);
+                            }
+                            if (!tourist.dateOfBirth) {
+                              if (!missingFields.some(f => f.includes(touristName) && f.includes('дата рождения'))) {
+                                missingFields.push(`${touristName}: дата рождения`);
+                              }
+                            }
+                          });
+                          
+                          if (missingFields.length > 0) {
                             toast({
                               title: "Невозможно скачать лист бронирования",
-                              description: `Не заполнены данные загранпаспорта для: ${touristNames}`,
+                              description: `Не заполнены обязательные поля:\n${missingFields.slice(0, 5).join('\n')}${missingFields.length > 5 ? `\n...и ещё ${missingFields.length - 5}` : ''}`,
                               variant: "destructive",
                             });
                             return;

@@ -1193,6 +1193,50 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                         variant="outline" 
                         className="w-full"
                         onClick={() => {
+                          const missingFields: string[] = [];
+                          
+                          // Find primary tourist
+                          const primaryTourist = tourists.find(t => t.isPrimary) || tourists[0];
+                          
+                          // Validate primary tourist (Заказчик) - Russian passport data
+                          if (primaryTourist) {
+                            const primaryName = `${primaryTourist.lastName || ''} ${primaryTourist.firstName || ''}`.trim() || 'Заказчик';
+                            if (!primaryTourist.passportSeries) {
+                              missingFields.push(`${primaryName}: серия и номер паспорта РФ`);
+                            }
+                            if (!primaryTourist.passportIssuedBy) {
+                              missingFields.push(`${primaryName}: кем выдан паспорт РФ`);
+                            }
+                            if (!primaryTourist.dateOfBirth) {
+                              missingFields.push(`${primaryName}: дата рождения`);
+                            }
+                          }
+                          
+                          // Validate all tourists - foreign passport data
+                          tourists.forEach(tourist => {
+                            const touristName = `${tourist.lastName || ''} ${tourist.firstName || ''}`.trim() || 'Турист';
+                            if (!tourist.foreignPassportName) {
+                              missingFields.push(`${touristName}: имя в загранпаспорте`);
+                            }
+                            if (!tourist.foreignPassportNumber) {
+                              missingFields.push(`${touristName}: номер загранпаспорта`);
+                            }
+                            if (!tourist.dateOfBirth) {
+                              if (!missingFields.some(f => f.includes(touristName) && f.includes('дата рождения'))) {
+                                missingFields.push(`${touristName}: дата рождения`);
+                              }
+                            }
+                          });
+                          
+                          if (missingFields.length > 0) {
+                            toast({
+                              title: "Невозможно скачать лист бронирования",
+                              description: `Не заполнены обязательные поля:\n${missingFields.slice(0, 5).join('\n')}${missingFields.length > 5 ? `\n...и ещё ${missingFields.length - 5}` : ''}`,
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
                           window.open(`/api/leads/${lead.id}/documents/booking-sheet`, '_blank');
                         }}
                         data-testid="button-download-booking-sheet"

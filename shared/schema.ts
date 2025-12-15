@@ -247,6 +247,9 @@ export const leads = pgTable("leads", {
   passportSeries: text("passport_series"), // Серия и номер паспорта заказчика
   passportIssuedBy: text("passport_issued_by"), // Кем выдан паспорт заказчика
   registrationAddress: text("registration_address"), // Адрес регистрации заказчика
+  foreignPassportName: text("foreign_passport_name"), // ФИО в загранпаспорте (латиница)
+  foreignPassportNumber: text("foreign_passport_number"), // Номер загранпаспорта
+  foreignPassportValidUntil: text("foreign_passport_valid_until"), // Срок действия загранпаспорта
   clientCategory: text("client_category"), // Категория клиента
   status: text("status").notNull().default("new"), // 'new', 'contacted', 'qualified', 'won', 'lost'
   source: text("source").notNull().default("manual"), // 'manual', 'form', 'import', 'other'

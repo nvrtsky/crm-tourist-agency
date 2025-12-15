@@ -40,12 +40,17 @@ export function Wazzup24Chat({ lead }: Wazzup24ChatProps) {
       }
     },
     onError: (error: Error) => {
-      setIframeError(error.message);
-      toast({
-        title: "Ошибка загрузки чата",
-        description: error.message,
-        variant: "destructive",
-      });
+      const isUnauthorized = error.message.includes("401") || error.message.includes("Unauthorized");
+      if (isUnauthorized) {
+        setIframeError("API ключ Wazzup24 не настроен или недействителен");
+      } else {
+        setIframeError(error.message);
+        toast({
+          title: "Ошибка загрузки чата",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     },
   });
 

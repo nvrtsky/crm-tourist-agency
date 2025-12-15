@@ -2104,7 +2104,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0 max-h-[350px]" align="start">
+                          <PopoverContent className="w-[400px] p-0 max-h-[350px] pointer-events-auto" align="start">
                             <Command className="flex flex-col">
                               <CommandInput placeholder="Поиск тура..." />
                               <CommandList>

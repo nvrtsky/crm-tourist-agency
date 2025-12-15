@@ -2491,11 +2491,18 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                   <FormItem>
                     <FormLabel>Трансферы</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Информация о трансферах"
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-transfers"
+                      <MultiSelectField
+                        dictionaryType="transfers"
+                        value={field.value}
+                        onChange={(value) => field.onChange(value)}
+                        placeholder="Выберите тип"
+                        fallbackOptions={[
+                          { value: "group", label: "Групповой" },
+                          { value: "individual", label: "Индивидуальный" },
+                          { value: "self", label: "Самостоятельно" },
+                          { value: "none", label: "Без трансфера" },
+                        ]}
+                        data-testid="select-transfers"
                       />
                     </FormControl>
                     <FormMessage />
@@ -2510,11 +2517,19 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                   <FormItem>
                     <FormLabel>Питание</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Например: BB, HB, FB, AI"
-                        {...field}
-                        value={field.value || ""}
-                        data-testid="input-meals"
+                      <MultiSelectField
+                        dictionaryType="meals"
+                        value={field.value}
+                        onChange={(value) => field.onChange(value)}
+                        placeholder="Выберите тип"
+                        fallbackOptions={[
+                          { value: "RO", label: "RO (Без питания)" },
+                          { value: "BB", label: "BB (Завтрак)" },
+                          { value: "HB", label: "HB (Завтрак + Ужин)" },
+                          { value: "FB", label: "FB (Полный пансион)" },
+                          { value: "AI", label: "AI (Всё включено)" },
+                        ]}
+                        data-testid="select-meals"
                       />
                     </FormControl>
                     <FormMessage />

@@ -1147,32 +1147,29 @@ export default function Leads() {
                         onClick={() => {
                           const missingFields: string[] = [];
                           
-                          // Get current form values for validation
-                          const formValues = form.getValues();
-                          
-                          // Validate lead data using form values
-                          if (!formValues.eventId) {
+                          // Validate lead data using saved lead data
+                          if (!editingLead.eventId) {
                             missingFields.push("Лид: не выбран тур (для дат поездки)");
                           }
-                          if (!formValues.roomType) {
+                          if (!editingLead.roomType) {
                             missingFields.push("Лид: тип номера");
                           }
-                          if (!formValues.hotelCategory) {
+                          if (!editingLead.hotelCategory) {
                             missingFields.push("Лид: категория отелей");
                           }
-                          if (!formValues.transfers) {
+                          if (!editingLead.transfers) {
                             missingFields.push("Лид: трансферы");
                           }
-                          if (!formValues.meals) {
+                          if (!editingLead.meals) {
                             missingFields.push("Лид: питание");
                           }
-                          if (!formValues.tourCost) {
+                          if (!editingLead.tourCost) {
                             missingFields.push("Лид: общая стоимость");
                           }
-                          if (!formValues.advancePayment) {
+                          if (!editingLead.advancePayment) {
                             missingFields.push("Лид: предоплата");
                           }
-                          if (formValues.remainingPayment === null || formValues.remainingPayment === undefined || formValues.remainingPayment === "") {
+                          if (editingLead.remainingPayment === null || editingLead.remainingPayment === undefined || editingLead.remainingPayment === "") {
                             missingFields.push("Лид: остаток оплаты");
                           }
                           

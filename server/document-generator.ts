@@ -934,11 +934,12 @@ export async function generateBookingSheet(
       tourist.foreignPassportName || getTouristFullName(tourist);
     const dob = tourist.dateOfBirth ? formatDate(tourist.dateOfBirth) : "";
     const passportNum = tourist.foreignPassportNumber || "";
+    const validUntil = tourist.foreignPassportValidUntil ? formatDate(tourist.foreignPassportValidUntil) : "";
 
     return new Paragraph({
       children: [
         new TextRun({
-          text: `${index + 1}. ${fullName}, Дата рождения ${dob}, № з/паспорта ${passportNum}`,
+          text: `${index + 1}. ${fullName}, Дата рождения ${dob}, № з/паспорта ${passportNum}, действует до ${validUntil}`,
           size: 22,
         }),
       ],

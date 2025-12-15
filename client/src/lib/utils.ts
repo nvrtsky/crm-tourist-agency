@@ -66,29 +66,14 @@ export function calculateTouristDataCompleteness(tourist: LeadTourist): TouristD
     russianPassport = rfPassportStatus === "empty" ? "not_required" : rfPassportStatus;
   }
 
-  // Загранпаспорт обязателен для всех туристов (ФИО латиницей + номер + срок + сканы)
+  // Загранпаспорт обязателен для всех туристов (ФИО латиницей + номер + срок действия)
   const foreignPassportFields = [
     tourist.foreignPassportName,
     tourist.foreignPassportNumber,
     tourist.foreignPassportValidUntil,
   ];
   
-  // Проверяем наличие сканов загранпаспорта
-  const hasScans = checkArrayField(tourist.passportScans);
-  
-  const foreignPassportStatus = checkFields(foreignPassportFields);
-  
-  // Если все поля заполнены И есть сканы - complete
-  // Если нет ничего И нет сканов - empty
-  // Иначе - partial
-  let foreignPassport: CompletenessStatus;
-  if (foreignPassportStatus === "complete" && hasScans) {
-    foreignPassport = "complete";
-  } else if (foreignPassportStatus === "empty" && !hasScans) {
-    foreignPassport = "empty";
-  } else {
-    foreignPassport = "partial";
-  }
+  const foreignPassport = checkFields(foreignPassportFields);
 
   return {
     personal,

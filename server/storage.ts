@@ -118,6 +118,7 @@ export interface IStorage {
   createCityVisit(visit: InsertCityVisit): Promise<CityVisit>;
   updateCityVisit(id: string, visit: Partial<InsertCityVisit>): Promise<CityVisit | undefined>;
   deleteCityVisit(id: string): Promise<boolean>;
+  syncLeadRoomTypeToCityVisits(leadId: string, roomType: string): Promise<void>;
 
   // Notification operations
   getNotification(id: string): Promise<Notification | undefined>;
@@ -697,6 +698,25 @@ export class DatabaseStorage implements IStorage {
   async deleteCityVisit(id: string): Promise<boolean> {
     const result = await db.delete(cityVisits).where(eq(cityVisits.id, id)).returning();
     return result.length > 0;
+  }
+
+  async syncLeadRoomTypeToCityVisits(leadId: string, roomType: string): Promise<void> {
+    // Get all contacts linked to this lead
+    const leadContacts = await this.getContactsByLead(leadId);
+    
+    for (const contact of leadContacts) {
+      // Get all deals for each contact
+      const contactDeals = await this.getDealsByContact(contact.id);
+      
+      for (const deal of contactDeals) {
+        // Update roomType in all city visits for this deal
+        await db
+          .update(cityVisits)
+          .set({ roomType })
+          .where(eq(cityVisits.dealId, deal.id));
+      }
+    }
+    console.log(`[SYNC] Synced roomType '${roomType}' to cityVisits for lead ${leadId}`);
   }
 
   // ==================== NOTIFICATION OPERATIONS ====================

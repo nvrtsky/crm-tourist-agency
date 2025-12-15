@@ -1429,6 +1429,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Sync roomType to cityVisits if changed
+      if (validation.data.hasOwnProperty('roomType') && validation.data.roomType) {
+        console.log(`[UPDATE_LEAD] RoomType changed to ${validation.data.roomType}, syncing to cityVisits`);
+        await storage.syncLeadRoomTypeToCityVisits(id, validation.data.roomType);
+      }
+      
       res.json(lead);
     } catch (error) {
       console.error("Error updating lead:", error);

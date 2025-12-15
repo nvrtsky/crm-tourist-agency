@@ -2107,7 +2107,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                           <PopoverContent className="w-[400px] p-0 max-h-[350px] pointer-events-auto" align="start">
                             <Command className="flex flex-col">
                               <CommandInput placeholder="Поиск тура..." />
-                              <CommandList>
+                              <CommandList className="max-h-[250px] overflow-y-auto">
                                 <CommandEmpty>Тур не найден</CommandEmpty>
                                 <CommandGroup>
                                   {events.filter(event => !event.isArchived).map((event) => (

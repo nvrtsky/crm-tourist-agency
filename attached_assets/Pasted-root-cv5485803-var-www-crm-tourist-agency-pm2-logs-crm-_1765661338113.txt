@@ -1,0 +1,105 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 50
+[TAILING] Tailing last 50 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 50 lines:
+0|crm-chin | }
+0|crm-chin | Error fetching dictionary items: error: relation "system_dictionaries" does not exist
+0|crm-chin |     at /var/www/crm-tourist-agency/node_modules/pg-pool/index.js:45:11
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|crm-chin |     at async DatabaseStorage.getDictionaryItems (file:///var/www/crm-tourist-agency/dist/index.js:2892:12)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:5659:21 {
+0|crm-chin |   length: 118,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42P01',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '94',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '1449',
+0|crm-chin |   routine: 'parserOpenTable'
+0|crm-chin | }
+0|crm-chin | Error fetching events: error: column "external_id" does not exist
+0|crm-chin |     at /var/www/crm-tourist-agency/node_modules/pg-pool/index.js:45:11
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|crm-chin |     at async DatabaseStorage.getAllEvents (file:///var/www/crm-tourist-agency/dist/index.js:2175:12)
+0|crm-chin |     at async DatabaseStorage.getAllEventsWithStats (file:///var/www/crm-tourist-agency/dist/index.js:2206:23)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:3783:21 {
+0|crm-chin |   length: 112,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42703',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '195',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '3722',
+0|crm-chin |   routine: 'errorMissingColumn'
+0|crm-chin | }
+
+/root/.pm2/logs/crm-chinaunique-out.log last 50 lines:
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 12:23:38 AM [express] GET /api/auth/me 304 in 0ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc7…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 12:23:39 AM [express] GET /api/events 304 in 115ms :: [{"id":"e23189b8-239a-45a2-b3a9-419d6c32ff61","…
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 12:23:44 AM [express] GET /api/auth/me 304 in 1ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc7…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 12:23:44 AM [express] GET /api/events 304 in 46ms :: [{"id":"e23189b8-239a-45a2-b3a9-419d6c32ff61","n…
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 12:23:48 AM [express] GET /api/leads 304 in 9ms :: [{"id":"f895f7d0-f89b-4f56-bedc-ad3747a5b188","las…
+0|crm-chin | 📥 GET /api/users
+0|crm-chin | 12:23:51 AM [express] GET /api/users 200 in 1ms :: [{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc774c","use…
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 📥 GET /api/settings/wazzup24
+0|crm-chin | 12:23:52 AM [express] GET /api/settings/wazzup24 304 in 1ms :: {"configured":false}
+0|crm-chin | 
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 12:26:07 AM [express] serving on port 3000
+0|crm-chin | 📥 GET /settings
+0|crm-chin | 📥 GET /assets/index-DFV9IQaG.js
+0|crm-chin | 📥 GET /assets/index-BJ5Cqv-l.css
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 12:26:33 AM [express] GET /api/auth/me 401 in 2ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 12:26:36 AM [express] POST /api/auth/login 200 in 100ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6a…
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 12:26:36 AM [express] GET /api/auth/me 304 in 0ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc7…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 12:26:36 AM [express] GET /api/events 500 in 6ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/public/dictionaries/client_category
+0|crm-chin | 📥 GET /api/public/dictionaries/lead_source
+0|crm-chin | 12:26:38 AM [express] GET /api/public/dictionaries/client_category 500 in 4ms :: {"error":"Failed to …
+0|crm-chin | 12:26:38 AM [express] GET /api/public/dictionaries/lead_source 500 in 3ms :: {"error":"Failed to fetc…
+0|crm-chin | 📥 GET /api/public/dictionaries/hotel_category
+0|crm-chin | 12:26:38 AM [express] GET /api/public/dictionaries/hotel_category 500 in 3ms :: {"error":"Failed to f…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 12:26:38 AM [express] GET /api/events 500 in 5ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 12:26:38 AM [express] GET /api/leads 500 in 4ms :: {"error":"Failed to fetch leads"}
+0|crm-chin | 📥 GET /api/public/dictionaries/room_type
+0|crm-chin | 12:26:38 AM [express] GET /api/public/dictionaries/room_type 500 in 2ms :: {"error":"Failed to fetch …
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 12:26:40 AM [express] GET /api/events 500 in 3ms :: {"error":"Failed to fetch events"}
+0|crm-chin | 📥 PROPFIND /

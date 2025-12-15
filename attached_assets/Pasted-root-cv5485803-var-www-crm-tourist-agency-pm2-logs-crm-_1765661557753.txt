@@ -1,0 +1,65 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 30
+[TAILING] Tailing last 30 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 30 lines:
+0|crm-chin |   routine: 'parserOpenTable'
+0|crm-chin | }
+0|crm-chin | Error fetching events: error: column "external_id" does not exist
+0|crm-chin |     at /var/www/crm-tourist-agency/node_modules/pg-pool/index.js:45:11
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|crm-chin |     at async DatabaseStorage.getAllEvents (file:///var/www/crm-tourist-agency/dist/index.js:2175:12)
+0|crm-chin |     at async DatabaseStorage.getAllEventsWithStats (file:///var/www/crm-tourist-agency/dist/index.js:2206:23)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:3783:21 {
+0|crm-chin |   length: 112,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42703',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '195',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '3722',
+0|crm-chin |   routine: 'errorMissingColumn'
+0|crm-chin | }
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+
+/root/.pm2/logs/crm-chinaunique-out.log last 30 lines:
+0|crm-chin | 📥 GET /events
+0|crm-chin | 📥 GET /assets/index-BJ5Cqv-l.css
+0|crm-chin | 📥 GET /assets/index-DFV9IQaG.js
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 12:29:45 AM [express] GET /api/auth/me 401 in 2ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 12:29:46 AM [express] POST /api/auth/login 200 in 91ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af…
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 12:29:47 AM [express] GET /api/auth/me 304 in 1ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc7…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 12:29:47 AM [express] GET /api/events 200 in 114ms :: [{"id":"e23189b8-239a-45a2-b3a9-419d6c32ff61","…
+0|crm-chin | 📥 GET /api/public/dictionaries/client_category
+0|crm-chin | 12:29:49 AM [express] GET /api/public/dictionaries/client_category 200 in 2ms :: []
+0|crm-chin | 📥 GET /api/public/dictionaries/lead_source
+0|crm-chin | 12:29:49 AM [express] GET /api/public/dictionaries/lead_source 200 in 1ms :: []
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 12:29:49 AM [express] GET /api/leads 200 in 5ms :: [{"id":"f895f7d0-f89b-4f56-bedc-ad3747a5b188","las…
+0|crm-chin | 📥 GET /api/public/dictionaries/hotel_category
+0|crm-chin | 12:29:49 AM [express] GET /api/public/dictionaries/hotel_category 200 in 1ms :: []
+0|crm-chin | 📥 GET /api/public/dictionaries/room_type
+0|crm-chin | 12:29:49 AM [express] GET /api/public/dictionaries/room_type 200 in 1ms :: []
+0|crm-chin | 📥 GET /api/users
+0|crm-chin | 12:29:53 AM [express] GET /api/users 304 in 2ms :: [{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc774c","use…
+0|crm-chin | 📥 GET /api/sync-settings/tour_sync
+0|crm-chin | 12:29:53 AM [express] GET /api/sync-settings/tour_sync 200 in 2ms :: {"key":"tour_sync","enabled":fal…
+0|crm-chin | 📥 GET /api/sync-logs?page=1&limit=20
+0|crm-chin | 12:29:53 AM [express] GET /api/sync-logs 200 in 2ms :: {"logs":[],"pagination":{"page":1,"limit":20,"…

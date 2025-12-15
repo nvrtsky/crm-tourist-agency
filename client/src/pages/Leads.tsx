@@ -1387,12 +1387,16 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                           <div className="text-xs text-muted-foreground space-y-0.5 sm:space-y-1">
                             {lead.phone && <div className="truncate">{lead.phone}</div>}
                             {lead.email && <div className="truncate">{lead.email}</div>}
-                            {event && <div className="font-medium text-primary truncate">{event.name}</div>}
+                            {event && (
+                              <div className="font-medium text-primary truncate">
+                                {event.name}
+                                <span className="ml-1 text-muted-foreground font-normal">
+                                  ({format(new Date(event.startDate), "dd.MM.yy", { locale: ru })})
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                            <Badge variant="outline" className="text-[9px] sm:text-[10px] truncate max-w-[100px] sm:max-w-none">
-                              {dynamicLeadSourceMap[lead.source] || lead.source}
-                            </Badge>
                             {lead.clientCategory && (
                               <Badge variant="outline" className="text-[9px] sm:text-[10px] truncate max-w-[100px] sm:max-w-none">
                                 {dynamicClientCategoryMap[lead.clientCategory] || lead.clientCategory}

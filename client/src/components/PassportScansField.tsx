@@ -172,7 +172,10 @@ export function PassportScansField({
   };
 
   const getFileName = (fileUrl: string) => {
-    return fileUrl.split('/').pop() || 'файл';
+    const filename = fileUrl.split('/').pop() || 'файл';
+    // Remove timestamp prefix (format: 1234567890123_originalname.ext)
+    const match = filename.match(/^\d+_(.+)$/);
+    return match ? match[1] : filename;
   };
 
   return (

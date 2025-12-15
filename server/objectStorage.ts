@@ -51,9 +51,11 @@ export class ObjectStorageService {
 
   async uploadFile(file: { buffer: Buffer; originalname: string; mimetype: string }, folder: string = "passport-scans"): Promise<string> {
     const privateDir = this.getPrivateObjectDir();
-    const fileId = randomUUID();
-    const extension = file.originalname.split('.').pop() || 'jpg';
-    const objectPath = `${privateDir}/${folder}/${fileId}.${extension}`;
+    // Sanitize filename: keep original name but add timestamp prefix to avoid collisions
+    const timestamp = Date.now();
+    const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9а-яА-ЯёЁ._-]/g, '_');
+    const filename = `${timestamp}_${sanitizedName}`;
+    const objectPath = `${privateDir}/${folder}/${filename}`;
 
     const { bucketName, objectName } = this.parseObjectPath(objectPath);
     const bucket = objectStorageClient.bucket(bucketName);
@@ -67,7 +69,7 @@ export class ObjectStorageService {
     });
 
     // Return the path relative to private directory
-    return `/${folder}/${fileId}.${extension}`;
+    return `/${folder}/${filename}`;
   }
 
   async deleteFile(relativePath: string): Promise<void> {

@@ -1388,11 +1388,11 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                             {lead.phone && <div className="truncate">{lead.phone}</div>}
                             {lead.email && <div className="truncate">{lead.email}</div>}
                             {event && (
-                              <div className="font-medium text-primary truncate">
-                                {event.name}
-                                <span className="ml-1 text-muted-foreground font-normal">
-                                  ({format(new Date(event.startDate), "dd.MM.yy", { locale: ru })})
-                                </span>
+                              <div className="space-y-0.5">
+                                <div className="font-medium text-primary truncate">{event.name}</div>
+                                <div className="text-muted-foreground">
+                                  {format(new Date(event.startDate), "dd.MM.yyyy", { locale: ru })}
+                                </div>
                               </div>
                             )}
                           </div>

@@ -1116,7 +1116,47 @@ export default function Leads() {
                       <Button 
                         variant="outline" 
                         className="w-full"
-                        onClick={() => {
+                        onClick={async () => {
+                          const missingFields: string[] = [];
+                          
+                          if (!editingLead.eventId) {
+                            missingFields.push("Тур не выбран");
+                          }
+                          if (!editingLead.tourCost) {
+                            missingFields.push("Стоимость тура");
+                          }
+                          
+                          try {
+                            const response = await fetch(`/api/leads/${editingLead.id}/tourists`);
+                            if (response.ok) {
+                              const tourists: LeadTourist[] = await response.json();
+                              const primaryTourist = tourists.find(t => t.isPrimary);
+                              
+                              if (!primaryTourist) {
+                                missingFields.push("Основной турист не найден");
+                              } else {
+                                if (!primaryTourist.lastName) missingFields.push("Фамилия");
+                                if (!primaryTourist.firstName) missingFields.push("Имя");
+                                if (!primaryTourist.passportSeries) missingFields.push("Номер паспорта РФ");
+                                if (!primaryTourist.dateOfBirth) missingFields.push("Дата рождения");
+                                if (!primaryTourist.foreignPassportNumber) missingFields.push("Номер загранпаспорта");
+                                if (!primaryTourist.foreignPassportValidUntil) missingFields.push("Срок действия загранпаспорта");
+                                if (!primaryTourist.foreignPassportName) missingFields.push("Имя в загранпаспорте");
+                              }
+                            }
+                          } catch (error) {
+                            console.error("Failed to fetch tourists for validation:", error);
+                          }
+                          
+                          if (missingFields.length > 0) {
+                            toast({
+                              title: "Невозможно сгенерировать документ",
+                              description: `Не заполнены обязательные поля: ${missingFields.join(", ")}`,
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
                           window.open(`/api/leads/${editingLead.id}/documents/contract`, '_blank');
                         }}
                         data-testid="button-download-contract"
@@ -1137,7 +1177,47 @@ export default function Leads() {
                       <Button 
                         variant="outline" 
                         className="w-full"
-                        onClick={() => {
+                        onClick={async () => {
+                          const missingFields: string[] = [];
+                          
+                          if (!editingLead.eventId) {
+                            missingFields.push("Тур не выбран");
+                          }
+                          if (!editingLead.tourCost) {
+                            missingFields.push("Стоимость тура");
+                          }
+                          
+                          try {
+                            const response = await fetch(`/api/leads/${editingLead.id}/tourists`);
+                            if (response.ok) {
+                              const tourists: LeadTourist[] = await response.json();
+                              const primaryTourist = tourists.find(t => t.isPrimary);
+                              
+                              if (!primaryTourist) {
+                                missingFields.push("Основной турист не найден");
+                              } else {
+                                if (!primaryTourist.lastName) missingFields.push("Фамилия");
+                                if (!primaryTourist.firstName) missingFields.push("Имя");
+                                if (!primaryTourist.passportSeries) missingFields.push("Номер паспорта РФ");
+                                if (!primaryTourist.dateOfBirth) missingFields.push("Дата рождения");
+                                if (!primaryTourist.foreignPassportNumber) missingFields.push("Номер загранпаспорта");
+                                if (!primaryTourist.foreignPassportValidUntil) missingFields.push("Срок действия загранпаспорта");
+                                if (!primaryTourist.foreignPassportName) missingFields.push("Имя в загранпаспорте");
+                              }
+                            }
+                          } catch (error) {
+                            console.error("Failed to fetch tourists for validation:", error);
+                          }
+                          
+                          if (missingFields.length > 0) {
+                            toast({
+                              title: "Невозможно сгенерировать документ",
+                              description: `Не заполнены обязательные поля: ${missingFields.join(", ")}`,
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
                           window.open(`/api/leads/${editingLead.id}/documents/booking-sheet`, '_blank');
                         }}
                         data-testid="button-download-booking-sheet"

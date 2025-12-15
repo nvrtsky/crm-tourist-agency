@@ -16,7 +16,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download, Archive, ArchiveRestore } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download, Archive, ArchiveRestore, ChevronsUpDown, Check, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
@@ -26,7 +26,9 @@ import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { DataCompletenessIndicator } from "@/components/DataCompletenessIndicator";
-import { calculateTouristDataCompleteness, formatCurrency, formatTouristName } from "@/lib/utils";
+import { calculateTouristDataCompleteness, formatCurrency, formatTouristName, cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { ColorPicker, ColorIndicator, type ColorOption, type ColorDisplayMode, getColorDisplayMode, getPastelClasses } from "@/components/ColorPicker";
 import { DeferLeadDialog, type DeferLeadDialogResult, postponeReasonLabels, failureReasonLabels, postponeReasons, failureReasons } from "@/components/DeferLeadDialog";
 import { Wazzup24Chat } from "@/components/Wazzup24Chat";
@@ -1530,6 +1532,8 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
   const [prefillData, setPrefillData] = useState<Partial<InsertLeadTourist> | null>(null);
   // Track focus state for number fields to control formatting
   const [isTourCostFocused, setIsTourCostFocused] = useState(false);
+  // Tour search combobox state
+  const [tourSearchOpen, setTourSearchOpen] = useState(false);
   const [isAdvanceFocused, setIsAdvanceFocused] = useState(false);
   const [isRemainingFocused, setIsRemainingFocused] = useState(false);
   
@@ -2080,33 +2084,70 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                   return (
                     <FormItem className="col-span-2">
                       <FormLabel>Тур</FormLabel>
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          // When tour changes, set all cities as selected by default
-                          const newEvent = events.find(e => e.id === value);
-                          if (newEvent?.cities) {
-                            form.setValue("selectedCities", [...newEvent.cities]);
-                          } else {
-                            form.setValue("selectedCities", null);
-                          }
-                        }}
-                        value={field.value ?? ''}
-                        data-testid="select-eventId"
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Выберите тур" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {events.filter(event => !event.isArchived).map((event) => (
-                            <SelectItem key={event.id} value={event.id}>
-                              {event.name} ({format(new Date(event.startDate), "dd.MM.yyyy", { locale: ru })} - {format(new Date(event.endDate), "dd.MM.yyyy", { locale: ru })})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex gap-2">
+                        <Popover open={tourSearchOpen} onOpenChange={setTourSearchOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button 
+                                variant="outline" 
+                                role="combobox" 
+                                aria-expanded={tourSearchOpen}
+                                className="w-full justify-between font-normal"
+                                data-testid="select-eventId"
+                              >
+                                {field.value 
+                                  ? events.find(e => e.id === field.value)?.name 
+                                    ? `${events.find(e => e.id === field.value)?.name} (${format(new Date(events.find(e => e.id === field.value)!.startDate), "dd.MM.yyyy", { locale: ru })})`
+                                    : "Выберите тур"
+                                  : "Выберите тур"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Поиск тура..." />
+                              <CommandList>
+                                <CommandEmpty>Тур не найден</CommandEmpty>
+                                <CommandGroup>
+                                  {events.filter(event => !event.isArchived).map((event) => (
+                                    <CommandItem
+                                      key={event.id}
+                                      value={`${event.name} ${format(new Date(event.startDate), "dd.MM.yyyy")}`}
+                                      onSelect={() => {
+                                        field.onChange(event.id);
+                                        const newEvent = events.find(e => e.id === event.id);
+                                        if (newEvent?.cities) {
+                                          form.setValue("selectedCities", [...newEvent.cities]);
+                                        } else {
+                                          form.setValue("selectedCities", null);
+                                        }
+                                        setTourSearchOpen(false);
+                                      }}
+                                    >
+                                      <Check className={cn("mr-2 h-4 w-4", field.value === event.id ? "opacity-100" : "opacity-0")} />
+                                      {event.name} ({format(new Date(event.startDate), "dd.MM.yyyy", { locale: ru })} - {format(new Date(event.endDate), "dd.MM.yyyy", { locale: ru })})
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        
+                        {field.value && (
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="icon"
+                            onClick={() => window.open(`/events/${field.value}/summary`, '_blank')}
+                            title="Открыть тур"
+                            data-testid="link-to-tour"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                       <FormMessage />
                       
                       {/* City checkboxes - shown when tour is selected */}

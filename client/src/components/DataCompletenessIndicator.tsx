@@ -1,6 +1,6 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CheckCircle2, AlertCircle, XCircle, MinusCircle } from "lucide-react";
-import type { TouristDataCompleteness, CompletenessStatus } from "@/lib/utils";
+import type { TouristDataCompleteness, CompletenessStatus, CategoryCompleteness } from "@/lib/utils";
 
 interface DataCompletenessIndicatorProps {
   completeness: TouristDataCompleteness;
@@ -33,38 +33,19 @@ const statusConfig: Record<CompletenessStatus, {
   },
 };
 
-const categoryLabels = {
+const categoryLabels: Record<keyof TouristDataCompleteness, string> = {
   personal: "Личные данные",
   russianPassport: "РФ паспорт",
   foreignPassport: "Загранпаспорт",
-};
-
-const categoryDescriptions: Record<keyof TouristDataCompleteness, Record<CompletenessStatus, string>> = {
-  personal: {
-    complete: "Все личные данные заполнены",
-    partial: "Личные данные заполнены частично",
-    empty: "Личные данные не заполнены",
-    not_required: "Данные не требуются",
-  },
-  russianPassport: {
-    complete: "Паспорт РФ заполнен полностью",
-    partial: "Паспорт РФ заполнен частично",
-    empty: "Паспорт РФ не заполнен",
-    not_required: "Данные не требуются",
-  },
-  foreignPassport: {
-    complete: "Загранпаспорт заполнен полностью",
-    partial: "Загранпаспорт заполнен частично",
-    empty: "Загранпаспорт не заполнен",
-    not_required: "Данные не требуются",
-  },
 };
 
 export function DataCompletenessIndicator({ completeness }: DataCompletenessIndicatorProps) {
   return (
     <div className="flex items-center gap-1">
       {(Object.keys(completeness) as Array<keyof TouristDataCompleteness>).map((category) => {
-        const status = completeness[category];
+        const categoryData = completeness[category] as CategoryCompleteness;
+        const status = categoryData.status;
+        const missingFields = categoryData.missingFields;
         const config = statusConfig[status];
         const Icon = config.icon;
 
@@ -80,7 +61,17 @@ export function DataCompletenessIndicator({ completeness }: DataCompletenessIndi
             </TooltipTrigger>
             <TooltipContent side="bottom" collisionPadding={8}>
               <p className="font-semibold">{categoryLabels[category]}</p>
-              <p className="text-xs text-muted-foreground">{categoryDescriptions[category][status]}</p>
+              {status === "complete" && (
+                <p className="text-xs text-muted-foreground">Все данные заполнены</p>
+              )}
+              {status === "not_required" && (
+                <p className="text-xs text-muted-foreground">Данные не требуются</p>
+              )}
+              {(status === "partial" || status === "empty") && missingFields.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Не заполнено: {missingFields.join(", ")}
+                </p>
+              )}
             </TooltipContent>
           </Tooltip>
         );

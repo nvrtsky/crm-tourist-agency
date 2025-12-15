@@ -1083,7 +1083,7 @@ export default function Leads() {
                   Документы
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="details">
+              <TabsContent value="details" forceMount className="data-[state=inactive]:hidden">
                 <LeadForm
                   lead={editingLead}
                   onSubmit={(data) => {
@@ -1101,10 +1101,10 @@ export default function Leads() {
                   isAdmin={isAdmin}
                 />
               </TabsContent>
-              <TabsContent value="chat">
+              <TabsContent value="chat" forceMount className="data-[state=inactive]:hidden">
                 <Wazzup24Chat lead={editingLead} />
               </TabsContent>
-              <TabsContent value="documents">
+              <TabsContent value="documents" forceMount className="data-[state=inactive]:hidden">
                 <div className="space-y-6">
                   <div className="text-sm text-muted-foreground">
                     Генерация документов для лида. Скачайте договор и лист бронирования в формате DOCX.
@@ -3042,6 +3042,7 @@ function TouristDialog({
       foreignPassportName: tourist?.foreignPassportName || null,
       foreignPassportNumber: tourist?.foreignPassportNumber || null,
       foreignPassportValidUntil: tourist?.foreignPassportValidUntil || null,
+      passportScans: tourist?.passportScans || null,
       touristType: tourist?.touristType || "adult",
       isPrimary: tourist?.isPrimary || false,
       notes: tourist?.notes || null,
@@ -3066,6 +3067,7 @@ function TouristDialog({
         foreignPassportName: tourist.foreignPassportName,
         foreignPassportNumber: tourist.foreignPassportNumber,
         foreignPassportValidUntil: tourist.foreignPassportValidUntil,
+        passportScans: tourist.passportScans,
         touristType: tourist.touristType,
         isPrimary: tourist.isPrimary,
         notes: tourist.notes,
@@ -3086,6 +3088,7 @@ function TouristDialog({
         foreignPassportName: null,
         foreignPassportNumber: null,
         foreignPassportValidUntil: null,
+        passportScans: null,
         touristType: "adult",
         isPrimary: prefillData.isPrimary ?? tourists.length === 0,
         notes: null,
@@ -3106,6 +3109,7 @@ function TouristDialog({
         foreignPassportName: null,
         foreignPassportNumber: null,
         foreignPassportValidUntil: null,
+        passportScans: null,
         touristType: "adult",
         isPrimary: tourists.length === 0,
         notes: null,
@@ -3356,6 +3360,29 @@ function TouristDialog({
                           {...field}
                           value={field.value || ""}
                           data-testid="input-tourist-foreignPassportValidUntil"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="passportScans"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Скан загранпаспорта</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/passport-scan.jpg"
+                          {...field}
+                          value={field.value?.[0] || ""}
+                          onChange={(e) => {
+                            const value = e.target.value.trim();
+                            field.onChange(value ? [value] : null);
+                          }}
+                          data-testid="input-tourist-passportScans"
                         />
                       </FormControl>
                       <FormMessage />

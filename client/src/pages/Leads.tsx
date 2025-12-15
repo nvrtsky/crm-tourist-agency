@@ -156,6 +156,12 @@ export default function Leads() {
     queryKey: ["/api/events"],
   });
 
+  // Fetch tourists for the editing lead (for document validation)
+  const { data: editingLeadTourists = [] } = useQuery<LeadTourist[]>({
+    queryKey: ["/api/leads", editingLead?.id, "tourists"],
+    enabled: !!editingLead?.id,
+  });
+
   // Dictionary queries for dynamic form options
   const { data: clientCategoryItems = [] } = useSystemDictionary("client_category");
   const { data: leadSourceItems = [] } = useSystemDictionary("lead_source");
@@ -1138,6 +1144,26 @@ export default function Leads() {
                         variant="outline" 
                         className="w-full"
                         onClick={() => {
+                          // Validate foreign passport data for all tourists
+                          const touristsWithMissingPassportData = editingLeadTourists.filter(tourist => 
+                            !tourist.foreignPassportName || 
+                            !tourist.foreignPassportNumber || 
+                            !tourist.foreignPassportValidUntil
+                          );
+                          
+                          if (touristsWithMissingPassportData.length > 0) {
+                            const touristNames = touristsWithMissingPassportData.map(t => 
+                              `${t.lastName || ''} ${t.firstName || ''}`.trim() || 'Без имени'
+                            ).join(', ');
+                            
+                            toast({
+                              title: "Невозможно скачать лист бронирования",
+                              description: `Не заполнены данные загранпаспорта для: ${touristNames}`,
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
                           window.open(`/api/leads/${editingLead.id}/documents/booking-sheet`, '_blank');
                         }}
                         data-testid="button-download-booking-sheet"

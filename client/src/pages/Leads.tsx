@@ -1391,7 +1391,7 @@ function KanbanBoard({ leads, events, isLoading, onStatusChange, onEdit, onDelet
                               <div className="space-y-0.5">
                                 <div className="font-medium text-primary truncate">{event.name}</div>
                                 <div className="text-muted-foreground">
-                                  {format(new Date(event.startDate), "dd.MM.yyyy", { locale: ru })}
+                                  {format(new Date(event.startDate), "dd.MM", { locale: ru })} - {format(new Date(event.endDate), "dd.MM.yy", { locale: ru })}
                                 </div>
                               </div>
                             )}

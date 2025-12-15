@@ -2085,7 +2085,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                     <FormItem className="col-span-2">
                       <FormLabel>Тур</FormLabel>
                       <div className="flex gap-2">
-                        <Popover open={tourSearchOpen} onOpenChange={setTourSearchOpen}>
+                        <Popover open={tourSearchOpen} onOpenChange={setTourSearchOpen} modal={false}>
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button 
@@ -2104,10 +2104,15 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0 max-h-[350px] pointer-events-auto" align="start">
-                            <Command className="flex flex-col overflow-visible">
+                          <PopoverContent 
+                              className="w-[400px] p-0 pointer-events-auto" 
+                              align="start"
+                              onWheel={(e) => e.stopPropagation()}
+                              onTouchMove={(e) => e.stopPropagation()}
+                            >
+                            <Command className="flex flex-col">
                               <CommandInput placeholder="Поиск тура..." />
-                              <CommandList className="max-h-[250px] overflow-y-auto overflow-x-hidden">
+                              <CommandList className="max-h-[280px]">
                                 <CommandEmpty>Тур не найден</CommandEmpty>
                                 <CommandGroup>
                                   {events.filter(event => !event.isArchived).map((event) => (

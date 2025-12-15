@@ -1195,6 +1195,26 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                         onClick={() => {
                           const missingFields: string[] = [];
                           
+                          // Validate lead data
+                          if (!lead.eventId) {
+                            missingFields.push("Лид: не выбран тур (для дат поездки)");
+                          }
+                          if (!lead.roomType) {
+                            missingFields.push("Лид: тип номера");
+                          }
+                          if (!lead.meals) {
+                            missingFields.push("Лид: питание");
+                          }
+                          if (!lead.tourCost) {
+                            missingFields.push("Лид: общая стоимость");
+                          }
+                          if (!lead.advancePayment) {
+                            missingFields.push("Лид: предоплата");
+                          }
+                          if (!lead.remainingPayment) {
+                            missingFields.push("Лид: остаток оплаты");
+                          }
+                          
                           // Find primary tourist
                           const primaryTourist = tourists.find(t => t.isPrimary) || tourists[0];
                           

@@ -1146,6 +1146,26 @@ export default function Leads() {
                         onClick={() => {
                           const missingFields: string[] = [];
                           
+                          // Validate lead data
+                          if (!editingLead.eventId) {
+                            missingFields.push("Лид: не выбран тур (для дат поездки)");
+                          }
+                          if (!editingLead.roomType) {
+                            missingFields.push("Лид: тип номера");
+                          }
+                          if (!editingLead.meals) {
+                            missingFields.push("Лид: питание");
+                          }
+                          if (!editingLead.tourCost) {
+                            missingFields.push("Лид: общая стоимость");
+                          }
+                          if (!editingLead.advancePayment) {
+                            missingFields.push("Лид: предоплата");
+                          }
+                          if (!editingLead.remainingPayment) {
+                            missingFields.push("Лид: остаток оплаты");
+                          }
+                          
                           // Find primary tourist
                           const primaryTourist = editingLeadTourists.find(t => t.isPrimary) || editingLeadTourists[0];
                           

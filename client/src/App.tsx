@@ -16,6 +16,7 @@ import Events from "@/pages/Events";
 import EventSummary from "@/pages/EventSummary";
 import Settings from "@/pages/Settings";
 import DevTest from "@/pages/DevTest";
+import DesignTest from "@/pages/DesignTest";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 import { useTranslation } from "react-i18next";
@@ -80,6 +81,7 @@ function Router() {
       <Switch>
       <Route path="/login" component={Login} />
       <Route path="/dev" component={DevTest} />
+      <Route path="/design-test" component={DesignTest} />
       
       {/* Demo routes - protected */}
       <Route path="/demo/leads">

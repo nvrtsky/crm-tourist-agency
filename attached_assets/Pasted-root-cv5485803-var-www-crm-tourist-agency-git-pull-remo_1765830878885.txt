@@ -1,0 +1,85 @@
+root@cv5485803:/var/www/crm-tourist-agency# git pull
+remote: Enumerating objects: 360, done.
+remote: Counting objects: 100% (360/360), done.
+remote: Compressing objects: 100% (50/50), done.
+remote: Total 334 (delta 285), reused 331 (delta 282), pack-reused 0 (from 0)
+Receiving objects: 100% (334/334), 8.80 MiB | 20.47 MiB/s, done.
+Resolving deltas: 100% (285/285), completed with 25 local objects.
+From https://github.com/nvrtsky/crm-tourist-agency
+   d11a599..d73512e  main       -> origin/main
+Updating d11a599..d73512e
+Fast-forward
+ ...sted-root-cv5485803-var-www-crm-tourist-agency-pm2-logs-crm-_1765661338113.txt | 105 ++++++++++++
+ ...sted-root-cv5485803-var-www-crm-tourist-agency-pm2-logs-crm-_1765661557753.txt |  65 +++++++
+ attached_assets/image_1765661173902.png                                           | Bin 0 -> 1209823 bytes
+ attached_assets/image_1765661245652.png                                           | Bin 0 -> 304766 bytes
+ attached_assets/image_1765661304745.png                                           | Bin 0 -> 1206415 bytes
+ attached_assets/image_1765661369456.png                                           | Bin 0 -> 1231394 bytes
+ attached_assets/image_1765661458149.png                                           | Bin 0 -> 647721 bytes
+ attached_assets/image_1765661469434.png                                           | Bin 0 -> 647721 bytes
+ attached_assets/image_1765661730236.png                                           | Bin 0 -> 128355 bytes
+ attached_assets/image_1765662191043.png                                           | Bin 0 -> 647725 bytes
+ attached_assets/image_1765784920215.png                                           | Bin 0 -> 545453 bytes
+ attached_assets/image_1765785099376.png                                           | Bin 0 -> 621976 bytes
+ attached_assets/image_1765788609263.png                                           | Bin 0 -> 157974 bytes
+ attached_assets/image_1765788660014.png                                           | Bin 0 -> 287808 bytes
+ attached_assets/image_1765795988622.png                                           | Bin 0 -> 119993 bytes
+ attached_assets/image_1765805488418.png                                           | Bin 0 -> 306174 bytes
+ attached_assets/image_1765814760461.png                                           | Bin 0 -> 223750 bytes
+ attached_assets/image_1765815315213.png                                           | Bin 0 -> 256517 bytes
+ attached_assets/image_1765815769656.png                                           | Bin 0 -> 256177 bytes
+ attached_assets/image_1765815769778.png                                           | Bin 0 -> 256177 bytes
+ attached_assets/image_1765815873789.png                                           | Bin 0 -> 36225 bytes
+ attached_assets/image_1765815873898.png                                           | Bin 0 -> 36225 bytes
+ attached_assets/image_1765827017754.png                                           | Bin 0 -> 48885 bytes
+ attached_assets/image_1765827262192.png                                           | Bin 0 -> 84711 bytes
+ attached_assets/image_1765827582055.png                                           | Bin 0 -> 73623 bytes
+ attached_assets/image_1765827709322.png                                           | Bin 0 -> 395040 bytes
+ attached_assets/image_1765828979962.png                                           | Bin 0 -> 837045 bytes
+ attached_assets/image_1765830071676.png                                           | Bin 0 -> 27721 bytes
+ client/src/components/DataCompletenessIndicator.tsx                               |  41 ++---
+ client/src/components/LeadEditModal.tsx                                           | 227 ++++++++++++++++++++-----
+ client/src/components/PassportScansField.tsx                                      |   5 +-
+ client/src/components/Wazzup24Chat.tsx                                            |  17 +-
+ client/src/components/ui/command.tsx                                              |   2 +-
+ client/src/components/ui/popover.tsx                                              |   2 +-
+ client/src/lib/utils.ts                                                           | 151 ++++++++++-------
+ client/src/pages/EventSummary.tsx                                                 |  10 +-
+ client/src/pages/Events.tsx                                                       |   7 +-
+ client/src/pages/Leads.tsx                                                        | 354 +++++++++++++++++++++++++++++++--------
+ dropdown-popover.png                                                              | Bin 0 -> 100207 bytes
+ server/document-generator.ts                                                      |  15 +-
+ server/objectStorage.ts                                                           |  10 +-
+ server/routes.ts                                                                  |  49 +++++-
+ server/storage.ts                                                                 |  56 ++++++-
+ 43 files changed, 888 insertions(+), 228 deletions(-)
+ create mode 100644 attached_assets/Pasted-root-cv5485803-var-www-crm-tourist-agency-pm2-logs-crm-_1765661338113.txt
+ create mode 100644 attached_assets/Pasted-root-cv5485803-var-www-crm-tourist-agency-pm2-logs-crm-_1765661557753.txt
+ create mode 100644 attached_assets/image_1765661173902.png
+ create mode 100644 attached_assets/image_1765661245652.png
+ create mode 100644 attached_assets/image_1765661304745.png
+ create mode 100644 attached_assets/image_1765661369456.png
+ create mode 100644 attached_assets/image_1765661458149.png
+ create mode 100644 attached_assets/image_1765661469434.png
+ create mode 100644 attached_assets/image_1765661730236.png
+ create mode 100644 attached_assets/image_1765662191043.png
+ create mode 100644 attached_assets/image_1765784920215.png
+ create mode 100644 attached_assets/image_1765785099376.png
+ create mode 100644 attached_assets/image_1765788609263.png
+ create mode 100644 attached_assets/image_1765788660014.png
+ create mode 100644 attached_assets/image_1765795988622.png
+ create mode 100644 attached_assets/image_1765805488418.png
+ create mode 100644 attached_assets/image_1765814760461.png
+ create mode 100644 attached_assets/image_1765815315213.png
+ create mode 100644 attached_assets/image_1765815769656.png
+ create mode 100644 attached_assets/image_1765815769778.png
+ create mode 100644 attached_assets/image_1765815873789.png
+ create mode 100644 attached_assets/image_1765815873898.png
+ create mode 100644 attached_assets/image_1765827017754.png
+ create mode 100644 attached_assets/image_1765827262192.png
+ create mode 100644 attached_assets/image_1765827582055.png
+ create mode 100644 attached_assets/image_1765827709322.png
+ create mode 100644 attached_assets/image_1765828979962.png
+ create mode 100644 attached_assets/image_1765830071676.png
+ create mode 100644 dropdown-popover.png
+root@cv5485803:/var/www/crm-tourist-agency# 

@@ -1,0 +1,106 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 50
+[TAILING] Tailing last 50 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 50 lines:
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:5659:21 {
+0|crm-chin |   length: 118,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42P01',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '94',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '1449',
+0|crm-chin |   routine: 'parserOpenTable'
+0|crm-chin | }
+0|crm-chin | Error fetching events: error: column "external_id" does not exist
+0|crm-chin |     at /var/www/crm-tourist-agency/node_modules/pg-pool/index.js:45:11
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|crm-chin |     at async DatabaseStorage.getAllEvents (file:///var/www/crm-tourist-agency/dist/index.js:2175:12)
+0|crm-chin |     at async DatabaseStorage.getAllEventsWithStats (file:///var/www/crm-tourist-agency/dist/index.js:2206:23)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:3783:21 {
+0|crm-chin |   length: 112,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '42703',
+0|crm-chin |   detail: undefined,
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: '195',
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: undefined,
+0|crm-chin |   table: undefined,
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: undefined,
+0|crm-chin |   file: 'parse_relation.c',
+0|crm-chin |   line: '3722',
+0|crm-chin |   routine: 'errorMissingColumn'
+0|crm-chin | }
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+
+/root/.pm2/logs/crm-chinaunique-out.log last 50 lines:
+0|crm-chin | 📥 GET /api/dictionaries/client_category
+0|crm-chin | 11:36:55 PM [express] GET /api/dictionaries/client_category 200 in 1ms :: []
+0|crm-chin | 📥 GET /api/dictionary-type-configs
+0|crm-chin | 11:36:55 PM [express] GET /api/dictionary-type-configs 304 in 1ms :: []
+0|crm-chin | 
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 11:37:34 PM [express] serving on port 3000
+0|crm-chin | 📥 GET /settings
+0|crm-chin | 📥 GET /assets/index-CeI84TF_.css
+0|crm-chin | 📥 GET /assets/index-CrKOlGEV.js
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 11:37:58 PM [express] GET /api/auth/me 401 in 1ms :: {"error":"Not authenticated"}
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 📥 POST /api/auth/login
+0|crm-chin | 11:38:00 PM [express] POST /api/auth/login 200 in 98ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af…
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 11:38:00 PM [express] GET /api/auth/me 304 in 1ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc7…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 11:38:00 PM [express] GET /api/events 304 in 130ms :: [{"id":"e23189b8-239a-45a2-b3a9-419d6c32ff61","…
+0|crm-chin | 📥 GET /assets/logo_1762426754494-D1p67QHm.png
+0|crm-chin | 📥 GET /api/auth/me
+0|crm-chin | 11:38:06 PM [express] GET /api/auth/me 304 in 1ms :: {"user":{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc7…
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 11:38:06 PM [express] GET /api/events 304 in 79ms :: [{"id":"e23189b8-239a-45a2-b3a9-419d6c32ff61","n…
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 📥 GET /api/public/dictionaries/hotel_category
+0|crm-chin | 11:38:09 PM [express] GET /api/leads 304 in 9ms :: [{"id":"bec9f6cb-4b21-4f91-8c5f-8ce9f582d3dc","las…
+0|crm-chin | 11:38:09 PM [express] GET /api/public/dictionaries/hotel_category 304 in 7ms :: [{"id":"ba887473-62da…
+0|crm-chin | 📥 GET /api/public/dictionaries/room_type
+0|crm-chin | 11:38:09 PM [express] GET /api/public/dictionaries/room_type 304 in 1ms :: []
+0|crm-chin | 📥 GET /api/public/dictionaries/client_category
+0|crm-chin | 📥 GET /api/public/dictionaries/lead_source
+0|crm-chin | 11:38:09 PM [express] GET /api/public/dictionaries/client_category 304 in 4ms :: []
+0|crm-chin | 11:38:09 PM [express] GET /api/public/dictionaries/lead_source 304 in 2ms :: [{"id":"96b744a1-b87f-4c…
+0|crm-chin | 📥 GET /api/public/dictionary-type-config/room_type
+0|crm-chin | 11:38:12 PM [express] GET /api/public/dictionary-type-config/room_type 304 in 2ms :: {"type":"room_ty…
+0|crm-chin | 📥 GET /api/public/dictionary-type-config/hotel_category
+0|crm-chin | 11:38:12 PM [express] GET /api/public/dictionary-type-config/hotel_category 304 in 2ms :: {"type":"ho…
+0|crm-chin | 📥 GET /api/public/dictionary-type-config/client_category
+0|crm-chin | 11:38:12 PM [express] GET /api/public/dictionary-type-config/client_category 304 in 1ms :: {"type":"c…
+0|crm-chin | 📥 GET /api/public/dictionary-type-config/lead_source
+0|crm-chin | 11:38:12 PM [express] GET /api/public/dictionary-type-config/lead_source 304 in 1ms :: {"type":"lead_…
+0|crm-chin | 📥 GET /api/leads/4fe71172-be52-4077-94c2-457e43a40203/tourists
+0|crm-chin | 11:38:12 PM [express] GET /api/leads/4fe71172-be52-4077-94c2-457e43a40203/tourists 304 in 1ms :: [{"i…
+0|crm-chin | 📥 GET /api/users/managers-and-admins
+0|crm-chin | 11:38:12 PM [express] GET /api/users/managers-and-admins 304 in 3ms :: [{"id":"8fb947a9-6af5-4a13-bdf…
+

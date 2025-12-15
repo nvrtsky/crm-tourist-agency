@@ -30,6 +30,8 @@ const DICTIONARY_TYPE_LABELS: Record<string, string> = {
   currency: "Валюты",
   hotel_category: "Категории отелей",
   client_category: "Категории клиентов",
+  transfers: "Трансферы",
+  meals: "Питание",
 };
 
 const AVAILABLE_DICTIONARY_TYPES = Object.keys(DICTIONARY_TYPE_LABELS);

@@ -595,6 +595,8 @@ export const DICTIONARY_TYPES = [
   'currency',
   'hotel_category',
   'client_category',
+  'transfers',
+  'meals',
 ] as const;
 export type DictionaryType = typeof DICTIONARY_TYPES[number];
 

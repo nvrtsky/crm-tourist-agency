@@ -1438,7 +1438,7 @@ export default function EventSummary() {
         baseData[`${city} - Транспорт прибытия`] = visit?.transportType || "";
         baseData[`${city} - Рейс/Поезд прибытия`] = visit?.flightNumber || "";
         baseData[`${city} - Отель`] = visit?.hotelName || "";
-        baseData[`${city} - Тип номера`] = visit?.roomType || "";
+        baseData[`${city} - Тип номера`] = visit?.roomType || p.lead?.roomType || "";
         baseData[`${city} - Отъезд`] = visit?.departureDate
           ? `${format(new Date(visit.departureDate), "dd.MM.yyyy")}${visit.departureTime ? ` ${visit.departureTime}` : ""}`
           : "";
@@ -2410,7 +2410,7 @@ export default function EventSummary() {
                                     />
                                     <EditableCell
                                       type="select"
-                                      value={visit?.roomType}
+                                      value={visit?.roomType || participant.lead?.roomType}
                                       placeholder="Тип номера"
                                       selectOptions={[
                                         { value: "single", label: "Single" },
@@ -2531,9 +2531,9 @@ export default function EventSummary() {
                             
                             participants.forEach(p => {
                               const visit = p.visits?.find(v => v.city === city);
-                              if (visit?.roomType) {
-                                const type = visit.roomType;
-                                roomTypeCounts[type] = (roomTypeCounts[type] || 0) + 1;
+                              const roomType = visit?.roomType || p.lead?.roomType;
+                              if (roomType) {
+                                roomTypeCounts[roomType] = (roomTypeCounts[roomType] || 0) + 1;
                               }
                             });
                             

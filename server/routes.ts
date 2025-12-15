@@ -42,6 +42,29 @@ function sanitizeUser(user: User) {
   return sanitized;
 }
 
+// Helper function to get roomType from a deal by traversing deal -> contact -> lead
+async function getRoomTypeFromDeal(dealId: string): Promise<string | null> {
+  const deal = await storage.getDeal(dealId);
+  if (!deal) return null;
+  
+  const contact = await storage.getContact(deal.contactId);
+  if (!contact) return null;
+  
+  let leadId: string | null = null;
+  
+  if (contact.leadId) {
+    leadId = contact.leadId;
+  } else if (contact.leadTouristId) {
+    const tourist = await storage.getTourist(contact.leadTouristId);
+    if (tourist) leadId = tourist.leadId;
+  }
+  
+  if (!leadId) return null;
+  
+  const lead = await storage.getLead(leadId);
+  return lead?.roomType || null;
+}
+
 // Configure multer for file uploads (store in memory)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -1069,6 +1092,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Auto-create city visits for all cities in the event route
       const event = await storage.getEvent(deal.eventId);
       if (event && event.cities && event.cities.length > 0) {
+        // Get roomType from the associated lead
+        const roomType = await getRoomTypeFromDeal(deal.id);
+        
         for (const city of event.cities) {
           await storage.createCityVisit({
             dealId: deal.id,
@@ -1076,6 +1102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             arrivalDate: event.startDate,
             transportType: "plane",
             hotelName: `Hotel ${city}`,
+            roomType: roomType || undefined,
           });
         }
       }
@@ -1158,7 +1185,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const visit = await storage.createCityVisit(validation.data);
+      // If roomType not provided in request, inherit from lead
+      let visitDataWithRoomType = validation.data;
+      if (!visitDataWithRoomType.roomType) {
+        const roomType = await getRoomTypeFromDeal(dealId);
+        if (roomType) {
+          visitDataWithRoomType = { ...visitDataWithRoomType, roomType };
+        }
+      }
+
+      const visit = await storage.createCityVisit(visitDataWithRoomType);
       res.json(visit);
     } catch (error) {
       console.error("Error creating visit:", error);
@@ -1801,6 +1837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               arrivalDate: event.startDate,
               transportType: "plane",
               hotelName: `Hotel ${city}`,
+              roomType: lead.roomType || undefined,
             });
           }
         }
@@ -1912,6 +1949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               arrivalDate: event.startDate,
               transportType: "plane",
               hotelName: `Hotel ${city}`,
+              roomType: lead.roomType || undefined,
             });
           }
         }
@@ -1989,6 +2027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               arrivalDate: event.startDate,
               transportType: "plane",
               hotelName: `Hotel ${city}`,
+              roomType: lead.roomType || undefined,
             });
           }
         }
@@ -2052,6 +2091,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               arrivalDate: event.startDate,
               transportType: "plane",
               hotelName: `Hotel ${city}`,
+              roomType: lead.roomType || undefined,
             });
           }
         }
@@ -2174,6 +2214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 arrivalDate: event.startDate,
                 transportType: "plane",
                 hotelName: `Hotel ${city}`,
+                roomType: lead.roomType || undefined,
               });
             }
           }

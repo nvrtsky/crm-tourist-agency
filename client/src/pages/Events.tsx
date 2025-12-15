@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
@@ -186,6 +186,11 @@ export default function Events() {
   const [showArchived, setShowArchived] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+
+  useEffect(() => {
+    setIsCreateDialogOpen(false);
+    setEditingEvent(null);
+  }, []);
 
   const { data: events = [], isLoading } = useQuery<EventWithStats[]>({
     queryKey: ["/api/events"],

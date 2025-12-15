@@ -2104,10 +2104,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0" align="start">
-                            <Command>
+                          <PopoverContent className="w-[400px] p-0 max-h-[350px]" align="start">
+                            <Command className="flex flex-col">
                               <CommandInput placeholder="Поиск тура..." />
-                              <CommandList className="max-h-[300px] overflow-y-auto">
+                              <CommandList>
                                 <CommandEmpty>Тур не найден</CommandEmpty>
                                 <CommandGroup>
                                   {events.filter(event => !event.isArchived).map((event) => (

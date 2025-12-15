@@ -16,7 +16,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download, Archive, ArchiveRestore, ChevronsUpDown, Check, ExternalLink, X } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download, Archive, ArchiveRestore, ChevronsUpDown, Check, ExternalLink, X, Calendar, CreditCard, Settings } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
@@ -1906,7 +1906,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Личные данные */}
           <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-foreground">Личные данные</h4>
+            <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+              <UserIcon className="h-4 w-4 text-primary" />
+              Личные данные
+            </h4>
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -2002,7 +2005,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
             <>
               {/* Дата рождения */}
               <div className="space-y-4 pt-4 border-t">
-                <h4 className="text-sm font-semibold text-foreground">Дата рождения</h4>
+                <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  Дата рождения
+                </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -2027,7 +2033,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
 
               {/* Российский паспорт */}
               <div className="space-y-4 pt-4 border-t">
-                <h4 className="text-sm font-semibold text-foreground">Российский паспорт</h4>
+                <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Российский паспорт
+                </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -2090,7 +2099,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
 
               {/* Загранпаспорт */}
               <div className="space-y-4 pt-4 border-t">
-                <h4 className="text-sm font-semibold text-foreground">Загранпаспорт</h4>
+                <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Загранпаспорт
+                </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -2155,7 +2167,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
 
           {/* Тур и оплата */}
           <div className="space-y-4 pt-4 border-t">
-            <h4 className="text-sm font-semibold text-foreground">Тур и оплата</h4>
+            <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-primary" />
+              Тур и оплата
+            </h4>
             <div className="grid grid-cols-2 gap-4 items-start">
               <FormField
                 control={form.control}
@@ -2640,7 +2655,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
 
           {/* Информация о лиде */}
           <div className="space-y-4 pt-4 border-t">
-            <h4 className="text-sm font-semibold text-foreground">Информация о лиде</h4>
+            <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+              <Settings className="h-4 w-4 text-primary" />
+              Информация о лиде
+            </h4>
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -2776,7 +2794,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
 
           {/* Заметки */}
           <div className="space-y-4 pt-4 border-t">
-            <h4 className="text-sm font-semibold text-foreground">Заметки</h4>
+            <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+              <MessageCircle className="h-4 w-4 text-primary" />
+              Заметки
+            </h4>
             <FormField
               control={form.control}
               name="notes"
@@ -3158,7 +3179,10 @@ function TouristDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* Личные данные */}
             <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-foreground">Личные данные</h4>
+              <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+                <UserIcon className="h-4 w-4 text-primary" />
+                Личные данные
+              </h4>
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -3270,7 +3294,10 @@ function TouristDialog({
 
             {/* Российский паспорт */}
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="text-sm font-semibold text-foreground">Российский паспорт</h4>
+              <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                Российский паспорт
+              </h4>
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -3333,7 +3360,10 @@ function TouristDialog({
 
             {/* Загранпаспорт */}
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="text-sm font-semibold text-foreground">Загранпаспорт</h4>
+              <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                Загранпаспорт
+              </h4>
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -3411,7 +3441,10 @@ function TouristDialog({
 
             {/* Тип и настройки туриста */}
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="text-sm font-semibold text-foreground">Тип и настройки</h4>
+              <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+                <Settings className="h-4 w-4 text-primary" />
+                Тип и настройки
+              </h4>
               <FormField
                 control={form.control}
                 name="touristType"

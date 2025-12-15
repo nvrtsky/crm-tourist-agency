@@ -15,7 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Edit, Trash2, Star, User as UserIcon, UserRound, Baby, MessageCircle, FileText, Download } from "lucide-react";
+import { Plus, Edit, Trash2, Star, User as UserIcon, UserRound, Baby, MessageCircle, FileText, Download, X } from "lucide-react";
 import type { Lead, LeadTourist, InsertLead, InsertLeadTourist, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -479,34 +479,51 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Тур</FormLabel>
-                              <Select 
-                                onValueChange={(value) => {
-                                  field.onChange(value === "__none__" ? null : value);
-                                  if (value && value !== "__none__") {
-                                    const event = events.find(e => e.id === value);
-                                    if (event?.cities) {
-                                      form.setValue("selectedCities", [...event.cities]);
+                              <div className="flex gap-2">
+                                <Select 
+                                  onValueChange={(value) => {
+                                    field.onChange(value === "__none__" ? null : value);
+                                    if (value && value !== "__none__") {
+                                      const event = events.find(e => e.id === value);
+                                      if (event?.cities) {
+                                        form.setValue("selectedCities", [...event.cities]);
+                                      }
+                                    } else {
+                                      form.setValue("selectedCities", null);
                                     }
-                                  } else {
-                                    form.setValue("selectedCities", null);
-                                  }
-                                }} 
-                                value={field.value || "__none__"}
-                              >
-                                <FormControl>
-                                  <SelectTrigger data-testid="select-lead-eventId">
-                                    <SelectValue placeholder="Выберите тур" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="__none__">Без тура</SelectItem>
-                                  {events.map((event) => (
-                                    <SelectItem key={event.id} value={event.id}>
-                                      {event.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                  }} 
+                                  value={field.value || "__none__"}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="flex-1" data-testid="select-lead-eventId">
+                                      <SelectValue placeholder="Выберите тур" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="__none__">Без тура</SelectItem>
+                                    {events.map((event) => (
+                                      <SelectItem key={event.id} value={event.id}>
+                                        {event.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                {field.value && (
+                                  <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    size="icon"
+                                    onClick={() => {
+                                      field.onChange(null);
+                                      form.setValue("selectedCities", null);
+                                    }}
+                                    title="Очистить тур"
+                                    data-testid="button-clear-tour"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1196,23 +1213,32 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                         onClick={() => {
                           const missingFields: string[] = [];
                           
-                          // Validate lead data
-                          if (!lead.eventId) {
+                          // Get current form values for validation
+                          const formValues = form.getValues();
+                          
+                          // Validate lead data using form values
+                          if (!formValues.eventId) {
                             missingFields.push("Лид: не выбран тур (для дат поездки)");
                           }
-                          if (!lead.roomType) {
+                          if (!formValues.roomType) {
                             missingFields.push("Лид: тип номера");
                           }
-                          if (!lead.meals) {
+                          if (!formValues.hotelCategory) {
+                            missingFields.push("Лид: категория отелей");
+                          }
+                          if (!formValues.transfers) {
+                            missingFields.push("Лид: трансферы");
+                          }
+                          if (!formValues.meals) {
                             missingFields.push("Лид: питание");
                           }
-                          if (!lead.tourCost) {
+                          if (!formValues.tourCost) {
                             missingFields.push("Лид: общая стоимость");
                           }
-                          if (!lead.advancePayment) {
+                          if (!formValues.advancePayment) {
                             missingFields.push("Лид: предоплата");
                           }
-                          if (!lead.remainingPayment) {
+                          if (formValues.remainingPayment === null || formValues.remainingPayment === undefined || formValues.remainingPayment === "") {
                             missingFields.push("Лид: остаток оплаты");
                           }
                           

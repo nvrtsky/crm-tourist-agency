@@ -16,7 +16,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download, Archive, ArchiveRestore, ChevronsUpDown, Check, ExternalLink } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download, Archive, ArchiveRestore, ChevronsUpDown, Check, ExternalLink, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
@@ -1147,23 +1147,32 @@ export default function Leads() {
                         onClick={() => {
                           const missingFields: string[] = [];
                           
-                          // Validate lead data
-                          if (!editingLead.eventId) {
+                          // Get current form values for validation
+                          const formValues = form.getValues();
+                          
+                          // Validate lead data using form values
+                          if (!formValues.eventId) {
                             missingFields.push("Лид: не выбран тур (для дат поездки)");
                           }
-                          if (!editingLead.roomType) {
+                          if (!formValues.roomType) {
                             missingFields.push("Лид: тип номера");
                           }
-                          if (!editingLead.meals) {
+                          if (!formValues.hotelCategory) {
+                            missingFields.push("Лид: категория отелей");
+                          }
+                          if (!formValues.transfers) {
+                            missingFields.push("Лид: трансферы");
+                          }
+                          if (!formValues.meals) {
                             missingFields.push("Лид: питание");
                           }
-                          if (!editingLead.tourCost) {
+                          if (!formValues.tourCost) {
                             missingFields.push("Лид: общая стоимость");
                           }
-                          if (!editingLead.advancePayment) {
+                          if (!formValues.advancePayment) {
                             missingFields.push("Лид: предоплата");
                           }
-                          if (!editingLead.remainingPayment) {
+                          if (formValues.remainingPayment === null || formValues.remainingPayment === undefined || formValues.remainingPayment === "") {
                             missingFields.push("Лид: остаток оплаты");
                           }
                           
@@ -2216,16 +2225,31 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         </Popover>
                         
                         {field.value && (
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="icon"
-                            onClick={() => window.open(`/events/${field.value}/summary`, '_blank')}
-                            title="Открыть тур"
-                            data-testid="link-to-tour"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
+                          <>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => {
+                                field.onChange(null);
+                                form.setValue("selectedCities", null);
+                              }}
+                              title="Очистить тур"
+                              data-testid="button-clear-tour"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => window.open(`/events/${field.value}/summary`, '_blank')}
+                              title="Открыть тур"
+                              data-testid="link-to-tour"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                       <FormMessage />

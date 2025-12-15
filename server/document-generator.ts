@@ -1007,25 +1007,23 @@ export async function generateBookingSheet(
           size: 22,
         }),
         new TextRun({
-          text: ", паспорт: №",
+          text: ", паспорт: ",
           size: 22,
         }),
         new TextRun({
-          text: primaryTourist.foreignPassportNumber || "",
+          text: primaryTourist.passportSeries || "",
           size: 22,
         }),
         new TextRun({
-          text: " , годен до ",
+          text: primaryTourist.passportIssuedBy ? ", кем выдан: " : "",
           size: 22,
         }),
         new TextRun({
-          text: primaryTourist.foreignPassportValidUntil
-            ? formatDate(primaryTourist.foreignPassportValidUntil)
-            : "",
+          text: primaryTourist.passportIssuedBy || "",
           size: 22,
         }),
         new TextRun({
-          text: " г,",
+          text: ",",
           size: 22,
         }),
       ],

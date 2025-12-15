@@ -1668,9 +1668,9 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       passportSeries: lead?.passportSeries || null,
       passportIssuedBy: lead?.passportIssuedBy || null,
       registrationAddress: lead?.registrationAddress || null,
-      foreignPassportName: null,
-      foreignPassportNumber: null,
-      foreignPassportValidUntil: null,
+      foreignPassportName: lead?.foreignPassportName || null,
+      foreignPassportNumber: lead?.foreignPassportNumber || null,
+      foreignPassportValidUntil: lead?.foreignPassportValidUntil || null,
     },
   });
 
@@ -1712,6 +1712,9 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
         passportSeries: lead.passportSeries || null,
         passportIssuedBy: lead.passportIssuedBy || null,
         registrationAddress: lead.registrationAddress || null,
+        foreignPassportName: lead.foreignPassportName || null,
+        foreignPassportNumber: lead.foreignPassportNumber || null,
+        foreignPassportValidUntil: lead.foreignPassportValidUntil || null,
         eventId: lead.eventId || null,
         selectedCities,
         tourCost: lead.tourCost || null,

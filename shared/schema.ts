@@ -243,6 +243,10 @@ export const leads = pgTable("leads", {
   middleName: text("middle_name"), // Отчество
   phone: text("phone"), // Телефон
   email: text("email"), // Email
+  dateOfBirth: text("date_of_birth"), // Дата рождения заказчика
+  passportSeries: text("passport_series"), // Серия и номер паспорта заказчика
+  passportIssuedBy: text("passport_issued_by"), // Кем выдан паспорт заказчика
+  registrationAddress: text("registration_address"), // Адрес регистрации заказчика
   clientCategory: text("client_category"), // Категория клиента
   status: text("status").notNull().default("new"), // 'new', 'contacted', 'qualified', 'won', 'lost'
   source: text("source").notNull().default("manual"), // 'manual', 'form', 'import', 'other'

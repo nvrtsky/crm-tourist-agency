@@ -1003,7 +1003,7 @@ export async function generateBookingSheet(
           size: 22,
         }),
         new TextRun({
-          text: getTouristFullName(primaryTourist),
+          text: [data.lead.lastName, data.lead.firstName, data.lead.middleName].filter(Boolean).join(" "),
           size: 22,
         }),
         new TextRun({
@@ -1011,7 +1011,7 @@ export async function generateBookingSheet(
           size: 22,
         }),
         new TextRun({
-          text: primaryTourist.passportSeries || "",
+          text: data.lead.passportSeries || "",
           size: 22,
         }),
         new TextRun({
@@ -1027,8 +1027,8 @@ export async function generateBookingSheet(
           size: 22,
         }),
         new TextRun({
-          text: primaryTourist.dateOfBirth
-            ? formatDate(primaryTourist.dateOfBirth)
+          text: data.lead.dateOfBirth
+            ? formatDate(data.lead.dateOfBirth)
             : "",
           size: 22,
         }),

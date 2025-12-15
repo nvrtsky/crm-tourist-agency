@@ -1663,11 +1663,11 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
       formId: lead?.formId || null,
       assignedUserId: lead?.assignedUserId || null,
       createdByUserId: lead?.createdByUserId || null,
-      // Primary tourist data
-      dateOfBirth: null,
-      passportSeries: null,
-      passportIssuedBy: null,
-      registrationAddress: null,
+      // Lead personal data (for Заказчик section in documents)
+      dateOfBirth: lead?.dateOfBirth || null,
+      passportSeries: lead?.passportSeries || null,
+      passportIssuedBy: lead?.passportIssuedBy || null,
+      registrationAddress: lead?.registrationAddress || null,
       foreignPassportName: null,
       foreignPassportNumber: null,
       foreignPassportValidUntil: null,
@@ -1708,6 +1708,10 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
         middleName: lead.middleName || null,
         phone: lead.phone || null,
         email: lead.email || null,
+        dateOfBirth: lead.dateOfBirth || null,
+        passportSeries: lead.passportSeries || null,
+        passportIssuedBy: lead.passportIssuedBy || null,
+        registrationAddress: lead.registrationAddress || null,
         eventId: lead.eventId || null,
         selectedCities,
         tourCost: lead.tourCost || null,
@@ -1979,7 +1983,7 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                 control={form.control}
                 name="email"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
@@ -1988,6 +1992,25 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                         {...field}
                         value={field.value || ""}
                         data-testid="input-email"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dateOfBirth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Дата рождения</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        {...field}
+                        value={field.value || ""}
+                        data-testid="input-lead-dateOfBirth"
                       />
                     </FormControl>
                     <FormMessage />

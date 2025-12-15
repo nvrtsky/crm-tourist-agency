@@ -2797,19 +2797,24 @@ function LeadForm({ lead, onSubmit, isPending, onDelete, isAdmin = false }: Lead
                                 </TooltipContent>
                               </Tooltip>
                               {tourist.isPrimary ? (
-                                <Tooltip>
-                                  <TooltipTrigger 
-                                    type="button"
-                                    className="inline-flex items-center rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground transition-colors cursor-default hover-elevate"
-                                    data-testid={`badge-primary-${tourist.id}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <Star className="h-3 w-3" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Основной турист</p>
-                                  </TooltipContent>
-                                </Tooltip>
+                                <>
+                                  <Tooltip>
+                                    <TooltipTrigger 
+                                      type="button"
+                                      className="inline-flex items-center rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground transition-colors cursor-default hover-elevate"
+                                      data-testid={`badge-primary-${tourist.id}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Star className="h-3 w-3" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Основной турист</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <Badge variant="outline" className="text-[10px] bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300">
+                                    Договор
+                                  </Badge>
+                                </>
                               ) : (
                                 <Tooltip>
                                   <TooltipTrigger asChild>

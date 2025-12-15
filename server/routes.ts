@@ -1429,10 +1429,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Sync roomType to cityVisits if changed
-      if (validation.data.hasOwnProperty('roomType') && validation.data.roomType) {
-        console.log(`[UPDATE_LEAD] RoomType changed to ${validation.data.roomType}, syncing to cityVisits`);
-        await storage.syncLeadRoomTypeToCityVisits(id, validation.data.roomType);
+      // Sync roomType to cityVisits if changed (compare persisted values)
+      if (lead.roomType && lead.roomType !== currentLead.roomType) {
+        console.log(`[UPDATE_LEAD] RoomType changed from '${currentLead.roomType}' to '${lead.roomType}', syncing to cityVisits`);
+        await storage.syncLeadRoomTypeToCityVisits(id, lead.roomType);
       }
       
       res.json(lead);

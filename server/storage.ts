@@ -1,4 +1,4 @@
-import { eq, and, or, sql, desc, count } from "drizzle-orm";
+import { eq, and, or, sql, desc, count, inArray } from "drizzle-orm";
 import { db } from "./db";
 import {
   type Event,
@@ -701,22 +701,56 @@ export class DatabaseStorage implements IStorage {
   }
 
   async syncLeadRoomTypeToCityVisits(leadId: string, roomType: string): Promise<void> {
-    // Get all contacts linked to this lead
-    const leadContacts = await this.getContactsByLead(leadId);
+    // Collect all contact IDs linked to this lead via multiple paths
+    // This ensures we don't miss any contacts even after lead conversion
     
-    for (const contact of leadContacts) {
-      // Get all deals for each contact
-      const contactDeals = await this.getDealsByContact(contact.id);
-      
-      for (const deal of contactDeals) {
-        // Update roomType in all city visits for this deal
-        await db
-          .update(cityVisits)
-          .set({ roomType })
-          .where(eq(cityVisits.dealId, deal.id));
-      }
+    const allContactIds: Set<string> = new Set();
+    
+    // Path 1: Lead → LeadTourists → Contact (via leadTouristId)
+    // This path survives conversion because leadTouristId is preserved
+    const tourists = await this.getTouristsByLead(leadId);
+    if (tourists.length > 0) {
+      const touristIds = tourists.map(t => t.id);
+      const touristContacts = await db.select({ id: contacts.id })
+        .from(contacts)
+        .where(inArray(contacts.leadTouristId, touristIds));
+      touristContacts.forEach(c => allContactIds.add(c.id));
     }
-    console.log(`[SYNC] Synced roomType '${roomType}' to cityVisits for lead ${leadId}`);
+    
+    // Path 2: Lead → Contact (via leadId)
+    // Fallback for contacts that have leadId set
+    const directContacts = await db.select({ id: contacts.id })
+      .from(contacts)
+      .where(eq(contacts.leadId, leadId));
+    directContacts.forEach(c => allContactIds.add(c.id));
+    
+    console.log(`[SYNC] Found ${allContactIds.size} unique contacts for lead ${leadId}`);
+    
+    if (allContactIds.size === 0) {
+      console.log(`[SYNC] No contacts found for lead ${leadId}, skipping sync`);
+      return;
+    }
+    
+    // Get all deals for these contacts
+    const contactIdArray = Array.from(allContactIds);
+    const allDeals = await db.select({ id: deals.id })
+      .from(deals)
+      .where(inArray(deals.contactId, contactIdArray));
+    
+    const dealIds = allDeals.map(d => d.id);
+    console.log(`[SYNC] Found ${dealIds.length} deals for lead ${leadId}`);
+    
+    if (dealIds.length === 0) {
+      console.log(`[SYNC] No deals found for lead ${leadId}, skipping sync`);
+      return;
+    }
+    
+    // Update all cityVisits for these deals in one batch query
+    await db.update(cityVisits)
+      .set({ roomType })
+      .where(inArray(cityVisits.dealId, dealIds));
+    
+    console.log(`[SYNC] Synced roomType '${roomType}' to cityVisits for ${dealIds.length} deals of lead ${leadId}`);
   }
 
   // ==================== NOTIFICATION OPERATIONS ====================

@@ -26,6 +26,7 @@ import { calculateTouristDataCompleteness, formatTouristName } from "@/lib/utils
 import { ColorPicker, ColorIndicator, type ColorOption } from "@/components/ColorPicker";
 import { Wazzup24Chat } from "@/components/Wazzup24Chat";
 import { MultiSelectField } from "@/components/MultiSelectField";
+import { PassportScansField } from "@/components/PassportScansField";
 
 const leadFormSchema = insertLeadSchema.extend({
   color: z.string().nullable(),
@@ -1693,28 +1694,20 @@ function TouristDialog({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="passportScans"
-                  render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Скан загранпаспорта</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://example.com/passport-scan.jpg"
-                          {...field}
-                          value={field.value?.[0] || ""}
-                          onChange={(e) => {
-                            const value = e.target.value.trim();
-                            field.onChange(value ? [value] : null);
-                          }}
-                          data-testid="input-tourist-passportScans"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="col-span-2">
+                  <FormLabel className="block mb-2">Скан загранпаспорта</FormLabel>
+                  {tourist?.id ? (
+                    <PassportScansField
+                      touristId={tourist.id}
+                      initialScans={tourist.passportScans || []}
+                      onUpdate={(scans) => form.setValue("passportScans", scans.length > 0 ? scans : null)}
+                    />
+                  ) : (
+                    <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
+                      Сохраните туриста, чтобы загрузить сканы паспорта
+                    </div>
                   )}
-                />
+                </div>
               </div>
             </div>
 

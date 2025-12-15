@@ -1003,7 +1003,7 @@ export async function generateBookingSheet(
           size: 22,
         }),
         new TextRun({
-          text: [data.lead.lastName, data.lead.firstName, data.lead.middleName].filter(Boolean).join(" "),
+          text: getTouristFullName(primaryTourist),
           size: 22,
         }),
         new TextRun({
@@ -1011,11 +1011,21 @@ export async function generateBookingSheet(
           size: 22,
         }),
         new TextRun({
-          text: data.lead.passportSeries || "",
+          text: primaryTourist.foreignPassportNumber || "",
           size: 22,
         }),
         new TextRun({
-          text: ",",
+          text: " , годен до ",
+          size: 22,
+        }),
+        new TextRun({
+          text: primaryTourist.foreignPassportValidUntil
+            ? formatDate(primaryTourist.foreignPassportValidUntil)
+            : "",
+          size: 22,
+        }),
+        new TextRun({
+          text: " г,",
           size: 22,
         }),
       ],
@@ -1027,8 +1037,8 @@ export async function generateBookingSheet(
           size: 22,
         }),
         new TextRun({
-          text: data.lead.dateOfBirth
-            ? formatDate(data.lead.dateOfBirth)
+          text: primaryTourist.dateOfBirth
+            ? formatDate(primaryTourist.dateOfBirth)
             : "",
           size: 22,
         }),

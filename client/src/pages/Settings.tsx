@@ -596,6 +596,62 @@ function DisplayTab() {
 function Wazzup24Tab() {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState("");
+  const [editedWazzupIds, setEditedWazzupIds] = useState<Record<string, string>>({});
+  const [savingUserId, setSavingUserId] = useState<string | null>(null);
+
+  const { data: users = [], isLoading: isLoadingUsers } = useQuery<SanitizedUser[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const saveWazzupIdMutation = useMutation({
+    mutationFn: async ({ userId, wazzup24UserId }: { userId: string; wazzup24UserId: string }) => {
+      const response = await apiRequest("PATCH", `/api/users/${userId}`, { wazzup24UserId: wazzup24UserId || null });
+      return await response.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setEditedWazzupIds((prev) => {
+        const next = { ...prev };
+        delete next[variables.userId];
+        return next;
+      });
+      setSavingUserId(null);
+      toast({
+        title: "Сохранено",
+        description: "Wazzup24 ID пользователя обновлен",
+      });
+    },
+    onError: (error: Error) => {
+      setSavingUserId(null);
+      toast({
+        title: "Ошибка сохранения",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleWazzupIdChange = (userId: string, value: string) => {
+    setEditedWazzupIds((prev) => ({ ...prev, [userId]: value }));
+  };
+
+  const handleSaveWazzupId = async (userId: string) => {
+    const value = editedWazzupIds[userId] ?? "";
+    setSavingUserId(userId);
+    await saveWazzupIdMutation.mutateAsync({ userId, wazzup24UserId: value });
+  };
+
+  const getWazzupIdValue = (user: SanitizedUser) => {
+    if (editedWazzupIds.hasOwnProperty(user.id)) {
+      return editedWazzupIds[user.id];
+    }
+    return user.wazzup24UserId || "";
+  };
+
+  const hasUnsavedChanges = (user: SanitizedUser) => {
+    if (!editedWazzupIds.hasOwnProperty(user.id)) return false;
+    return editedWazzupIds[user.id] !== (user.wazzup24UserId || "");
+  };
   
   const { data: wazzup24Status, isLoading: isLoadingStatus } = useQuery<{ configured: boolean; updatedAt?: string }>({
     queryKey: ["/api/settings/wazzup24"],
@@ -844,6 +900,78 @@ function Wazzup24Tab() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Привязка пользователей
+          </CardTitle>
+          <CardDescription>
+            Привяжите пользователей CRM к существующим пользователям в Wazzup24 для правильной работы чата
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoadingUsers ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : users.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Нет пользователей в системе
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Пользователь</TableHead>
+                    <TableHead>Wazzup24 ID</TableHead>
+                    <TableHead className="w-24">Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id} data-testid={`row-wazzup24-user-${user.id}`}>
+                      <TableCell className="font-medium">
+                        {user.lastName} {user.firstName} ({user.username})
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={getWazzupIdValue(user)}
+                          onChange={(e) => handleWazzupIdChange(user.id, e.target.value)}
+                          placeholder="Введите Wazzup24 ID"
+                          className="max-w-xs"
+                          data-testid={`input-wazzup24-id-${user.id}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {hasUnsavedChanges(user) && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveWazzupId(user.id)}
+                            disabled={savingUserId === user.id}
+                            data-testid={`button-save-wazzup24-id-${user.id}`}
+                          >
+                            {savingUserId === user.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Сохранить"
+                            )}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Wazzup24 ID пользователей можно найти в личном кабинете Wazzup24 в разделе «Сотрудники».
+          </p>
         </CardContent>
       </Card>
 

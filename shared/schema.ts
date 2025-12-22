@@ -269,6 +269,7 @@ export const leads = pgTable("leads", {
   failureReason: text("failure_reason"), // Причина провала: 'missing_contact', 'expensive', 'competitor', 'not_target'
   hasBeenContacted: boolean("has_been_contacted").notNull().default(false), // Была ли коммуникация с лидом
   isArchived: boolean("is_archived").notNull().default(false), // Архивирован ли лид
+  wazzupChannelId: text("wazzup_channel_id"), // Wazzup24 channel ID (saved from webhook when message received)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

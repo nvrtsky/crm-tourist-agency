@@ -3088,7 +3088,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Wazzup24 contact creation error:", contactResponse.status, contactErrorText);
           // Continue anyway - contact might already exist or we can still show chat
         } else {
-          console.log("Wazzup24: Contact created/updated successfully");
+          const contactResult = await contactResponse.json();
+          console.log("Wazzup24: Contact created/updated successfully:", JSON.stringify(contactResult, null, 2));
         }
       }
       

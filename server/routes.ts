@@ -3104,14 +3104,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Build request body according to Wazzup24 API v3 spec
-      // Use scope: "personal" to show only current user's chats (allows writing)
+      // Use scope: "card" as per API documentation (required for iframe)
       const requestBody: Record<string, unknown> = {
-        scope: "personal",
+        scope: "card",
         user: userData
       };
       
-      // Set activeChat to open specific chat by default
+      // Set filter and activeChat to open specific chat by default
       if (normalizedPhone) {
+        requestBody.filter = [
+          {
+            chatType: "whatsapp",
+            chatId: normalizedPhone
+          }
+        ];
         requestBody.activeChat = {
           chatType: "whatsapp",
           chatId: normalizedPhone

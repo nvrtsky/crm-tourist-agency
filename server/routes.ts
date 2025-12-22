@@ -3103,8 +3103,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const contactId = `lead_${leadId}`;
-      
       // Build request body according to Wazzup24 API v3 spec
       // Use scope: "card" to show only the lead's chat
       const requestBody: Record<string, unknown> = {
@@ -3112,12 +3110,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user: userData
       };
       
-      // Add contacts array with contactId to bind iframe to specific contact
+      // Add filter array with phone (required by Wazzup24 API)
       if (normalizedPhone) {
-        // Use contacts parameter to specify which contact to show
-        requestBody.contacts = [
+        requestBody.filter = [
           {
-            id: contactId,
             chatType: "whatsapp",
             chatId: normalizedPhone
           }

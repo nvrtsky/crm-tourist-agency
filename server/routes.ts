@@ -3104,18 +3104,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Build request body according to Wazzup24 API v3 spec
-      // Use scope: "card" as per API documentation (required for iframe)
+      // Use scope: "card" with filter for contact-specific chat
       const requestBody: Record<string, unknown> = {
         scope: "card",
-        user: userData
+        user: userData,
+        options: {
+          useMessageEvents: true,
+          useDealsEvents: false
+        }
       };
       
       // Set filter and activeChat to open specific chat by default
       if (normalizedPhone) {
+        const leadName = name || `Lead ${leadId}`;
         requestBody.filter = [
           {
             chatType: "whatsapp",
-            chatId: normalizedPhone
+            chatId: normalizedPhone,
+            name: leadName
           }
         ];
         requestBody.activeChat = {

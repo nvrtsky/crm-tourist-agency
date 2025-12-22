@@ -1,0 +1,65 @@
+По логам причина уже видна: INVALID_IFRAME_DATA с указанием поля filter. В вашем payload вы передаёте в filter объект с полем channelId, а по спецификации iFrame в filter допускаются только chatType, chatId (и опционально name). channelId должен быть в activeChat, а не в filter. 
+https://wazzup24.com/
+
+Сейчас у вас:
+
+"filter": [
+  {
+    "chatType": "whatsapp",
+    "chatId": "79257854600",
+    "channelId": "bcbf802c-efb3-4843-b287-e2fdd4ed1335"   // <-- лишнее для filter
+  }
+],
+"activeChat": {
+  "chatType": "whatsapp",
+  "chatId": "79257854600"
+}
+
+
+А должно быть так (минимальный корректный вариант):
+
+{
+  "scope": "card",
+  "user": { "id": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c", "name": "Тестовый Администратор" },
+  "options": { "useMessageEvents": true, "useDealsEvents": true },
+  "filter": [
+    { "chatType": "whatsapp", "chatId": "79257854600" }
+  ],
+  "activeChat": {
+    "chatType": "whatsapp",
+    "chatId": "79257854600",
+    "channelId": "bcbf802c-efb3-4843-b287-e2fdd4ed1335"
+  }
+}
+
+
+Почему это важно:
+
+filter — список чатов для отображения при scope="card" (без channelId). 
+https://wazzup24.com/
+
+activeChat.channelId — именно туда Wazzup предлагает передавать канал для “активного чата” при открытии. 
+https://wazzup24.com/
+
+Почему у вас ещё всплывает data:["scope"]
+
+Это обычно второй симптом: в некоторых запросах scope уходит пустым/не тем значением (например, undefined, null, "Card", пробелы и т.п.). Wazzup принимает строго "global" или "card". 
+https://wazzup24.com/
+
+Решение — добавить серверную валидацию и дефолт:
+
+если открываем из карточки → "card" и обязательно непустой filter;
+
+если глобальный инбокс → "global" и не передавать filter вообще (или передавать корректно по документации).
+
+Рекомендованный фикс в коде (сервер)
+
+Перед отправкой в Wazzup “санитизируйте” filter: выбрасывайте любые поля кроме chatType/chatId/name.
+
+Переносите channelId в activeChat.channelId.
+
+Жёстко валидируйте scope.
+
+Дополнительно: предупреждение connect.session() MemoryStore... к Wazzup не относится, но в проде действительно лучше Redis/Mongo-store, чтобы не словить утечки/перезапуски сессий.
+
+Если после этого iFrame начнёт стабильно открываться без 400, а “писать нельзя” сохранится — тогда следующий шаг уже не про payload, а про права пользователя в Wazzup (роль Quality Control) или уход пользователя в режим “просмотреть все диалоги”. Но сначала нужно устранить 400 по filter, потому что сейчас часть ваших открытий iFrame реально падает на валидации запроса.

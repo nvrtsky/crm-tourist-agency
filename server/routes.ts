@@ -3104,26 +3104,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Build request body according to Wazzup24 API v3 spec
-      // Use scope: "card" with filter for contact-specific chat
+      // Use scope: "global" to show all user's chats and allow writing
+      // Note: "card" scope with filter causes "read-only" mode issues
       const requestBody: Record<string, unknown> = {
-        scope: "card",
-        user: userData,
-        options: {
-          useMessageEvents: true,
-          useDealsEvents: false
-        }
+        scope: "global",
+        user: userData
       };
       
-      // Set filter and activeChat to open specific chat by default
+      // Set activeChat to pre-select specific chat when phone is available
       if (normalizedPhone) {
-        const leadName = name || `Lead ${leadId}`;
-        requestBody.filter = [
-          {
-            chatType: "whatsapp",
-            chatId: normalizedPhone,
-            name: leadName
-          }
-        ];
         requestBody.activeChat = {
           chatType: "whatsapp",
           chatId: normalizedPhone

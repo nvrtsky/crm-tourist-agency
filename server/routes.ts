@@ -3032,9 +3032,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const normalizedPhone = normalizePhone(phone);
       
       // First, ensure user exists in Wazzup24 (create if not exists)
+      // IMPORTANT: Use String(id) to match how users are synced via sync-users endpoint
       const userData = {
-        id: currentUser.id,
-        name: currentUser.username || "CRM User"
+        id: String(currentUser.id),
+        name: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.username || "CRM User"
       };
       
       console.log("Wazzup24: Ensuring user exists:", JSON.stringify(userData, null, 2));

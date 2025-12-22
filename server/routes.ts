@@ -3110,7 +3110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user: userData,
         options: {
           useMessageEvents: true,
-          useDealsEvents: false
+          useDealsEvents: true
         }
       };
       

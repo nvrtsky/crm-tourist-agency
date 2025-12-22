@@ -3032,11 +3032,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const normalizedPhone = normalizePhone(phone);
       
       // First, ensure user exists in Wazzup24 (create if not exists)
-      // Get Wazzup24 user ID (use mapped ID if available, otherwise fall back to CRM ID)
-      const wazzup24Id = currentUser.wazzup24UserId || String(currentUser.id);
-      
+      // IMPORTANT: Use String(id) to match how users are synced via sync-users endpoint
       const userData = {
-        id: wazzup24Id,
+        id: String(currentUser.id),
         name: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.username || "CRM User"
       };
       
@@ -3064,7 +3062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (normalizedPhone) {
         const contactData = [{
           id: `lead_${leadId}`,
-          responsibleUserId: wazzup24Id,
+          responsibleUserId: String(currentUser.id),
           name: name || `Lead ${leadId}`,
           contactData: [
             {
@@ -3239,12 +3237,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to decrypt API key" });
       }
       
-      // Get all CRM users without Wazzup24 mapping (need to create them in Wazzup24)
+      // Get all CRM users
       const crmUsers = await storage.getAllUsers();
-      const usersToSync = crmUsers.filter((user: User) => !user.wazzup24UserId);
       
       // Prepare users data for Wazzup24 API
-      const wazzupUsers = usersToSync.map((user: User) => ({
+      const wazzupUsers = crmUsers.map((user: User) => ({
         id: String(user.id),
         name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username
       }));
@@ -3284,7 +3281,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         syncedCount: wazzupUsers.length,
-        skippedCount: crmUsers.length - usersToSync.length,
         users: wazzupUsers.map((u: { id: string; name: string }) => u.name)
       });
     } catch (error) {

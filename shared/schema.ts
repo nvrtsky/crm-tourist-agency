@@ -107,7 +107,6 @@ export const users = pgTable("users", {
   position: text("position"), // Job position/title (optional)
   role: text("role").notNull(), // 'admin', 'manager', 'viewer'
   email: text("email"), // Email (optional)
-  wazzup24UserId: text("wazzup24_user_id"), // Wazzup24 user ID for chat integration
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

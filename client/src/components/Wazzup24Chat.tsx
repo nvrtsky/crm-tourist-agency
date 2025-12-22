@@ -167,7 +167,6 @@ export function Wazzup24Chat({ lead }: Wazzup24ChatProps) {
         src={iframeUrl}
         className="w-full h-[500px] border rounded-lg"
         title="Wazzup24 Chat"
-        allow="microphone *; clipboard-write *"
         data-testid="iframe-wazzup24-chat"
       />
     </div>

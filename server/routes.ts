@@ -3143,7 +3143,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const data = await response.json();
+      // Wazzup24 should return JSON with url, but handle text response just in case
+      const responseText = await response.text();
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        // If not JSON, try to use as-is or return error
+        console.error("Wazzup24 iframe response is not JSON:", responseText);
+        return res.status(500).json({ error: "Invalid response from Wazzup24", details: responseText });
+      }
       res.json(data);
     } catch (error) {
       console.error("Error getting Wazzup24 iframe:", error);
@@ -3187,7 +3196,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const data = await response.json();
+      // Wazzup24 may return JSON or text
+      const responseText = await response.text();
+      let data: any = responseText;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        // Not JSON, use text as-is
+      }
       res.json({ success: true, users: data });
     } catch (error) {
       console.error("Error testing Wazzup24:", error);

@@ -1,0 +1,65 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 30
+[TAILING] Tailing last 30 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 30 lines:
+0|crm-chin |     at JSON.parse (<anonymous>)
+0|crm-chin |     at parseJSONFromBytes (node:internal/deps/undici/undici:5738:19)
+0|crm-chin |     at successSteps (node:internal/deps/undici/undici:5719:27)
+0|crm-chin |     at fullyReadBody (node:internal/deps/undici/undici:4609:9)
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async consumeBody (node:internal/deps/undici/undici:5728:7)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:5997:20
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Error getting Wazzup24 iframe: SyntaxError: Unexpected token 'O', "OK" is not valid JSON
+0|crm-chin |     at JSON.parse (<anonymous>)
+0|crm-chin |     at parseJSONFromBytes (node:internal/deps/undici/undici:5738:19)
+0|crm-chin |     at successSteps (node:internal/deps/undici/undici:5719:27)
+0|crm-chin |     at fullyReadBody (node:internal/deps/undici/undici:4609:9)
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async consumeBody (node:internal/deps/undici/undici:5728:7)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:5913:33
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+
+/root/.pm2/logs/crm-chinaunique-out.log last 30 lines:
+0|crm-chin |     "id": "lead_71338c25-91e7-4a17-9925-d5ed5f3d922c",
+0|crm-chin |     "responsibleUserId": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c",
+0|crm-chin |     "name": "Засеева Фатима",
+0|crm-chin |     "contactData": [
+0|crm-chin |       {
+0|crm-chin |         "chatType": "whatsapp",
+0|crm-chin |         "chatId": "79257854600"
+0|crm-chin |       }
+0|crm-chin |     ]
+0|crm-chin |   }
+0|crm-chin | ]
+0|crm-chin | Wazzup24: Contact created/updated successfully: OK
+0|crm-chin | Wazzup24 iframe request: {
+0|crm-chin |   "scope": "card",
+0|crm-chin |   "user": {
+0|crm-chin |     "id": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c",
+0|crm-chin |     "name": "Тестовый Администратор"
+0|crm-chin |   },
+0|crm-chin |   "filter": [
+0|crm-chin |     {
+0|crm-chin |       "chatType": "whatsapp",
+0|crm-chin |       "chatId": "79257854600"
+0|crm-chin |     }
+0|crm-chin |   ],
+0|crm-chin |   "activeChat": {
+0|crm-chin |     "chatType": "whatsapp",
+0|crm-chin |     "chatId": "79257854600"
+0|crm-chin |   }
+0|crm-chin | }
+0|crm-chin | 8:12:13 PM [express] POST /api/wazzup24/iframe 200 in 539ms :: {"url":"https://app.wazzup24.com/8430…

@@ -1,0 +1,58 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 40
+[TAILING] Tailing last 40 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 40 lines:
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Wazzup24 API error: 400 {"status":400,"requestId":"9b69e88972f6816bb3e87fc515f9ebbb","error":"INVALID_IFRAME_DATA","description":"Invalid request data.","data":{"fields":["filter"]}}
+0|crm-chin | Wazzup24 API error: 400 {"status":400,"requestId":"9b34e4f83c7790b2a3e29f8322ee372a","error":"INVALID_IFRAME_DATA","description":"Invalid request data.","data":{"fields":["filter"]}}
+0|crm-chin | Wazzup24 API error: 400 {"status":400,"requestId":"e2c75578f537c967620be70731ee4662","error":"INVALID_IFRAME_DATA","description":"Invalid request data.","data":{"fields":["filter"]}}
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+
+/root/.pm2/logs/crm-chinaunique-out.log last 40 lines:
+0|crm-chin | 📥 GET /api/users/managers-and-admins
+0|crm-chin | 9:25:39 PM [express] GET /api/users/managers-and-admins 304 in 1ms :: [{"id":"8fb947a9-6af5-4a13-bdf…
+0|crm-chin | 📥 POST /api/wazzup24/iframe
+0|crm-chin | Wazzup24: Ensuring user exists: {
+0|crm-chin |   "id": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c",
+0|crm-chin |   "name": "Тестовый Администратор"
+0|crm-chin | }
+0|crm-chin | Wazzup24: User created/updated successfully
+0|crm-chin | Wazzup24: Creating/updating contact: [
+0|crm-chin |   {
+0|crm-chin |     "id": "lead_a4fe03df-8c48-44a4-af07-5a42179dd7eb",
+0|crm-chin |     "responsibleUserId": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c",
+0|crm-chin |     "name": "Долина Ирина",
+0|crm-chin |     "contactData": [
+0|crm-chin |       {
+0|crm-chin |         "chatType": "whatsapp",
+0|crm-chin |         "chatId": "79614531247"
+0|crm-chin |       }
+0|crm-chin |     ]
+0|crm-chin |   }
+0|crm-chin | ]
+0|crm-chin | Wazzup24: Contact created/updated successfully: OK
+0|crm-chin | Wazzup24 iframe request: {
+0|crm-chin |   "scope": "card",
+0|crm-chin |   "user": {
+0|crm-chin |     "id": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c",
+0|crm-chin |     "name": "Тестовый Администратор"
+0|crm-chin |   },
+0|crm-chin |   "filter": [
+0|crm-chin |     {
+0|crm-chin |       "chatType": "whatsapp",
+0|crm-chin |       "chatId": "79614531247"
+0|crm-chin |     }
+0|crm-chin |   ],
+0|crm-chin |   "activeChat": {
+0|crm-chin |     "chatType": "whatsapp",
+0|crm-chin |     "chatId": "79614531247"
+0|crm-chin |   }
+0|crm-chin | }
+0|crm-chin | 9:25:39 PM [express] POST /api/wazzup24/iframe 200 in 694ms :: {"url":"https://app.wazzup24.com/8430…
+

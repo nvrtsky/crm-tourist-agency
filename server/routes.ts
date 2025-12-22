@@ -3107,7 +3107,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use scope: "card" to show only the lead's chat
       const requestBody: Record<string, unknown> = {
         scope: "card",
-        user: userData
+        user: userData,
+        // Options to hide toggle and force card mode
+        options: {
+          hideToggleViewScope: true
+        }
       };
       
       // Add filter array with phone (required by Wazzup24 API)

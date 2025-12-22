@@ -3103,6 +3103,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Get available channels from Wazzup24 to find WhatsApp channelId
+      let whatsappChannelId: string | null = null;
+      try {
+        const channelsResponse = await fetch("https://api.wazzup24.com/v3/channels", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`
+          }
+        });
+        
+        if (channelsResponse.ok) {
+          const channels = await channelsResponse.json();
+          console.log("Wazzup24 channels:", JSON.stringify(channels, null, 2));
+          
+          // Find first active WhatsApp channel
+          const whatsappChannel = channels.find((ch: any) => 
+            ch.transport === "whatsapp" && ch.state === "active"
+          );
+          
+          if (whatsappChannel) {
+            whatsappChannelId = whatsappChannel.channelId;
+            console.log("Wazzup24: Using WhatsApp channel:", whatsappChannelId);
+          }
+        } else {
+          console.error("Wazzup24: Failed to get channels:", channelsResponse.status);
+        }
+      } catch (error) {
+        console.error("Wazzup24: Error getting channels:", error);
+      }
+      
       // Build request body according to Wazzup24 API v3 spec
       // Use scope: "card" with filter for contact-specific chat
       const requestBody: Record<string, unknown> = {
@@ -3116,12 +3146,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Set filter and activeChat to open specific chat by default
       if (normalizedPhone) {
-        requestBody.filter = [
-          {
-            chatType: "whatsapp",
-            chatId: normalizedPhone
-          }
-        ];
+        const filterItem: Record<string, string> = {
+          chatType: "whatsapp",
+          chatId: normalizedPhone
+        };
+        
+        // Add channelId if available - this is required for proper chat filtering
+        if (whatsappChannelId) {
+          filterItem.channelId = whatsappChannelId;
+        }
+        
+        requestBody.filter = [filterItem];
         requestBody.activeChat = {
           chatType: "whatsapp",
           chatId: normalizedPhone

@@ -1,0 +1,66 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 30
+[TAILING] Tailing last 30 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 30 lines:
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Wazzup24: Failed to get chats: 404
+0|crm-chin | Wazzup24: Failed to get chats: 404
+
+/root/.pm2/logs/crm-chinaunique-out.log last 30 lines:
+0|crm-chin |         "chatId": "79257854600"
+0|crm-chin |       }
+0|crm-chin |     ]
+0|crm-chin |   }
+0|crm-chin | ]
+0|crm-chin | Wazzup24: Contact created/updated successfully: OK
+0|crm-chin | Wazzup24 iframe request: {
+0|crm-chin |   "scope": "card",
+0|crm-chin |   "user": {
+0|crm-chin |     "id": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c",
+0|crm-chin |     "name": "Тестовый Администратор"
+0|crm-chin |   },
+0|crm-chin |   "options": {
+0|crm-chin |     "useMessageEvents": true,
+0|crm-chin |     "useDealsEvents": true
+0|crm-chin |   },
+0|crm-chin |   "filter": [
+0|crm-chin |     {
+0|crm-chin |       "chatType": "whatsapp",
+0|crm-chin |       "chatId": "79257854600"
+0|crm-chin |     }
+0|crm-chin |   ],
+0|crm-chin |   "activeChat": {
+0|crm-chin |     "chatType": "whatsapp",
+0|crm-chin |     "chatId": "79257854600"
+0|crm-chin |   }
+0|crm-chin | }
+0|crm-chin | 12:55:52 AM [express] POST /api/wazzup24/iframe 200 in 738ms :: {"url":"https://app.wazzup24.com/8430…
+0|crm-chin | 📥 PROPFIND /
+0|crm-chin | 📥 GET /
+

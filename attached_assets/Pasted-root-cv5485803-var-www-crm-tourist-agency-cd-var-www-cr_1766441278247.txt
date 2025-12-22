@@ -1,0 +1,59 @@
+root@cv5485803:/var/www/crm-tourist-agency# cd /var/www/crm-tourist-agency && git pull && npm run build && pm2 restart crm-chinaunique
+remote: Enumerating objects: 26, done.
+remote: Counting objects: 100% (26/26), done.
+remote: Compressing objects: 100% (7/7), done.
+remote: Total 22 (delta 15), reused 22 (delta 15), pack-reused 0 (from 0)
+Unpacking objects: 100% (22/22), 366.89 KiB | 673.00 KiB/s, done.
+From https://github.com/nvrtsky/crm-tourist-agency
+   5974028..0ea329b  main       -> origin/main
+Updating 5974028..0ea329b
+Fast-forward
+ attached_assets/Pasted---1766440729751_1766440729752.txt                          | 110 ++++++++++++++++++++++++++++++++
+ attached_assets/Pasted---1766440737594_1766440737594.txt                          | 110 ++++++++++++++++++++++++++++++++
+ attached_assets/Pasted--endpoint--1766441033561_1766441033562.txt                 | 132 +++++++++++++++++++++++++++++++++++++++
+ ...sted-root-cv5485803-var-www-crm-tourist-agency-pm2-logs-crm-_1766440623732.txt |  66 ++++++++++++++++++++
+ attached_assets/image_1766440581979.png                                           | Bin 0 -> 458267 bytes
+ server/routes.ts                                                                  |  77 ++++++++++++-----------
+ 6 files changed, 457 insertions(+), 38 deletions(-)
+ create mode 100644 attached_assets/Pasted---1766440729751_1766440729752.txt
+ create mode 100644 attached_assets/Pasted---1766440737594_1766440737594.txt
+ create mode 100644 attached_assets/Pasted--endpoint--1766441033561_1766441033562.txt
+ create mode 100644 attached_assets/Pasted-root-cv5485803-var-www-crm-tourist-agency-pm2-logs-crm-_1766440623732.txt
+ create mode 100644 attached_assets/image_1766440581979.png
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (3) src/main.tsxBrowserslist: browsers data (caniuse-lite) is 14 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+transforming (28) ../node_modules/react/cjs/react.production.min.js
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2742 modules transformed.
+../dist/public/index.html                                        0.80 kB │ gzip:   0.43 kB
+../dist/public/assets/favicon-white-C2b602W1.png                 1.21 kB
+../dist/public/assets/logo_white_1762533626956-ABs20zqe.png      7.03 kB
+../dist/public/assets/logo_1762426754494-D1p67QHm.png            7.66 kB
+../dist/public/assets/index-CeI84TF_.css                        92.70 kB │ gzip:  15.01 kB
+../dist/public/assets/index-DlY8AzCC.js                      1,321.33 kB │ gzip: 388.31 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.41s
+
+  dist/index.js  315.6kb
+
+⚡ Done in 18ms
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [crm-chinaunique](ids: [ 0 ])
+[PM2] [crm-chinaunique](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ crm-chinaunique    │ fork     │ 1137 │ online    │ 0%       │ 11.0mb   │
+│ 6  │ pay-app            │ fork     │ 4    │ online    │ 7.7%     │ 62.7mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+root@cv5485803:/var/www/crm-tourist-agency# 

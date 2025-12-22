@@ -1,0 +1,106 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 50
+[TAILING] Tailing last 50 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 50 lines:
+0|crm-chin |   length: 246,
+0|crm-chin |   severity: 'ERROR',
+0|crm-chin |   code: '23505',
+0|crm-chin |   detail: 'Key (type, value)=(transfers, Group) already exists.',
+0|crm-chin |   hint: undefined,
+0|crm-chin |   position: undefined,
+0|crm-chin |   internalPosition: undefined,
+0|crm-chin |   internalQuery: undefined,
+0|crm-chin |   where: undefined,
+0|crm-chin |   schema: 'public',
+0|crm-chin |   table: 'system_dictionaries',
+0|crm-chin |   column: undefined,
+0|crm-chin |   dataType: undefined,
+0|crm-chin |   constraint: 'system_dictionary_unique',
+0|crm-chin |   file: 'nbtinsert.c',
+0|crm-chin |   line: '666',
+0|crm-chin |   routine: '_bt_check_unique'
+0|crm-chin | }
+0|crm-chin | Error: Parse Error: Invalid method encountered
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Error syncing users to Wazzup24: SyntaxError: Unexpected token 'O', "OK" is not valid JSON
+0|crm-chin |     at JSON.parse (<anonymous>)
+0|crm-chin |     at parseJSONFromBytes (node:internal/deps/undici/undici:5738:19)
+0|crm-chin |     at successSteps (node:internal/deps/undici/undici:5719:27)
+0|crm-chin |     at fullyReadBody (node:internal/deps/undici/undici:4609:9)
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async consumeBody (node:internal/deps/undici/undici:5728:7)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:5997:20
+0|crm-chin | Error syncing users to Wazzup24: SyntaxError: Unexpected token 'O', "OK" is not valid JSON
+0|crm-chin |     at JSON.parse (<anonymous>)
+0|crm-chin |     at parseJSONFromBytes (node:internal/deps/undici/undici:5738:19)
+0|crm-chin |     at successSteps (node:internal/deps/undici/undici:5719:27)
+0|crm-chin |     at fullyReadBody (node:internal/deps/undici/undici:4609:9)
+0|crm-chin |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|crm-chin |     at async consumeBody (node:internal/deps/undici/undici:5728:7)
+0|crm-chin |     at async file:///var/www/crm-tourist-agency/dist/index.js:5997:20
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+
+/root/.pm2/logs/crm-chinaunique-out.log last 50 lines:
+0|crm-chin |   {
+0|crm-chin |     "id": "lead_71338c25-91e7-4a17-9925-d5ed5f3d922c",
+0|crm-chin |     "responsibleUserId": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c",
+0|crm-chin |     "name": "Засеева Фатима",
+0|crm-chin |     "contactData": [
+0|crm-chin |       {
+0|crm-chin |         "chatType": "whatsapp",
+0|crm-chin |         "chatId": "79257854600"
+0|crm-chin |       }
+0|crm-chin |     ]
+0|crm-chin |   }
+0|crm-chin | ]
+0|crm-chin | Wazzup24: Contact created/updated successfully
+0|crm-chin | Wazzup24 iframe request: {
+0|crm-chin |   "scope": "card",
+0|crm-chin |   "user": {
+0|crm-chin |     "id": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c",
+0|crm-chin |     "name": "Тестовый Администратор"
+0|crm-chin |   },
+0|crm-chin |   "filter": [
+0|crm-chin |     {
+0|crm-chin |       "chatType": "whatsapp",
+0|crm-chin |       "chatId": "79257854600"
+0|crm-chin |     }
+0|crm-chin |   ],
+0|crm-chin |   "activeChat": {
+0|crm-chin |     "chatType": "whatsapp",
+0|crm-chin |     "chatId": "79257854600"
+0|crm-chin |   }
+0|crm-chin | }
+0|crm-chin | 7:46:38 PM [express] POST /api/wazzup24/iframe 200 in 490ms :: {"url":"https://app.wazzup24.com/8430…
+0|crm-chin | 📥 POST /
+0|crm-chin | 📥 PROPFIND /
+0|crm-chin | 📥 POST /
+0|crm-chin | 📥 POST /_next
+0|crm-chin | 📥 POST /api
+0|crm-chin | 7:56:03 PM [express] POST /api 200 in 1ms
+0|crm-chin | 📥 POST /_next/server
+0|crm-chin | 📥 POST /app
+0|crm-chin | 📥 POST /api/route
+0|crm-chin | 7:56:07 PM [express] POST /api/route 200 in 2ms
+0|crm-chin | 📥 GET /api/users
+0|crm-chin | 7:57:08 PM [express] GET /api/users 304 in 1ms :: [{"id":"8fb947a9-6af5-4a13-bdf5-b6af5edc774c","use…
+0|crm-chin | 📥 GET /
+0|crm-chin | 📥 GET /admin/config.php
+0|crm-chin | 
+0|crm-chin | > rest-express@1.0.0 start
+0|crm-chin | > NODE_ENV=production node dist/index.js
+0|crm-chin | 
+0|crm-chin | 8:02:30 PM [express] serving on port 3000
+

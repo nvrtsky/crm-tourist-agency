@@ -1,0 +1,38 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 30
+[TAILING] Tailing last 30 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 30 lines:
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+
+/root/.pm2/logs/crm-chinaunique-out.log last 30 lines:
+0|crm-chin |   "email": "fzaseeva@mail.ru",
+0|crm-chin |   "clientCategory": null,
+0|crm-chin |   "status": "new",
+0|crm-chin |   "source": "booking",
+0|crm-chin |   "eventId": null,
+0|crm-chin |   "selectedCities": null,
+0|crm-chin |   "tourCost": "541255.00",
+0|crm-chin |   "tourCostCurrency": "RUB",
+0|crm-chin |   "advancePayment": "54126.00",
+0|crm-chin |   "advancePaymentCurrency": "RUB",
+0|crm-chin |   "remainingPayment": null,
+0|crm-chin |   "remainingPaymentCurrency": "RUB",
+0|crm-chin |   "roomType": null,
+0|crm-chin |   "transfers": null,
+0|crm-chin |   "meals": null,
+0|crm-chin |   "hotelCategory": null,
+0|crm-chin |   "formId": null,
+0|crm-chin |   "color": null,
+0|crm-chin |   "notes": "Тур: Индивидуальный тур по Китаю на 11 дней\nДата: 24/12/3949\nУчастников: 1\nСпособ оплаты: Российская карта\nID бронирования: 12",
+0|crm-chin |   "assignedUserId": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c",
+0|crm-chin |   "createdByUserId": null
+0|crm-chin | }
+0|crm-chin | [UPDATE_LEAD] Contact fields changed, checking for auto-created tourist
+0|crm-chin | 8:23:44 PM [express] PATCH /api/leads/71338c25-91e7-4a17-9925-d5ed5f3d922c 200 in 6ms :: {"id":"7133…
+0|crm-chin | 📥 GET /api/leads
+0|crm-chin | 8:23:44 PM [express] GET /api/leads 200 in 11ms :: [{"id":"ca955dd0-8036-4ed6-963e-1d7cc2c1b99a","la…
+0|crm-chin | 📥 GET /api/leads/71338c25-91e7-4a17-9925-d5ed5f3d922c/tourists
+0|crm-chin | 8:23:44 PM [express] GET /api/leads/71338c25-91e7-4a17-9925-d5ed5f3d922c/tourists 304 in 2ms :: []
+0|crm-chin | 📥 GET /api/events
+0|crm-chin | 8:23:44 PM [express] GET /api/events 304 in 104ms :: [{"id":"e23189b8-239a-45a2-b3a9-419d6c32ff61","…

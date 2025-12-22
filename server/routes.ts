@@ -3097,20 +3097,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Not JSON, use text as-is
           }
           console.log("Wazzup24: Contact created/updated successfully:", contactResult);
+          
+          // Small delay to allow Wazzup24 to process the contact
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
       
+      const contactId = `lead_${leadId}`;
+      
       // Build request body according to Wazzup24 API v3 spec
-      // Use scope: "card" to show only the lead's chat (with filter)
+      // Use scope: "card" to show only the lead's chat
       const requestBody: Record<string, unknown> = {
         scope: "card",
         user: userData
       };
       
-      // Add filter array with phone if available (required by Wazzup24 API)
+      // Add contacts array with contactId to bind iframe to specific contact
       if (normalizedPhone) {
-        requestBody.filter = [
+        // Use contacts parameter to specify which contact to show
+        requestBody.contacts = [
           {
+            id: contactId,
             chatType: "whatsapp",
             chatId: normalizedPhone
           }

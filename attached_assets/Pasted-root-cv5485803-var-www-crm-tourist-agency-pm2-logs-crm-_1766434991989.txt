@@ -1,0 +1,78 @@
+root@cv5485803:/var/www/crm-tourist-agency# pm2 logs crm-chinaunique --lines 50
+[TAILING] Tailing last 50 lines for [crm-chinaunique] process (change the value with --lines option)
+/root/.pm2/logs/crm-chinaunique-error.log last 50 lines:
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Wazzup24 API error: 400 {"status":400,"requestId":"9b69e88972f6816bb3e87fc515f9ebbb","error":"INVALID_IFRAME_DATA","description":"Invalid request data.","data":{"fields":["filter"]}}
+0|crm-chin | Wazzup24 API error: 400 {"status":400,"requestId":"9b34e4f83c7790b2a3e29f8322ee372a","error":"INVALID_IFRAME_DATA","description":"Invalid request data.","data":{"fields":["filter"]}}
+0|crm-chin | Wazzup24 API error: 400 {"status":400,"requestId":"e2c75578f537c967620be70731ee4662","error":"INVALID_IFRAME_DATA","description":"Invalid request data.","data":{"fields":["filter"]}}
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+0|crm-chin | Wazzup24 API error: 400 {"status":400,"requestId":"743c41be2fcd9b6c1bfea43f10cf01e7","error":"INVALID_IFRAME_DATA","description":"Invalid request data.","data":["scope"]}
+0|crm-chin | Wazzup24 API error: 400 {"status":400,"requestId":"01cdfaecdfd4d688333c08b611553d40","error":"INVALID_IFRAME_DATA","description":"Invalid request data.","data":["scope"]}
+0|crm-chin | Warning: connect.session() MemoryStore is not
+0|crm-chin | designed for a production environment, as it will leak
+0|crm-chin | memory, and will not scale past a single process.
+
+/root/.pm2/logs/crm-chinaunique-out.log last 50 lines:
+0|crm-chin | 📥 GET /
+0|crm-chin | 📥 POST /
+0|crm-chin | 📥 GET /
+0|crm-chin | 📥 GET /
+0|crm-chin | 📥 GET /assets/favicon-white-C2b602W1.png
+0|crm-chin | 📥 POST /
+0|crm-chin | 📥 POST /_next
+0|crm-chin | 📥 POST /api
+0|crm-chin | 11:04:18 PM [express] POST /api 200 in 9ms
+0|crm-chin | 📥 POST /_next/server
+0|crm-chin | 📥 POST /app
+0|crm-chin | 📥 POST /api/route
+0|crm-chin | 11:04:28 PM [express] POST /api/route 200 in 1ms
+0|crm-chin | 📥 GET /cgi-bin/luci/;stok=/locale
+0|crm-chin | 📥 PROPFIND /
+0|crm-chin | 📥 GET /cgi-bin/luci/;stok=/locale
+0|crm-chin | 📥 PROPFIND /
+0|crm-chin | 📥 HEAD /
+0|crm-chin | 📥 GET /
+0|crm-chin | 📥 HEAD /_next
+0|crm-chin | 📥 POST /
+0|crm-chin | 📥 POST /_next
+0|crm-chin | 📥 GET /
+0|crm-chin | 📥 GET /api/settings/wazzup24
+0|crm-chin | 11:22:51 PM [express] GET /api/settings/wazzup24 304 in 1ms :: {"configured":true,"updatedAt":"2025-1…
+0|crm-chin | 📥 POST /api/wazzup24/sync-users
+0|crm-chin | Wazzup24: Syncing users: [
+0|crm-chin |   {
+0|crm-chin |     "id": "8fb947a9-6af5-4a13-bdf5-b6af5edc774c",
+0|crm-chin |     "name": "Тестовый Администратор"
+0|crm-chin |   },
+0|crm-chin |   {
+0|crm-chin |     "id": "b29921f4-0e52-4165-b831-a9b07d56cca1",
+0|crm-chin |     "name": "Антон Труфанов"
+0|crm-chin |   },
+0|crm-chin |   {
+0|crm-chin |     "id": "22b63fc6-49c9-43b0-84f6-60d9a008163d",
+0|crm-chin |     "name": "Александр Хон"
+0|crm-chin |   },
+0|crm-chin |   {
+0|crm-chin |     "id": "ae0d759d-6908-4b92-9975-fa6f6ee912b1",
+0|crm-chin |     "name": "Яна Хон"
+0|crm-chin |   },
+0|crm-chin |   {
+0|crm-chin |     "id": "933160e9-d389-4e77-9650-b3a57b4ceff0",
+0|crm-chin |     "name": "Лиля Патрушева"
+0|crm-chin |   }
+0|crm-chin | ]
+0|crm-chin | Wazzup24: Users synced successfully: OK
+0|crm-chin | 11:22:53 PM [express] POST /api/wazzup24/sync-users 200 in 269ms :: {"success":true,"syncedCount":5,"…

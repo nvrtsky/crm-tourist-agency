@@ -1,0 +1,61 @@
+root@cv5485803:/var/www/crm-tourist-agency# cd /var/www/crm-tourist-agency
+git pull
+npm run build
+pm2 restart crm-chinaunique
+pm2 flush crm-chinaunique
+remote: Enumerating objects: 15, done.
+remote: Counting objects: 100% (15/15), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 11 (delta 8), reused 11 (delta 8), pack-reused 0 (from 0)
+Unpacking objects: 100% (11/11), 4.05 KiB | 691.00 KiB/s, done.
+From https://github.com/nvrtsky/crm-tourist-agency
+   f04ecdf..6a4993a  main       -> origin/main
+Updating f04ecdf..6a4993a
+Fast-forward
+ ...sted-pm2-restart-crm-chinaunique-C-root-cv5485803-var-www-cr_1766423381274.txt | 55 ++++++++++++++++++++++++++++++++++
+ ...sted-root-cv5485803-var-www-crm-tourist-agency-pm2-logs-crm-_1766423556856.txt | 65 ++++++++++++++++++++++++++++++++++++++++
+ server/routes.ts                                                                  | 20 +++++++++++--
+ 3 files changed, 138 insertions(+), 2 deletions(-)
+ create mode 100644 attached_assets/Pasted-pm2-restart-crm-chinaunique-C-root-cv5485803-var-www-cr_1766423381274.txt
+ create mode 100644 attached_assets/Pasted-root-cv5485803-var-www-crm-tourist-agency-pm2-logs-crm-_1766423556856.txt
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (3) src/main.tsxBrowserslist: browsers data (caniuse-lite) is 14 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+transforming (4) src/i18n/index.ts
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2742 modules transformed.
+../dist/public/index.html                                        0.80 kB │ gzip:   0.43 kB
+../dist/public/assets/favicon-white-C2b602W1.png                 1.21 kB
+../dist/public/assets/logo_white_1762533626956-ABs20zqe.png      7.03 kB
+../dist/public/assets/logo_1762426754494-D1p67QHm.png            7.66 kB
+../dist/public/assets/index-CeI84TF_.css                        92.70 kB │ gzip:  15.01 kB
+../dist/public/assets/index-DlY8AzCC.js                      1,321.33 kB │ gzip: 388.31 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.35s
+
+  dist/index.js  314.0kb
+
+⚡ Done in 19ms
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [crm-chinaunique](ids: [ 0 ])
+[PM2] [crm-chinaunique](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ crm-chinaunique    │ fork     │ 1122 │ online    │ 0%       │ 17.9mb   │
+│ 6  │ pay-app            │ fork     │ 4    │ online    │ 0%       │ 60.9mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Flushing:
+[PM2] /root/.pm2/logs/crm-chinaunique-out.log
+[PM2] /root/.pm2/logs/crm-chinaunique-error.log
+[PM2] Logs flushed
+root@cv5485803:/var/www/crm-tourist-agency# 

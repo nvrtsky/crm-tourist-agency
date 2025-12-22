@@ -3088,8 +3088,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Wazzup24 contact creation error:", contactResponse.status, contactErrorText);
           // Continue anyway - contact might already exist or we can still show chat
         } else {
-          const contactResult = await contactResponse.json();
-          console.log("Wazzup24: Contact created/updated successfully:", JSON.stringify(contactResult, null, 2));
+          // Wazzup24 may return "OK" as text or JSON
+          const contactResponseText = await contactResponse.text();
+          let contactResult: any = contactResponseText;
+          try {
+            contactResult = JSON.parse(contactResponseText);
+          } catch {
+            // Not JSON, use text as-is
+          }
+          console.log("Wazzup24: Contact created/updated successfully:", contactResult);
         }
       }
       
@@ -3237,7 +3244,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const data = await response.json();
+      // Wazzup24 may return "OK" as text or JSON
+      const responseText = await response.text();
+      let data: any = responseText;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        // Not JSON, use text as-is
+      }
       console.log("Wazzup24: Users synced successfully:", data);
       
       res.json({ 

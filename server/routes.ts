@@ -3116,12 +3116,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Set filter and activeChat to open specific chat by default
       if (normalizedPhone) {
-        const leadName = name || `Lead ${leadId}`;
         requestBody.filter = [
           {
             chatType: "whatsapp",
-            chatId: normalizedPhone,
-            name: leadName
+            chatId: normalizedPhone
           }
         ];
         requestBody.activeChat = {

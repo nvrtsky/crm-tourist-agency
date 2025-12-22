@@ -34,6 +34,7 @@ import {
   insertDictionaryTypeConfigSchema,
   type User,
   type LeadTourist,
+  type Lead,
 } from "@shared/schema";
 
 // Utility to sanitize user object (remove password hash)
@@ -3103,47 +3104,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Get channels from Wazzup24 to find the correct WhatsApp channelId
-      // We need channelId in activeChat for proper chat context
+      // Determine channelId for activeChat
+      // Priority: 1. Lead's stored channelId (from webhook)
+      //           2. Default channel from settings
+      //           3. Preferred channel (66610032333) from API
+      //           4. First active WhatsApp channel from API
       let whatsappChannelId: string | null = null;
-      try {
-        const channelsResponse = await fetch("https://api.wazzup24.com/v3/channels", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`
-          }
-        });
-        
-        if (channelsResponse.ok) {
-          const channels = await channelsResponse.json();
-          console.log("Wazzup24 channels:", JSON.stringify(channels, null, 2));
-          
-          // Priority: find active WhatsApp channel with plainId == "66610032333" (main business number)
-          // This is the channel most conversations are on
-          const preferredChannel = channels.find((ch: any) => 
-            ch.transport === "whatsapp" && 
-            ch.state === "active" && 
-            ch.plainId === "66610032333"
-          );
-          
-          if (preferredChannel) {
-            whatsappChannelId = preferredChannel.channelId;
-            console.log("Wazzup24: Using preferred WhatsApp channel (66610032333):", whatsappChannelId);
-          } else {
-            // Fallback: use first active WhatsApp channel
-            const fallbackChannel = channels.find((ch: any) => 
-              ch.transport === "whatsapp" && ch.state === "active"
-            );
-            if (fallbackChannel) {
-              whatsappChannelId = fallbackChannel.channelId;
-              console.log("Wazzup24: Using fallback WhatsApp channel:", whatsappChannelId);
+      
+      // First, check if the lead has a stored channelId from previous webhook
+      const lead = await storage.getLead(leadId);
+      if (lead?.wazzupChannelId) {
+        whatsappChannelId = lead.wazzupChannelId;
+        console.log("Wazzup24: Using lead's stored channelId:", whatsappChannelId);
+      }
+      
+      // If no stored channelId, fall back to API lookup
+      if (!whatsappChannelId) {
+        try {
+          const channelsResponse = await fetch("https://api.wazzup24.com/v3/channels", {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`
             }
+          });
+          
+          if (channelsResponse.ok) {
+            const channels = await channelsResponse.json();
+            console.log("Wazzup24 channels:", JSON.stringify(channels, null, 2));
+            
+            // Priority: find active WhatsApp channel with plainId == "66610032333" (main business number)
+            // This is the channel most conversations are on
+            const preferredChannel = channels.find((ch: any) => 
+              ch.transport === "whatsapp" && 
+              ch.state === "active" && 
+              ch.plainId === "66610032333"
+            );
+            
+            if (preferredChannel) {
+              whatsappChannelId = preferredChannel.channelId;
+              console.log("Wazzup24: Using preferred WhatsApp channel (66610032333):", whatsappChannelId);
+            } else {
+              // Fallback: use first active WhatsApp channel
+              const fallbackChannel = channels.find((ch: any) => 
+                ch.transport === "whatsapp" && ch.state === "active"
+              );
+              if (fallbackChannel) {
+                whatsappChannelId = fallbackChannel.channelId;
+                console.log("Wazzup24: Using fallback WhatsApp channel:", whatsappChannelId);
+              }
+            }
+          } else {
+            console.error("Wazzup24: Failed to get channels:", channelsResponse.status);
           }
-        } else {
-          console.error("Wazzup24: Failed to get channels:", channelsResponse.status);
+        } catch (error) {
+          console.error("Wazzup24: Error getting channels:", error);
         }
-      } catch (error) {
-        console.error("Wazzup24: Error getting channels:", error);
       }
       
       // Build request body according to Wazzup24 API v3 spec
@@ -3337,6 +3352,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error syncing users to Wazzup24:", error);
       res.status(500).json({ success: false, error: "Failed to sync users" });
+    }
+  });
+
+  // Wazzup24 Webhook - receives incoming messages and updates lead channelId
+  // This endpoint must be public (no auth) as it's called by Wazzup24
+  app.post("/api/wazzup24/webhook", async (req, res) => {
+    try {
+      console.log("Wazzup24 webhook received:", JSON.stringify(req.body, null, 2));
+      
+      const { messages } = req.body;
+      
+      if (!messages || !Array.isArray(messages)) {
+        // Could be a test ping or other event type
+        return res.status(200).json({ success: true, message: "Webhook received" });
+      }
+      
+      // Process each message and update lead's channelId
+      for (const message of messages) {
+        const { channelId, chatId, chatType } = message;
+        
+        if (!channelId || !chatId || chatType !== "whatsapp") {
+          continue; // Skip non-WhatsApp messages or messages without channelId
+        }
+        
+        // Normalize phone number (remove leading +, spaces, etc.)
+        let normalizedPhone = chatId.replace(/\D/g, '');
+        
+        // Try to find leads with matching phone number
+        const allLeads = await storage.getAllLeads();
+        const matchingLeads = allLeads.filter((lead) => {
+          if (!lead.phone) return false;
+          const leadPhone = lead.phone.replace(/\D/g, '');
+          // Match if phones are equal or one contains the other (with reasonable length)
+          return leadPhone === normalizedPhone || 
+                 (leadPhone.length >= 10 && normalizedPhone.endsWith(leadPhone)) ||
+                 (normalizedPhone.length >= 10 && leadPhone.endsWith(normalizedPhone));
+        });
+        
+        console.log(`Wazzup24 webhook: Found ${matchingLeads.length} leads for phone ${chatId}`);
+        
+        // Update each matching lead with the channelId
+        for (const lead of matchingLeads) {
+          if (lead.wazzupChannelId !== channelId) {
+            await storage.updateLead(lead.id, { wazzupChannelId: channelId });
+            console.log(`Wazzup24 webhook: Updated lead ${lead.id} with channelId ${channelId}`);
+          }
+        }
+      }
+      
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error processing Wazzup24 webhook:", error);
+      // Always return 200 to Wazzup24 to avoid retries
+      res.status(200).json({ success: false, error: "Internal error" });
     }
   });
 

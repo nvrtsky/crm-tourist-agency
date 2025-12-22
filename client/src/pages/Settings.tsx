@@ -672,6 +672,35 @@ function Wazzup24Tab() {
     },
   });
 
+  const syncUsersMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/wazzup24/sync-users");
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        const usersList = Array.isArray(data.users) ? data.users.join(", ") : "";
+        toast({
+          title: "Пользователи синхронизированы",
+          description: `Синхронизировано ${data.syncedCount || 0} пользователей${usersList ? `: ${usersList}` : ""}`,
+        });
+      } else {
+        toast({
+          title: "Ошибка синхронизации",
+          description: data.error || "Не удалось синхронизировать пользователей",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка синхронизации",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSave = async () => {
     if (!apiKey.trim()) {
       toast({
@@ -690,6 +719,10 @@ function Wazzup24Tab() {
 
   const handleTest = async () => {
     await testMutation.mutateAsync();
+  };
+
+  const handleSyncUsers = async () => {
+    await syncUsersMutation.mutateAsync();
   };
 
   if (isLoadingStatus) {
@@ -780,6 +813,24 @@ function Wazzup24Tab() {
                 )}
               </Button>
               <Button
+                variant="outline"
+                onClick={handleSyncUsers}
+                disabled={syncUsersMutation.isPending}
+                data-testid="button-sync-users-wazzup24"
+              >
+                {syncUsersMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Синхронизация...
+                  </>
+                ) : (
+                  <>
+                    <Users className="mr-2 h-4 w-4" />
+                    Синхронизировать пользователей
+                  </>
+                )}
+              </Button>
+              <Button
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
@@ -804,7 +855,8 @@ function Wazzup24Tab() {
           <p>1. Получите API ключ в личном кабинете Wazzup24</p>
           <p>2. Введите ключ выше и нажмите "Сохранить"</p>
           <p>3. Проверьте подключение кнопкой "Проверить подключение"</p>
-          <p>4. После настройки в карточках лидов появится вкладка "Чат" для общения через WhatsApp</p>
+          <p>4. Нажмите "Синхронизировать пользователей" чтобы добавить всех менеджеров CRM в Wazzup24</p>
+          <p>5. После настройки в карточках лидов появится вкладка "Чат" для общения через WhatsApp</p>
         </CardContent>
       </Card>
     </div>

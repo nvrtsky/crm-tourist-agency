@@ -3057,9 +3057,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Build request body according to Wazzup24 API v3 spec
-      // filter must be an array of objects with chatType and chatId
+      // Use scope: "global" to allow writing in chat (card mode is read-only)
       const requestBody: Record<string, unknown> = {
-        scope: "card",
+        scope: "global",
         user: userData
       };
       
@@ -3148,6 +3148,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error testing Wazzup24:", error);
       res.status(500).json({ success: false, error: "Failed to test connection" });
+    }
+  });
+
+  // Sync all CRM users to Wazzup24 (admin only)
+  app.post("/api/wazzup24/sync-users", requireAdmin, async (req, res) => {
+    try {
+      // Get API key from settings
+      const setting = await storage.getSetting("wazzup24_api_key");
+      
+      if (!setting?.value) {
+        return res.status(400).json({ error: "Wazzup24 is not configured" });
+      }
+      
+      // Decrypt the API key
+      let apiKey: string;
+      try {
+        apiKey = isEncrypted(setting.value) ? decrypt(setting.value) : setting.value;
+      } catch {
+        return res.status(500).json({ error: "Failed to decrypt API key" });
+      }
+      
+      // Get all CRM users
+      const crmUsers = await storage.getAllUsers();
+      
+      // Prepare users data for Wazzup24 API
+      const wazzupUsers = crmUsers.map((user: User) => ({
+        id: String(user.id),
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username
+      }));
+      
+      console.log("Wazzup24: Syncing users:", JSON.stringify(wazzupUsers, null, 2));
+      
+      // Send users to Wazzup24
+      const response = await fetch("https://api.wazzup24.com/v3/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(wazzupUsers)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Wazzup24 sync users error:", response.status, errorText);
+        return res.status(response.status).json({ 
+          success: false,
+          error: `Wazzup24 API error: ${response.statusText}`,
+          details: errorText
+        });
+      }
+      
+      const data = await response.json();
+      console.log("Wazzup24: Users synced successfully:", data);
+      
+      res.json({ 
+        success: true, 
+        syncedCount: wazzupUsers.length,
+        users: wazzupUsers.map((u: { id: string; name: string }) => u.name)
+      });
+    } catch (error) {
+      console.error("Error syncing users to Wazzup24:", error);
+      res.status(500).json({ success: false, error: "Failed to sync users" });
     }
   });
 

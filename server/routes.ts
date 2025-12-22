@@ -3057,9 +3057,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Build request body according to Wazzup24 API v3 spec
-      // Use scope: "global" to allow writing in chat (card mode is read-only)
+      // Use scope: "card" to show only the lead's chat (with filter)
       const requestBody: Record<string, unknown> = {
-        scope: "global",
+        scope: "card",
         user: userData
       };
       

@@ -3103,10 +3103,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Get channels from Wazzup24 to find the correct WhatsApp channelId
+      // We need channelId in activeChat for proper chat context
+      let whatsappChannelId: string | null = null;
+      try {
+        const channelsResponse = await fetch("https://api.wazzup24.com/v3/channels", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`
+          }
+        });
+        
+        if (channelsResponse.ok) {
+          const channels = await channelsResponse.json();
+          console.log("Wazzup24 channels:", JSON.stringify(channels, null, 2));
+          
+          // Priority: find active WhatsApp channel with plainId == "66610032333" (main business number)
+          // This is the channel most conversations are on
+          const preferredChannel = channels.find((ch: any) => 
+            ch.transport === "whatsapp" && 
+            ch.state === "active" && 
+            ch.plainId === "66610032333"
+          );
+          
+          if (preferredChannel) {
+            whatsappChannelId = preferredChannel.channelId;
+            console.log("Wazzup24: Using preferred WhatsApp channel (66610032333):", whatsappChannelId);
+          } else {
+            // Fallback: use first active WhatsApp channel
+            const fallbackChannel = channels.find((ch: any) => 
+              ch.transport === "whatsapp" && ch.state === "active"
+            );
+            if (fallbackChannel) {
+              whatsappChannelId = fallbackChannel.channelId;
+              console.log("Wazzup24: Using fallback WhatsApp channel:", whatsappChannelId);
+            }
+          }
+        } else {
+          console.error("Wazzup24: Failed to get channels:", channelsResponse.status);
+        }
+      } catch (error) {
+        console.error("Wazzup24: Error getting channels:", error);
+      }
+      
       // Build request body according to Wazzup24 API v3 spec
       // Use scope: "card" with filter for contact-specific chat
-      // Note: We don't specify channelId - Wazzup24 should find the chat automatically
-      // (Wazzup24 API v3 doesn't have a /v3/chats endpoint to look up channelId by phone)
       const requestBody: Record<string, unknown> = {
         scope: "card",
         user: userData,
@@ -3117,7 +3158,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       // Set filter and activeChat to open specific chat by default
-      // Without channelId, Wazzup24 should find the chat across all channels
+      // filter: only chatType and chatId (no channelId!)
+      // activeChat: chatType, chatId, and channelId
       if (normalizedPhone) {
         requestBody.filter = [
           {
@@ -3125,10 +3167,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             chatId: normalizedPhone
           }
         ];
-        requestBody.activeChat = {
+        
+        const activeChat: Record<string, string> = {
           chatType: "whatsapp",
           chatId: normalizedPhone
         };
+        
+        // Add channelId to activeChat (required for proper chat context)
+        if (whatsappChannelId) {
+          activeChat.channelId = whatsappChannelId;
+        }
+        
+        requestBody.activeChat = activeChat;
       }
       
       console.log("Wazzup24 iframe request:", JSON.stringify(requestBody, null, 2));

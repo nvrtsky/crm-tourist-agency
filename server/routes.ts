@@ -3056,6 +3056,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Wazzup24: User created/updated successfully");
       }
       
+      // Create/update contact in Wazzup24 with responsibleUserId
+      // This is required to allow writing in "card" scope
+      if (normalizedPhone) {
+        const contactData = [{
+          id: `lead_${leadId}`,
+          responsibleUserId: String(currentUser.id),
+          name: name || `Lead ${leadId}`,
+          contactData: [
+            {
+              chatType: "whatsapp",
+              chatId: normalizedPhone
+            }
+          ]
+        }];
+        
+        console.log("Wazzup24: Creating/updating contact:", JSON.stringify(contactData, null, 2));
+        
+        const contactResponse = await fetch("https://api.wazzup24.com/v3/contacts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(contactData)
+        });
+        
+        if (!contactResponse.ok) {
+          const contactErrorText = await contactResponse.text();
+          console.error("Wazzup24 contact creation error:", contactResponse.status, contactErrorText);
+          // Continue anyway - contact might already exist or we can still show chat
+        } else {
+          console.log("Wazzup24: Contact created/updated successfully");
+        }
+      }
+      
       // Build request body according to Wazzup24 API v3 spec
       // Use scope: "card" to show only the lead's chat (with filter)
       const requestBody: Record<string, unknown> = {

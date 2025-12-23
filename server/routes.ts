@@ -4235,8 +4235,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate verification code (6 digits)
-      // Use fixed code for test accounts (only in development)
-      const isTestAccount = value === "kozlov@example.com" && process.env.NODE_ENV !== "production";
+      // Use fixed code for test accounts (demo purposes)
+      const testAccounts = ["kozlov@example.com"];
+      const isTestAccount = testAccounts.includes(value);
       const code = isTestAccount ? "123456" : Math.floor(100000 + Math.random() * 900000).toString();
       const token = crypto.randomBytes(32).toString("hex");
 

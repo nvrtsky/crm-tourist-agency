@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,14 +12,68 @@ interface Wazzup24ChatProps {
   lead: Lead;
 }
 
+interface WazzupMessage {
+  type?: string;
+  data?: {
+    channelId?: string;
+    chatId?: string;
+    chatType?: string;
+    messageId?: string;
+  };
+}
+
 export function Wazzup24Chat({ lead }: Wazzup24ChatProps) {
   const { toast } = useToast();
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [iframeError, setIframeError] = useState<string | null>(null);
+  const channelIdSavedRef = useRef<boolean>(!!lead.wazzupChannelId);
 
   const { data: wazzup24Status, isLoading: isLoadingStatus } = useQuery<{ configured: boolean }>({
     queryKey: ["/api/settings/wazzup24"],
   });
+
+  const saveChannelIdMutation = useMutation({
+    mutationFn: async (channelId: string) => {
+      const response = await apiRequest("PATCH", `/api/leads/${lead.id}`, {
+        wazzupChannelId: channelId,
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      channelIdSavedRef.current = true;
+      queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
+      console.log("Wazzup24: channelId saved for lead", lead.id);
+    },
+    onError: (error: Error) => {
+      console.error("Wazzup24: Failed to save channelId:", error);
+    },
+  });
+
+  const handleWazzupMessage = useCallback((event: MessageEvent) => {
+    if (!event.data) return;
+    
+    try {
+      const message: WazzupMessage = typeof event.data === "string" 
+        ? JSON.parse(event.data) 
+        : event.data;
+      
+      console.log("Wazzup24 iFrame message:", message);
+      
+      if (message.data?.channelId && 
+          message.data?.chatType === "whatsapp" && 
+          !channelIdSavedRef.current) {
+        saveChannelIdMutation.mutate(message.data.channelId);
+      }
+    } catch {
+    }
+  }, [saveChannelIdMutation]);
+
+  useEffect(() => {
+    window.addEventListener("message", handleWazzupMessage);
+    return () => {
+      window.removeEventListener("message", handleWazzupMessage);
+    };
+  }, [handleWazzupMessage]);
 
   const iframeMutation = useMutation({
     mutationFn: async () => {

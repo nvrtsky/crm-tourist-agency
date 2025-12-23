@@ -165,7 +165,7 @@ export function Wazzup24Chat({ lead }: Wazzup24ChatProps) {
       </div>
       <iframe
         src={iframeUrl}
-        className="w-full h-[500px] border rounded-lg"
+        className="w-full h-[600px] border rounded-lg"
         title="Wazzup24 Chat"
         data-testid="iframe-wazzup24-chat"
       />

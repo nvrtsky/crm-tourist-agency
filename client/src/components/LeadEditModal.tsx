@@ -756,11 +756,17 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                             <FormItem>
                               <FormLabel>Трансферы</FormLabel>
                               <FormControl>
-                                <Input
-                                  placeholder="Информация о трансферах"
-                                  {...field}
-                                  value={field.value || ""}
-                                  data-testid="input-lead-transfers"
+                                <MultiSelectField
+                                  dictionaryType="transfers"
+                                  value={field.value}
+                                  onChange={(value) => field.onChange(value)}
+                                  placeholder="Выберите трансфер"
+                                  fallbackOptions={[
+                                    { value: "included", label: "Включен" },
+                                    { value: "not_included", label: "Не включен" },
+                                    { value: "airport_transfer", label: "Трансфер аэропорт" },
+                                  ]}
+                                  data-testid="select-lead-transfers"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -775,11 +781,18 @@ export function LeadEditModal({ leadId, open, onClose, onSuccess, eventId }: Lea
                             <FormItem>
                               <FormLabel>Питание</FormLabel>
                               <FormControl>
-                                <Input
-                                  placeholder="Например: BB, HB, FB, AI"
-                                  {...field}
-                                  value={field.value || ""}
-                                  data-testid="input-lead-meals"
+                                <MultiSelectField
+                                  dictionaryType="meals"
+                                  value={field.value}
+                                  onChange={(value) => field.onChange(value)}
+                                  placeholder="Выберите тип питания"
+                                  fallbackOptions={[
+                                    { value: "BB", label: "BB (Завтрак)" },
+                                    { value: "HB", label: "HB (Полупансион)" },
+                                    { value: "FB", label: "FB (Полный пансион)" },
+                                    { value: "AI", label: "AI (Всё включено)" },
+                                  ]}
+                                  data-testid="select-lead-meals"
                                 />
                               </FormControl>
                               <FormMessage />

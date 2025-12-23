@@ -380,46 +380,44 @@ export default function TouristPortal() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <ScrollArea className="w-full">
-            <TabsList className="inline-flex w-max min-w-full">
-              <TabsTrigger value="tours" className="flex items-center gap-1" data-testid="tab-tours">
-                <Plane className="h-4 w-4" />
-                <span className="hidden sm:inline">Туры</span>
-              </TabsTrigger>
-              <TabsTrigger value="program" className="flex items-center gap-1" data-testid="tab-program">
-                <MapPin className="h-4 w-4" />
-                <span className="hidden sm:inline">Программа</span>
-              </TabsTrigger>
-              <TabsTrigger value="payment" className="flex items-center gap-1" data-testid="tab-payment">
-                <CreditCard className="h-4 w-4" />
-                <span className="hidden sm:inline">Оплата</span>
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="flex items-center gap-1" data-testid="tab-documents">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Документы</span>
-              </TabsTrigger>
-              <TabsTrigger value="checklist" className="flex items-center gap-1" data-testid="tab-checklist">
-                <CheckSquare className="h-4 w-4" />
-                <span className="hidden sm:inline">Чек-лист</span>
-              </TabsTrigger>
-              <TabsTrigger value="companions" className="flex items-center gap-1" data-testid="tab-companions">
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Попутчики</span>
-              </TabsTrigger>
-              <TabsTrigger value="chat" className="flex items-center gap-1" data-testid="tab-chat">
-                <MessageSquare className="h-4 w-4" />
-                <span className="hidden sm:inline">Чат</span>
-              </TabsTrigger>
-              <TabsTrigger value="reviews" className="flex items-center gap-1" data-testid="tab-reviews">
-                <Star className="h-4 w-4" />
-                <span className="hidden sm:inline">Отзывы</span>
-              </TabsTrigger>
-              <TabsTrigger value="other-tours" className="flex items-center gap-1" data-testid="tab-other-tours">
-                <Sparkles className="h-4 w-4" />
-                <span className="hidden sm:inline">Другие</span>
-              </TabsTrigger>
-            </TabsList>
-          </ScrollArea>
+          <TabsList className="flex flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="tours" className="flex items-center gap-1" data-testid="tab-tours">
+              <Plane className="h-4 w-4" />
+              <span className="hidden sm:inline">Туры</span>
+            </TabsTrigger>
+            <TabsTrigger value="program" className="flex items-center gap-1" data-testid="tab-program">
+              <MapPin className="h-4 w-4" />
+              <span className="hidden sm:inline">Программа</span>
+            </TabsTrigger>
+            <TabsTrigger value="payment" className="flex items-center gap-1" data-testid="tab-payment">
+              <CreditCard className="h-4 w-4" />
+              <span className="hidden sm:inline">Оплата</span>
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-1" data-testid="tab-documents">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Документы</span>
+            </TabsTrigger>
+            <TabsTrigger value="checklist" className="flex items-center gap-1" data-testid="tab-checklist">
+              <CheckSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Чек-лист</span>
+            </TabsTrigger>
+            <TabsTrigger value="companions" className="flex items-center gap-1" data-testid="tab-companions">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Попутчики</span>
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="flex items-center gap-1" data-testid="tab-chat">
+              <MessageSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Чат</span>
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="flex items-center gap-1" data-testid="tab-reviews">
+              <Star className="h-4 w-4" />
+              <span className="hidden sm:inline">Отзывы</span>
+            </TabsTrigger>
+            <TabsTrigger value="other-tours" className="flex items-center gap-1" data-testid="tab-other-tours">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Другие туры</span>
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="tours" className="space-y-4">
             <h2 className="text-lg font-semibold">Мои туры</h2>

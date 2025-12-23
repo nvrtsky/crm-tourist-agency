@@ -47,6 +47,7 @@ A public-facing portal for tourists to manage their trip information and interac
 -   **Checklists**: Interactive to-do lists for before, during, and after the trip
 -   **Reviews**: Submit ratings and feedback after completing trips
 -   **Tour Recommendations**: Browse upcoming tours for future bookings
+-   **Chat with Manager**: Real-time messaging with agency managers
 
 #### Tourist Portal Authentication
 -   **Login Flow**: Email/phone → Verification code → Access portal
@@ -59,6 +60,8 @@ A public-facing portal for tourists to manage their trip information and interac
 -   `GET /api/portal/me` - Get all tourist data (requires Bearer token)
 -   `POST /api/portal/checklist/toggle` - Toggle checklist item completion
 -   `POST /api/portal/reviews` - Submit trip review
+-   `GET /api/portal/messages` - Get chat message history
+-   `POST /api/portal/messages` - Send message to manager
 
 #### Admin Portal Management
 Accessible at `/portal-admin` for CRM admins:
@@ -79,6 +82,7 @@ Accessible at `/portal-admin` for CRM admins:
 -   `tourist_checklist_progress` - Tourist's progress on checklists
 -   `reviews` - NPS ratings and comments from tourists
 -   `tourist_notifications` - Portal notifications for tourists
+-   `portal_messages` - Chat messages between tourists and managers
 
 #### Frontend Routes
 -   `/portal` - Tourist login page (public)

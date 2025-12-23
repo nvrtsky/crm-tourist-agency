@@ -1,4 +1,4 @@
-import { UserPlus, Calendar, Settings } from "lucide-react";
+import { UserPlus, Calendar, Settings, User } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
@@ -38,6 +38,12 @@ export function AppSidebar() {
       testId: "nav-events",
     },
     {
+      title: "Личный кабинет",
+      url: `${urlPrefix}/portal-admin`,
+      icon: User,
+      testId: "nav-portal-admin",
+    },
+    {
       title: t("nav.settings"),
       url: `${urlPrefix}/settings`,
       icon: Settings,
@@ -50,7 +56,7 @@ export function AppSidebar() {
     ? allMenuItems.filter(item => item.testId === "nav-events")
     : user?.role === "manager"
     ? allMenuItems.filter(item => item.testId === "nav-leads" || item.testId === "nav-events")
-    : allMenuItems;
+    : allMenuItems; // Admin sees all including portal-admin
 
   return (
     <Sidebar>

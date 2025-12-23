@@ -768,6 +768,173 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
   deals: many(deals),
 }));
 
+// ================= TOURIST PERSONAL CABINET TABLES =================
+
+// Checklist phases
+export const CHECKLIST_PHASES = ["before", "during", "after"] as const;
+export type ChecklistPhase = typeof CHECKLIST_PHASES[number];
+
+// Review types
+export const REVIEW_TYPES = ["tour", "guide", "hotel", "transport", "overall"] as const;
+export type ReviewType = typeof REVIEW_TYPES[number];
+
+// Tourist sessions - for tourist authentication
+export const touristSessions = pgTable("tourist_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: 'cascade' }),
+  token: text("token").notNull().unique(),
+  verificationCode: text("verification_code"),
+  codeExpiresAt: timestamp("code_expires_at"),
+  isVerified: boolean("is_verified").notNull().default(false),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTouristSessionSchema = createInsertSchema(touristSessions).omit({ id: true, createdAt: true });
+export type InsertTouristSession = z.infer<typeof insertTouristSessionSchema>;
+export type TouristSession = typeof touristSessions.$inferSelect;
+
+// Checklist templates - templates by country/tour type
+export const checklistTemplates = pgTable("checklist_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  country: text("country"), // null = applies to all countries
+  tourType: text("tour_type"), // null = applies to all tour types
+  phase: text("phase").notNull(), // 'before', 'during', 'after'
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertChecklistTemplateSchema = createInsertSchema(checklistTemplates).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertChecklistTemplate = z.infer<typeof insertChecklistTemplateSchema>;
+export type ChecklistTemplate = typeof checklistTemplates.$inferSelect;
+
+// Checklist template items - items within a template
+export const checklistTemplateItems = pgTable("checklist_template_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: varchar("template_id").notNull().references(() => checklistTemplates.id, { onDelete: 'cascade' }),
+  text: text("text").notNull(),
+  description: text("description"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isRequired: boolean("is_required").notNull().default(false),
+});
+
+export const insertChecklistTemplateItemSchema = createInsertSchema(checklistTemplateItems).omit({ id: true });
+export type InsertChecklistTemplateItem = z.infer<typeof insertChecklistTemplateItemSchema>;
+export type ChecklistTemplateItem = typeof checklistTemplateItems.$inferSelect;
+
+// Tourist checklist progress - tracking completion for tourists
+export const touristChecklistProgress = pgTable("tourist_checklist_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: 'cascade' }),
+  eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
+  templateItemId: varchar("template_item_id").notNull().references(() => checklistTemplateItems.id, { onDelete: 'cascade' }),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+});
+
+export const insertTouristChecklistProgressSchema = createInsertSchema(touristChecklistProgress).omit({ id: true });
+export type InsertTouristChecklistProgress = z.infer<typeof insertTouristChecklistProgressSchema>;
+export type TouristChecklistProgress = typeof touristChecklistProgress.$inferSelect;
+
+// Reviews - NPS and tour reviews from tourists
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: 'cascade' }),
+  eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
+  type: text("type").notNull(), // 'tour', 'guide', 'hotel', 'transport', 'overall'
+  rating: integer("rating").notNull(), // 1-10 for NPS, 1-5 for other ratings
+  comment: text("comment"),
+  guideId: varchar("guide_id").references(() => users.id, { onDelete: 'set null' }), // For guide reviews
+  city: text("city"), // For city-specific reviews (hotel, guide)
+  isPublic: boolean("is_public").notNull().default(false), // Can be displayed on website
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true, createdAt: true });
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type Review = typeof reviews.$inferSelect;
+
+// Tourist notifications - notifications for tourists in personal cabinet
+export const touristNotifications = pgTable("tourist_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: 'cascade' }),
+  eventId: varchar("event_id").references(() => events.id, { onDelete: 'cascade' }),
+  type: text("type").notNull(), // 'payment_reminder', 'tour_upcoming', 'program_change', 'document_request', 'review_request'
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  actionUrl: text("action_url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTouristNotificationSchema = createInsertSchema(touristNotifications).omit({ id: true, createdAt: true });
+export type InsertTouristNotification = z.infer<typeof insertTouristNotificationSchema>;
+export type TouristNotification = typeof touristNotifications.$inferSelect;
+
+// Relations for new tables
+export const touristSessionsRelations = relations(touristSessions, ({ one }) => ({
+  contact: one(contacts, {
+    fields: [touristSessions.contactId],
+    references: [contacts.id],
+  }),
+}));
+
+export const checklistTemplatesRelations = relations(checklistTemplates, ({ many }) => ({
+  items: many(checklistTemplateItems),
+}));
+
+export const checklistTemplateItemsRelations = relations(checklistTemplateItems, ({ one }) => ({
+  template: one(checklistTemplates, {
+    fields: [checklistTemplateItems.templateId],
+    references: [checklistTemplates.id],
+  }),
+}));
+
+export const touristChecklistProgressRelations = relations(touristChecklistProgress, ({ one }) => ({
+  contact: one(contacts, {
+    fields: [touristChecklistProgress.contactId],
+    references: [contacts.id],
+  }),
+  event: one(events, {
+    fields: [touristChecklistProgress.eventId],
+    references: [events.id],
+  }),
+  templateItem: one(checklistTemplateItems, {
+    fields: [touristChecklistProgress.templateItemId],
+    references: [checklistTemplateItems.id],
+  }),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  contact: one(contacts, {
+    fields: [reviews.contactId],
+    references: [contacts.id],
+  }),
+  event: one(events, {
+    fields: [reviews.eventId],
+    references: [events.id],
+  }),
+  guide: one(users, {
+    fields: [reviews.guideId],
+    references: [users.id],
+  }),
+}));
+
+export const touristNotificationsRelations = relations(touristNotifications, ({ one }) => ({
+  contact: one(contacts, {
+    fields: [touristNotifications.contactId],
+    references: [contacts.id],
+  }),
+  event: one(events, {
+    fields: [touristNotifications.eventId],
+    references: [events.id],
+  }),
+}));
+
 // ================= SYNC TABLES =================
 
 // Sync logs table - for tracking WordPress sync operations

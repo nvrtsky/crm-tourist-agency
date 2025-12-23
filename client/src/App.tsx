@@ -18,6 +18,9 @@ import Settings from "@/pages/Settings";
 import DevTest from "@/pages/DevTest";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
+import TouristPortalAdmin from "@/pages/TouristPortalAdmin";
+import TouristLogin from "@/pages/TouristLogin";
+import TouristPortal from "@/pages/TouristPortal";
 import { useTranslation } from "react-i18next";
 import logoDarkUrl from "@assets/logo_1762426754494.png";
 import logoLightUrl from "@assets/logo_white_1762533626956.png";
@@ -146,6 +149,18 @@ function Router() {
           </ProtectedRoute>
         )}
       </Route>
+      <Route path="/portal-admin">
+        {() => (
+          <ProtectedRoute>
+            <TouristPortalAdmin />
+          </ProtectedRoute>
+        )}
+      </Route>
+      
+      {/* Public tourist portal routes */}
+      <Route path="/portal/dashboard" component={TouristPortal} />
+      <Route path="/portal" component={TouristLogin} />
+      
       <Route component={NotFound} />
     </Switch>
     </>
@@ -232,8 +247,8 @@ function AppContent() {
 
   const logoUrl = theme === "dark" ? logoLightUrl : logoDarkUrl;
   
-  // Login page doesn't need sidebar/header
-  if (location === "/login") {
+  // Login page and public portal pages don't need sidebar/header
+  if (location === "/login" || location.startsWith("/portal")) {
     return (
       <TooltipProvider>
         <Router />

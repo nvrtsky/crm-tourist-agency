@@ -34,6 +34,57 @@ A normalized PostgreSQL schema underpins the system, supporting core CRM entitie
 -   **Authentication & User Management**: Implements session-based authentication with Passport.js and bcrypt, featuring role-based access control (admin/manager/viewer) for secure login, route protection, and restricted content access.
 -   **System Dictionaries**: Centralized management of lookup tables (lead sources, statuses, countries, accommodation types, currencies) via Settings page. Admin-only CRUD operations for maintaining system-wide configuration values. **Multi-Select Support**: Dictionary types can be configured with `isMultiple` toggle - when enabled, form fields render as checkbox groups instead of dropdowns. Values are stored as comma-separated strings for backward compatibility. Affected fields: clientCategory, source, roomType, hotelCategory.
 
+### Tourist Personal Cabinet (Личный кабинет туриста)
+A public-facing portal for tourists to manage their trip information and interact with the agency.
+
+#### Portal Features
+-   **My Tours**: View upcoming and past trips with detailed information
+-   **Trip Program**: Day-by-day itinerary with cities and activities
+-   **Payment Tracking**: View total cost, advance payment, and remaining balance
+-   **Documents**: Access to important travel documents
+-   **Personal Data**: View/update personal information
+-   **Companions**: See other travelers in the group
+-   **Checklists**: Interactive to-do lists for before, during, and after the trip
+-   **Reviews**: Submit ratings and feedback after completing trips
+-   **Tour Recommendations**: Browse upcoming tours for future bookings
+
+#### Tourist Portal Authentication
+-   **Login Flow**: Email/phone → Verification code → Access portal
+-   **Session Management**: Token-based authentication stored in localStorage
+-   **Security**: Code expires in 10 minutes, session expires in 24 hours
+
+#### Portal API Endpoints
+-   `POST /api/portal/auth/request-code` - Request verification code via email/phone
+-   `POST /api/portal/auth/verify-code` - Verify code and get session token
+-   `GET /api/portal/me` - Get all tourist data (requires Bearer token)
+-   `POST /api/portal/checklist/toggle` - Toggle checklist item completion
+-   `POST /api/portal/reviews` - Submit trip review
+
+#### Admin Portal Management
+Accessible at `/portal-admin` for CRM admins:
+-   **Checklist Templates**: Create/edit/delete checklist templates by country, tour type, and phase (before/during/after)
+-   **Reviews Dashboard**: View all tourist reviews with ratings
+-   **NPS Analytics**: Track Net Promoter Score and customer satisfaction
+
+#### Admin API Endpoints (requireAdmin)
+-   `GET /api/checklist-templates` - List all templates with items
+-   `POST /api/checklist-templates` - Create new template
+-   `DELETE /api/checklist-templates/:id` - Delete template
+-   `GET /api/reviews` - List all reviews with contact/event details
+
+#### Database Tables
+-   `tourist_sessions` - Portal login sessions with verification codes
+-   `checklist_templates` - Template definitions (name, country, tourType, phase)
+-   `checklist_template_items` - Individual checklist items
+-   `tourist_checklist_progress` - Tourist's progress on checklists
+-   `reviews` - NPS ratings and comments from tourists
+-   `tourist_notifications` - Portal notifications for tourists
+
+#### Frontend Routes
+-   `/portal` - Tourist login page (public)
+-   `/portal/dashboard` - Tourist dashboard (requires tourist token)
+-   `/portal-admin` - Admin management (requires CRM admin auth)
+
 ### WordPress Integration
 The system provides API endpoints for WordPress integration:
 -   **WordPress API Endpoints** (secured with API key `WORDPRESS_API_KEY`):

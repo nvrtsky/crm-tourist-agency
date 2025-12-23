@@ -1,13 +1,16 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { requireAuth, requireAdmin } from "./auth";
 import passport from "passport";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import { z } from "zod";
 import multer from "multer";
 import { ObjectStorageService } from "./objectStorage";
 import { scrapeAllTours, syncToursToDatabase } from "./websiteScraper";
+import { eq, and, desc } from "drizzle-orm";
 import {
   insertEventSchema,
   updateEventSchema,
@@ -35,6 +38,13 @@ import {
   type User,
   type LeadTourist,
   type Lead,
+  // Tourist Portal tables
+  touristSessions,
+  checklistTemplates,
+  checklistTemplateItems,
+  touristChecklistProgress,
+  reviews,
+  touristNotifications,
 } from "@shared/schema";
 
 // Utility to sanitize user object (remove password hash)
@@ -4199,6 +4209,505 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: "Failed to scrape website",
         details: error instanceof Error ? error.message : "Unknown error"
       });
+    }
+  });
+
+  // ==================== TOURIST PORTAL API ====================
+
+  // Portal Auth: Request verification code
+  app.post("/api/portal/auth/request-code", async (req, res) => {
+    try {
+      const { type, value } = req.body;
+      
+      if (!type || !value) {
+        return res.status(400).json({ error: "Type and value are required" });
+      }
+
+      // Find contact by email or phone
+      const allContacts = await storage.getAllContacts();
+      const contact = allContacts.find(c => 
+        type === "email" ? c.email === value : c.phone === value
+      );
+
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      // Generate verification code (6 digits)
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const token = crypto.randomBytes(32).toString("hex");
+
+      // Store session with verification code
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const codeExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      await db.insert(touristSessions).values({
+        contactId: contact.id,
+        token,
+        verificationCode: code,
+        codeExpiresAt,
+        isVerified: false,
+        expiresAt,
+      });
+
+      // In production, send code via email/SMS
+      // For now, log it (in development)
+      console.log(`[PORTAL] Verification code for ${value}: ${code}`);
+
+      res.json({ token, message: "Code sent" });
+    } catch (error) {
+      console.error("Portal auth error:", error);
+      res.status(500).json({ error: "Failed to send code" });
+    }
+  });
+
+  // Portal Auth: Verify code
+  app.post("/api/portal/auth/verify-code", async (req, res) => {
+    try {
+      const { token, code } = req.body;
+
+      if (!token || !code) {
+        return res.status(400).json({ error: "Token and code are required" });
+      }
+
+      const [session] = await db.select()
+        .from(touristSessions)
+        .where(eq(touristSessions.token, token));
+
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+
+      if (session.codeExpiresAt && new Date() > session.codeExpiresAt) {
+        return res.status(400).json({ error: "Code expired" });
+      }
+
+      if (session.verificationCode !== code) {
+        return res.status(400).json({ error: "Invalid code" });
+      }
+
+      // Mark session as verified
+      await db.update(touristSessions)
+        .set({ isVerified: true, verificationCode: null })
+        .where(eq(touristSessions.id, session.id));
+
+      res.json({ token, message: "Verified" });
+    } catch (error) {
+      console.error("Portal verify error:", error);
+      res.status(500).json({ error: "Failed to verify code" });
+    }
+  });
+
+  // Portal: Get tourist data (requires verified token in header)
+  app.get("/api/portal/me", async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "") || 
+                    req.headers["x-tourist-token"] as string;
+
+      if (!token) {
+        return res.status(401).json({ error: "Token required" });
+      }
+
+      const [session] = await db.select()
+        .from(touristSessions)
+        .where(and(
+          eq(touristSessions.token, token),
+          eq(touristSessions.isVerified, true)
+        ));
+
+      if (!session || new Date() > session.expiresAt) {
+        return res.status(401).json({ error: "Invalid or expired session" });
+      }
+
+      // Get contact
+      const contact = await storage.getContact(session.contactId);
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+
+      // Get deals for this contact
+      const contactDeals = await storage.getDealsByContact(contact.id);
+      
+      // Build trip data
+      const trips = await Promise.all(contactDeals.map(async (deal) => {
+        const event = await storage.getEvent(deal.eventId);
+        if (!event) return null;
+
+        const cityVisits = await storage.getCityVisitsByDeal(deal.id);
+        
+        // Get lead data if available
+        let lead = null;
+        if (contact.leadId) {
+          lead = await storage.getLead(contact.leadId);
+        }
+
+        // Get companions (other contacts in same group or event)
+        const eventDeals = await storage.getDealsByEvent(deal.eventId);
+        const companions = await Promise.all(
+          eventDeals
+            .filter(d => d.id !== deal.id)
+            .map(async (d) => {
+              const c = await storage.getContact(d.contactId);
+              return c ? { id: c.id, name: c.name } : null;
+            })
+        );
+
+        // Build itinerary from event
+        const itinerary = event.cities?.map((city, idx) => ({
+          day: idx + 1,
+          date: new Date(new Date(event.startDate).getTime() + idx * 24 * 60 * 60 * 1000).toISOString(),
+          city,
+          description: `День ${idx + 1} в ${city}`,
+        })) || [];
+
+        return {
+          id: deal.id,
+          event: {
+            id: event.id,
+            name: event.name,
+            country: event.country,
+            cities: event.cities,
+            startDate: event.startDate,
+            endDate: event.endDate,
+            tourType: event.tourType,
+          },
+          deal: {
+            id: deal.id,
+            status: deal.status,
+            amount: deal.amount,
+            paidAmount: deal.paidAmount,
+          },
+          lead: lead ? {
+            tourCost: lead.tourCost,
+            tourCostCurrency: lead.tourCostCurrency || "RUB",
+            advancePayment: lead.advancePayment,
+            remainingPayment: lead.remainingPayment,
+            remainingPaymentCurrency: lead.remainingPaymentCurrency || "RUB",
+            roomType: lead.roomType,
+            hotelCategory: lead.hotelCategory,
+            meals: lead.meals,
+            transfers: lead.transfers,
+          } : null,
+          companions: companions.filter(Boolean),
+          cityVisits: cityVisits.map(cv => ({
+            city: cv.city,
+            arrivalDate: cv.arrivalDate,
+            departureDate: cv.departureDate,
+            hotelName: cv.hotelName,
+            roomType: cv.roomType,
+          })),
+          itinerary,
+        };
+      }));
+
+      // Get notifications
+      const notifications = await db.select()
+        .from(touristNotifications)
+        .where(eq(touristNotifications.contactId, contact.id))
+        .orderBy(desc(touristNotifications.createdAt))
+        .limit(20);
+
+      // Get checklists with progress
+      const templates = await db.select()
+        .from(checklistTemplates)
+        .where(eq(checklistTemplates.isActive, true));
+
+      const checklists = await Promise.all(templates.map(async (template) => {
+        const items = await db.select()
+          .from(checklistTemplateItems)
+          .where(eq(checklistTemplateItems.templateId, template.id));
+
+        const firstTrip = trips.filter(Boolean)[0];
+        const eventId = firstTrip?.event?.id;
+
+        const progress = eventId ? await db.select()
+          .from(touristChecklistProgress)
+          .where(and(
+            eq(touristChecklistProgress.contactId, contact.id),
+            eq(touristChecklistProgress.eventId, eventId)
+          )) : [];
+
+        const progressMap = new Map(progress.map(p => [p.templateItemId, p.isCompleted]));
+
+        return {
+          phase: template.phase,
+          items: items.map(item => ({
+            id: item.id,
+            text: item.text,
+            description: item.description,
+            isRequired: item.isRequired,
+            isCompleted: progressMap.get(item.id) || false,
+          })),
+        };
+      }));
+
+      // Get upcoming tours for recommendations
+      const allEvents = await storage.getAllEvents();
+      const upcomingTours = allEvents
+        .filter(e => !e.isArchived && new Date(e.startDate) > new Date())
+        .slice(0, 6)
+        .map(e => ({
+          id: e.id,
+          name: e.name,
+          country: e.country,
+          cities: e.cities,
+          startDate: e.startDate,
+          endDate: e.endDate,
+          price: e.price,
+          priceCurrency: e.priceCurrency,
+          websiteUrl: e.websiteUrl,
+        }));
+
+      res.json({
+        contact: {
+          id: contact.id,
+          name: contact.name,
+          email: contact.email,
+          phone: contact.phone,
+          passport: contact.passport,
+          birthDate: contact.birthDate,
+        },
+        trips: trips.filter(Boolean),
+        notifications,
+        checklists,
+        upcomingTours,
+      });
+    } catch (error) {
+      console.error("Portal me error:", error);
+      res.status(500).json({ error: "Failed to get tourist data" });
+    }
+  });
+
+  // Portal: Toggle checklist item
+  app.post("/api/portal/checklist/toggle", async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "") ||
+                    req.headers["x-tourist-token"] as string;
+
+      if (!token) {
+        return res.status(401).json({ error: "Token required" });
+      }
+
+      const [session] = await db.select()
+        .from(touristSessions)
+        .where(and(
+          eq(touristSessions.token, token),
+          eq(touristSessions.isVerified, true)
+        ));
+
+      if (!session) {
+        return res.status(401).json({ error: "Invalid session" });
+      }
+
+      const { itemId, isCompleted } = req.body;
+
+      // Validate that the itemId exists and belongs to a template that applies to the contact's event
+      const [item] = await db.select()
+        .from(checklistTemplateItems)
+        .innerJoin(checklistTemplates, eq(checklistTemplateItems.templateId, checklistTemplates.id))
+        .where(eq(checklistTemplateItems.id, itemId));
+
+      if (!item) {
+        return res.status(404).json({ error: "Checklist item not found" });
+      }
+
+      // Get contact's deals to find the event this checklist item might belong to
+      const contactDeals = await storage.getDealsByContact(session.contactId);
+      
+      // Find a deal where the event matches the template's criteria (country and tourType)
+      let targetDeal = null;
+      for (const deal of contactDeals) {
+        const event = await storage.getEvent(deal.eventId);
+        if (!event) continue;
+
+        const countryMatch = !item.checklist_templates.country || item.checklist_templates.country === event.country;
+        const tourTypeMatch = !item.checklist_templates.tourType || item.checklist_templates.tourType === event.tourType;
+
+        if (countryMatch && tourTypeMatch) {
+          targetDeal = deal;
+          break;
+        }
+      }
+
+      if (!targetDeal) {
+        return res.status(403).json({ error: "This checklist item does not belong to any of your trips" });
+      }
+
+      // Check if progress exists
+      const [existing] = await db.select()
+        .from(touristChecklistProgress)
+        .where(and(
+          eq(touristChecklistProgress.contactId, session.contactId),
+          eq(touristChecklistProgress.eventId, targetDeal.eventId),
+          eq(touristChecklistProgress.templateItemId, itemId)
+        ));
+
+      if (existing) {
+        await db.update(touristChecklistProgress)
+          .set({ 
+            isCompleted, 
+            completedAt: isCompleted ? new Date() : null 
+          })
+          .where(eq(touristChecklistProgress.id, existing.id));
+      } else {
+        await db.insert(touristChecklistProgress).values({
+          contactId: session.contactId,
+          eventId: targetDeal.eventId,
+          templateItemId: itemId,
+          isCompleted,
+          completedAt: isCompleted ? new Date() : null,
+        });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Portal checklist toggle error:", error);
+      res.status(500).json({ error: "Failed to toggle checklist" });
+    }
+  });
+
+  // Portal: Submit review
+  app.post("/api/portal/reviews", async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "") ||
+                    req.headers["x-tourist-token"] as string;
+
+      if (!token) {
+        return res.status(401).json({ error: "Token required" });
+      }
+
+      const [session] = await db.select()
+        .from(touristSessions)
+        .where(and(
+          eq(touristSessions.token, token),
+          eq(touristSessions.isVerified, true)
+        ));
+
+      if (!session) {
+        return res.status(401).json({ error: "Invalid session" });
+      }
+
+      const { tripId, rating, comment } = req.body;
+
+      // Get deal to get eventId and verify ownership
+      const deal = await storage.getDeal(tripId);
+      if (!deal) {
+        return res.status(404).json({ error: "Trip not found" });
+      }
+
+      if (deal.contactId !== session.contactId) {
+        return res.status(403).json({ error: "You can only review your own trips" });
+      }
+
+      await db.insert(reviews).values({
+        contactId: session.contactId,
+        eventId: deal.eventId,
+        type: "overall",
+        rating,
+        comment,
+        isPublic: false,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Portal review submit error:", error);
+      res.status(500).json({ error: "Failed to submit review" });
+    }
+  });
+
+  // Admin: Get checklist templates
+  app.get("/api/checklist-templates", requireAdmin, async (req, res) => {
+    try {
+      const templates = await db.select().from(checklistTemplates);
+      
+      const templatesWithItems = await Promise.all(templates.map(async (template) => {
+        const items = await db.select()
+          .from(checklistTemplateItems)
+          .where(eq(checklistTemplateItems.templateId, template.id))
+          .orderBy(checklistTemplateItems.sortOrder);
+        return { ...template, items };
+      }));
+
+      res.json(templatesWithItems);
+    } catch (error) {
+      console.error("Get templates error:", error);
+      res.status(500).json({ error: "Failed to get templates" });
+    }
+  });
+
+  // Admin: Create checklist template
+  app.post("/api/checklist-templates", requireAdmin, async (req, res) => {
+    try {
+      const { name, country, tourType, phase, isActive, sortOrder, items } = req.body;
+
+      const [template] = await db.insert(checklistTemplates)
+        .values({
+          name,
+          country: country || null,
+          tourType: tourType || null,
+          phase,
+          isActive: isActive ?? true,
+          sortOrder: sortOrder ?? 0,
+        })
+        .returning();
+
+      // Insert items
+      if (items && items.length > 0) {
+        await db.insert(checklistTemplateItems).values(
+          items.map((item: any, idx: number) => ({
+            templateId: template.id,
+            text: item.text,
+            description: item.description || null,
+            sortOrder: item.sortOrder ?? idx,
+            isRequired: item.isRequired ?? false,
+          }))
+        );
+      }
+
+      res.json(template);
+    } catch (error) {
+      console.error("Create template error:", error);
+      res.status(500).json({ error: "Failed to create template" });
+    }
+  });
+
+  // Admin: Delete checklist template
+  app.delete("/api/checklist-templates/:id", requireAdmin, async (req, res) => {
+    try {
+      await db.delete(checklistTemplates)
+        .where(eq(checklistTemplates.id, req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete template error:", error);
+      res.status(500).json({ error: "Failed to delete template" });
+    }
+  });
+
+  // Admin: Get reviews
+  app.get("/api/reviews", requireAdmin, async (req, res) => {
+    try {
+      const allReviews = await db.select().from(reviews).orderBy(desc(reviews.createdAt));
+      
+      // Enrich with contact and event names
+      const enrichedReviews = await Promise.all(allReviews.map(async (review) => {
+        const contact = await storage.getContact(review.contactId);
+        const event = await storage.getEvent(review.eventId);
+        let guide = null;
+        if (review.guideId) {
+          guide = await storage.getUser(review.guideId);
+        }
+        return {
+          ...review,
+          contact: contact ? { name: contact.name } : null,
+          event: event ? { name: event.name } : null,
+          guide: guide ? { firstName: guide.firstName, lastName: guide.lastName } : null,
+        };
+      }));
+
+      res.json(enrichedReviews);
+    } catch (error) {
+      console.error("Get reviews error:", error);
+      res.status(500).json({ error: "Failed to get reviews" });
     }
   });
 

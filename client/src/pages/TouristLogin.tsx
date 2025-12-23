@@ -18,6 +18,7 @@ export default function TouristLogin() {
   const [contactValue, setContactValue] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [sessionToken, setSessionToken] = useState("");
+  const [devCode, setDevCode] = useState<string | null>(null);
 
   const requestCodeMutation = useMutation({
     mutationFn: async (data: { type: "email" | "phone"; value: string }) => {
@@ -27,11 +28,14 @@ export default function TouristLogin() {
     onSuccess: (data: any) => {
       setSessionToken(data.token);
       setStep("verify");
+      if (data.devCode) {
+        setDevCode(data.devCode);
+      }
       toast({
         title: "Код отправлен",
-        description: contactMethod === "email" 
-          ? "Проверьте вашу почту" 
-          : "Проверьте SMS",
+        description: data.devCode 
+          ? `Код для тестирования: ${data.devCode}` 
+          : (contactMethod === "email" ? "Проверьте вашу почту" : "Проверьте SMS"),
       });
     },
     onError: (error: any) => {
@@ -163,6 +167,13 @@ export default function TouristLogin() {
                 Код отправлен на{" "}
                 <span className="font-medium text-foreground">{contactValue}</span>
               </div>
+
+              {devCode && (
+                <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Код для тестирования:</p>
+                  <p className="text-2xl font-bold text-primary tracking-widest" data-testid="text-dev-code">{devCode}</p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="code">Код подтверждения</Label>

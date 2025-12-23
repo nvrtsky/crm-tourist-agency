@@ -4254,7 +4254,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For now, log it (in development)
       console.log(`[PORTAL] Verification code for ${value}: ${code}`);
 
-      res.json({ token, message: "Code sent" });
+      // In development mode, include the code in response for easier testing
+      const isDev = process.env.NODE_ENV === "development";
+      res.json({ 
+        token, 
+        message: "Code sent",
+        ...(isDev && { devCode: code })
+      });
     } catch (error) {
       console.error("Portal auth error:", error);
       res.status(500).json({ error: "Failed to send code" });

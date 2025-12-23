@@ -134,6 +134,7 @@ export default function TouristPortal() {
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [reviewData, setReviewData] = useState({ rating: 0, comment: "" });
+  const [chatMessage, setChatMessage] = useState("");
 
   const token = typeof window !== "undefined" ? localStorage.getItem("touristToken") : null;
 
@@ -194,6 +195,40 @@ export default function TouristPortal() {
       setIsReviewDialogOpen(false);
       setReviewData({ rating: 0, comment: "" });
       toast({ title: "Спасибо за отзыв!" });
+    },
+  });
+
+  const { data: messages = [], refetch: refetchMessages } = useQuery<{
+    id: string;
+    contactId: string;
+    eventId: string | null;
+    senderId: string | null;
+    senderType: string;
+    message: string;
+    isRead: boolean;
+    createdAt: string;
+  }[]>({
+    queryKey: ["/api/portal/messages"],
+    queryFn: async () => {
+      const res = await fetch("/api/portal/messages", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch messages");
+      return res.json();
+    },
+    enabled: !!token && activeTab === "chat",
+    refetchInterval: activeTab === "chat" ? 10000 : false,
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
+      return apiRequest("POST", "/api/portal/messages", { message }, {
+        Authorization: `Bearer ${token}`
+      });
+    },
+    onSuccess: () => {
+      setChatMessage("");
+      refetchMessages();
     },
   });
 
@@ -345,40 +380,46 @@ export default function TouristPortal() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
-            <TabsTrigger value="tours" className="flex items-center gap-1" data-testid="tab-tours">
-              <Plane className="h-4 w-4" />
-              <span className="hidden sm:inline">Туры</span>
-            </TabsTrigger>
-            <TabsTrigger value="program" className="flex items-center gap-1" data-testid="tab-program">
-              <MapPin className="h-4 w-4" />
-              <span className="hidden sm:inline">Программа</span>
-            </TabsTrigger>
-            <TabsTrigger value="payment" className="flex items-center gap-1" data-testid="tab-payment">
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Оплата</span>
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-1" data-testid="tab-documents">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Документы</span>
-            </TabsTrigger>
-            <TabsTrigger value="checklist" className="flex items-center gap-1" data-testid="tab-checklist">
-              <CheckSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">Чек-лист</span>
-            </TabsTrigger>
-            <TabsTrigger value="companions" className="flex items-center gap-1" data-testid="tab-companions">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Попутчики</span>
-            </TabsTrigger>
-            <TabsTrigger value="reviews" className="flex items-center gap-1" data-testid="tab-reviews">
-              <Star className="h-4 w-4" />
-              <span className="hidden sm:inline">Отзывы</span>
-            </TabsTrigger>
-            <TabsTrigger value="other-tours" className="flex items-center gap-1" data-testid="tab-other-tours">
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">Другие</span>
-            </TabsTrigger>
-          </TabsList>
+          <ScrollArea className="w-full">
+            <TabsList className="inline-flex w-max min-w-full">
+              <TabsTrigger value="tours" className="flex items-center gap-1" data-testid="tab-tours">
+                <Plane className="h-4 w-4" />
+                <span className="hidden sm:inline">Туры</span>
+              </TabsTrigger>
+              <TabsTrigger value="program" className="flex items-center gap-1" data-testid="tab-program">
+                <MapPin className="h-4 w-4" />
+                <span className="hidden sm:inline">Программа</span>
+              </TabsTrigger>
+              <TabsTrigger value="payment" className="flex items-center gap-1" data-testid="tab-payment">
+                <CreditCard className="h-4 w-4" />
+                <span className="hidden sm:inline">Оплата</span>
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="flex items-center gap-1" data-testid="tab-documents">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Документы</span>
+              </TabsTrigger>
+              <TabsTrigger value="checklist" className="flex items-center gap-1" data-testid="tab-checklist">
+                <CheckSquare className="h-4 w-4" />
+                <span className="hidden sm:inline">Чек-лист</span>
+              </TabsTrigger>
+              <TabsTrigger value="companions" className="flex items-center gap-1" data-testid="tab-companions">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Попутчики</span>
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="flex items-center gap-1" data-testid="tab-chat">
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden sm:inline">Чат</span>
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="flex items-center gap-1" data-testid="tab-reviews">
+                <Star className="h-4 w-4" />
+                <span className="hidden sm:inline">Отзывы</span>
+              </TabsTrigger>
+              <TabsTrigger value="other-tours" className="flex items-center gap-1" data-testid="tab-other-tours">
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">Другие</span>
+              </TabsTrigger>
+            </TabsList>
+          </ScrollArea>
 
           <TabsContent value="tours" className="space-y-4">
             <h2 className="text-lg font-semibold">Мои туры</h2>
@@ -715,6 +756,73 @@ export default function TouristPortal() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="chat" className="space-y-4">
+            <h2 className="text-lg font-semibold">Чат с менеджером</h2>
+            <Card className="flex flex-col h-[500px]">
+              <CardContent className="flex-1 overflow-hidden p-4">
+                <ScrollArea className="h-full pr-4">
+                  {messages.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-center text-muted-foreground">
+                      <div>
+                        <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Здесь будут ваши сообщения с менеджером</p>
+                        <p className="text-sm mt-2">Напишите, если у вас есть вопросы по туру</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {messages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`flex ${msg.senderType === "tourist" ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                              msg.senderType === "tourist"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                            }`}
+                          >
+                            <p className="text-sm">{msg.message}</p>
+                            <p className={`text-xs mt-1 ${msg.senderType === "tourist" ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                              {format(new Date(msg.createdAt), "d MMM HH:mm", { locale: ru })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+              <CardFooter className="border-t p-4">
+                <div className="flex w-full gap-2">
+                  <Textarea
+                    placeholder="Напишите сообщение..."
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (chatMessage.trim()) {
+                          sendMessageMutation.mutate(chatMessage);
+                        }
+                      }
+                    }}
+                    className="flex-1 min-h-[40px] max-h-[120px] resize-none"
+                    data-testid="input-chat-message"
+                  />
+                  <Button
+                    onClick={() => chatMessage.trim() && sendMessageMutation.mutate(chatMessage)}
+                    disabled={!chatMessage.trim() || sendMessageMutation.isPending}
+                    data-testid="button-send-message"
+                  >
+                    {sendMessageMutation.isPending ? "..." : "Отправить"}
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
           </TabsContent>
 
           <TabsContent value="reviews" className="space-y-4">

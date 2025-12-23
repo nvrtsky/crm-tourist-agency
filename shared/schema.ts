@@ -875,6 +875,22 @@ export const insertTouristNotificationSchema = createInsertSchema(touristNotific
 export type InsertTouristNotification = z.infer<typeof insertTouristNotificationSchema>;
 export type TouristNotification = typeof touristNotifications.$inferSelect;
 
+// Portal messages - chat between tourists and managers
+export const portalMessages = pgTable("portal_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").notNull().references(() => contacts.id, { onDelete: 'cascade' }),
+  eventId: varchar("event_id").references(() => events.id, { onDelete: 'cascade' }),
+  senderId: varchar("sender_id"), // null = tourist, user ID = manager
+  senderType: text("sender_type").notNull(), // 'tourist' | 'manager'
+  message: text("message").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertPortalMessageSchema = createInsertSchema(portalMessages).omit({ id: true, createdAt: true });
+export type InsertPortalMessage = z.infer<typeof insertPortalMessageSchema>;
+export type PortalMessage = typeof portalMessages.$inferSelect;
+
 // Relations for new tables
 export const touristSessionsRelations = relations(touristSessions, ({ one }) => ({
   contact: one(contacts, {
@@ -932,6 +948,21 @@ export const touristNotificationsRelations = relations(touristNotifications, ({ 
   event: one(events, {
     fields: [touristNotifications.eventId],
     references: [events.id],
+  }),
+}));
+
+export const portalMessagesRelations = relations(portalMessages, ({ one }) => ({
+  contact: one(contacts, {
+    fields: [portalMessages.contactId],
+    references: [contacts.id],
+  }),
+  event: one(events, {
+    fields: [portalMessages.eventId],
+    references: [events.id],
+  }),
+  sender: one(users, {
+    fields: [portalMessages.senderId],
+    references: [users.id],
   }),
 }));
 

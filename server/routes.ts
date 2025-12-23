@@ -45,6 +45,7 @@ import {
   touristChecklistProgress,
   reviews,
   touristNotifications,
+  portalMessages,
 } from "@shared/schema";
 
 // Utility to sanitize user object (remove password hash)
@@ -4393,7 +4394,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             hotelCategory: lead.hotelCategory,
             meals: lead.meals,
             transfers: lead.transfers,
-          } : null,
+          } : (deal.amount ? {
+            tourCost: deal.amount,
+            tourCostCurrency: "RUB",
+            advancePayment: deal.paidAmount || "0",
+            remainingPayment: String(Number(deal.amount) - Number(deal.paidAmount || 0)),
+            remainingPaymentCurrency: "RUB",
+            roomType: null,
+            hotelCategory: null,
+            meals: null,
+            transfers: null,
+          } : null),
           companions: companions.filter(Boolean),
           cityVisits: cityVisits.map(cv => ({
             city: cv.city,
@@ -4618,6 +4629,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Portal review submit error:", error);
       res.status(500).json({ error: "Failed to submit review" });
+    }
+  });
+
+  // Portal: Get messages (chat history)
+  app.get("/api/portal/messages", async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "") ||
+                    req.headers["x-tourist-token"] as string;
+
+      if (!token) {
+        return res.status(401).json({ error: "Token required" });
+      }
+
+      const [session] = await db.select()
+        .from(touristSessions)
+        .where(and(
+          eq(touristSessions.token, token),
+          eq(touristSessions.isVerified, true)
+        ));
+
+      if (!session) {
+        return res.status(401).json({ error: "Invalid session" });
+      }
+
+      const messages = await db.select()
+        .from(portalMessages)
+        .where(eq(portalMessages.contactId, session.contactId))
+        .orderBy(portalMessages.createdAt);
+
+      // Mark all messages from managers as read
+      await db.update(portalMessages)
+        .set({ isRead: true })
+        .where(and(
+          eq(portalMessages.contactId, session.contactId),
+          eq(portalMessages.senderType, "manager"),
+          eq(portalMessages.isRead, false)
+        ));
+
+      res.json(messages);
+    } catch (error) {
+      console.error("Get messages error:", error);
+      res.status(500).json({ error: "Failed to get messages" });
+    }
+  });
+
+  // Portal: Send message
+  app.post("/api/portal/messages", async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "") ||
+                    req.headers["x-tourist-token"] as string;
+
+      if (!token) {
+        return res.status(401).json({ error: "Token required" });
+      }
+
+      const [session] = await db.select()
+        .from(touristSessions)
+        .where(and(
+          eq(touristSessions.token, token),
+          eq(touristSessions.isVerified, true)
+        ));
+
+      if (!session) {
+        return res.status(401).json({ error: "Invalid session" });
+      }
+
+      const { message, eventId } = req.body;
+
+      if (!message?.trim()) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const [newMessage] = await db.insert(portalMessages)
+        .values({
+          contactId: session.contactId,
+          eventId: eventId || null,
+          senderId: null,
+          senderType: "tourist",
+          message: message.trim(),
+          isRead: false,
+        })
+        .returning();
+
+      res.json(newMessage);
+    } catch (error) {
+      console.error("Send message error:", error);
+      res.status(500).json({ error: "Failed to send message" });
     }
   });
 

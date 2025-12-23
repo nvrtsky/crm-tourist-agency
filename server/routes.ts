@@ -3355,6 +3355,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Setup Wazzup24 webhook (admin only)
+  // This configures Wazzup24 to send incoming messages to our webhook endpoint
+  app.post("/api/wazzup24/setup-webhook", requireAdmin, async (req, res) => {
+    try {
+      // Get API key from settings
+      const setting = await storage.getSetting("wazzup24_api_key");
+      
+      if (!setting?.value) {
+        return res.status(400).json({ success: false, error: "Wazzup24 не настроен" });
+      }
+      
+      // Decrypt the API key
+      let apiKey: string;
+      try {
+        apiKey = isEncrypted(setting.value) ? decrypt(setting.value) : setting.value;
+      } catch {
+        return res.status(500).json({ success: false, error: "Ошибка расшифровки API ключа" });
+      }
+      
+      // Get webhook URL from request or construct from host
+      const { webhookUrl } = req.body;
+      const finalWebhookUrl = webhookUrl || `https://crm.chinaunique.ru/api/wazzup24/webhook`;
+      
+      console.log("Wazzup24: Setting up webhook:", finalWebhookUrl);
+      
+      // Configure webhook in Wazzup24
+      const response = await fetch("https://api.wazzup24.com/v3/webhooks", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          webhooksUri: finalWebhookUrl,
+          subscriptions: {
+            messagesAndStatuses: true,
+            contactsAndDeals: false,
+            channels: false
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Wazzup24 webhook setup error:", response.status, errorText);
+        return res.status(response.status).json({ 
+          success: false,
+          error: `Wazzup24 API ошибка: ${response.statusText}`,
+          details: errorText
+        });
+      }
+      
+      // Wazzup24 may return "OK" or JSON
+      const responseText = await response.text();
+      console.log("Wazzup24: Webhook configured successfully:", responseText);
+      
+      res.json({ 
+        success: true, 
+        webhookUrl: finalWebhookUrl,
+        message: "Webhook успешно настроен"
+      });
+    } catch (error) {
+      console.error("Error setting up Wazzup24 webhook:", error);
+      res.status(500).json({ success: false, error: "Не удалось настроить webhook" });
+    }
+  });
+
   // Wazzup24 Webhook - receives incoming messages and updates lead channelId
   // This endpoint must be public (no auth) as it's called by Wazzup24
   app.post("/api/wazzup24/webhook", async (req, res) => {

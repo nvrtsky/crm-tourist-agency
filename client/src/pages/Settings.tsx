@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Pencil, Trash2, Loader2, Shield, MessageCircle, Check, X, Settings as SettingsIcon, Palette, Book, ArrowUp, ArrowDown, Cloud } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, Loader2, Shield, MessageCircle, Check, X, Settings as SettingsIcon, Palette, Book, ArrowUp, ArrowDown, Cloud, Webhook } from "lucide-react";
 import { SyncLogsTab } from "@/components/SyncLogsTab";
 import { z } from "zod";
 import type { User, SystemDictionary, DICTIONARY_TYPES } from "@shared/schema";
@@ -701,6 +701,34 @@ function Wazzup24Tab() {
     },
   });
 
+  const setupWebhookMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/wazzup24/setup-webhook");
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({
+          title: "Webhook настроен",
+          description: `URL: ${data.webhookUrl}`,
+        });
+      } else {
+        toast({
+          title: "Ошибка настройки webhook",
+          description: data.error || "Не удалось настроить webhook",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка настройки webhook",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSave = async () => {
     if (!apiKey.trim()) {
       toast({
@@ -723,6 +751,10 @@ function Wazzup24Tab() {
 
   const handleSyncUsers = async () => {
     await syncUsersMutation.mutateAsync();
+  };
+
+  const handleSetupWebhook = async () => {
+    await setupWebhookMutation.mutateAsync();
   };
 
   if (isLoadingStatus) {
@@ -831,6 +863,24 @@ function Wazzup24Tab() {
                 )}
               </Button>
               <Button
+                variant="outline"
+                onClick={handleSetupWebhook}
+                disabled={setupWebhookMutation.isPending}
+                data-testid="button-setup-webhook-wazzup24"
+              >
+                {setupWebhookMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Настройка...
+                  </>
+                ) : (
+                  <>
+                    <Webhook className="mr-2 h-4 w-4" />
+                    Настроить Webhook
+                  </>
+                )}
+              </Button>
+              <Button
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
@@ -856,7 +906,8 @@ function Wazzup24Tab() {
           <p>2. Введите ключ выше и нажмите "Сохранить"</p>
           <p>3. Проверьте подключение кнопкой "Проверить подключение"</p>
           <p>4. Нажмите "Синхронизировать пользователей" чтобы добавить всех менеджеров CRM в Wazzup24</p>
-          <p>5. После настройки в карточках лидов появится вкладка "Чат" для общения через WhatsApp</p>
+          <p>5. Нажмите "Настроить Webhook" чтобы получать уведомления о входящих сообщениях</p>
+          <p>6. После настройки в карточках лидов появится вкладка "Чат" для общения через WhatsApp</p>
         </CardContent>
       </Card>
     </div>

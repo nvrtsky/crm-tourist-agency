@@ -869,16 +869,50 @@ export default function EventSummary() {
     other: "Прочее",
   };
 
-  // Sort participants by: (1) confirmed leads first, (2) mini-group groupId (priority for grouping), 
-  // (3) leadId for families, (4) isPrimary, (5) isPrimaryInGroup
-  // Mini-groups take priority so tourists with same groupId are always adjacent
+  // Sort participants using a composite grouping key approach:
+  // 1. Confirmed leads first
+  // 2. Group by "effective grouping key": family takes priority over mini-group
+  //    This ensures families (same leadId) always stay together
+  // 3. Within group: isPrimaryInGroup first, then isPrimary
+  
+  // Pre-compute which leads have multiple members (families)
+  const leadCountMap = new Map<string, number>();
+  rawParticipants.forEach((p) => {
+    const leadId = p.contact?.leadId;
+    if (leadId) {
+      leadCountMap.set(leadId, (leadCountMap.get(leadId) || 0) + 1);
+    }
+  });
+  
+  // Create composite grouping key that keeps related participants together
+  // FAMILY TAKES PRIORITY: if participant is in a family (leadId with 2+ members), 
+  // always use lead key even if they also have groupId
+  const getGroupingKey = (p: Participant): string => {
+    const groupId = p.deal.groupId;
+    const leadId = p.contact?.leadId;
+    
+    // Priority 1: If participant is part of a FAMILY (lead with 2+ members), use lead key
+    // This ensures all family members stay together even if some have groupId
+    if (leadId && (leadCountMap.get(leadId) || 0) > 1) {
+      return `lead_${leadId}`;
+    }
+    // Priority 2: If participant is in a mini-group (but not in family), use groupId
+    if (groupId) {
+      return `group_${groupId}`;
+    }
+    // Priority 3: Single participants with leadId (not a family)
+    if (leadId) {
+      return `lead_${leadId}`;
+    }
+    // No group and no lead - use deal id to keep stable
+    return `solo_${p.deal.id}`;
+  };
+  
   const participants = rawParticipants.slice().sort((a, b) => {
     const aIsConfirmed = a.lead?.status === "converted";
     const bIsConfirmed = b.lead?.status === "converted";
-    const aLeadId = a.contact?.leadId ?? '';
-    const bLeadId = b.contact?.leadId ?? '';
-    const aGroupId = a.deal.groupId ?? '';
-    const bGroupId = b.deal.groupId ?? '';
+    const aGroupKey = getGroupingKey(a);
+    const bGroupKey = getGroupingKey(b);
     const aIsPrimary = a.leadTourist?.isPrimary || false;
     const bIsPrimary = b.leadTourist?.isPrimary || false;
     const aIsPrimaryInGroup = a.deal.isPrimaryInGroup || false;
@@ -889,35 +923,20 @@ export default function EventSummary() {
       return aIsConfirmed ? -1 : 1;
     }
     
-    // Second: if both are in mini-groups, compare by groupId first (keeps mini-group members adjacent)
-    // If one is in mini-group and one is not, mini-group members with same groupId should stay together
-    if (aGroupId && bGroupId && aGroupId === bGroupId) {
-      // Same mini-group - compare by isPrimaryInGroup
-      if (aIsPrimaryInGroup !== bIsPrimaryInGroup) {
-        return aIsPrimaryInGroup ? -1 : 1;
-      }
-      // Then by leadId within the group
-      if (aLeadId !== bLeadId) {
-        return aLeadId.localeCompare(bLeadId);
-      }
-      return 0;
+    // Second: sort by grouping key to keep related participants together
+    // This groups both mini-groups (same groupId) and families (same leadId)
+    if (aGroupKey !== bGroupKey) {
+      // Mini-groups (group_*) come before families (lead_*) which come before solo (solo_*)
+      return aGroupKey.localeCompare(bGroupKey);
     }
     
-    // Third: sort by groupId to keep mini-group members adjacent
-    if (aGroupId !== bGroupId) {
-      // If one has groupId and one doesn't, groupId comes first
-      if (aGroupId && !bGroupId) return -1;
-      if (!aGroupId && bGroupId) return 1;
-      // Both have groupId but different - sort alphabetically
-      return aGroupId.localeCompare(bGroupId);
+    // Third: within the same group, sort by primary status
+    // isPrimaryInGroup takes precedence for mini-groups
+    if (aIsPrimaryInGroup !== bIsPrimaryInGroup) {
+      return aIsPrimaryInGroup ? -1 : 1;
     }
     
-    // Fourth: compare by leadId (empty string sorts equally with other empty strings)
-    if (aLeadId !== bLeadId) {
-      return aLeadId.localeCompare(bLeadId);
-    }
-    
-    // Fifth: same leadId (including both empty) - compare by isPrimary
+    // Fourth: then by isPrimary for lead/family ordering
     if (aIsPrimary !== bIsPrimary) {
       return aIsPrimary ? -1 : 1;
     }
@@ -968,12 +987,17 @@ export default function EventSummary() {
   const groupColorMap = new Map<string, number>();
   let colorIndex = 0;
   
-  // First pass: count lead members to identify families (2+ members)
+  // First pass: count lead and group members
   const leadMemberCount = new Map<string, number>();
+  const groupMemberCount = new Map<string, number>();
   participants.forEach((p) => {
     const leadId = p.contact?.leadId;
+    const groupId = p.deal.groupId;
     if (leadId) {
       leadMemberCount.set(leadId, (leadMemberCount.get(leadId) || 0) + 1);
+    }
+    if (groupId) {
+      groupMemberCount.set(groupId, (groupMemberCount.get(groupId) || 0) + 1);
     }
   });
   
@@ -981,14 +1005,17 @@ export default function EventSummary() {
   participants.forEach((p, index) => {
     const leadId = p.contact?.leadId;
     const groupId = p.deal.groupId;
-    const isMiniGroup = p.group?.type === 'mini_group';
     const isFamily = leadId && (leadMemberCount.get(leadId) || 0) > 1;
+    // A participant is in mini-group ONLY if NOT in a family
+    const isMiniGroup = groupId && (groupMemberCount.get(groupId) || 0) > 1 && !isFamily;
     
     if (leadId && !leadFirstIndexMap.has(leadId)) {
       leadFirstIndexMap.set(leadId, index);
     }
     
-    if (groupId && !groupFirstIndexMap.has(groupId)) {
+    // IMPORTANT: Only populate groupFirstIndexMap for NON-family members
+    // This prevents family members with groupId from being treated as mini-group anchors
+    if (groupId && !groupFirstIndexMap.has(groupId) && !isFamily) {
       groupFirstIndexMap.set(groupId, index);
     }
     
@@ -1925,7 +1952,6 @@ export default function EventSummary() {
                 return filteredParticipants.map((participant, displayIndex) => {
                   const leadId = participant.contact?.leadId;
                   const groupId = participant.deal.groupId;
-                  const isMiniGroup = participant.group?.type === 'mini_group';
                   
                   let groupInfo: ParticipantCardProps['groupInfo'] = undefined;
                   let sharedFields: ParticipantCardProps['sharedFields'] = undefined;
@@ -1952,12 +1978,12 @@ export default function EventSummary() {
                     }
                   }
                   // Priority 2: Mini-group (not in lead, or lead has only 1 member) - shares HOTEL only
-                  else if (groupId && isMiniGroup && participant.group) {
+                  else if (groupId) {
                     const miniGroupMembers = participants.filter(p => p.deal.groupId === groupId);
                     if (miniGroupMembers.length > 1) {
                       groupInfo = {
                         type: 'mini_group',
-                        name: participant.group.name,
+                        name: participant.group?.name || 'Мини-группа',
                         memberCount: miniGroupMembers.length,
                       };
                       sharedFields = {
@@ -1980,12 +2006,14 @@ export default function EventSummary() {
                   // Get group color for mobile card - priority: family > mini-group
                   let groupColor: string | undefined;
                   const hasFamily = leadId && participants.filter(p => p.contact?.leadId === leadId).length > 1;
+                  // Mini-group only if NOT in a family
+                  const hasMiniGroup = groupId && participants.filter(p => p.deal.groupId === groupId).length > 1 && !hasFamily;
                   if (hasFamily && leadId) {
                     const colorIdx = groupColorMap.get(`lead:${leadId}`);
                     if (colorIdx !== undefined) {
                       groupColor = groupColors[colorIdx];
                     }
-                  } else if (isMiniGroup && groupId) {
+                  } else if (hasMiniGroup) {
                     const colorIdx = groupColorMap.get(`group:${groupId}`);
                     if (colorIdx !== undefined) {
                       groupColor = groupColors[colorIdx];
@@ -2091,14 +2119,16 @@ export default function EventSummary() {
                     // Use pre-computed first index map - works even without isPrimary flag
                     const isFirstInLead = leadId ? leadFirstIndexMap.get(leadId) === index : false;
                     
-                    // Determine if this is a mini-group (not a family group)
-                    const isMiniGroup = participant.group?.type === "mini_group";
-                    // Use pre-computed first index map - works even without isPrimaryInGroup flag
-                    const isFirstInMiniGroup = isMiniGroup && groupId ? groupFirstIndexMap.get(groupId) === index : false;
-
                     // Lead column merging: ONLY for families (same leadId), NOT for mini-groups
                     // Mini-groups may have participants from different leads with different statuses
                     const hasLeadFamily = leadId && leadSize > 1;
+                    
+                    // Determine if this is a mini-group (participants with same groupId)
+                    // IMPORTANT: A participant is in mini-group ONLY if NOT in a family!
+                    // Family members should use lead-based merging even if they have groupId
+                    const isMiniGroup = !!(groupId && groupSize > 1 && !hasLeadFamily);
+                    // Use pre-computed first index map - works even without isPrimaryInGroup flag
+                    const isFirstInMiniGroup = isMiniGroup ? groupFirstIndexMap.get(groupId!) === index : false;
                     const leadColumnRowSpan = hasLeadFamily ? leadSize : 1;
                     const isLeadColumnAnchor = hasLeadFamily ? isFirstInLead : true;
 
@@ -2114,7 +2144,7 @@ export default function EventSummary() {
                       if (colorIdx !== undefined) {
                         groupColorClass = groupColors[colorIdx];
                       }
-                    } else if (isMiniGroup && groupId) {
+                    } else if (isMiniGroup) {
                       const colorIdx = groupColorMap.get(`group:${groupId}`);
                       if (colorIdx !== undefined) {
                         groupColorClass = groupColors[colorIdx];

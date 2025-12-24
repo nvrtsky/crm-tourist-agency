@@ -1,0 +1,88 @@
+root@cv5485803:/var/www/crm-tourist-agency# cd /var/www/crm-tourist-agency && git pull && npm install && npm run build && npm run db:push --force && pm2 restart all
+remote: Enumerating objects: 35, done.
+remote: Counting objects: 100% (35/35), done.
+remote: Compressing objects: 100% (6/6), done.
+remote: Total 26 (delta 20), reused 26 (delta 20), pack-reused 0 (from 0)
+Unpacking objects: 100% (26/26), 1.73 MiB | 4.01 MiB/s, done.
+From https://github.com/nvrtsky/crm-tourist-agency
+   3eb286e..32c96c6  main       -> origin/main
+Updating 3eb286e..32c96c6
+Fast-forward
+ ...sted-root-cv5485803-var-www-crm-tourist-agency-cd-var-www-cr_1766604924574.txt |  88 +++++++++++++++
+ attached_assets/image_1766606684352.png                                           | Bin 0 -> 1110882 bytes
+ attached_assets/image_1766606764541.png                                           | Bin 0 -> 754606 bytes
+ client/src/components/CollapsibleSection.tsx                                      |  73 ++++++++++++
+ client/src/pages/EventSummary.tsx                                                 | 187 ++++++++++++++++--------------
+ client/src/pages/Events.tsx                                                       | 237 ++++++++++++++++++++-------------------
+ client/src/pages/Leads.tsx                                                        |  99 ++++++++--------
+ 7 files changed, 434 insertions(+), 250 deletions(-)
+ create mode 100644 attached_assets/Pasted-root-cv5485803-var-www-crm-tourist-agency-cd-var-www-cr_1766604924574.txt
+ create mode 100644 attached_assets/image_1766606684352.png
+ create mode 100644 attached_assets/image_1766606764541.png
+ create mode 100644 client/src/components/CollapsibleSection.tsx
+
+up to date, audited 608 packages in 3s
+
+79 packages are looking for funding
+  run `npm fund` for details
+
+11 vulnerabilities (3 low, 5 moderate, 3 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (3) src/main.tsxBrowserslist: browsers data (caniuse-lite) is 14 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2750 modules transformed.
+../dist/public/index.html                                        0.80 kB │ gzip:   0.43 kB
+../dist/public/assets/favicon-white-C2b602W1.png                 1.21 kB
+../dist/public/assets/logo_white_1762533626956-ABs20zqe.png      7.03 kB
+../dist/public/assets/logo_1762426754494-D1p67QHm.png            7.66 kB
+../dist/public/assets/index-qjsIUTMw.css                        95.54 kB │ gzip:  15.43 kB
+../dist/public/assets/index-BXqxtccI.js                      1,391.26 kB │ gzip: 405.50 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.97s
+
+  dist/index.js  351.1kb
+
+⚡ Done in 22ms
+npm warn using --force Recommended protections disabled.
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/var/www/crm-tourist-agency/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
+[✓] Changes applied
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [all](ids: [ 0, 6 ])
+[PM2] [crm-chinaunique](0) ✓
+[PM2] [pay-app](6) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ crm-chinaunique    │ fork     │ 1145 │ online    │ 0%       │ 56.6mb   │
+│ 6  │ pay-app            │ fork     │ 5    │ online    │ 0%       │ 18.9mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+root@cv5485803:/var/www/crm-tourist-agency# 

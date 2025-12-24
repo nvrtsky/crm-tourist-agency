@@ -24,6 +24,9 @@ export function AppSidebar() {
   const isDemoMode = location.startsWith("/demo");
   const urlPrefix = isDemoMode ? "/demo" : "";
 
+  // Check if we're in development mode (hide portal-admin in production)
+  const isDev = import.meta.env.DEV;
+
   const allMenuItems = [
     {
       title: "Лиды",
@@ -37,12 +40,13 @@ export function AppSidebar() {
       icon: Calendar,
       testId: "nav-events",
     },
-    {
+    // Only show portal-admin in development mode
+    ...(isDev ? [{
       title: "Личный кабинет",
       url: `${urlPrefix}/portal-admin`,
       icon: User,
       testId: "nav-portal-admin",
-    },
+    }] : []),
     {
       title: t("nav.settings"),
       url: `${urlPrefix}/settings`,

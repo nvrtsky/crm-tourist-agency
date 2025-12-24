@@ -2443,7 +2443,7 @@ export default function EventSummary() {
                               )}
                               {cityMeta.showHotel && (
                                 <td 
-                                  className="p-1 border-r min-w-[120px] align-top" 
+                                  className={`p-1 border-r min-w-[120px] align-top ${rowBgClass}`}
                                   {...(cityMeta.hotelRowSpan > 1 && { rowSpan: cityMeta.hotelRowSpan })}
                                 >
                                   <div className="space-y-1">

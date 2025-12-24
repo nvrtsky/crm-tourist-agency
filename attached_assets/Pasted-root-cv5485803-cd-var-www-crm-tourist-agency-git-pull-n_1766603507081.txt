@@ -1,0 +1,89 @@
+root@cv5485803:~# cd /var/www/crm-tourist-agency
+git pull
+npm run build
+pm2 restart crm-chinaunique
+remote: Enumerating objects: 170, done.
+remote: Counting objects: 100% (170/170), done.
+remote: Compressing objects: 100% (20/20), done.
+remote: Total 150 (delta 127), reused 150 (delta 127), pack-reused 0 (from 0)
+Receiving objects: 100% (150/150), 2.65 MiB | 7.79 MiB/s, done.
+Resolving deltas: 100% (127/127), completed with 18 local objects.
+From https://github.com/nvrtsky/crm-tourist-agency
+   cc73072..11e0d8b  main       -> origin/main
+Updating cc73072..11e0d8b
+Fast-forward
+ ...sted--api-auth-me-1-Failed-to-load-resource-the-server-respo_1766601025870.txt |   33 ++
+ attached_assets/image_1766485413323.png                                           |  Bin 0 -> 146853 bytes
+ attached_assets/image_1766515370997.png                                           |  Bin 0 -> 120175 bytes
+ attached_assets/image_1766515468454.png                                           |  Bin 0 -> 99352 bytes
+ attached_assets/image_1766515683933.png                                           |  Bin 0 -> 484020 bytes
+ attached_assets/image_1766519058384.png                                           |  Bin 0 -> 865184 bytes
+ attached_assets/image_1766519270836.png                                           |  Bin 0 -> 864083 bytes
+ attached_assets/image_1766598420589.png                                           |  Bin 0 -> 197222 bytes
+ attached_assets/image_1766600411602.png                                           |  Bin 0 -> 179702 bytes
+ attached_assets/image_1766601051810.png                                           |  Bin 0 -> 285863 bytes
+ client/src/App.tsx                                                                |   19 +-
+ client/src/components/app-sidebar.tsx                                             |   14 +-
+ client/src/lib/queryClient.ts                                                     |    6 +-
+ client/src/lib/utils.ts                                                           |    2 -
+ client/src/pages/EventSummary.tsx                                                 |   10 +-
+ client/src/pages/Leads.tsx                                                        |  160 +++---
+ client/src/pages/Settings.tsx                                                     |   11 +-
+ client/src/pages/TouristLogin.tsx                                                 |  235 +++++++++
+ client/src/pages/TouristPortal.tsx                                                | 1013 ++++++++++++++++++++++++++++++++++++++
+ client/src/pages/TouristPortalAdmin.tsx                                           |  662 +++++++++++++++++++++++++
+ replit.md                                                                         |   55 +++
+ server/document-generator.ts                                                      |   26 +-
+ server/routes.ts                                                                  |  643 ++++++++++++++++++++++++
+ shared/schema.ts                                                                  |  199 ++++++++
+ 24 files changed, 3012 insertions(+), 76 deletions(-)
+ create mode 100644 attached_assets/Pasted--api-auth-me-1-Failed-to-load-resource-the-server-respo_1766601025870.txt
+ create mode 100644 attached_assets/image_1766485413323.png
+ create mode 100644 attached_assets/image_1766515370997.png
+ create mode 100644 attached_assets/image_1766515468454.png
+ create mode 100644 attached_assets/image_1766515683933.png
+ create mode 100644 attached_assets/image_1766519058384.png
+ create mode 100644 attached_assets/image_1766519270836.png
+ create mode 100644 attached_assets/image_1766598420589.png
+ create mode 100644 attached_assets/image_1766600411602.png
+ create mode 100644 attached_assets/image_1766601051810.png
+ create mode 100644 client/src/pages/TouristLogin.tsx
+ create mode 100644 client/src/pages/TouristPortal.tsx
+ create mode 100644 client/src/pages/TouristPortalAdmin.tsx
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (3) src/main.tsxBrowserslist: browsers data (caniuse-lite) is 14 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+transforming (4) src/i18n/index.ts
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2749 modules transformed.
+../dist/public/index.html                                        0.80 kB │ gzip:   0.43 kB
+../dist/public/assets/favicon-white-C2b602W1.png                 1.21 kB
+../dist/public/assets/logo_white_1762533626956-ABs20zqe.png      7.03 kB
+../dist/public/assets/logo_1762426754494-D1p67QHm.png            7.66 kB
+../dist/public/assets/index-qjsIUTMw.css                        95.54 kB │ gzip:  15.43 kB
+../dist/public/assets/index-C5VWE6V9.js                      1,390.00 kB │ gzip: 405.04 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.65s
+
+  dist/index.js  346.6kb
+
+⚡ Done in 23ms
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [crm-chinaunique](ids: [ 0 ])
+[PM2] [crm-chinaunique](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ crm-chinaunique    │ fork     │ 1142 │ online    │ 0%       │ 18.6mb   │
+│ 6  │ pay-app            │ fork     │ 4    │ online    │ 0%       │ 59.1mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+root@cv5485803:/var/www/crm-tourist-agency# 

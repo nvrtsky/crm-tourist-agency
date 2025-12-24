@@ -1,0 +1,84 @@
+root@cv5485803:/var/www/crm-tourist-agency# cd /var/www/crm-tourist-agency && git pull && npm install && npm run build && pm2 restart all
+remote: Enumerating objects: 41, done.
+remote: Counting objects: 100% (41/41), done.
+remote: Compressing objects: 100% (11/11), done.
+remote: Total 35 (delta 24), reused 35 (delta 24), pack-reused 0 (from 0)
+Unpacking objects: 100% (35/35), 3.30 MiB | 7.36 MiB/s, done.
+From https://github.com/nvrtsky/crm-tourist-agency
+   4dade0c..36b10db  main       -> origin/main
+Updating 4dade0c..36b10db
+Fast-forward
+ ...sted-root-cv5485803-var-www-crm-tourist-agency-cd-var-www-cr_1766608534280.txt |  88 +++++++++++++++++++++++++++++++++++++++
+ attached_assets/image_1766608599184.png                                           | Bin 0 -> 869515 bytes
+ attached_assets/image_1766608630255.png                                           | Bin 0 -> 828380 bytes
+ attached_assets/image_1766608807506.png                                           | Bin 0 -> 870236 bytes
+ attached_assets/image_1766608984124.png                                           | Bin 0 -> 863191 bytes
+ attached_assets/image_1766609051956.png                                           | Bin 0 -> 98701 bytes
+ attached_assets/image_1766609052169.png                                           | Bin 0 -> 98701 bytes
+ attached_assets/image_1766609319032.png                                           | Bin 0 -> 148982 bytes
+ client/src/pages/EventSummary.tsx                                                 |  22 +++++-----
+ 9 files changed, 99 insertions(+), 11 deletions(-)
+ create mode 100644 attached_assets/Pasted-root-cv5485803-var-www-crm-tourist-agency-cd-var-www-cr_1766608534280.txt
+ create mode 100644 attached_assets/image_1766608599184.png
+ create mode 100644 attached_assets/image_1766608630255.png
+ create mode 100644 attached_assets/image_1766608807506.png
+ create mode 100644 attached_assets/image_1766608984124.png
+ create mode 100644 attached_assets/image_1766609051956.png
+ create mode 100644 attached_assets/image_1766609052169.png
+ create mode 100644 attached_assets/image_1766609319032.png
+
+up to date, audited 608 packages in 3s
+
+79 packages are looking for funding
+  run `npm fund` for details
+
+11 vulnerabilities (3 low, 5 moderate, 3 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (3) src/main.tsxBrowserslist: browsers data (caniuse-lite) is 14 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+transforming (4) src/i18n/index.ts
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2750 modules transformed.
+../dist/public/index.html                                        0.80 kB │ gzip:   0.43 kB
+../dist/public/assets/favicon-white-C2b602W1.png                 1.21 kB
+../dist/public/assets/logo_white_1762533626956-ABs20zqe.png      7.03 kB
+../dist/public/assets/logo_1762426754494-D1p67QHm.png            7.66 kB
+../dist/public/assets/index-qjsIUTMw.css                        95.54 kB │ gzip:  15.43 kB
+../dist/public/assets/index-CZBihq3W.js                      1,391.40 kB │ gzip: 405.52 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.53s
+
+  dist/index.js  351.1kb
+
+⚡ Done in 20ms
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [all](ids: [ 0, 6 ])
+[PM2] [crm-chinaunique](0) ✓
+[PM2] [pay-app](6) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ crm-chinaunique    │ fork     │ 1147 │ online    │ 0%       │ 56.4mb   │
+│ 6  │ pay-app            │ fork     │ 7    │ online    │ 0%       │ 9.4mb    │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+root@cv5485803:/var/www/crm-tourist-agency# 

@@ -100,7 +100,7 @@ export function EditableCell({
         >
           <SelectTrigger 
             className={cn(
-              "h-auto min-h-[28px] px-2 py-1 pr-7 border-0 hover-elevate data-[state=open]:bg-accent",
+              "h-auto min-h-[28px] px-2 py-1 pr-7 border-0 bg-transparent hover-elevate data-[state=open]:bg-accent",
               !value && "text-muted-foreground italic",
               className
             )}

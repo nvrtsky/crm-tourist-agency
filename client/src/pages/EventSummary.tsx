@@ -2305,7 +2305,7 @@ export default function EventSummary() {
                         {/* Lead status column with rowSpan - merges for both families AND mini-groups */}
                         {isLeadColumnAnchor && (
                           <td 
-                            className="p-2 border-r text-center align-top w-16"
+                            className={`p-2 border-r text-center align-top w-16 ${rowBgClass}`}
                             rowSpan={leadColumnRowSpan}
                           >
                             {participant.lead ? (() => {
@@ -2367,7 +2367,7 @@ export default function EventSummary() {
                         {/* Remaining payment column */}
                         {isLeadColumnAnchor && (
                           <td 
-                            className="p-2 border-r text-center align-top w-24"
+                            className={`p-2 border-r text-center align-top w-24 ${rowBgClass}`}
                             rowSpan={leadColumnRowSpan}
                           >
                             {participant.lead?.remainingPayment ? (
@@ -2388,7 +2388,7 @@ export default function EventSummary() {
                             <Fragment key={city}>
                               {cityMeta.showArrival && (
                                 <td 
-                                  className="p-1 border-r align-top" 
+                                  className={`p-1 border-r align-top ${cityMeta.arrivalRowSpan > 1 ? rowBgClass : ''}`}
                                   {...(cityMeta.arrivalRowSpan > 1 && { rowSpan: cityMeta.arrivalRowSpan })}
                                 >
                                   <div className="space-y-1">
@@ -2443,7 +2443,7 @@ export default function EventSummary() {
                               )}
                               {cityMeta.showHotel && (
                                 <td 
-                                  className="p-1 border-r min-w-[120px] align-top" 
+                                  className={`p-1 border-r min-w-[120px] align-top ${cityMeta.hotelRowSpan > 1 ? rowBgClass : ''}`}
                                   {...(cityMeta.hotelRowSpan > 1 && { rowSpan: cityMeta.hotelRowSpan })}
                                 >
                                   <div className="space-y-1">
@@ -2474,7 +2474,7 @@ export default function EventSummary() {
                               )}
                               {cityMeta.showDeparture && (
                                 <td 
-                                  className="p-1 border-r align-top" 
+                                  className={`p-1 border-r align-top ${cityMeta.departureRowSpan > 1 ? rowBgClass : ''}`}
                                   {...(cityMeta.departureRowSpan > 1 && { rowSpan: cityMeta.departureRowSpan })}
                                 >
                                   <div className="space-y-1">

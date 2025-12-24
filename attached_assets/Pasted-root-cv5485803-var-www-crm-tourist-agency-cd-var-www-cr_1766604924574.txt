@@ -1,0 +1,88 @@
+root@cv5485803:/var/www/crm-tourist-agency# cd /var/www/crm-tourist-agency
+git pull
+npm run build
+
+# Добавьте переменную окружения для локального хранения (опционально - включается автоматически если PRIVATE_OBJECT_DIR не задан) 
+# export USE_LOCAL_STORAGE=true
+
+# Синхронизация схемы (для колонки citizenship)
+npm run db:push --force
+
+pm2 restart crm-chinaunique
+remote: Enumerating objects: 22, done.
+remote: Counting objects: 100% (22/22), done.
+remote: Compressing objects: 100% (9/9), done.
+remote: Total 17 (delta 8), reused 17 (delta 8), pack-reused 0 (from 0)
+Unpacking objects: 100% (17/17), 836.30 KiB | 2.56 MiB/s, done.
+From https://github.com/nvrtsky/crm-tourist-agency
+   11e0d8b..3eb286e  main       -> origin/main
+Updating 11e0d8b..3eb286e
+Fast-forward
+ .gitignore                                                                        |  78 +-------------
+ ...sted-api-auth-me-1-Failed-to-load-resource-the-server-respon_1766603950125.txt |  25 +++++
+ ...sted-api-auth-me-1-Failed-to-load-resource-the-server-respon_1766603955451.txt |  25 +++++
+ ...sted-api-auth-me-1-Failed-to-load-resource-the-server-respon_1766603955518.txt |  25 +++++
+ ...sted-root-cv5485803-cd-var-www-crm-tourist-agency-git-pull-n_1766603507081.txt |  89 ++++++++++++++++
+ ...sted-root-cv5485803-var-www-crm-tourist-agency-pm2-logs-crm-_1766604030391.txt | 105 +++++++++++++++++++
+ attached_assets/image_1766603412651.png                                           | Bin 0 -> 143225 bytes
+ attached_assets/image_1766603552202.png                                           | Bin 0 -> 297662 bytes
+ attached_assets/image_1766603919510.png                                           | Bin 0 -> 390435 bytes
+ attached_assets/image_1766603990905.png                                           | Bin 0 -> 280043 bytes
+ server/objectStorage.ts                                                           | 221 +++++++++++++++++++++++++++++++++++----
+ 11 files changed, 470 insertions(+), 98 deletions(-)
+ create mode 100644 attached_assets/Pasted-api-auth-me-1-Failed-to-load-resource-the-server-respon_1766603950125.txt
+ create mode 100644 attached_assets/Pasted-api-auth-me-1-Failed-to-load-resource-the-server-respon_1766603955451.txt
+ create mode 100644 attached_assets/Pasted-api-auth-me-1-Failed-to-load-resource-the-server-respon_1766603955518.txt
+ create mode 100644 attached_assets/Pasted-root-cv5485803-cd-var-www-crm-tourist-agency-git-pull-n_1766603507081.txt
+ create mode 100644 attached_assets/Pasted-root-cv5485803-var-www-crm-tourist-agency-pm2-logs-crm-_1766604030391.txt
+ create mode 100644 attached_assets/image_1766603412651.png
+ create mode 100644 attached_assets/image_1766603552202.png
+ create mode 100644 attached_assets/image_1766603919510.png
+ create mode 100644 attached_assets/image_1766603990905.png
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (1) index.htmlBrowserslist: browsers data (caniuse-lite) is 14 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+transforming (4) src/i18n/index.ts
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2749 modules transformed.
+../dist/public/index.html                                        0.80 kB │ gzip:   0.43 kB
+../dist/public/assets/favicon-white-C2b602W1.png                 1.21 kB
+../dist/public/assets/logo_white_1762533626956-ABs20zqe.png      7.03 kB
+../dist/public/assets/logo_1762426754494-D1p67QHm.png            7.66 kB
+../dist/public/assets/index-qjsIUTMw.css                        95.54 kB │ gzip:  15.43 kB
+../dist/public/assets/index-C5VWE6V9.js                      1,390.00 kB │ gzip: 405.04 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.52s
+
+  dist/index.js  351.1kb
+
+⚡ Done in 21ms
+npm warn using --force Recommended protections disabled.
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/var/www/crm-tourist-agency/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
+[✓] Changes applied
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [crm-chinaunique](ids: [ 0 ])
+[PM2] [crm-chinaunique](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ crm-chinaunique    │ fork     │ 1144 │ online    │ 0%       │ 10.4mb   │
+│ 6  │ pay-app            │ fork     │ 4    │ online    │ 0%       │ 59.8mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+root@cv5485803:/var/www/crm-tourist-agency# 

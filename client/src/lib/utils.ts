@@ -94,13 +94,11 @@ export function calculateTouristDataCompleteness(tourist: LeadTourist): TouristD
     russianPassport = checkFieldsWithNames([
       { name: "passportSeries", value: tourist.passportSeries },
       { name: "passportIssuedBy", value: tourist.passportIssuedBy },
-      { name: "registrationAddress", value: tourist.registrationAddress },
     ]);
   } else {
     const rfFields = [
       { name: "passportSeries", value: tourist.passportSeries },
       { name: "passportIssuedBy", value: tourist.passportIssuedBy },
-      { name: "registrationAddress", value: tourist.registrationAddress },
     ];
     const result = checkFieldsWithNames(rfFields);
     if (result.status === "empty") {

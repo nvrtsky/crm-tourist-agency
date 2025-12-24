@@ -3544,8 +3544,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const getDictionaryLabel = (items: any[], value: string | null) => {
         if (!value) return "";
-        const item = items.find(i => i.value === value);
-        return item?.label || value;
+        // Handle comma-separated multi-select values
+        const values = value.split(",").map(v => v.trim());
+        const labels = values.map(v => {
+          const item = items.find(i => i.value === v);
+          return item?.label || v;
+        });
+        return labels.join(", ");
       };
       
       const labels = {

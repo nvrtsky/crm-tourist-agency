@@ -869,8 +869,9 @@ export default function EventSummary() {
     other: "Прочее",
   };
 
-  // Sort participants by: (1) confirmed leads first, (2) leadId, (3) isPrimary, (4) groupId, (5) isPrimaryInGroup
-  // This ensures confirmed participants appear at the top while maintaining group relationships
+  // Sort participants by: (1) confirmed leads first, (2) mini-group groupId (priority for grouping), 
+  // (3) leadId for families, (4) isPrimary, (5) isPrimaryInGroup
+  // Mini-groups take priority so tourists with same groupId are always adjacent
   const participants = rawParticipants.slice().sort((a, b) => {
     const aIsConfirmed = a.lead?.status === "converted";
     const bIsConfirmed = b.lead?.status === "converted";
@@ -888,24 +889,37 @@ export default function EventSummary() {
       return aIsConfirmed ? -1 : 1;
     }
     
-    // Second: compare by leadId (empty string sorts equally with other empty strings)
+    // Second: if both are in mini-groups, compare by groupId first (keeps mini-group members adjacent)
+    // If one is in mini-group and one is not, mini-group members with same groupId should stay together
+    if (aGroupId && bGroupId && aGroupId === bGroupId) {
+      // Same mini-group - compare by isPrimaryInGroup
+      if (aIsPrimaryInGroup !== bIsPrimaryInGroup) {
+        return aIsPrimaryInGroup ? -1 : 1;
+      }
+      // Then by leadId within the group
+      if (aLeadId !== bLeadId) {
+        return aLeadId.localeCompare(bLeadId);
+      }
+      return 0;
+    }
+    
+    // Third: sort by groupId to keep mini-group members adjacent
+    if (aGroupId !== bGroupId) {
+      // If one has groupId and one doesn't, groupId comes first
+      if (aGroupId && !bGroupId) return -1;
+      if (!aGroupId && bGroupId) return 1;
+      // Both have groupId but different - sort alphabetically
+      return aGroupId.localeCompare(bGroupId);
+    }
+    
+    // Fourth: compare by leadId (empty string sorts equally with other empty strings)
     if (aLeadId !== bLeadId) {
       return aLeadId.localeCompare(bLeadId);
     }
     
-    // Third: same leadId (including both empty) - compare by isPrimary
+    // Fifth: same leadId (including both empty) - compare by isPrimary
     if (aIsPrimary !== bIsPrimary) {
       return aIsPrimary ? -1 : 1;
-    }
-    
-    // Fourth: same leadId and primary status - compare by groupId
-    if (aGroupId !== bGroupId) {
-      return aGroupId.localeCompare(bGroupId);
-    }
-    
-    // Fifth: same groupId - compare by isPrimaryInGroup
-    if (aIsPrimaryInGroup !== bIsPrimaryInGroup) {
-      return aIsPrimaryInGroup ? -1 : 1;
     }
     
     return 0;
@@ -2060,8 +2074,8 @@ export default function EventSummary() {
                   {participants.map((participant, index) => {
                     // Determine group membership
                     const groupId = participant.deal.groupId;
-                    const groupMembers = participant.group 
-                      ? participants.filter(p => p.group?.id === participant.group?.id)
+                    const groupMembers = groupId 
+                      ? participants.filter(p => p.deal.groupId === groupId)
                       : [];
                     const groupSize = groupMembers.length;
                     

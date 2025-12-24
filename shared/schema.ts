@@ -306,6 +306,7 @@ export const leadTourists = pgTable("lead_tourists", {
   email: text("email"),
   phone: text("phone"),
   dateOfBirth: date("date_of_birth"), // Дата рождения
+  citizenship: text("citizenship").default("russia"), // 'russia' or 'kazakhstan'
   passportSeries: text("passport_series"), // Серия и номер (национальный паспорт)
   passportIssuedBy: text("passport_issued_by"), // Кем выдан (нац паспорт)
   registrationAddress: text("registration_address"), // Адрес регистрации

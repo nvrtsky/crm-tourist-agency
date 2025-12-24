@@ -3079,6 +3079,7 @@ function TouristDialog({
       email: tourist?.email || null,
       phone: tourist?.phone || null,
       dateOfBirth: tourist?.dateOfBirth || null,
+      citizenship: tourist?.citizenship || "russia",
       passportSeries: tourist?.passportSeries || null,
       passportIssuedBy: tourist?.passportIssuedBy || null,
       registrationAddress: tourist?.registrationAddress || null,
@@ -3093,6 +3094,9 @@ function TouristDialog({
     },
   });
 
+  // Watch citizenship for conditional rendering
+  const citizenship = form.watch("citizenship");
+
   // Reset form when tourist or prefillData changes
   useEffect(() => {
     if (tourist) {
@@ -3104,6 +3108,7 @@ function TouristDialog({
         email: tourist.email,
         phone: tourist.phone,
         dateOfBirth: tourist.dateOfBirth,
+        citizenship: tourist.citizenship || "russia",
         passportSeries: tourist.passportSeries,
         passportIssuedBy: tourist.passportIssuedBy,
         registrationAddress: tourist.registrationAddress,
@@ -3125,6 +3130,7 @@ function TouristDialog({
         email: prefillData.email || null,
         phone: prefillData.phone || null,
         dateOfBirth: null,
+        citizenship: "russia",
         passportSeries: null,
         passportIssuedBy: null,
         registrationAddress: null,
@@ -3146,6 +3152,7 @@ function TouristDialog({
         email: null,
         phone: null,
         dateOfBirth: null,
+        citizenship: "russia",
         passportSeries: null,
         passportIssuedBy: null,
         registrationAddress: null,
@@ -3289,71 +3296,98 @@ function TouristDialog({
               </div>
             </div>
 
-            {/* Российский паспорт */}
+            {/* Гражданство */}
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" />
-                Российский паспорт
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="passportSeries"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Серия паспорта</FormLabel>
+              <FormField
+                control={form.control}
+                name="citizenship"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Гражданство</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || "russia"} data-testid="select-tourist-citizenship">
                       <FormControl>
-                        <Input
-                          placeholder="45 12 123456"
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-tourist-passportSeries"
-                        />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите гражданство" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="passportIssuedBy"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Кем выдан паспорт</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Отделом УФМС..."
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-tourist-passportIssuedBy"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="registrationAddress"
-                  render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Адрес регистрации</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="г. Москва, ул. ..."
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-tourist-registrationAddress"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      <SelectContent>
+                        <SelectItem value="russia">Россия</SelectItem>
+                        <SelectItem value="kazakhstan">Казахстан</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
+
+            {/* Российский паспорт - только для граждан России */}
+            {citizenship !== "kazakhstan" && (
+              <div className="space-y-4 pt-4 border-t">
+                <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Российский паспорт
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="passportSeries"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Серия паспорта</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="45 12 123456"
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-tourist-passportSeries"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="passportIssuedBy"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Кем выдан паспорт</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Отделом УФМС..."
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-tourist-passportIssuedBy"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="registrationAddress"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel>Адрес регистрации</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="г. Москва, ул. ..."
+                            {...field}
+                            value={field.value || ""}
+                            data-testid="input-tourist-registrationAddress"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Загранпаспорт */}
             <div className="space-y-4 pt-4 border-t">

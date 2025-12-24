@@ -3534,11 +3534,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const event = lead.eventId ? await storage.getEvent(lead.eventId) : null;
       const primaryTourist = tourists.find((t: LeadTourist) => t.isPrimary) || tourists[0] || null;
       
+      // Fetch dictionary labels for readable document output
+      const [hotelCategoryItems, roomTypeItems, mealsItems, transfersItems] = await Promise.all([
+        storage.getDictionaryItems("hotel_category"),
+        storage.getDictionaryItems("room_type"),
+        storage.getDictionaryItems("meals"),
+        storage.getDictionaryItems("transfers"),
+      ]);
+      
+      const getDictionaryLabel = (items: any[], value: string | null) => {
+        if (!value) return "";
+        const item = items.find(i => i.value === value);
+        return item?.label || value;
+      };
+      
+      const labels = {
+        hotelCategory: getDictionaryLabel(hotelCategoryItems, lead.hotelCategory),
+        roomType: getDictionaryLabel(roomTypeItems, lead.roomType),
+        meals: getDictionaryLabel(mealsItems, lead.meals),
+        transfers: getDictionaryLabel(transfersItems, lead.transfers),
+      };
+      
       const buffer = await generateBookingSheet({
         lead,
         tourists,
         event: event || null,
         primaryTourist,
+        labels,
       });
       
       const contractNumber = new Date().toISOString().slice(0,10).split('-').reverse().join('/').slice(0,8);

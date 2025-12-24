@@ -1199,6 +1199,12 @@ export default function Leads() {
                             if (!tourist.foreignPassportNumber) {
                               missingFields.push(`${touristName}: номер загранпаспорта`);
                             }
+                            if (!tourist.foreignPassportValidUntil) {
+                              missingFields.push(`${touristName}: загранпаспорт действует до`);
+                            }
+                            if (!tourist.passportScans || tourist.passportScans.length === 0) {
+                              missingFields.push(`${touristName}: скан загранпаспорта`);
+                            }
                             if (!tourist.dateOfBirth) {
                               if (!missingFields.some(f => f.includes(touristName) && f.includes('дата рождения'))) {
                                 missingFields.push(`${touristName}: дата рождения`);

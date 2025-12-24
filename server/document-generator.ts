@@ -26,6 +26,17 @@ interface DocumentData {
   primaryTourist: LeadTourist | null;
 }
 
+interface DictionaryLabels {
+  hotelCategory?: string;
+  roomType?: string;
+  meals?: string;
+  transfers?: string;
+}
+
+interface BookingSheetData extends DocumentData {
+  labels?: DictionaryLabels;
+}
+
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return "";
   try {
@@ -911,12 +922,17 @@ export async function generateContract(data: DocumentData): Promise<Buffer> {
 }
 
 export async function generateBookingSheet(
-  data: DocumentData
+  data: BookingSheetData
 ): Promise<Buffer> {
   const contractNumber = getContractNumber();
   const contractDate = formatDateLong(new Date().toISOString());
 
   const primaryTourist = data.primaryTourist || data.tourists[0];
+  
+  const hotelCategoryLabel = data.labels?.hotelCategory || data.lead.hotelCategory || "";
+  const roomTypeLabel = data.labels?.roomType || data.lead.roomType || "";
+  const mealsLabel = data.labels?.meals || data.lead.meals || "";
+  const transfersLabel = data.labels?.transfers || data.lead.transfers || "Входят все индивидуальные трансферы по маршруту с аэропортов, вокзалов.";
 
   const eventStartDate = data.event?.startDate
     ? formatDate(data.event.startDate)
@@ -1097,7 +1113,7 @@ export async function generateBookingSheet(
     new Paragraph({
       children: [
         new TextRun({
-          text: "• Отели/кат. : 5*",
+          text: `• Отели/кат. : ${hotelCategoryLabel}`,
           size: 22,
         }),
       ],
@@ -1169,7 +1185,7 @@ export async function generateBookingSheet(
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: data.lead.roomType || "",
+                      text: roomTypeLabel,
                       size: 20,
                     }),
                   ],
@@ -1181,7 +1197,7 @@ export async function generateBookingSheet(
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: data.lead.meals || "",
+                      text: mealsLabel,
                       size: 20,
                     }),
                   ],
@@ -1201,7 +1217,7 @@ export async function generateBookingSheet(
           size: 22,
         }),
         new TextRun({
-          text: data.lead.transfers || "Входят все индивидуальные трансферы по маршруту с аэропортов, вокзалов.",
+          text: transfersLabel,
           size: 22,
         }),
       ],

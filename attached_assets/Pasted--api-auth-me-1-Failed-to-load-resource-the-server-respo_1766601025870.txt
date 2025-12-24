@@ -1,0 +1,33 @@
+/api/auth/me:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+index-CCEZ0QJ0.js:477 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-CCEZ0QJ0.js:477
+index-CCEZ0QJ0.js:477 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-CCEZ0QJ0.js:477
+index-CCEZ0QJ0.js:477 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-CCEZ0QJ0.js:477
+index-CCEZ0QJ0.js:477 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-CCEZ0QJ0.js:477
+156d3b0.js:1 Hit: https://app.wazzup24.com/8430-5193/chat/whatsapp/79825018098/fd35d81d-2de9-4c4f-bc46-39402419a94b?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyR3VpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCIsImFjY291bnRJZCI6ODQzMDUxOTMsImludGVncmF0aW9uIjp7ImNybSI6ImFwaV92MyIsImd1aWQiOiJmY2ViODZjOC0zZmQwLTQyZWUtYWRlYS1lNmJlOWZlMmVjYmIiLCJ0eXBlIjoxMSwic2NvcGUiOiJjYXJkIiwidXNlcklkIjoiOGZiOTQ3YTktNmFmNS00YTEzLWJkZjUtYjZhZjVlZGM3NzRjIiwic2hvd0dyb3VwQ2hhdHMiOnRydWUsImhhc1JvbGUiOnRydWUsInBob25lcyI6W3siY2hhdFR5cGUiOiJ3aGF0c2FwcCIsImNoYXRJZCI6Ijc5ODI1MDE4MDk4In1dLCJkb21haW4iOm51bGwsImFsbG93Q3JlYXRlRW50aXR5Ijp0cnVlLCJ1c2VyTmFtZSI6ItCi0LXRgdGC0L7QstGL0Lkg0JDQtNC80LjQvdC40YHRgtGA0LDRgtC-0YAiLCJpc0FkbWluIjpmYWxzZSwidmVyc2lvbiI6MSwiZmlsdGVyIjp7InZlcnNpb24iOjIsImNvbnRhY3RzIjp0cnVlfSwib3B0aW9ucyI6eyJjbGllbnRUeXBlIjpudWxsLCJ1c2VEZWFsc0V2ZW50cyI6dHJ1ZSwidXNlTWVzc2FnZUV2ZW50cyI6dHJ1ZX19LCJpYXQiOjE3NjY2MDA5OTIsImV4cCI6MTc2NjYyOTc5Mn0.6DrnsC5kRK1Z-eQCXoM1LzeBrpr3FS7kRJ2oyXGjEpM https://app.wazzup24.com/
+156d3b0.js:1 ReferenceError: ym is not defined
+    at r (156d3b0.js:1:71432)
+    at 156d3b0.js:1:71980
+    at c246ea5.js:2:178858
+    at Array.forEach (<anonymous>)
+    at c246ea5.js:2:178834
+    at c246ea5.js:2:180784
+    at r (c246ea5.js:2:175872)
+    at r (c246ea5.js:2:175910)
+    at Tt (c246ea5.js:2:175918)
+    at c246ea5.js:2:180685
+156d3b0.js:1 Hit: https://app.wazzup24.com/8430-5193/chat/whatsapp/79825018098/fd35d81d-2de9-4c4f-bc46-39402419a94b?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyR3VpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCIsImFjY291bnRJZCI6ODQzMDUxOTMsImludGVncmF0aW9uIjp7ImNybSI6ImFwaV92MyIsImd1aWQiOiJmY2ViODZjOC0zZmQwLTQyZWUtYWRlYS1lNmJlOWZlMmVjYmIiLCJ0eXBlIjoxMSwic2NvcGUiOiJjYXJkIiwidXNlcklkIjoiOGZiOTQ3YTktNmFmNS00YTEzLWJkZjUtYjZhZjVlZGM3NzRjIiwic2hvd0dyb3VwQ2hhdHMiOnRydWUsImhhc1JvbGUiOnRydWUsInBob25lcyI6W3siY2hhdFR5cGUiOiJ3aGF0c2FwcCIsImNoYXRJZCI6Ijc5ODI1MDE4MDk4In1dLCJkb21haW4iOm51bGwsImFsbG93Q3JlYXRlRW50aXR5Ijp0cnVlLCJ1c2VyTmFtZSI6ItCi0LXRgdGC0L7QstGL0Lkg0JDQtNC80LjQvdC40YHRgtGA0LDRgtC-0YAiLCJpc0FkbWluIjpmYWxzZSwidmVyc2lvbiI6MSwiZmlsdGVyIjp7InZlcnNpb24iOjIsImNvbnRhY3RzIjp0cnVlfSwib3B0aW9ucyI6eyJjbGllbnRUeXBlIjpudWxsLCJ1c2VEZWFsc0V2ZW50cyI6dHJ1ZSwidXNlTWVzc2FnZUV2ZW50cyI6dHJ1ZX19LCJpYXQiOjE3NjY2MDEwMDQsImV4cCI6MTc2NjYyOTgwNH0.-7rQnYB01AkI7KmU88io6kzPMraYjdO-d8ropJuDa1c https://app.wazzup24.com/
+156d3b0.js:1 ReferenceError: ym is not defined
+    at r (156d3b0.js:1:71432)
+    at 156d3b0.js:1:71980
+    at c246ea5.js:2:178858
+    at Array.forEach (<anonymous>)
+    at c246ea5.js:2:178834
+    at c246ea5.js:2:180784
+    at r (c246ea5.js:2:175872)
+    at r (c246ea5.js:2:175910)
+    at Tt (c246ea5.js:2:175918)
+    at c246ea5.js:2:180685

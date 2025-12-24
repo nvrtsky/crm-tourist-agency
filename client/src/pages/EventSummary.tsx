@@ -1438,7 +1438,8 @@ export default function EventSummary() {
         baseData[`${city} - Транспорт прибытия`] = visit?.transportType || "";
         baseData[`${city} - Рейс/Поезд прибытия`] = visit?.flightNumber || "";
         baseData[`${city} - Отель`] = visit?.hotelName || "";
-        baseData[`${city} - Тип номера`] = visit?.roomType || p.lead?.roomType || "";
+        const roomTypeRaw = visit?.roomType || p.lead?.roomType || "";
+        baseData[`${city} - Тип номера`] = roomTypeRaw ? roomTypeRaw.charAt(0).toUpperCase() + roomTypeRaw.slice(1).toLowerCase() : "";
         baseData[`${city} - Отъезд`] = visit?.departureDate
           ? `${format(new Date(visit.departureDate), "dd.MM.yyyy")}${visit.departureTime ? ` ${visit.departureTime}` : ""}`
           : "";
@@ -2410,7 +2411,7 @@ export default function EventSummary() {
                                     />
                                     <EditableCell
                                       type="select"
-                                      value={visit?.roomType || participant.lead?.roomType}
+                                      value={(visit?.roomType || participant.lead?.roomType)?.toLowerCase()}
                                       placeholder="Тип номера"
                                       selectOptions={[
                                         { value: "single", label: "Single" },
@@ -2531,7 +2532,7 @@ export default function EventSummary() {
                             
                             participants.forEach(p => {
                               const visit = p.visits?.find(v => v.city === city);
-                              const roomType = visit?.roomType || p.lead?.roomType;
+                              const roomType = (visit?.roomType || p.lead?.roomType)?.toLowerCase();
                               if (roomType) {
                                 roomTypeCounts[roomType] = (roomTypeCounts[roomType] || 0) + 1;
                               }
@@ -2540,9 +2541,10 @@ export default function EventSummary() {
                             const entries = Object.entries(roomTypeCounts);
                             if (entries.length === 0) return "—";
                             
+                            // Capitalize first letter for display
                             return entries
                               .sort((a, b) => b[1] - a[1])
-                              .map(([type, count]) => `${count} ${type}`)
+                              .map(([type, count]) => `${count} ${type.charAt(0).toUpperCase() + type.slice(1)}`)
                               .join(", ");
                           })()}
                         </td>

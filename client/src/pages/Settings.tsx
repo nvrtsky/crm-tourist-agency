@@ -1027,6 +1027,13 @@ function DictionariesTab() {
       return;
     }
 
+    // Check for Cyrillic characters in the value field
+    const cyrillicPattern = /[\u0400-\u04FF]/;
+    if (cyrillicPattern.test(formData.value)) {
+      toast({ title: "Ошибка", description: "Значение (код) должно содержать только латиницу и цифры", variant: "destructive" });
+      return;
+    }
+
     if (editingItem) {
       updateMutation.mutate({ id: editingItem.id, data: formData });
     } else {
@@ -1188,12 +1195,12 @@ function DictionariesTab() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="value">Значение (код)</Label>
+              <Label htmlFor="value">Значение (код) - Латиница или число</Label>
               <Input
                 id="value"
                 value={formData.value}
                 onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                placeholder="Уникальный идентификатор"
+                placeholder="Уникальный идентификатор (только латиница и цифры)"
                 data-testid="input-dictionary-value"
               />
             </div>

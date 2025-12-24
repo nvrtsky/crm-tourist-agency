@@ -65,6 +65,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LeadEditModal } from "@/components/LeadEditModal";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
 
 const LEAD_STATUS_LABELS: Record<string, string> = {
   new: "Новый",
@@ -1761,80 +1762,82 @@ export default function EventSummary() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card data-testid="stat-total-participants">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Участников</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {participants.filter(p => p.lead?.status === "converted").length} / {event.participantLimit}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {event.availableSpots} мест доступно
-            </p>
-          </CardContent>
-        </Card>
+      <CollapsibleSection id="summary-stats" title="Статистика" defaultOpen={false}>
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card data-testid="stat-total-participants">
+            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Участников</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {participants.filter(p => p.lead?.status === "converted").length} / {event.participantLimit}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {event.availableSpots} мест доступно
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card data-testid="stat-confirmed">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Подтверждено</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {participants.filter(p => p.lead?.status === "converted").length}
-            </div>
-            <p className="text-xs text-muted-foreground">Готовы к туру</p>
-          </CardContent>
-        </Card>
+          <Card data-testid="stat-confirmed">
+            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Подтверждено</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {participants.filter(p => p.lead?.status === "converted").length}
+              </div>
+              <p className="text-xs text-muted-foreground">Готовы к туру</p>
+            </CardContent>
+          </Card>
 
-        <Card data-testid="stat-pending">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">В ожидании</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {participants.filter(p => p.lead?.status && p.lead.status !== "converted" && p.lead.status !== "lost").length}
-            </div>
-            <p className="text-xs text-muted-foreground">Требуют подтверждения</p>
-          </CardContent>
-        </Card>
+          <Card data-testid="stat-pending">
+            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">В ожидании</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {participants.filter(p => p.lead?.status && p.lead.status !== "converted" && p.lead.status !== "lost").length}
+              </div>
+              <p className="text-xs text-muted-foreground">Требуют подтверждения</p>
+            </CardContent>
+          </Card>
 
-        <Card data-testid="stat-revenue">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Выручка</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(() => {
-                const processedLeads = new Set<string>();
-                const totals: Record<string, number> = {};
-                participants
-                  .filter(p => p.lead?.status === "converted")
-                  .forEach(p => {
-                    if (p.lead && !processedLeads.has(p.lead.id)) {
-                      processedLeads.add(p.lead.id);
-                      if (p.lead.tourCost) {
-                        const currency = p.lead.tourCostCurrency || "RUB";
-                        const amount = parseFloat(p.lead.tourCost);
-                        if (!isNaN(amount)) {
-                          totals[currency] = (totals[currency] || 0) + amount;
+          <Card data-testid="stat-revenue">
+            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Выручка</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {(() => {
+                  const processedLeads = new Set<string>();
+                  const totals: Record<string, number> = {};
+                  participants
+                    .filter(p => p.lead?.status === "converted")
+                    .forEach(p => {
+                      if (p.lead && !processedLeads.has(p.lead.id)) {
+                        processedLeads.add(p.lead.id);
+                        if (p.lead.tourCost) {
+                          const currency = p.lead.tourCostCurrency || "RUB";
+                          const amount = parseFloat(p.lead.tourCost);
+                          if (!isNaN(amount)) {
+                            totals[currency] = (totals[currency] || 0) + amount;
+                          }
                         }
                       }
-                    }
-                  });
-                const entries = Object.entries(totals);
-                if (entries.length === 0) return "0 ₽";
-                return entries.map(([currency, amount]) => 
-                  formatCurrency(amount, currency)
-                ).join(", ");
-              })()}
-            </div>
-            <p className="text-xs text-muted-foreground">От подтвержденных</p>
-          </CardContent>
-        </Card>
-      </div>
+                    });
+                  const entries = Object.entries(totals);
+                  if (entries.length === 0) return "0 ₽";
+                  return entries.map(([currency, amount]) => 
+                    formatCurrency(amount, currency)
+                  ).join(", ");
+                })()}
+              </div>
+              <p className="text-xs text-muted-foreground">От подтвержденных</p>
+            </CardContent>
+          </Card>
+        </div>
+      </CollapsibleSection>
 
       <Tabs defaultValue="summary" className="w-full">
         <TabsList className="mb-4">

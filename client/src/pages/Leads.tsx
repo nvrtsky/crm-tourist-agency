@@ -36,6 +36,7 @@ import { useSystemDictionary } from "@/hooks/use-system-dictionary";
 import { MultiSelectField } from "@/components/MultiSelectField";
 import { PassportScansField } from "@/components/PassportScansField";
 import { z } from "zod";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
 
 const leadStatusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; customClass?: string }> = {
   new: { label: "Новый", variant: "secondary" },
@@ -473,54 +474,57 @@ export default function Leads() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card data-testid="stat-total-leads">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Всего лидов</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">Все лиды в системе</p>
-          </CardContent>
-        </Card>
+      <CollapsibleSection id="leads-stats" title="Статистика" defaultOpen={false}>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card data-testid="stat-total-leads">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Всего лидов</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+              <p className="text-xs text-muted-foreground">Все лиды в системе</p>
+            </CardContent>
+          </Card>
 
-        <Card data-testid="stat-new-leads">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Новые</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.new}</div>
-            <p className="text-xs text-muted-foreground">Статус: новый</p>
-          </CardContent>
-        </Card>
+          <Card data-testid="stat-new-leads">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Новые</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.new}</div>
+              <p className="text-xs text-muted-foreground">Статус: новый</p>
+            </CardContent>
+          </Card>
 
-        <Card data-testid="stat-in-progress">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">В работе</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.inProgress}</div>
-            <p className="text-xs text-muted-foreground">Активные лиды</p>
-          </CardContent>
-        </Card>
+          <Card data-testid="stat-in-progress">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">В работе</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.inProgress}</div>
+              <p className="text-xs text-muted-foreground">Активные лиды</p>
+            </CardContent>
+          </Card>
 
-        <Card data-testid="stat-completed">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Завершено</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completed}</div>
-            <p className="text-xs text-muted-foreground">Успешно конвертированы</p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card data-testid="stat-completed">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Завершено</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.completed}</div>
+              <p className="text-xs text-muted-foreground">Успешно конвертированы</p>
+            </CardContent>
+          </Card>
+        </div>
+      </CollapsibleSection>
 
       {/* Filters and View Toggle */}
-      <Card>
+      <CollapsibleSection id="leads-filters" title="Фильтры и поиск" description="Найдите нужный лид" defaultOpen={false}>
+        <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap items-center gap-4">
             {/* Search */}
@@ -792,7 +796,8 @@ export default function Leads() {
             )}
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </CollapsibleSection>
 
       {/* Kanban View */}
       {viewMode === 'kanban' ? (

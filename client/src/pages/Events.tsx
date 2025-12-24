@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Plus, Search, Filter, X, Archive } from "lucide-react";
+import { CollapsibleSection } from "@/components/CollapsibleSection";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { EventCard } from "@/components/EventCard";
@@ -414,131 +415,131 @@ export default function Events() {
       </div>
 
       {canManageEvents && (
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card data-testid="stat-total-events">
-            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Всего туров</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">В системе</p>
-            </CardContent>
-          </Card>
+        <CollapsibleSection id="events-stats" title="Статистика" defaultOpen={false}>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card data-testid="stat-total-events">
+              <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Всего туров</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.total}</div>
+                <p className="text-xs text-muted-foreground">В системе</p>
+              </CardContent>
+            </Card>
 
-          <Card data-testid="stat-upcoming-events">
-            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Предстоящие</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.upcoming}</div>
-              <p className="text-xs text-muted-foreground">Еще не началось</p>
-            </CardContent>
-          </Card>
+            <Card data-testid="stat-upcoming-events">
+              <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Предстоящие</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.upcoming}</div>
+                <p className="text-xs text-muted-foreground">Еще не началось</p>
+              </CardContent>
+            </Card>
 
-          <Card data-testid="stat-full-events">
-            <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Почти заполнены</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.fullOrAlmostFull}</div>
-              <p className="text-xs text-muted-foreground">≥90% занято</p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card data-testid="stat-full-events">
+              <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Почти заполнены</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.fullOrAlmostFull}</div>
+                <p className="text-xs text-muted-foreground">≥90% занято</p>
+              </CardContent>
+            </Card>
+          </div>
+        </CollapsibleSection>
       )}
 
-      <Card data-testid="card-filters">
-        <CardHeader>
-          <CardTitle>Фильтры и поиск</CardTitle>
-          <CardDescription>Найдите нужный тур</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Поиск по названию или городу..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-                data-testid="input-search"
+      <CollapsibleSection id="events-filters" title="Фильтры и поиск" description="Найдите нужный тур" defaultOpen={false}>
+        <Card data-testid="card-filters">
+          <CardContent className="space-y-4 pt-4">
+            <div className="flex flex-wrap gap-3">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Поиск по названию или городу..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search"
+                />
+              </div>
+
+              <div className="w-[180px]">
+                <Select value={countryFilter} onValueChange={setCountryFilter}>
+                  <SelectTrigger data-testid="select-country">
+                    <SelectValue placeholder="Все страны" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все страны</SelectItem>
+                    {countries.map(country => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-[180px]">
+                <Select value={tourTypeFilter} onValueChange={setTourTypeFilter}>
+                  <SelectTrigger data-testid="select-tour-type">
+                    <SelectValue placeholder="Все типы" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все типы</SelectItem>
+                    {tourTypes.map(type => (
+                      <SelectItem key={type} value={type}>{getTourTypeLabel(type)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-[180px]">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger data-testid="select-sort">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="startDate">По дате начала</SelectItem>
+                    <SelectItem value="price">По цене</SelectItem>
+                    <SelectItem value="availability">По доступности</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {(searchQuery || countryFilter !== "all" || tourTypeFilter !== "all") && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCountryFilter("all");
+                    setTourTypeFilter("all");
+                    setSortBy("startDate");
+                  }}
+                  data-testid="button-reset-filters"
+                >
+                  Сбросить
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <Switch
+                id="show-archived"
+                checked={showArchived}
+                onCheckedChange={setShowArchived}
+                data-testid="switch-show-archived"
               />
+              <Label htmlFor="show-archived" className="flex items-center gap-2 cursor-pointer">
+                <Archive className="h-4 w-4" />
+                Только архивные
+              </Label>
             </div>
-
-            <div className="w-[180px]">
-              <Select value={countryFilter} onValueChange={setCountryFilter}>
-                <SelectTrigger data-testid="select-country">
-                  <SelectValue placeholder="Все страны" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Все страны</SelectItem>
-                  {countries.map(country => (
-                    <SelectItem key={country} value={country}>{country}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-[180px]">
-              <Select value={tourTypeFilter} onValueChange={setTourTypeFilter}>
-                <SelectTrigger data-testid="select-tour-type">
-                  <SelectValue placeholder="Все типы" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Все типы</SelectItem>
-                  {tourTypes.map(type => (
-                    <SelectItem key={type} value={type}>{getTourTypeLabel(type)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-[180px]">
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger data-testid="select-sort">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="startDate">По дате начала</SelectItem>
-                  <SelectItem value="price">По цене</SelectItem>
-                  <SelectItem value="availability">По доступности</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {(searchQuery || countryFilter !== "all" || tourTypeFilter !== "all") && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchQuery("");
-                  setCountryFilter("all");
-                  setTourTypeFilter("all");
-                  setSortBy("startDate");
-                }}
-                data-testid="button-reset-filters"
-              >
-                Сбросить
-              </Button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 pt-2">
-            <Switch
-              id="show-archived"
-              checked={showArchived}
-              onCheckedChange={setShowArchived}
-              data-testid="switch-show-archived"
-            />
-            <Label htmlFor="show-archived" className="flex items-center gap-2 cursor-pointer">
-              <Archive className="h-4 w-4" />
-              Только архивные
-            </Label>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </CollapsibleSection>
 
       {isLoading ? (
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">

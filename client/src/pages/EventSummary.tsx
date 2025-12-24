@@ -887,25 +887,26 @@ export default function EventSummary() {
   // Create composite grouping key that keeps related participants together
   // FAMILY TAKES PRIORITY: if participant is in a family (leadId with 2+ members), 
   // always use lead key even if they also have groupId
+  // Use numeric prefixes to ensure correct sorting order: families > mini-groups > solo
   const getGroupingKey = (p: Participant): string => {
     const groupId = p.deal.groupId;
     const leadId = p.contact?.leadId;
     
-    // Priority 1: If participant is part of a FAMILY (lead with 2+ members), use lead key
+    // Priority 1: If participant is part of a FAMILY (lead with 2+ members)
     // This ensures all family members stay together even if some have groupId
     if (leadId && (leadCountMap.get(leadId) || 0) > 1) {
-      return `lead_${leadId}`;
+      return `1_family_${leadId}`;
     }
-    // Priority 2: If participant is in a mini-group (but not in family), use groupId
+    // Priority 2: If participant is in a mini-group (but not in family)
     if (groupId) {
-      return `group_${groupId}`;
+      return `2_group_${groupId}`;
     }
-    // Priority 3: Single participants with leadId (not a family)
+    // Priority 3: Solo participants (individual tourists without family or mini-group)
+    // Use leadId if available for stable grouping, otherwise dealId
     if (leadId) {
-      return `lead_${leadId}`;
+      return `3_solo_${leadId}`;
     }
-    // No group and no lead - use deal id to keep stable
-    return `solo_${p.deal.id}`;
+    return `3_solo_${p.deal.id}`;
   };
   
   const participants = rawParticipants.slice().sort((a, b) => {
@@ -924,9 +925,8 @@ export default function EventSummary() {
     }
     
     // Second: sort by grouping key to keep related participants together
-    // This groups both mini-groups (same groupId) and families (same leadId)
+    // Order: families (1_family_*) > mini-groups (2_group_*) > solo (3_solo_*)
     if (aGroupKey !== bGroupKey) {
-      // Mini-groups (group_*) come before families (lead_*) which come before solo (solo_*)
       return aGroupKey.localeCompare(bGroupKey);
     }
     

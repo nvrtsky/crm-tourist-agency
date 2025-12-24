@@ -16,7 +16,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download, Archive, ArchiveRestore, ChevronsUpDown, Check, ExternalLink, X, Calendar, CreditCard, Settings } from "lucide-react";
+import { Plus, Users, TrendingUp, Clock, CheckCircle, Edit, Trash2, LayoutGrid, LayoutList, Filter, Star, User as UserIcon, UserRound, Baby, RotateCcw, Search, MessageCircle, MapPin, XCircle, FileText, Download, Archive, ArchiveRestore, ChevronsUpDown, Check, ExternalLink, X, Calendar, CreditCard, Settings, Globe } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Lead, LeadWithTouristCount, InsertLead, LeadTourist, InsertLeadTourist, Event, EventWithStats, User } from "@shared/schema";
 import { insertLeadSchema, insertLeadTouristSchema } from "@shared/schema";
@@ -3298,12 +3298,16 @@ function TouristDialog({
 
             {/* Гражданство */}
             <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-sm font-semibold text-foreground bg-muted/30 px-3 py-2 rounded-md flex items-center gap-2">
+                <Globe className="h-4 w-4 text-primary" />
+                Гражданство
+              </h4>
               <FormField
                 control={form.control}
                 name="citizenship"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Гражданство</FormLabel>
+                    <FormLabel>Страна</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || "russia"} data-testid="select-tourist-citizenship">
                       <FormControl>
                         <SelectTrigger>
